@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Water Reflection, Upside-Down &amp; Mirror Looking Magic Squares Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --bg:#F5F6FA;--surface:#FFFFFF;--surface-alt:#E8EAF6;--border:#D3D7EA;
+    --ink:#232A45;--ink-soft:#5C6483;--accent:#3F51B5;--accent-ink:#FFFFFF;--accent-soft:#DDE1F5;
+    --warn:#C9722F;--warn-soft:#F5E3D0;--ok:#2F7A52;--ok-soft:#DCEFE4;
+    --radius-sm:6px;--radius-md:10px;--radius-lg:16px;
+    --shadow:0 1px 2px rgba(30,35,70,0.06), 0 6px 20px rgba(30,35,70,0.06);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;}
+  .page{max-width:1180px;margin:0 auto;padding:3rem 1.5rem 4rem;}
+  header.hero{margin-bottom:2.25rem;}
+  .kicker{font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:0.04em;color:var(--accent);margin-bottom:0.6rem;}
+  h1{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(1.9rem,4.5vw,2.6rem);line-height:1.1;margin:0 0 0.7rem;letter-spacing:-0.01em;}
+  h1 em{font-style:italic;font-weight:500;color:var(--accent);font-size:clamp(1rem,2vw,1.6rem);}
+  .hero p{font-size:16px;line-height:1.55;color:var(--ink-soft);max-width:none;margin:0;}
+  .credit-line{margin-top:0.9rem;font-size:12.5px;color:var(--ink-soft);}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem 1.6rem;box-shadow:var(--shadow);margin-bottom:1.4rem;}
+  .field-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:0.9rem;align-items:end;}
+  label{display:block;font-size:12.5px;color:var(--ink-soft);margin-bottom:0.35rem;}
+  input[type=number],select{font-family:'IBM Plex Mono',monospace;font-size:16px;padding:0.55rem 0.7rem;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--ink);width:100%;}
+  input:focus{outline:none;border-color:var(--accent);}
+
+  .mode-row{margin-top:1.1rem;}
+  .mode-toggle{display:flex;gap:0.5rem;flex-wrap:wrap;}
+  .mode-btn{font-family:'Inter',sans-serif;font-size:13.5px;font-weight:500;padding:0.55rem 0.9rem;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--ink-soft);cursor:pointer;}
+  .mode-btn.active{border-color:var(--accent);color:var(--accent);background:var(--accent-soft);}
+  .mode-note{font-size:13px;color:var(--ink-soft);margin-top:0.6rem;line-height:1.5;}
+  .digit-line{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-soft);margin-top:0.7rem;display:flex;gap:0.4rem;flex-wrap:wrap;align-items:center;}
+  .digit-pill{padding:0.15rem 0.55rem;border-radius:999px;background:var(--surface-alt);border:1px solid var(--border);}
+  .digit-pill.pair{color:var(--accent);border-color:var(--accent);}
+  .digit-check{
+    display:inline-flex;align-items:center;gap:0.4rem;
+    padding:0.35rem 0.7rem;border-radius:999px;
+    background:var(--surface-alt);border:1px solid var(--border);
+    font-family:'IBM Plex Mono',monospace;font-size:14px;
+    cursor:pointer;user-select:none;
+  }
+  .digit-check input{margin:0;accent-color:var(--accent);cursor:pointer;}
+  .digit-check.checked{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:600;}
+  .digit-check.pair-linked .pair-tag{font-size:10px;color:var(--ink-soft);margin-left:0.1rem;}
+  .pool-note{font-size:12.5px;color:var(--ink-soft);margin-top:0.6rem;line-height:1.5;}
+
+  .actions-row{display:flex;gap:0.6rem;align-items:center;margin-top:1.3rem;flex-wrap:wrap;}
+  button.primary{font-family:'Inter',sans-serif;font-size:14px;font-weight:600;background:var(--accent);color:var(--accent-ink);border:none;border-radius:var(--radius-sm);padding:0.62rem 1.2rem;cursor:pointer;}
+  button.primary:hover{background:#2E3B92;}
+  button.primary:disabled{opacity:0.5;cursor:default;}
+  button.ghost{font-family:'Inter',sans-serif;font-size:13px;font-weight:500;background:transparent;color:var(--ink-soft);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.5rem 0.9rem;cursor:pointer;}
+  button.ghost:hover{background:var(--surface-alt);color:var(--ink);}
+
+  .note{font-size:13.5px;margin-top:0.85rem;color:var(--ink-soft);}
+  .note.warn{color:var(--warn);}
+  .note.ok{color:var(--ok);}
+
+  .progress-wrap{margin-top:1.1rem;display:none;}
+  .progress-bar{height:6px;background:var(--surface-alt);border-radius:999px;overflow:hidden;}
+  .progress-fill{height:100%;background:var(--accent);width:0%;transition:width 0.15s linear;}
+  .progress-text{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink-soft);margin-top:0.4rem;}
+
+  .grids-row{display:flex;gap:1.5rem;flex-wrap:wrap;}
+  .grid-col{flex:1;min-width:220px;overflow-x:auto;}
+  .grids-row.both-results{display:grid;grid-template-columns:1fr;gap:1rem;}
+  .grids-row.both-results .grid-col{width:100%;box-sizing:border-box;padding:1rem;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--surface-alt);}
+  .grids-row.both-results .grid-label{font-size:13px;font-weight:700;color:var(--accent);}
+  .grids-row.both-results table.sq td.cell{background:var(--surface);}
+  .grids-row.large-order{display:grid;grid-template-columns:1fr;gap:1rem;}
+  .grids-row.large-order .grid-col{width:100%;padding:1rem;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--surface-alt);}
+  .grid-label{font-family:'IBM Plex Mono',monospace;font-size:11.5px;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-soft);margin-bottom:0.5rem;}
+  table.sq{border-collapse:collapse;width:100%;min-width:max-content;font-family:'IBM Plex Mono',monospace;font-size:14px;}
+  table.sq td{padding:0.5rem 0.6rem;text-align:right;border:1px solid var(--border);}
+  table.sq td.cell{background:var(--surface-alt);color:var(--ink);font-weight:600;}
+  table.sq td.rowsum{background:var(--accent-soft);color:var(--accent);font-weight:700;border-left:2px solid var(--accent);}
+  table.sq td.colsum{background:var(--accent-soft);color:var(--accent);font-weight:700;border-top:2px solid var(--accent);}
+  table.sq td.corner{background:var(--surface);border:none;}
+  .diag-line{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-soft);margin-top:0.5rem;display:flex;gap:1rem;flex-wrap:wrap;}
+  .diag-line .diag-val.match{color:var(--ok);font-weight:600;}
+  .diag-line .diag-val.nomatch{color:var(--warn);}
+
+  .verdict-row{display:flex;gap:0.9rem;flex-wrap:wrap;margin-top:1.3rem;}
+  .verdict{background:var(--surface-alt);border-radius:var(--radius-md);padding:0.75rem 0.9rem;flex:1;min-width:140px;}
+  .verdict .v-label{font-size:11.5px;color:var(--ink-soft);margin-bottom:0.25rem;}
+  .verdict .v-val{font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600;color:var(--accent);}
+
+  .export-row{display:flex;gap:0.6rem;margin-top:1.3rem;padding-top:1.2rem;border-top:1px solid var(--border);}
+  .results-list{display:flex;flex-direction:column;gap:1.4rem;}
+  .result-item{padding:1.25rem;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface);}
+  .result-head{display:flex;justify-content:space-between;gap:1rem;align-items:center;margin-bottom:0.9rem;}
+  .result-head strong{font-family:'Fraunces',serif;font-size:20px;}
+  .result-head span{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--accent);}
+  .summary-strip{display:flex;gap:0.6rem;flex-wrap:wrap;margin-bottom:1rem;}
+  .summary-strip span{padding:0.3rem 0.65rem;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-family:'IBM Plex Mono',monospace;font-size:12px;}
+  @media(max-width:600px){.grids-row{flex-direction:column}.page{padding:2rem 0.8rem 3rem}.card{padding:1.1rem}.result-item{padding:0.8rem}table.sq{font-size:12px}table.sq td{padding:0.4rem 0.35rem}}
+
+  footer{margin-top:3rem;padding-top:1.6rem;border-top:1px solid var(--border);font-size:13px;color:var(--ink-soft);line-height:1.9;}
+  footer a{color:var(--accent);text-decoration:none;}
+  footer a:hover{text-decoration:underline;}
+
+#ijt-digital-reflections-generator{--bg:#e4edf2;--surface:#f4f8fb;--surface-alt:#e1edf3;--border:#abc3d0;--ink:#173849;--ink-soft:#405c6c;--accent:#176886;--accent-soft:#d0e6ee;--warn:#985014;--ok:#236745;background:linear-gradient(135deg,#dbe8ef,#edf3f4 55%,#e0e8f2);border-radius:22px;}
+#ijt-digital-reflections-generator header.hero,#ijt-digital-reflections-generator .card,#ijt-digital-reflections-generator .result-item,#ijt-digital-reflections-generator footer{border:1px solid #a8becb;border-left:7px solid #236e8c;background:linear-gradient(145deg,#cfdee7 0%,#e7eff4 45%,#f5f8fa 100%);box-shadow:inset 5px 5px 12px rgba(35,65,85,.19),inset -5px -5px 12px rgba(255,255,255,.9),0 1px 0 rgba(255,255,255,.8);border-radius:18px;}
+#ijt-digital-reflections-generator header.hero{padding:1.6rem;margin-bottom:1.4rem;border-left-color:#205477;background:linear-gradient(145deg,#cbdceb,#e2ecf4 45%,#f2f7fa);}
+#ijt-digital-reflections-generator #resultsCard{border-left-color:#367c70;background:linear-gradient(145deg,#d0e4df,#e9f3ee 50%,#f5faf8);}
+#ijt-digital-reflections-generator #researchReferences{border-left-color:#a07835;background:linear-gradient(145deg,#e5ddca,#f2eddf 50%,#faf7ee);}
+#ijt-digital-reflections-generator .result-item{border-left-width:5px;border-left-color:#3b8580;}
+#ijt-digital-reflections-generator .grid-col,#ijt-digital-reflections-generator .grids-row.both-results .grid-col,#ijt-digital-reflections-generator .grids-row.large-order .grid-col,#ijt-digital-reflections-generator .verdict{padding:.9rem;background:linear-gradient(145deg,#d6e4ec,#f0f6f8);border:1px solid #b3c9d4;border-radius:12px;box-shadow:inset 3px 3px 7px rgba(35,65,85,.16),inset -3px -3px 7px rgba(255,255,255,.9);}
+#ijt-digital-reflections-generator .mode-btn{background:linear-gradient(145deg,#ecf4f7,#d6e6ee);color:#31576b;box-shadow:inset 1px 1px 3px #fff;}
+#ijt-digital-reflections-generator .mode-btn.active{color:#fff;background:linear-gradient(145deg,#15566f,#24819d);border-color:#12536d;box-shadow:inset 3px 3px 7px rgba(0,30,50,.3),inset -1px -1px 3px rgba(255,255,255,.18);}
+#ijt-digital-reflections-generator button.primary{background:linear-gradient(135deg,#176886,#34879c);box-shadow:inset 0 1px 0 rgba(255,255,255,.3);}
+#ijt-digital-reflections-generator button.primary:hover{background:#145571;}
+#ijt-digital-reflections-generator input[type=number],#ijt-digital-reflections-generator select{background:#f5f9fb;box-shadow:inset 2px 2px 5px rgba(35,65,85,.12);}
+#ijt-digital-reflections-generator #researchReferences a,#ijt-digital-reflections-generator footer a{color:#175f81;text-decoration:underline;text-underline-offset:3px;overflow-wrap:anywhere;}
+#ijt-digital-reflections-generator footer{padding:1.2rem 1.5rem;border-left-color:#65768f;}
+#ijt-digital-reflections-generator :is(button,input,select,a):focus-visible{outline:3px solid #aa782a;outline-offset:3px;}
+@media(max-width:600px){#ijt-digital-reflections-generator header.hero{padding:1.1rem;}#ijt-digital-reflections-generator .grid-col{padding:.6rem;}}
+
+
+#ijt-digital-reflections-generator #researchReferences summary{cursor:pointer;font-size:1.2rem;font-weight:700;color:#685022;line-height:1.5;}
+#ijt-digital-reflections-generator #researchReferences summary::marker{color:#946f30;}
+#ijt-digital-reflections-generator #researchReferences .references-hint{font-size:.85rem;font-weight:400;color:#635c4c;}
+#ijt-digital-reflections-generator #researchReferences[open] summary{margin-bottom:1rem;}
+#ijt-digital-reflections-generator #researchReferences summary:focus-visible{outline:3px solid #aa782a;outline-offset:5px;border-radius:3px;}
+
+#ijt-digital-reflections-generator h1{font-size:clamp(1.65rem,2.5vw,2rem);line-height:1.2;}
+#ijt-digital-reflections-generator h1 em{font-size:inherit;}
+#ijt-digital-reflections-generator h1>span{display:inline-block;font-family:'Inter',sans-serif;font-size:1rem;font-weight:500;letter-spacing:.02em;margin-top:.65rem;color:var(--ink-soft);}
+
+#ijt-digital-reflections-generator header.hero{background:linear-gradient(145deg,#c8c2df 0%,#e2ddf0 48%,#f5f0fa 100%)!important;border-color:#aaa0c4!important;border-left:8px solid #65468b!important;box-shadow:inset 6px 6px 14px rgba(65,43,95,.22),inset -6px -6px 14px rgba(255,255,255,.88)!important;}
+#ijt-digital-reflections-generator header.hero .kicker{color:#65468b!important;}
+#ijt-digital-reflections-generator header.hero h1{font-size:clamp(1.9rem,3.4vw,2.65rem)!important;line-height:1.16!important;}
+#ijt-digital-reflections-generator header.hero h1 em{font-size:inherit!important;color:#49306d!important;font-weight:600!important;}
+#ijt-digital-reflections-generator header.hero h1>span{font-size:15px!important;line-height:1.4!important;font-weight:500!important;color:#67577b!important;margin-top:.7rem!important;}
+#ijt-digital-reflections-generator header.hero p,#ijt-digital-reflections-generator header.hero .credit-line{color:#514760!important;}
+</style>
+</head>
+<body>
+<div class="page" id="ijt-digital-reflections-generator">
+
+  <header class="hero">
+    <div class="kicker">RECREATIONAL MATHEMATICS * MAGIC SQUARES</div>
+    <h1><em>Water Reflection, Upside-Down &amp; Mirror Looking Magic Squares Generator</em></h1>
+    <p><strong>Order 3&ndash;25.</strong> Choose the square order, the allowed digital digits, and the number of digits in every cell. Choose water reflection, upside-down, or all three: water reflection, upside-down and mirror looking. The results verify the selected row, column and diagonal conditions; Excel places the original and transformed squares side by side.</p>
+    <div class="credit-line">Created by <strong>Inder J. Taneja</strong></div>
+  </header>
+
+  <div class="card">
+    <div class="field-grid">
+      <div><label for="orderInput">Magic-square order</label><select id="orderInput"><option value="3">3 &#215; 3</option><option value="4">4 &#215; 4</option><option value="5">5 &#215; 5</option><option value="6">6 &#215; 6</option><option value="7">7 &#215; 7</option><option value="8">8 &#215; 8</option><option value="9">9 &#215; 9</option><option value="10">10 &#215; 10</option><option value="11">11 &#215; 11</option><option value="12">12 &#215; 12</option><option value="13">13 &#215; 13</option><option value="14">14 &#215; 14</option><option value="15">15 &#215; 15</option><option value="16">16 &#215; 16</option><option value="17">17 &#215; 17</option><option value="18">18 &#215; 18</option><option value="19">19 &#215; 19</option><option value="20">20 &#215; 20</option><option value="21">21 &#215; 21</option><option value="22">22 &#215; 22</option><option value="23">23 &#215; 23</option><option value="24">24 &#215; 24</option><option value="25">25 &#215; 25</option></select></div>
+      <div><label for="lengthInput">Digits in each cell</label><input type="number" id="lengthInput" value="4" min="2" max="12"></div>
+      <div><label for="maxResultsInput">Maximum results</label><input type="number" id="maxResultsInput" value="10" min="1" max="100"></div>
+      <div><label for="conditionInput">Magic condition</label><select id="conditionInput"><option value="semi">Rows and columns</option><option value="full">Rows, columns and diagonals</option></select></div>
+    </div>
+    <div class="mode-row">
+      <label>Transform</label>
+      <div class="mode-toggle">
+        <button class="mode-btn active" data-mode="water">1. Water reflection</button>
+        <button class="mode-btn" data-mode="rotate">2. Upside-down</button>
+        <button class="mode-btn" data-mode="both">3. Water Reflection, Upside-down and Mirror Looking</button>
+      </div>
+      <div class="mode-note" id="modeNote">0, 1, 8 stay the same in a mirror; 2 and 5 swap with each other. (3, 4, 6, 7, 9 have no real mirror image.)</div>
+      <label style="margin-top:1rem;">Digits to use</label>
+      <div class="digit-line" id="digitCheckboxes"></div>
+      <div class="pool-note" id="zeroNote">Zero normally appears only in an interior position. For 7&#215;7 two-digit Upside-down squares, fixed-width entries such as 01 are preserved so all 49 combinations are available.</div>
+      <div class="pool-note" id="countNote"></div>
+    </div>
+
+    <div class="note" id="sizeNote"></div>
+
+    <div class="actions-row">
+      <button class="primary" id="genBtn">Generate</button>
+      <button class="ghost" id="stopBtn" style="display:none;">Stop</button>
+    </div>
+    <div class="note" id="setupNote"></div>
+
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-text" id="progressText"></div>
+    </div>
+  </div>
+
+  <div id="resultsCard" class="card" style="display:none;">
+    <div class="summary-strip" id="summaryStrip"></div>
+    <div class="results-list" id="resultsList"></div>
+    <div class="export-row" id="exportRow" style="display:none;">
+      <button class="ghost" id="exportTxtBtn">Export all .txt</button>
+      <button class="ghost" id="exportXlsxBtn">Export all .xlsx</button>
+    </div>
+  </div>
+
+<details class="card" id="researchReferences">
+<summary id="referencesHeading">References <span class="references-hint">&#8212; click to show or hide</span></summary>
+<p>Based on the author&#8217;s following research works:</p>
+<ol style="padding-left:1.5rem;line-height:1.65">
+<li style="margin-bottom:1.2rem"><strong>Inder J. Taneja</strong>, <em>Upside-Down, Mirror Looking and Water Reflection Magic Squares: Orders 3 to 6</em>, <strong>Zenodo</strong>, January 07, 2025, pp. 1&#8211;93, <a href="https://doi.org/10.5281/zenodo.14607070" target="_blank" rel="noopener">https://doi.org/10.5281/zenodo.14607070</a>.<ul>
+<li>Site link: <a href="https://numbers-magic.com/?p=12610" target="_blank" rel="noopener">Universal and Upside-Down Magic Squares of Order 3 to 6 (new site)</a></li>
+<li>Site link: <a href="https://numbers-magic.com/?p=14126" target="_blank" rel="noopener">Water Reflexive Magic Squares: Order 3 to 6 (new site)</a></li>
+<li>Site link: <a href="https://inderjtaneja.wordpress.com/2024/09/30/universal-and-upside-down-magic-squares-of-order-3-to-6/" target="_blank" rel="noopener">Universal and Upside-Down Magic Squares of Order 3 to 6 (old site)</a></li>
+<li>Site link: <a href="https://inderjtaneja.wordpress.com/2025/01/11/water-reflexive-magic-squares-order-3-to-6/" target="_blank" rel="noopener">Water Reflexive Magic Squares: Order 3 to 6 (old site)</a></li>
+</ul></li>
+<li style="margin-bottom:1.2rem"><strong>Inder J. Taneja</strong>, <em>Upside-Down, Mirror Looking and Water Reflection Magic Squares: Orders 7 to 10</em>, <strong>Zenodo</strong>, January 07, 2025, pp. 1&#8211;171, <a href="https://doi.org/10.5281/zenodo.14607071" target="_blank" rel="noopener">https://doi.org/10.5281/zenodo.14607071</a>.<ul>
+<li>Site link: <a href="https://numbers-magic.com/?p=12654" target="_blank" rel="noopener">Universal and Upside-Down Magic Squares of Orders 7 to 10 (new site)</a></li>
+<li>Site link: <a href="https://numbers-magic.com/?p=14213" target="_blank" rel="noopener">Water Reflexive Magic Squares: Order 7 to 10 (new site)</a></li>
+<li>Site link: <a href="https://inderjtaneja.wordpress.com/2024/09/30/universal-and-upside-down-magic-squares-of-orders-7-to-10/" target="_blank" rel="noopener">Universal and Upside-Down Magic Squares of Orders 7 to 10 (old site)</a></li>
+<li>Site link: <a href="https://inderjtaneja.wordpress.com/2025/01/11/water-reflexive-magic-squares-order-7-to-10/" target="_blank" rel="noopener">Water Reflexive Magic Squares: Order 7 to 10 (old site)</a></li>
+</ul></li>
+<li style="margin-bottom:1.2rem"><strong>Inder J. Taneja</strong>, <em>Upside-Down, Mirror Looking and Water Reflection Magic Squares: Orders 11 to 13</em>, <strong>Zenodo</strong>, January 15, 2025, pp. 1&#8211;146, <a href="https://doi.org/10.5281/zenodo.14649320" target="_blank" rel="noopener">https://doi.org/10.5281/zenodo.14649320</a>.<ul>
+<li>Site link: <a href="https://numbers-magic.com/?p=12731" target="_blank" rel="noopener">Universal and Upside-Down Magic Squares of Orders 11 to 15 (new site)</a></li>
+<li>Site link: <a href="https://numbers-magic.com/?p=14339" target="_blank" rel="noopener">Water Reflection Magic Squares: Order 11 to 13 (new site)</a></li>
+<li>Site link: <a href="https://inderjtaneja.wordpress.com/2024/10/07/universal-and-upside-down-magic-squares-of-orders-11-to-15/" target="_blank" rel="noopener">Universal and Upside-Down Magic Squares of Orders 11 to 15 (old site)</a></li>
+<li>Site link: <a href="https://inderjtaneja.wordpress.com/2025/01/23/water-reflection-magic-squares-orders-11-to-13/" target="_blank" rel="noopener">Water Reflection Magic Squares: Order 11 to 13 (old site)</a></li>
+</ul></li>
+<li style="margin-bottom:1.2rem"><strong>Inder J. Taneja</strong>, <em>Upside-Down, Mirror Looking and Water Reflection Magic Squares: Orders 14 to 16</em>, <strong>Zenodo</strong>, January 15, 2024, pp. 1&#8211;140, <a href="https://doi.org/10.5281/zenodo.14649519" target="_blank" rel="noopener">https://doi.org/10.5281/zenodo.14649519</a>.<ul>
+<li>Site link: <a href="https://numbers-magic.com/?p=13138" target="_blank" rel="noopener">Universal and Upside-Down Magic and Bimagic Squares of Order 16 (new site)</a></li>
+<li>Site link: <a href="https://numbers-magic.com/?p=14518" target="_blank" rel="noopener">Water Reflection Magic Squares: Order 14 to 16 (new site)</a></li>
+<li>Site link: <a href="https://inderjtaneja.wordpress.com/2024/10/16/universal-and-upside-down-magic-and-bimagic-squares-of-order-16/" target="_blank" rel="noopener">Universal and Upside-Down Magic and Bimagic Squares of Order 16 (old site)</a></li>
+<li>Site link: <a href="https://inderjtaneja.wordpress.com/2025/01/23/water-reflection-magic-squares-orders-14-to-16/" target="_blank" rel="noopener">Water Reflection Magic Squares: Order 14 to 16 (old site)</a></li>
+</ul></li>
+<li style="margin-bottom:1.2rem"><strong>Inder J. Taneja</strong>, <em>Upside-Down, Mirror Looking and Water Reflection Magic Squares: Orders 17 to 20</em>, <strong>Zenodo</strong>, January 17, 2025, pp. 1&#8211;86, <a href="https://doi.org/10.5281/zenodo.14676293" target="_blank" rel="noopener">https://doi.org/10.5281/zenodo.14676293</a>.<ul>
+<li>Site link: <a href="https://numbers-magic.com/?p=13186" target="_blank" rel="noopener">Universal and Upside-Down Magic Squares of Order 20 (new site)</a></li>
+<li>Site link: <a href="https://numbers-magic.com/?p=14561" target="_blank" rel="noopener">Water Reflection Magic Squares: Orders 17 to 20 (new site)</a></li>
+<li>Site link: <a href="https://inderjtaneja.wordpress.com/2024/10/23/universal-and-upside-down-magic-and-bimagic-squares-of-order-16-2/" target="_blank" rel="noopener">Universal and Upside-Down Magic Squares of Order 20 (old site)</a></li>
+<li>Site link: <a href="https://inderjtaneja.wordpress.com/2025/01/23/water-reflection-magic-squares-orders-17-to-20/" target="_blank" rel="noopener">Water Reflection Magic Squares: Orders 17 to 20 (old site)</a></li>
+</ul></li>
+<li style="margin-bottom:1.2rem"><strong>Inder J. Taneja</strong>, <em>Upside-Down, Mirror Looking and Water Reflection Magic Squares: Orders 21 to 23</em>, <strong>Zenodo</strong>, January 20, 2025, pp. 1&#8211;83, <a href="https://doi.org/10.5281/zenodo.14688709" target="_blank" rel="noopener">https://doi.org/10.5281/zenodo.14688709</a>.<ul>
+<li>Site link: <a href="https://numbers-magic.com/?p=13242" target="_blank" rel="noopener">Universal and Upside-Down Magic Squares of Order 21 (new site)</a></li>
+<li>Site link: <a href="https://numbers-magic.com/?p=14616" target="_blank" rel="noopener">Water Reflection Magic Squares: Orders 21 to 23 (new site)</a></li>
+<li>Site link: <a href="https://inderjtaneja.wordpress.com/2024/10/23/10984/" target="_blank" rel="noopener">Universal and Upside-Down Magic Squares of Order 21 (old site)</a></li>
+<li>Site link: <a href="https://inderjtaneja.wordpress.com/2025/01/23/water-reflection-magic-squares-orders-21-to-23/" target="_blank" rel="noopener">Water Reflection Magic Squares: Orders 21 to 23 (old site)</a></li>
+</ul></li>
+<li style="margin-bottom:1.2rem"><strong>Inder J. Taneja</strong>, <em>Upside-Down, Mirror Looking and Water Reflection Magic Squares: Order 24</em>, <strong>Zenodo</strong>, January 20, 2025, pp. 1&#8211;150, <a href="https://doi.org/10.5281/zenodo.14700325" target="_blank" rel="noopener">https://doi.org/10.5281/zenodo.14700325</a>.<ul>
+<li>Site link: <a href="https://numbers-magic.com/?p=13299" target="_blank" rel="noopener">Universal and Upside-Down Magic Squares of Order 24 (new site)</a></li>
+<li>Site link: <a href="https://numbers-magic.com/?p=14668" target="_blank" rel="noopener">Water Reflection Magic Squares: Order 24 (new site)</a></li>
+<li>Site link: <a href="https://inderjtaneja.wordpress.com/2024/10/29/universal-and-upside-down-magic-squares-of-order-24/" target="_blank" rel="noopener">Universal and Upside-Down Magic Squares of Order 24 (old site)</a></li>
+<li>Site link: <a href="https://inderjtaneja.wordpress.com/2025/01/23/water-reflection-magic-squares-order-24/" target="_blank" rel="noopener">Water Reflection Magic Squares: Order 24 (old site)</a></li>
+</ul></li>
+<li style="margin-bottom:1.2rem"><strong>Inder J. Taneja</strong>, <em>Upside-Down, Mirror Looking and Water Reflection Magic Squares: Order 25</em>, <strong>Zenodo</strong>, January 21, 2025, pp. 1&#8211;79, <a href="https://doi.org/10.5281/zenodo.14715162" target="_blank" rel="noopener">https://doi.org/10.5281/zenodo.14715162</a>.<ul>
+<li>Site link: <a href="https://numbers-magic.com/?p=13336" target="_blank" rel="noopener">Universal and Upside-Down Magic and Bimagic Squares of Order 25 (new site)</a></li>
+<li>Site link: <a href="https://numbers-magic.com/?p=14749" target="_blank" rel="noopener">Water Reflection Magic Squares: Order 25 (new site)</a></li>
+<li>Site link: <a href="https://inderjtaneja.wordpress.com/2024/10/30/universal-and-upside-down-magic-and-bimagic-squares-of-order-25/" target="_blank" rel="noopener">Universal and Upside-Down Magic and Bimagic Squares of Order 25 (old site)</a></li>
+<li>Site link: <a href="https://inderjtaneja.wordpress.com/2025/01/23/water-reflection-magic-squares-order-25/" target="_blank" rel="noopener">Water Reflection Magic Squares: Order 25 (old site)</a></li>
+</ul></li>
+</ol>
+</details>
+
+  <footer>
+    <strong>Inder J. Taneja</strong><br>
+    <a href="https://numbers-magic.com/" target="_blank" rel="noopener">numbers-magic.com</a> &#183;
+    <a href="https://inderjtaneja.wordpress.com/" target="_blank" rel="noopener">inderjtaneja.wordpress.com</a> &#183;
+    <a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/" target="_blank" rel="noopener">taneja-mathematical-generators.ijtaneja.chatgpt.site</a>
+  </footer>
+
+</div>
+
+
+<script>
+// Place each result's original and transformed squares across one worksheet band.
+function reflectionExcelLayout(resultSets){
+  const rows=[],widths=[];
+  resultSets.forEach(result=>{
+    const top=rows.length;let left=0,height=0;
+    result.blocks.forEach(block=>{
+      const g=block.grid,n=g.length,L=block.length||0;
+      const data=block.data||{magic:g[0].reduce((a,v)=>a+v,0),cols:g[0].map((_,c)=>g.reduce((a,r)=>a+r[c],0)),d1:g.reduce((a,r,i)=>a+r[i],0),d2:g.reduce((a,r,i)=>a+r[n-1-i],0)};
+      const band=[['Result '+result.number+' \u2014 '+block.label],['Magic sum',data.magic],Array(n).fill('').concat(['Row sum'])];
+      g.forEach(r=>band.push(r.map(v=>String(v).padStart(L,'0')).concat([r.reduce((a,v)=>a+v,0)])));
+      band.push(data.cols.concat(['Column sums']),['Diagonal \u2198',data.d1],['Diagonal \u2199',data.d2]);
+      band.forEach((r,j)=>{if(!rows[top+j])rows[top+j]=[];r.forEach((v,c)=>{rows[top+j][left+c]=v;});});
+      for(let c=0;c<=n;c++)widths[left+c]={wch:Math.max(16,L+3)};
+      widths[left+n+1]={wch:4};left+=n+2;height=Math.max(height,band.length);
+    });
+    rows.length=top+height;rows.push([],[]);
+  });
+  return {rows,columns:widths};
+}
+</script>
+<script>
+(function(){
+'use strict';
+const MAPS={
+  water:{map:{'0':'0','1':'1','2':'5','3':'3','5':'2','8':'8'},digits:['0','1','2','3','5','8'],pairs:[['2','5']],label:'Water reflection'},
+  mirror:{map:{'0':'0','1':'1','2':'5','5':'2','8':'8'},digits:['0','1','2','5','8'],pairs:[['2','5']],label:'Mirror-looking'},
+  rotate:{map:{'0':'0','1':'1','2':'2','5':'5','6':'9','8':'8','9':'6'},digits:['0','1','2','5','6','8','9'],pairs:[['6','9']],label:'Upside-down'},
+  both:{map:{'0':'0','1':'1','2':'5','5':'2','8':'8'},digits:['0','1','2','5','8'],pairs:[['2','5']],label:'Water reflection, Upside-down & Mirror-looking'}
+};
+let mode='water',selected=new Set(['0','2','5','8']),results=[],running=false,stop=false;
+const host=document.getElementById('ijt-digital-reflections-generator');
+const $=id=>host.querySelector('#'+id);
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const choose=(a,n)=>shuffle(a).slice(0,n);
+const sum=a=>a.reduce((x,y)=>x+y,0);
+function partner(d){for(const p of MAPS[mode].pairs){if(p[0]===d)return p[1];if(p[1]===d)return p[0];}return null;}
+function presetDigits(){const n=+$('orderInput').value;if(mode==='water')selected=new Set(['0','1','2','3','5','8']);else if(mode==='both')selected=new Set(['0','1','2','5','8']);else if(mode==='mirror')selected=new Set(n===3?['0','2','5','8']:n===4?['1','2','5','8']:['0','1','2','5','8']);else selected=new Set(['0','1','2','5','6','8','9']);}
+function setMode(next){mode=next;if(mode!=='water'&&$('conditionInput').value==='blocks')$('conditionInput').value='semi';host.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));presetDigits();$('modeNote').textContent=mode==='water'?'Water reflection: digit order is preserved; 2 and 5 exchange, while 0, 1, 3 and 8 remain unchanged.':mode==='mirror'?'Valid mirror digits: 0, 1, 2, 5, 8. Digits 2 and 5 are selected together.':mode==='rotate'?'Valid upside-down digits: 0, 1, 2, 5, 6, 8, 9. Digits 6 and 9 are selected together.':'Common valid digits: 0, 1, 2, 5, 8. Every result is checked separately as water reflection, mirror-looking and upside-down.';renderDigits();}
+function renderDigits(){const box=$('digitCheckboxes');box.innerHTML='';for(const d of MAPS[mode].digits){const lab=document.createElement('label');lab.className='digit-check'+(selected.has(d)?' checked':'');const cb=document.createElement('input');cb.type='checkbox';cb.checked=selected.has(d);cb.addEventListener('change',()=>toggleDigit(d));lab.append(cb,document.createTextNode(d));const p=partner(d);if(p){const t=document.createElement('span');t.className='pair-tag';t.textContent='\u2194 '+p;lab.append(t);}box.append(lab);}updateNote();}
+function toggleDigit(d){const add=!selected.has(d),p=partner(d);if(add){selected.add(d);if(p)selected.add(p);}else{selected.delete(d);if(p)selected.delete(p);}renderDigits();}
+function entryCapacity(n,L){const nonzero=[...selected].filter(d=>d!=='0').length,boundary=mode==='rotate'&&n===7&&L===2?selected.size:nonzero;return boundary*boundary*Math.pow(selected.size,Math.max(0,L-2));}
+function updateNote(){const n=+$('orderInput').value,L=Math.max(2,+$('lengthInput').value||2),capacity=entryCapacity(n,L),feasible=capacity>=n*n;$('countNote').textContent=selected.size+' digits selected \u00b7 '+capacity.toLocaleString()+' possible fixed-length entries \u00b7 '+(feasible?'ready for '+n+'\u00d7'+n+'.':'this order needs '+(n*n)+' distinct entries; add digits or increase the digits per cell.');$('countNote').style.color=feasible?'var(--ok)':'var(--warn)';}
+host.querySelectorAll('.mode-btn').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.mode)));
+$('orderInput').addEventListener('change',()=>{if(+$('orderInput').value>=6&&+$('lengthInput').value<8)$('lengthInput').value=8;presetDigits();renderDigits();});$('lengthInput').addEventListener('input',updateNote);
+function transformNumber(v,map,L){const chars=String(v).padStart(L,'0').split('');return Number((mode==='water'?chars:chars.reverse()).map(d=>map[d]).join(''));}
+function lineData(g){const n=g.length,rows=g.map(sum),cols=Array.from({length:n},(_,c)=>sum(g.map(r=>r[c]))),d1=sum(g.map((r,i)=>r[i])),d2=sum(g.map((r,i)=>r[n-1-i]));return{rows,cols,d1,d2,magic:rows[0],semi:rows.every(x=>x===rows[0])&&cols.every(x=>x===rows[0]),full:rows.every(x=>x===rows[0])&&cols.every(x=>x===rows[0])&&d1===rows[0]&&d2===rows[0]};}
+function valueList(pool,n){if(!pool.length)return null;for(let attempt=0;attempt<(mode==='water'?120:1);attempt++){const vals=shuffle(pool);while(vals.length<n)vals.push(pool[Math.floor(Math.random()*pool.length)]);const out=shuffle(vals.slice(0,n));if(mode!=='water'||sum(out.map(Number))===sum(out.map(d=>Number(MAPS.water.map[d]))))return out;}return null;}
+function latinPlane(n,digitPool,boundary,slope,rp,cp){const usable=boundary?digitPool.filter(d=>d!=='0'):digitPool.slice(),vals=valueList(usable,n);if(!vals)return null;const off=Math.floor(Math.random()*n);return Array.from({length:n},(_,r)=>Array.from({length:n},(_,c)=>vals[(rp[r]+slope*cp[c]+off)%n]));}
+function orderFourPlane(which,digitPool,boundary,rp,cp){const usable=boundary?digitPool.filter(d=>d!=='0'):digitPool.slice(),vals=valueList(usable,4);if(!vals)return null;const bases=[[[0,1,2,3],[1,0,3,2],[2,3,0,1],[3,2,1,0]],[[0,2,3,1],[1,3,2,0],[2,0,1,3],[3,1,0,2]]],base=bases[which%2];return Array.from({length:4},(_,r)=>Array.from({length:4},(_,c)=>vals[base[rp[r]][cp[c]]]));}
+function gf9add(a,b){return((a%3+b%3)%3)+3*((Math.floor(a/3)+Math.floor(b/3))%3);}
+function gf9mul(a,b){const ar=a%3,ai=Math.floor(a/3),br=b%3,bi=Math.floor(b/3);return((ar*br-ai*bi)%3+3)%3+3*((ar*bi+ai*br)%3);}
+function latinNinePlane(digitPool,boundary,slope,rp,cp){const usable=boundary?digitPool.filter(d=>d!=='0'):digitPool.slice(),vals=valueList(usable,9),off=Math.floor(Math.random()*9);if(!vals)return null;return Array.from({length:9},(_,r)=>Array.from({length:9},(_,c)=>vals[gf9add(gf9add(rp[r],gf9mul(slope,cp[c])),off)]));}
+function latinCompositePlane(n,digitPool,boundary){const usable=boundary?digitPool.filter(d=>d!=='0'):digitPool.slice(),vals=valueList(usable,n),rp=shuffle([...Array(n).keys()]),cp=shuffle([...Array(n).keys()]),sp=shuffle([...Array(n).keys()]);if(!vals)return null;return Array.from({length:n},(_,r)=>Array.from({length:n},(_,c)=>vals[sp[(rp[r]+cp[c])%n]]));}
+function gcd(a,b){while(b)[a,b]=[b,a%b];return a;}
+function balancedSubset(indices,size,w1,w2){
+ if(size===0)return [];
+ const levels=Array.from({length:size+1},()=>new Map());levels[0].set('0,0',[]);
+ for(const i of shuffle(indices))for(let k=size;k>=1;k--)for(const [key,path] of levels[k-1]){
+  const [a,b]=key.split(',').map(Number),next=(a+w1[i])+','+(b+w2[i]);
+  if(!levels[k].has(next))levels[k].set(next,path.concat(i));
+ }
+ return levels[size].get('0,0')||null;
+}
+function balancedDigitPlane(n,digits,boundary,full){
+ const pair=mode==='rotate'?['6','9']:['2','5'];
+ const usable=digits.filter(d=>d!=='0'),fixed=usable.filter(d=>!pair.includes(d));
+ const paired=pair.every(d=>usable.includes(d));if(paired&&fixed.length>2)fixed.length=2;
+ if(!fixed.length&&(!paired||n%2))return null;
+ for(let attempt=0;attempt<30;attempt++){
+  const rp=shuffle([...Array(n).keys()]),cp=shuffle([...Array(n).keys()]),slopes=[...Array(n).keys()].filter(k=>gcd(k,n)===1),slope=slopes[Math.floor(Math.random()*slopes.length)];
+  const symbols=Array.from({length:n},(_,r)=>Array.from({length:n},(_,c)=>(rp[r]+slope*cp[c])%n)),w1=Array(n).fill(-1),w2=Array(n).fill(-1);
+  if(full){for(let r=0;r<n;r++){w1[symbols[r][r]]++;w2[symbols[r][n-1-r]]++;}}else{w1.fill(0);w2.fill(0);}
+  let remaining=[...Array(n).keys()],vals=Array(n),failed=false;
+  const assign=(digit,size)=>{const group=balancedSubset(remaining,size,w1,w2);if(!group)return false;const used=new Set(group);for(const i of group)vals[i]=digit;remaining=remaining.filter(i=>!used.has(i));return true;};
+  if(paired){const unit=n%2?1:2,k=fixed.length?unit*Math.max(1,Math.floor(n/(fixed.length+2)/unit)):n/2;if(!assign(pair[0],k)||!assign(pair[1],k))continue;}
+  for(let j=0;j<fixed.length;j++){const size=j===fixed.length-1?remaining.length:(n%2?1:2)*Math.ceil(remaining.length/(fixed.length-j)/(n%2?1:2));if(!assign(fixed[j],size)){failed=true;break;}}
+  if(failed||remaining.length)continue;
+  return symbols.map(row=>row.map(i=>vals[i]));
+ }
+ return null;
+}
+function latinSixPlane(digitPool,boundary){const usable=boundary?digitPool.filter(d=>d!=='0'):digitPool.slice(),vals=valueList(usable,6),rp=shuffle([0,1,2,3,4,5]),cp=shuffle([0,1,2,3,4,5]),sp=shuffle([0,1,2,3,4,5]);if(!vals)return null;return Array.from({length:6},(_,r)=>Array.from({length:6},(_,c)=>vals[sp[(rp[r]+cp[c])%6]]));}
+function gf8mul(a,b){let out=0;for(;b;b>>=1,a<<=1){if(a&8)a^=11;if(b&1)out^=a;}return out&7;}
+function latinEightPlane(digitPool,boundary,slope,rp,cp){const usable=boundary?digitPool.filter(d=>d!=='0'):digitPool.slice(),vals=valueList(usable,8),off=Math.floor(Math.random()*8);if(!vals)return null;return Array.from({length:8},(_,r)=>Array.from({length:8},(_,c)=>vals[rp[r]^gf8mul(slope,cp[c])^off]));}
+function grouped(parts){return parts.flatMap(x=>shuffle(x));}
+function blockSize(n){return n===6?3:n===8?4:n===9?3:n===10?5:0;}
+function blockData(g,k){const sums=[];for(let br=0;br<g.length;br+=k)for(let bc=0;bc<g.length;bc+=k){let s=0;for(let r=br;r<br+k;r++)for(let c=bc;c<bc+k;c++)s+=g[r][c];sums.push(s);}return{sums,equal:sums.every(x=>x===sums[0]),sum:sums[0]};}
+function waterBlockCandidate(n,L,digits,condition){const planes=new Array(L),blockMode=condition==='blocks',rp=blockMode&&n===8?grouped([[0,1,2,3],[4,5,6,7]]):blockMode&&n===9?grouped([[0,1,2],[3,4,5],[6,7,8]]):shuffle([...Array(n).keys()]),cp=blockMode&&n===8?grouped([[0,1,4,5],[2,3,6,7]]):blockMode&&n===9?grouped([[0,3,6],[1,4,7],[2,5,8]]):shuffle([...Array(n).keys()]);for(let p=0;p<L;p++){const boundary=p===0;if(n>10)planes[p]=balancedDigitPlane(n,digits,boundary,condition==='full');else if(n===4)planes[p]=orderFourPlane(p===L-1?1:p,digits,boundary,rp,cp);else if(n===6)planes[p]=latinSixPlane(digits,boundary);else if(n===8){const slopes=blockMode?[1,3,4,5,6,7]:[1,2,3,4,5,6,7];planes[p]=latinEightPlane(digits,boundary,slopes[p%slopes.length],rp,cp);}else if(n===9){const slopes=blockMode?[1,2,4,5,7,8]:[1,2,3,4,5,6,7,8];planes[p]=latinNinePlane(digits,boundary,slopes[p%slopes.length],rp,cp);}else if(n===10)planes[p]=latinCompositePlane(10,digits,boundary);else{const slopes=[1,2,3,4,5,6].filter(k=>k<n);planes[p]=latinPlane(n,digits,boundary,slopes[p%slopes.length],rp,cp);}if(!planes[p])return null;}const grid=Array.from({length:n},(_,r)=>Array.from({length:n},(_,c)=>Number(planes.map(p=>p[r][c]).join(''))));const flat=grid.flat();if(new Set(flat).size!==n*n||new Set(planes.flat(2)).size<2)return null;const tgrid=Array.from({length:n},(_,r)=>Array.from({length:n},(_,c)=>transformNumber(grid[r][c],MAPS.water.map,L)));if(new Set(tgrid.flat()).size!==n*n)return null;const a=lineData(grid),b=lineData(tgrid);if(!a.semi||!b.semi||a.magic!==b.magic)return null;let ba=null,bb=null;if(blockMode){const k=blockSize(n);if(!k)return null;ba=blockData(grid,k);bb=blockData(tgrid,k);if(!ba.equal||!bb.equal||ba.sum!==bb.sum)return null;}return{grid,tgrid,a,b,ba,bb};}
+function makeCandidate(n,L,digits,condition){if(condition==='blocks')return waterBlockCandidate(n,L,digits,condition);const planes=new Array(L),rp=shuffle([...Array(n).keys()]),cp=shuffle([...Array(n).keys()]),fixedZero=mode==='rotate'&&n===7&&L===2;for(let p=0;p<L;p++){const boundary=(p===0||p===L-1)&&!fixedZero;if(n>=6&&!fixedZero)planes[p]=balancedDigitPlane(n,digits,true,condition==='full');else if(n===4)planes[p]=orderFourPlane(p===L-1?1:p,digits,boundary,rp,cp);else if(n===9)planes[p]=latinNinePlane(digits,boundary,(p%8)+1,rp,cp);else if(n===10)planes[p]=latinCompositePlane(10,digits,boundary);else{const slopes=[1,2,3,4,5,6].filter(k=>k<n);let slope;if(p===0)slope=slopes[0];else if(p===L-1)slope=slopes[1]||slopes[0];else slope=slopes[(p+1)%slopes.length];planes[p]=latinPlane(n,digits,boundary,slope,rp,cp);}if(!planes[p])return null;}const grid=Array.from({length:n},(_,r)=>Array.from({length:n},(_,c)=>Number(planes.map(p=>p[r][c]).join(''))));const flat=grid.flat();if(new Set(flat).size!==n*n||new Set(planes.flat(2)).size<2)return null;const mirrorMap=MAPS.mirror.map,rotateMap=MAPS.rotate.map,primaryMap=mode==='water'?MAPS.water.map:mode==='rotate'?rotateMap:mirrorMap,tgrid=Array.from({length:n},(_,r)=>Array.from({length:n},(_,c)=>transformNumber(grid[r][c],primaryMap,L)));if(new Set(tgrid.flat()).size!==n*n)return null;const a=lineData(grid),b=lineData(tgrid);if(!a.semi||!b.semi||a.magic!==b.magic)return null;if(mode!=='both')return{grid,tgrid,a,b};const ugrid=Array.from({length:n},(_,r)=>Array.from({length:n},(_,c)=>transformNumber(grid[r][c],rotateMap,L))),c=lineData(ugrid);if(new Set(ugrid.flat()).size!==n*n||!c.semi||a.magic!==c.magic)return null;const wgrid=grid.map(row=>row.map(v=>Number(String(v).padStart(L,'0').split('').map(d=>MAPS.water.map[d]).join('')))),d=lineData(wgrid);if(new Set(wgrid.flat()).size!==n*n||!d.semi||a.magic!==d.magic)return null;return{grid,tgrid,ugrid,wgrid,a,b,c,d};}
+function keyOf(g){const forms=[];let x=g;for(let i=0;i<4;i++){forms.push(x.flat().join(','));forms.push(x.map(r=>r.slice().reverse()).flat().join(','));x=Array.from({length:x.length},(_,r)=>Array.from({length:x.length},(_,c)=>x[x.length-1-c][r]));}return forms.sort()[0];}
+function generate(){if(running)return;const n=+$('orderInput').value,L=Math.max(n>=6?8:2,Math.min(12,+$('lengthInput').value||4)),max=Math.max(1,Math.min(100,+$('maxResultsInput').value||10)),condition=$('conditionInput').value,digits=[...selected];$('lengthInput').value=L;$('maxResultsInput').value=max;if(condition==='blocks'&&(mode!=='water'||!blockSize(n))){$('setupNote').textContent='Equal sub-block sums are available in water reflection for orders 6, 8, 9 and 10.';return;}const capacity=entryCapacity(n,L);if(capacity<n*n){$('setupNote').className='note warn';$('setupNote').textContent='This selection supplies only '+capacity+' valid fixed-length entries, but a '+n+'\u00d7'+n+' square needs '+(n*n)+' distinct entries. Add digits or increase the digits per cell.';return;}running=true;stop=false;results=[];$('genBtn').disabled=true;$('stopBtn').style.display='inline-block';$('progressWrap').style.display='block';$('resultsCard').style.display='none';const seen=new Set(),limit=Math.max(15000,max*(n>=9?300000:condition==='full'?30000:mode==='both'?12000:n>=5?6000:600));let tries=0;const started=performance.now();function batch(){const end=performance.now()+35;while(!stop&&results.length<max&&tries<limit&&performance.now()<end){tries++;const x=makeCandidate(n,L,digits,condition);if(!x)continue;if(condition==='full'&&(!x.a.full||!x.b.full||(x.c&&!x.c.full)||(x.d&&!x.d.full)))continue;const k=keyOf(x.grid);if(seen.has(k))continue;seen.add(k);results.push({...x,n,L,digits:digits.slice(),mode,condition});}$('progressFill').style.width=Math.min(100,100*results.length/max)+'%';$('progressText').textContent='Found '+results.length+' of '+max+' \u00b7 '+tries.toLocaleString()+' constructions tested';if(!stop&&results.length<max&&tries<limit&&performance.now()-started<30000){setTimeout(batch,0);}else finish();}batch();}
+function finish(){running=false;$('genBtn').disabled=false;$('stopBtn').style.display='none';$('progressFill').style.width=results.length?'100%':'0%';$('setupNote').className='note '+(results.length?'ok':'warn');$('setupNote').textContent=results.length?results.length+' different solution'+(results.length===1?'':'s')+' generated.':'No solution was found with this selection. Try more digits, Rows and columns mode, or fewer digits per cell.';renderResults();}
+$('genBtn').addEventListener('click',generate);$('stopBtn').addEventListener('click',()=>{stop=true;});
+function fixed(v,L){return String(v).padStart(L,'0');}
+function tableFor(g,magic,L){const n=g.length,t=document.createElement('table');t.className='sq';for(let r=0;r<n;r++){const tr=t.insertRow();for(let c=0;c<n;c++){const td=tr.insertCell();td.className='cell';td.textContent=fixed(g[r][c],L);}const rs=tr.insertCell();rs.className='rowsum';rs.textContent=sum(g[r]);}const foot=t.insertRow();for(let c=0;c<n;c++){const td=foot.insertCell();td.className='colsum';td.textContent=sum(g.map(r=>r[c]));}foot.insertCell().className='corner';return t;}
+function gridBlock(label,g,data,L){const col=document.createElement('div');col.className='grid-col';const lab=document.createElement('div');lab.className='grid-label';lab.textContent=label;col.append(lab,tableFor(g,data.magic,L));const diag=document.createElement('div');diag.className='diag-line';diag.innerHTML='<span>\u2198 '+data.d1+'</span><span>\u2199 '+data.d2+'</span>';col.append(diag);return col;}
+function renderResults(){const card=$('resultsCard'),list=$('resultsList'),strip=$('summaryStrip');list.innerHTML='';strip.innerHTML='';if(!results.length){card.style.display='none';return;}card.style.display='block';$('exportRow').style.display='flex';const first=results[0];[results.length+' results',first.n+'\u00d7'+first.n,first.L+' digits per cell',MAPS[first.mode].label,'digits {'+first.digits.join(', ')+'}'].forEach(x=>{const s=document.createElement('span');s.textContent=x;strip.append(s);});results.forEach((x,i)=>{const item=document.createElement('div');item.className='result-item';const head=document.createElement('div');head.className='result-head';head.innerHTML='<strong>Result '+(i+1)+'</strong><span>magic sum '+x.a.magic+'</span>';const row=document.createElement('div');row.className='grids-row'+(x.mode==='both'?' both-results':'')+(x.n>=9?' large-order':'');row.append(gridBlock('Original square',x.grid,x.a,x.L),gridBlock(x.mode==='both'?'Mirror-looking square':MAPS[x.mode].label,x.tgrid,x.b,x.L));if(x.ugrid)row.append(gridBlock('Upside-down square',x.ugrid,x.c,x.L));if(x.wgrid)row.append(gridBlock('Water reflection square',x.wgrid,x.d,x.L));item.append(head,row);list.append(item);});card.scrollIntoView({behavior:'smooth',block:'start'});}
+function appendTextGrid(out,label,g,data,L){out.push(label+' \u00b7 magic sum '+data.magic);g.forEach(r=>out.push(r.map(v=>fixed(v,L)).join('\t')+'\t| '+sum(r)));out.push('Columns: '+data.cols.join('\t'),'Diagonals: '+data.d1+' \u00b7 '+data.d2,'');}
+function textRows(x,i){const out=['RESULT '+(i+1)];appendTextGrid(out,'Original',x.grid,x.a,x.L);appendTextGrid(out,x.mode==='both'?'Mirror-looking':MAPS[x.mode].label,x.tgrid,x.b,x.L);if(x.ugrid)appendTextGrid(out,'Upside-down',x.ugrid,x.c,x.L);if(x.wgrid)appendTextGrid(out,'Water reflection',x.wgrid,x.d,x.L);return out;}
+function download(name,blob){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
+$('exportTxtBtn').addEventListener('click',()=>{if(!results.length)return;const x=results[0],head=['WATER REFLECTION, UPSIDE-DOWN AND MIRROR LOOKING MAGIC SQUARES','Created by Inder J. Taneja','Order: '+x.n+'\u00d7'+x.n,'Digits per cell: '+x.L,'Transform: '+MAPS[x.mode].label,'Allowed digits: '+x.digits.join(', '),'Results: '+results.length,''];download('reflection-digital-magic-squares-'+x.n+'x'+x.n+'.txt',new Blob([head.concat(results.flatMap(textRows)).join('\n')],{type:'text/plain;charset=utf-8'}));});
+$('exportXlsxBtn').addEventListener('click',()=>{if(!results.length||typeof XLSX==='undefined')return;const wb=XLSX.utils.book_new(),layout=reflectionExcelLayout(results.map((x,i)=>({number:i+1,blocks:[{label:'Original',grid:x.grid,data:x.a,length:x.L},{label:x.mode==='both'?'Mirror-looking':MAPS[x.mode].label,grid:x.tgrid,data:x.b,length:x.L}].concat(x.ugrid?[{label:'Upside-down',grid:x.ugrid,data:x.c,length:x.L}]:[]).concat(x.wgrid?[{label:'Water reflection',grid:x.wgrid,data:x.d,length:x.L}]:[])}))),ws=XLSX.utils.aoa_to_sheet(layout.rows);ws['!cols']=layout.columns;XLSX.utils.book_append_sheet(wb,ws,'All Results');XLSX.writeFile(wb,'reflection-digital-magic-squares-'+results[0].n+'x'+results[0].n+'.xlsx');});
+setMode('water');
+})();
+</script>
+</body>
+</html>

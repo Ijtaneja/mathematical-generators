@@ -1,0 +1,358 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Patterns in Single-Digit Representations – Generator</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#e8e0d5;color:#302820;font-family:Georgia,serif}.hero{text-align:center;padding:38px 18px 31px;color:white;background:radial-gradient(circle at 12% 18%,rgba(255,255,255,.18),transparent 26%),linear-gradient(125deg,#103454,#176ca9 55%,#0b8188)}.eyebrow{font:700 11px Arial;letter-spacing:3px;text-transform:uppercase;color:#c7edff}.hero h1{margin:8px 0;font-size:clamp(27px,4.6vw,43px);text-shadow:0 3px rgba(0,0,0,.2)}.hero p{margin:0;color:#e4f4fd;font-size:17px}.credit{display:inline-block;margin-top:14px;padding:7px 17px;border:1px solid #ffffff80;border-radius:99px;background:#ffffff1c;font:bold 12px Arial}.wrap{max-width:1160px;margin:auto;padding:24px 18px 44px}.panel{padding:20px;background:#fffdf9;border:1px solid #c7b9a6;border-radius:15px;box-shadow:0 8px 25px #4a351a17}.intro{text-align:center;margin:0 0 17px;line-height:1.55;color:#5d5146}.controls{display:grid;grid-template-columns:.8fr 1fr 1fr .75fr .7fr .75fr auto;gap:11px;align-items:end}.intervalOnly{display:none}.field label{display:block;margin-bottom:6px;font:bold 10px Arial;letter-spacing:.8px;text-transform:uppercase;color:#6a5d51}.field input,.field select{width:100%;height:43px;padding:8px 10px;border:1px solid #baa994;border-radius:8px;background:white;font:600 14px Arial;color:#302820}.field input:focus,.field select:focus{outline:0;border-color:#1774a9;box-shadow:0 0 0 3px #1774a920}button{border:0;border-radius:8px;cursor:pointer;font:bold 12px Arial}.go{height:43px;padding:0 18px;text-transform:uppercase;letter-spacing:.7px;background:linear-gradient(135deg,#efc66e,#d6a33d);color:#17110b}.go:disabled{opacity:.55;cursor:wait}.examples{text-align:center;margin-top:14px}.examples button{margin:3px;height:31px;padding:0 12px;color:#185d7b;background:#ebf5f9;border:1px solid #9fc7d8}.progress{display:none;margin:18px 0 0}.track{height:7px;background:#ddd3c6;border-radius:99px;overflow:hidden}.fill{height:100%;width:0;background:linear-gradient(90deg,#dca83f,#1685a0);transition:width .2s}.ptext{text-align:center;margin-top:7px;font:12px Arial;color:#65584c}.summary{display:none;margin:20px 0 11px;padding:14px 17px;background:#eaf5fa;border:1px solid #9ec7d8;border-radius:10px;font:600 13px/1.55 Arial;color:#24556b}.actions{display:none;justify-content:flex-end;gap:8px;margin-bottom:8px}.actions button,.copy{padding:9px 12px;background:#fffaf0;color:#6b4c17;border:1px solid #caa75c}.group{margin-top:20px}.gh{display:flex;align-items:center;gap:11px;margin-bottom:9px}.digit{width:40px;height:40px;border-radius:9px;color:white;display:grid;place-items:center;font:bold 20px Arial}.gh h2{margin:0;font-size:21px}.meta{font:12px Arial;color:#726559}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(405px,1fr));gap:13px}.card{overflow:hidden;border:1px solid #cfc1af;border-radius:12px;background:#fff;box-shadow:0 4px 13px #3a2a1a12}.ctop{display:flex;justify-content:space-between;gap:8px;padding:11px 13px;background:#f5f1eb;border-bottom:1px solid #ded3c6}.ctop h3{margin:0;font:700 13px/1.35 Arial}.ok{white-space:nowrap;padding:4px 8px;border-radius:99px;background:#e5f4ea;color:#23683e;font:bold 10px Arial}.lines{padding:8px 13px}.line{padding:7px 0;border-bottom:1px dashed #e4dcd2;font:600 12px/1.5 "Courier New";overflow-wrap:anywhere}.line:last-child{border:0}.key{font-weight:900}.assign{color:#8b7968;margin:0 5px}.foot{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 13px;background:#fbf8f3;border-top:1px solid #e1d7cb;font:11px Arial;color:#6b5c4d}.empty{text-align:center;margin-top:20px;padding:42px 20px;border:1px dashed #b8a792;border-radius:12px;color:#74675b;line-height:1.6}.footer{text-align:center;padding:27px 18px 34px;color:#dcedf8;background:linear-gradient(125deg,#102f4b,#175b80);font:12px/2 Arial}.footer strong{font-size:16px;color:white}.footer a{color:#96dcff;margin:0 6px;text-decoration:none}.small{max-width:900px;margin:12px auto 0;padding-top:11px;border-top:1px solid #ffffff28;font-size:11px;color:#c4e8fa}@media(max-width:850px){.controls{grid-template-columns:1fr 1fr}.field:first-child{grid-column:1/-1}.go{grid-column:1/-1}}@media(max-width:500px){.controls{display:block}.field{margin-bottom:10px}.cards{grid-template-columns:minmax(0,1fr)}}
+</style><script src="/generators/xlsx.full.min.js"></script></head><body>
+<header class="hero"><div class="eyebrow">Recreational Mathematics</div><h1>Patterns in Single-Digit Representations – Generator</h1><p>Search a starting number and grow its representations into verified families</p><div class="credit">Created by Inder J. Taneja</div></header>
+<main class="wrap"><section class="panel"><p class="intro">The search combines a general structural engine with a verified catalogue of manually discovered families. Repeated-digit blocks, synchronized growth and independent growth are inferred automatically; every displayed identity is then checked exactly.</p>
+<div class="controls"><div class="field"><label>Search mode</label><select id="mode"><option value="single">Single number</option><option value="interval">Number interval</option></select></div><div class="field"><label id="seedLabel">Starting target</label><input id="seed" inputmode="numeric" value="301" min="1" placeholder="Any positive integer"></div><div class="field intervalOnly"><label>Ending target</label><input id="end" inputmode="numeric" value="350" min="1" placeholder="Maximum 100 numbers"></div><div class="field"><label>Digit</label><select id="digit"><option value="all">All digits 1–9</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option></select></div><div class="field"><label>Generated terms</label><select id="terms"><option>3</option><option selected>4</option><option>5</option><option>6</option></select></div><div class="field"><label>Results per digit</label><select id="limit"><option>6</option><option selected>12</option><option>20</option><option>30</option></select></div><button class="go" id="go">Find patterns</button></div>
+<div class="examples"><button data-n="301">Try 301</button><button data-n="311">Try 311</button><button data-n="537">Try 537</button><button data-n="308">Try 308</button><button data-n="349">Try 349</button><button data-n="100">Try 100</button><button data-n="123">Try 123</button><button data-n="321">Try 321</button></div><div class="progress" id="progress"><div class="track"><div class="fill" id="fill"></div></div><div class="ptext" id="ptext"></div></div></section>
+<section id="singleSection" style="display:none;margin-top:20px"><div class="gh"><div><h2 style="margin:0">Individual single-digit representations</h2><div class="meta">Concatenation, basic operations, and exponential powers. Factorials are excluded.</div></div></div><div class="cards" id="singleResults"></div></section><div class="summary" id="summary"></div><div class="actions" id="actions"><button id="txt">TXT by number</button><button id="txtDigit">TXT by digit</button><button id="xls">Excel by number (.xlsx)</button><button id="xlsDigit">Excel by digit (.xlsx)</button></div><div id="results"></div></main>
+<footer class="footer"><strong>Inder J. Taneja</strong><br><a href="https://numbers-magic.com/" target="_blank">numbers-magic.com</a><a href="https://inderjtaneja.wordpress.com/" target="_blank">inderjtaneja.wordpress.com</a><a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/" target="_blank">Mathematical Generators</a><div class="small">The generator is based on the author’s following two works:<br><span style="display:inline-block;max-width:930px;text-align:left;margin-top:7px">1. Inder J. Taneja, <em>Single Digit Representations of Natural Numbers</em>, February 2015, pp. 1–55, <a href="https://arxiv.org/abs/1502.03501" target="_blank">arXiv:1502.03501</a>.<br>2. Inder J. Taneja, <em>Single Digit Representations of Natural Numbers From 1 to 5000</em>, Zenodo, January 14, 2019, <a href="https://doi.org/10.5281/zenodo.2538893" target="_blank">doi:10.5281/zenodo.2538893</a>.</span><br><span style="display:inline-block;margin-top:9px">All identities are checked with exact rational arithmetic. “No result” means no family was found inside the selected finite structural search—not that no mathematical pattern exists.</span></div></footer>
+<script>
+const $=x=>document.getElementById(x),COL={1:'#b42318',2:'#175cd3',3:'#087f5b',4:'#0057b8',5:'#c4320a',6:'#344054',7:'#6941c6',8:'#3538cd',9:'#9e165f'};
+const abs=x=>x<0n?-x:x;function gcd(a,b){a=abs(a);b=abs(b);while(b){let t=a%b;a=b;b=t}return a||1n}
+class Q{constructor(n,d=1n){if(d===0n)throw 0;if(d<0n){n=-n;d=-d}let g=gcd(n,d);this.n=n/g;this.d=d/g}add(x){return new Q(this.n*x.d+x.n*this.d,this.d*x.d)}sub(x){return new Q(this.n*x.d-x.n*this.d,this.d*x.d)}mul(x){return new Q(this.n*x.n,this.d*x.d)}div(x){if(x.n===0n)throw 0;return new Q(this.n*x.d,this.d*x.n)}int(){return this.d===1n}key(){return this.n+'/'+this.d}}
+const rep=(d,len)=>{let x=0n;for(let i=0;i<len;i++)x=x*10n+BigInt(d);return new Q(x)},rs=(d,len)=>rep(d,len).n.toString();
+const q=(d,L,i)=>rep(d,L[i]);
+const T=[
+ {name:'Three-block sum',slots:3,eval:(d,L)=>q(d,L,0).add(q(d,L,1)).add(q(d,L,2)),show:(d,L)=>`${rs(d,L[0])}+${rs(d,L[1])}+${rs(d,L[2])}`},
+ {name:'Sum and product',slots:3,eval:(d,L)=>q(d,L,0).add(q(d,L,1).mul(q(d,L,2))),show:(d,L)=>`${rs(d,L[0])}+${rs(d,L[1])}*${rs(d,L[2])}`},
+ {name:'Product and quotient',slots:4,eval:(d,L)=>q(d,L,0).mul(q(d,L,1)).add(q(d,L,2).div(q(d,L,3))),show:(d,L)=>`${rs(d,L[0])}*${rs(d,L[1])}+${rs(d,L[2])}/${rs(d,L[3])}`},
+ {name:'Product, addition and quotient',slots:5,eval:(d,L)=>q(d,L,0).add(q(d,L,1).mul(q(d,L,2))).add(q(d,L,3).div(q(d,L,4))),show:(d,L)=>`${rs(d,L[0])}+${rs(d,L[1])}*${rs(d,L[2])}+${rs(d,L[3])}/${rs(d,L[4])}`},
+ {name:'Triple product family',slots:6,eval:(d,L)=>q(d,L,0).mul(q(d,L,1)).mul(q(d,L,2)).add(q(d,L,3)).add(q(d,L,4).div(q(d,L,5))),show:(d,L)=>`${rs(d,L[0])}*${rs(d,L[1])}*${rs(d,L[2])}+${rs(d,L[3])}+${rs(d,L[4])}/${rs(d,L[5])}`},
+ {name:'Double factor times difference',slots:6,eval:(d,L)=>q(d,L,0).mul(q(d,L,1)).mul(q(d,L,2).sub(q(d,L,3))).sub(q(d,L,4).div(q(d,L,5))),show:(d,L)=>`${rs(d,L[0])}*${rs(d,L[1])}*(${rs(d,L[2])}-${rs(d,L[3])})-${rs(d,L[4])}/${rs(d,L[5])}`},
+ {name:'Factored sum family',slots:5,eval:(d,L)=>q(d,L,0).mul(q(d,L,1).add(q(d,L,2))).add(q(d,L,3).div(q(d,L,4))),show:(d,L)=>`${rs(d,L[0])}*(${rs(d,L[1])}+${rs(d,L[2])})+${rs(d,L[3])}/${rs(d,L[4])}`},
+ {name:'Factored difference minus quotient',slots:5,eval:(d,L)=>q(d,L,0).mul(q(d,L,1).sub(q(d,L,2))).sub(q(d,L,3).div(q(d,L,4))),show:(d,L)=>`${rs(d,L[0])}*(${rs(d,L[1])}-${rs(d,L[2])})-${rs(d,L[3])}/${rs(d,L[4])}`},
+ {name:'Quotient of sum and product',slots:5,eval:(d,L)=>q(d,L,0).add(q(d,L,1).mul(q(d,L,2))).div(q(d,L,3).add(q(d,L,4))),show:(d,L)=>`(${rs(d,L[0])}+${rs(d,L[1])}*${rs(d,L[2])})/(${rs(d,L[3])}+${rs(d,L[4])})`},
+ {name:'Quotient with fixed subtraction',slots:6,eval:(d,L)=>q(d,L,0).add(q(d,L,1).mul(q(d,L,2))).sub(q(d,L,3)).div(q(d,L,4).add(q(d,L,5))),show:(d,L)=>`(${rs(d,L[0])}+${rs(d,L[1])}*${rs(d,L[2])}-${rs(d,L[3])})/(${rs(d,L[4])}+${rs(d,L[5])})`},
+ {name:'Repeated leading factor',slots:5,eval:(d,L)=>q(d,L,0).add(q(d,L,0).mul(q(d,L,1).add(q(d,L,2)))).add(q(d,L,3).div(q(d,L,4))),show:(d,L)=>`${rs(d,L[0])}+${rs(d,L[0])}*(${rs(d,L[1])}+${rs(d,L[2])})+${rs(d,L[3])}/${rs(d,L[4])}`},
+ {name:'Difference product family',slots:7,eval:(d,L)=>q(d,L,0).sub(q(d,L,1)).mul(q(d,L,2).sub(q(d,L,3).div(q(d,L,4)))).add(q(d,L,5).div(q(d,L,6))),show:(d,L)=>`(${rs(d,L[0])}-${rs(d,L[1])})*(${rs(d,L[2])}-${rs(d,L[3])}/${rs(d,L[4])})+${rs(d,L[5])}/${rs(d,L[6])}`},
+ {name:'Symmetric square family',slots:4,eval:(d,L)=>q(d,L,0).add(q(d,L,0)).mul(q(d,L,1).add(q(d,L,1))).sub(q(d,L,2).div(q(d,L,3))),show:(d,L)=>`(${rs(d,L[0])}+${rs(d,L[0])})*(${rs(d,L[1])}+${rs(d,L[1])})-${rs(d,L[2])}/${rs(d,L[3])}`},
+ {name:'Difference and quotient',slots:4,eval:(d,L)=>q(d,L,0).sub(q(d,L,1).div(q(d,L,2))).sub(q(d,L,3)),show:(d,L)=>`${rs(d,L[0])}-${rs(d,L[1])}/${rs(d,L[2])}-${rs(d,L[3])}`},
+ {name:'Sum-product minus quotient',slots:5,eval:(d,L)=>q(d,L,0).add(q(d,L,1).mul(q(d,L,2))).sub(q(d,L,3).div(q(d,L,4))),show:(d,L)=>`${rs(d,L[0])}+${rs(d,L[1])}*${rs(d,L[2])}-${rs(d,L[3])}/${rs(d,L[4])}`},
+ {name:'Product minus quotient and block',slots:5,eval:(d,L)=>q(d,L,0).mul(q(d,L,1)).sub(q(d,L,2).div(q(d,L,3))).sub(q(d,L,4)),show:(d,L)=>`${rs(d,L[0])}*${rs(d,L[1])}-${rs(d,L[2])}/${rs(d,L[3])}-${rs(d,L[4])}`},
+ {name:'Product minus quotient',slots:6,eval:(d,L)=>q(d,L,0).mul(q(d,L,1)).sub(q(d,L,2).add(q(d,L,3)).add(q(d,L,4)).div(q(d,L,5))),show:(d,L)=>`${rs(d,L[0])}*${rs(d,L[1])}-(${rs(d,L[2])}+${rs(d,L[3])}+${rs(d,L[4])})/${rs(d,L[5])}`},
+ {name:'Repeated sum times difference',slots:3,eval:(d,L)=>q(d,L,0).mul(q(d,L,1).add(q(d,L,1))).mul(q(d,L,2).sub(q(d,L,1))).sub(q(d,L,1)),show:(d,L)=>`${rs(d,L[0])}*(${rs(d,L[1])}+${rs(d,L[1])})*(${rs(d,L[2])}-${rs(d,L[1])})-${rs(d,L[1])}`},
+ {name:'Symmetric repunit quotient correction',slots:5,eval:(d,L)=>q(d,L,0).sub(q(d,L,1)).div(q(d,L,2).add(q(d,L,2))).sub(q(d,L,3)).sub(q(d,L,3)).sub(q(d,L,4)),show:(d,L)=>`(${rs(d,L[0])}-${rs(d,L[1])})/(${rs(d,L[2])}+${rs(d,L[2])})-${rs(d,L[3])}-${rs(d,L[3])}-${rs(d,L[4])}`},
+ {name:'Repeated correction quotient',slots:4,eval:(d,L)=>q(d,L,0).sub(q(d,L,1)).sub(q(d,L,2).add(q(d,L,2)).add(q(d,L,3)).div(q(d,L,2))),show:(d,L)=>`${rs(d,L[0])}-${rs(d,L[1])}-(${rs(d,L[2])}+${rs(d,L[2])}+${rs(d,L[3])})/${rs(d,L[2])}`},
+ {name:'Quotient plus repeated factored sum',slots:3,eval:(d,L)=>q(d,L,0).div(q(d,L,1)).add(q(d,L,1).mul(q(d,L,1).add(q(d,L,2)))).sub(q(d,L,1)),show:(d,L)=>`${rs(d,L[0])}/${rs(d,L[1])}+${rs(d,L[1])}*(${rs(d,L[1])}+${rs(d,L[2])})-${rs(d,L[1])}`},
+ {name:'Repeated factor minus symmetric quotient',slots:2,eval:(d,L)=>q(d,L,0).mul(q(d,L,1)).sub(q(d,L,0).add(q(d,L,0)).div(q(d,L,0))),show:(d,L)=>`${rs(d,L[0])}*${rs(d,L[1])}-(${rs(d,L[0])}+${rs(d,L[0])})/${rs(d,L[0])}`}
+];
+function vectors(k,max,fn){const a=Array(k).fill(1);function go(i){if(i===k){fn(a.slice());return}for(let n=1;n<=max;n++){a[i]=n;go(i+1)}}go(0)}
+function grow(rule,d,L,mask,term){const G=L.map((v,i)=>v+((mask>>i)&1)*(term-1));return {v:rule.eval(d,G),e:rule.show(d,G)}}
+function patternsFor(seed,d,terms,limit){const found=new Map();for(const rule of T){const max=rule.slots>=7?3:4;vectors(rule.slots,max,L=>{let v;try{v=rule.eval(d,L)}catch{return}if(!v.int()||v.n!==seed)return;const masks=(1<<rule.slots)-1;for(let mask=1;mask<=masks;mask++){const rows=[];let good=true;for(let n=1;n<=terms;n++){let z;try{z=grow(rule,d,L,mask,n)}catch{good=false;break}if(!z.v.int()||z.v.n<=0n||z.v.n.toString().length>70){good=false;break}rows.push({target:z.v.n,expr:z.e})}if(!good||rows.every(r=>r.target===seed))continue;const seq=rows.map(r=>r.target).join(',');const sig=seq+'|'+rows.map(r=>r.expr).join('|');if(!found.has(sig))found.set(sig,{d,name:rule.name,rows,score:rows[0].expr.length+rule.slots*2});}})}return [...found.values()].sort((a,b)=>a.score-b.score||a.rows[1].target.toString().length-b.rows[1].target.toString().length).slice(0,limit)}
+// Quality layer: collapse commutative/reordered variants from the same
+// structural recipe and keep families with visible, sustained target growth.
+// The broader mechanical engine remains underneath and can be exposed later
+// as a separate experimental mode.
+const mechanicalPatternsFor=patternsFor;
+function commonEdge(strings,fromEnd=false){
+ let a=fromEnd?strings.map(x=>[...x].reverse().join('')):strings.slice(),n=0;
+ while(a.every(x=>x[n]!==undefined&&x[n]===a[0][n]))n++;
+ return n;
+}
+function qualityScore(rows){
+ const ss=rows.map(r=>r.target.toString()),lens=ss.map(x=>x.length);
+ let growth=0,repeated=0;
+ for(let i=1;i<lens.length;i++)if(lens[i]>lens[i-1])growth++;
+ for(const x of ss)if(/(.)\1/.test(x))repeated++;
+ const edge=Math.max(commonEdge(ss),commonEdge(ss,true));
+ // Strong patterns grow in place value at nearly every step, develop visible
+ // repeated blocks, or preserve a meaningful common prefix/suffix.
+ return growth*4+repeated*2+edge*2;
+}
+function hasVisibleNumberPattern(rows){
+ const ss=rows.map(r=>r.target.toString());
+ function embedsPrevious(a,b){
+   let i=0;
+   for(const c of b)if(i<a.length&&c===a[i])i++;
+   return i===a.length&&b.length>a.length;
+ }
+ // A target pattern must preserve every digit of the preceding target, in
+ // order, while embedding one or more new digits. A shared ending alone is
+ // not enough: 389 -> 5289 fails because the 3 disappears.
+ return ss.slice(1).every((x,i)=>embedsPrevious(ss[i],x));
+}
+const qualityPatternsFor=function(seed,d,terms,limit){
+ const pool=mechanicalPatternsFor(seed,d,terms,Math.max(80,limit*12));
+ const best=new Map();
+ for(const p of pool){
+   if(!hasVisibleNumberPattern(p.rows))continue;
+   const score=qualityScore(p.rows);
+   if(score<Math.max(7,terms*2-1))continue;
+   const seq=p.rows.map(r=>r.target).join(',');
+   // Collapse pure commutative reorderings, but preserve generators that grow
+   // different blocks even when they produce the same target sequence.
+   const commutative=new Set(['Triple product family','Three-block sum']);
+   const key=commutative.has(p.name)?p.name+'|'+seq:p.name+'|'+seq+'|'+p.rows.map(r=>r.expr).join('|');
+   const old=best.get(key);
+   if(!old||p.score<old.score)best.set(key,{...p,quality:score});
+ }
+ return [...best.values()].sort((a,b)=>b.quality-a.quality||a.score-b.score).slice(0,limit);
+};
+// Data-driven structural catalogue compiled from the verified 298–350 families.
+// Targets printed in the source are deliberately ignored: expressions are
+// evaluated exactly, so transcription mistakes cannot enter the result set.
+const CATALOG_GZIP_B64='H4sIACaEsGoC/9VdyZLkOI49T5v1P8Qx3DVuoYXaqqx+JX+g//8+EkkADwslz4zow1RWZVbivRCghSAEAtR/xn3765+hG4bn5/F7Nzx+1T///ve//jPuhLZgxpsEYUSUTDoY0/P4NXXT1yR6iwyFIFVilBPwcfFPrHUa97UIq16SnwAhpFzAjDLMRhCjqWtRukTVshhVoGgRUJ8taVmen0t3/Houj+5zWV7L42vJV2nZpxMW3BEORqEAx5NOVqUhTxPJms+t27bn+fvx59f2eHxtcnszGKMCN3AgeAZr37t9f56/d/sB7aD6RAJIsAgE1MD//tc/f/ZPOfJxR7vyeLzgoRapEqNcAwohiDTMz8+5m+fHa/6a6wN4Sp2Y5B5gxECkoVyR6MIxFl5VQUMY8Z+77OcZ9f1x6OKJDs80vKpjepTTLejpuY5/IwIxsnM7/wtJzCo+MP/miGQN3b6/iwAkLEKZCJV0giPSvZJzmrWoyoyQpCDmK5aH+TH0X8vXgtdqCQBGAkgwA35cqOpFlUdEVwSCNoOzvu3wI8/j1+O5fZ1eBU8PMAV6VMMBLgTWXB7r4/E+/vja6/M/9ZPGzlGAqIXzKFEExygDiTh3+nunX4FevYYD5UT4c4c59cMZUVyM3Ipfjl3i3I1e5t2O38E+sN1SZs3jUgz+oQWUYP3gIoEZ5uGtHNJPMQbHDL1ItRjkBkCEoA9RQR6h43khS724ygOAEAPdXMRJLmIATnANI3jCK9i6fGcccY7M1xlL5LDi/J+/P/hKWkKOQL62B1xURylRCpBiVg1mvjZ8nvYnz6gyskaAHKZAj2rY4HwDrDfowKMYvP48MhyFvJIieRZ7pu437Om9PYbQB+ZYSh8ZA6TvOKsxv/5cuStmXDosYd25LGDeOq0xBw4m+jwuiZIjYBAFWQxi0KyJB/z5x4P9x4j+Q0EVa4CEBvClxn5DlQ6cN6XVE5aJKcwJtRtPdr4tPdibjd6bKQIzLijCaZDIktizdcdv5N3GtnfLNLn7bQ+HxJgpXq5y+VL5MY4jdIxHuRrEY2Oc65E+tkb6N8Z6cWl//XP41+5z7Mav8Rhlx5+P6q4LFGEChijAHietMuLqSSoZD04tlTFr5BMc+Xy3/8ypgq/jkapP1UO05Hf/8+0/gBUeEjTDUsgGer1/lIfx/OHBA4REEGMhCI/hAe4dPBsvjGb3E1WwwQtBMyylcgwJWP9845+sI9W7+WWeCSfnB8Aj8mwEGD8fB3Y4PJclqPIgfUBIAAnmcwsZy+9LEpGd4rkfU32x8rHYfKAVzvIgEpszh0gFC0Oxb9+TOScAnkOefr9KIEDzdT8LGsOANwjIcBSy4HAaDe9EYMM/MdzyUEJo+KiDkGOBXxIskNBIWWzlAiBCR5fnUA4OzyAcG58/PLR69uDIx0PQhc/edIIFbT2AU+FU0tVjOBGVuBdPY7Hr9CCcDHvBBEdYCAoaw4A7wp3mfa7+MUYL3Fa+EyPW//H9gZjVLCXjl2PhJw2T4fGqo2lQhJBhKDHHkjyLrBnH5+dYhsvr/FfMGGOIsBhk1MOkcXp+Zm8+0USMMhZqqYiNfHq0j3zIqvBcDZGDZ4CQvFACKirKcFlI8bokdwCJiEUlIjAVsehUhEpGLCYZgemIWNPxArGoFwiBBsJCUFAPk74zCsph/LO8PuSf3AkJIMEiEFALX2qcQKPDJlQZwJNSahk8EtfX+rUewPpcu8+1Wx/H3/IR1n7M+EGojEI5OEA6WJV28ohYmScVuSeZ2JnOfPqB/BP0I2zj6fxbk8CoCO1ARNNuAhJDvp4K7ixMC4dIlzamSiy23duZ+AeqfT9g7dgbYztv6kgkMLSLjByFiRZ23rYPMK7G5F2JyPFRzNmp+nZ6oALTQ1jzV5wUO0nA4sePE12QG8vcSr6yZe/7wBZG955wZ4pw9l5YkSGF+QNT7frXP2fqSSY+yVINhDZgwVsEYIQUskCmJEhxr2rCw9z3qic9lRZfzcTXQQwaazru42omQFjMP6a51U+CHca8C1DURGh0wxSlM2urnhAJ/KgWrGZWtOm11c6MJsUVq/6oU+RqpkiFD0RoM4QSccSE5czix5MmoOHEiXg8eSpGOIFeWRCjOI+GuJpJY4axIFdBPLfX4eayk3tRJm4oaBMmvE1gRkz5IBNKUsMu4U/9ULFo/f9AGQ4rAE6CMBpFANf6AQtARCNY4YbwjZTAWRNVXgoe8GpAEWT2bA2U4CbOhIBBc91mXzxE8xgBhEQQYxYkTbQoKc4Ua7vAxariLnS9uroLfF9w9EEfncWDOTwgg1UwKR1nckASXdrBbn8VNIYBbxCQEVDoJJfsfygReyZJ5VyXAgYowdV5BQRmVIrlkH479kX7FkOExSCjHiaNPNawpGAoSAgRFoOMevhK4xFm7KzSgSe6i9aAkBk7qHakP/YgO1RtBj5kx7LNyIvsqm4z9CO7Ltw0HLJCj/sz/ScmjC2Q0BbMeEQgzWe8ZXIZWippCyOHfIZFpselhp2lWsUOgFGyK+w9PcfrQhFD9AgvHBVTwaN60yCCiR1Rp/JqkkPZrUeDLMruvBnmUXbvySCzsZ8rL/jedwQQFGTMGS0wvaFqQmVUCr+ZGhKxiCZvo0C8tSY1rWFGujIHaOnGoM3YlCOcUi1B7geEO/gdFO/obhSwi4fzRy9DtEZVcPw6OjneQh00NKVeQ2n67lLJ0EPaNL/X0TtdebrTwEWZTQpxpEIiZDENqiMckWzCsVKed5aa1QSR22UGQMxCw4mcKyhR3FXXVsK4i9ZdIlDQKCxrazzrBceGyqmALaUT4dd61WuSXhQu90RnHA2DKDrvaEnMMtlHu8B8Y09v8PNodhnbUrJGt9btWMWw37SnPBDqAnmTpvpsmIsUGVa44bW6snAjx1kqWZ9bXUm0GIIBquAIF8K15nJZtobqejm2raWcrsFmKV5/8aDlbZCDy7EXL/pJOTUGK1pdKb/nIoMo5FDhVRdi1Ib+wQEQnzoIQ1MP7t8sqxc/flbNXtW8MeGi5C0V0n3JWyLmezVvA5cPt6cZqCC+mGhUDfHVVGOKiC8mm0EK+eEdGMXq3VgB+q1ZQ+q9OdZSxCXY1EBFaqRpMAIpyHy+oys5XYykQBmgKVQ3GY2SluQIddBlyhK5DqZOGWLawRYqS0Aba0lWCwPJqQEseUXzra5+Q2UamTelzqBnAaPWOAdnd3YsBLVXASTVVxEI9VchLCFwU2u5Ext0k6HeiWBsKFO6J6GorrLQAll5ebxq5xE5633YB7sA40kHq9LMOkxAPblE9ssx5gfesnANLayhP9i4rk0b+ZUA7Vz5B2I74XXh+7VsdRFpGOV9oLpizFGsI74uDAFBMcT5ao4m1ZSHot3bMg8FF4ityobVN9SBaGAuGFcMpLfZQdhourKzGos2nuH3QTn/+BrxSpXA3EEVK1G7RwmuUb0ikM5SQKozJU7OSRePSD4mwCbUtHZrrhd4rY/uXMKvD/2JFIgxBitaYcGFQAyiAKeQSHu4bj3sClHr1cfo1qBepT4Hv8HdqnlTb3nktotl/aEy7pbzBya+sYqfnzHjgNBBjrGD1O5xbLvHkNhyjT/jas6XV4wJI1cz6aAxdCSa03Q3htZ0ODc2Hbdt0mFq2+lMNlK9cTuTD1ivHc9knYCsnTtMLax7VK+7B7ha/z7xpbwsv5ZHfjGuTyIBDgHIYwhq9ErbsIO23OaH2I76apefwnelk7v83tE8D9NU+/pRN8MnPlFXvzEAWJk2cVu/N2S5tyVNw4y2KOwEZ22IxjNhtia8ef33cgPgKugbXq6wvgbmtu/EMefv9G9doyo426BROxl4gp8QAo53wpN2wpyfLRfCOmCB66WInC+Q6Gq0XO8PpHuL203SHNdyvIbScL2W1XS+jth0v7e2HZ4yYevetQtOun/vDSecbB/fvRtOZ143jgAr1IgBCW1GgUxoxoFt3XvKSeWG8r3AF+p3otxbwNlTylv+OgT1biWVO/UEYkjaNOAwCdKlhka21BHcchYhwzqMmOSdRoPnHcedXSMxbuowmfZGJaZwb2ox37TxmKwSRr5Xpa3HvJZMDHxb3nrOhcnHw+/UuOanAx3zCzxzCjzzS7nm1HDNL+Ob04Vvfsmq35U1fWSNMqfvW+bs2qCemfFksb9r0xZfIbBp29qXSE1gGzMbFwlXR4eZCjjhDXYbsphW4HERfjuwAsoSvFqG3zKjUnARXlbiPy5UT8MyS+Wo6Z4YFgZRMXRQHAyhaL34Oj1LyPqsZT+0lDdjwGpBQLMTdDgSiptECunWA7vjXN2wAyg9yAIrHJqPgaEp2HUMub4LG+Z8CbxTgZRkdhNzq8UQ05PVo8xXnYadyUPOZpCQC5mDASLuY26MDXQd88WouNHeR9rBXcxNd4GuYr52FT8SV0r71acqDX9J7DYjh+M1pknoNmsmBGtChsBttnwVqMGPSNS2YAsjLlksqo9RLVosuplRL1sspqNRpfYb2pLXBosXXp1avggUFsKHKK3Ze18OWLFGrSChDVjwuJjwSvO+1EWFGC1wW/lOjDv9aix1EBAswXjqVECwNIZUZwKC5WJQZe7HvTl9ZI6yp9FfkgduZyKC5XqYdzD7Xtg0NGwCo4gTG6WCAuG2zZK44CcWMFbI4bVdkWZdOyPDfcMd2Z+4d0hrKQ/6Nb7oFetXrcxcMpbfwDKa/w/xvjLKS1rhlP9XrJl59W2uMuvfiEvWYF5R1qvXtcZnnFbENeu1wDqxOKmV65U4Jruo15Mb+g+vt0p8aA04neKyYojoTciek1i2PJSt+BAzlrIjR97e88X5w/z8nLU6JXVVNvcEuDw0S2GUuKxu7omk+qQsxKsBHG3v+YIkWNuSFFoCWlJqmoK0g5cujVHpyLUsGzfqOY/bRAT7nqhYwyi86A1Rkft5RXrrzVBVnd7ZOV/aCbqHe0ORnpbhTVO337B2mdcye96Ze4SNa51I3zR4nulHftjm9dpmtmAc3jFZDF6W4X2DlbV63vuEzYqOaX2NwgPFOef+tRUiaGYOE9arMIH4H++Z16/h1Gzs6/u1PTtbC3tmN+dn+ZF3bBxaNmojidcwcjdmCv/CTPipdywdLyxFU8fx1lRdtzHyT9wZ+0MFgP98lP7NTe2ue5bhvY7fhmzYUlCs/jMEYujKP0tili36Q+LHGwY51MAet4SAgZQ3Lsnqr8mJnsHZGZ/RdVnX8MoUUo7kcjTHV2jlH3AXibgl/itBINha67efR2Amm4zMBkHIYQr06IibkzQ15gujNZ4YgavXWXAmrIFe4txr30Pt9ArYUM5viE3VoJdWt1X5jJVL+YxDoHzGY5LvizUd89fGrUZaV84kbtJrZPTVTOMGvUZva12GSWsF6MAmo1XBJz5ZrbrBqaF1G4ZNtVW5pO5mO6uitO4WdFdFFthApC5p1OYbYeg4hBc1alSYkOnCEFjVqPx90z8RRSFqVeNdi5e5MG5NPkO+Sn3T6BLz0c/8vt21vBFbp4xYmqcsAO1TDoIkRaRlGkgcNFExFLdRCfzDjVQlA7qXDvNS/04f3qAdqsYCt3EiXDCY0uDcW7EAHOKKEDM05U+sGFZlBRKkbEDboUlQXGBssURlkZ1svmh63YPp9Ysn2D2aYL9kit3DKZb7Zi80D/seTXSC7vFUB4S9Ndm9pX8L9Qu87a2JXijbfjHVKyvyVoIvyCbttCPhC7NIO29I+FKpo132I3xhssgfeVRHZumoDw3AaA4+XR8/X7dCRgXletWjTEpFvU4Tg5EW7oeHRvqxABFCUIgx6NALbWN5Irn53m50Xp5IaL7f3Wbn9ZlU3fea9gM53rE0kr7UroLsXuYKN3EmtBlCiTn3VhjY45YQMBylYYUe3nIRjFODs7cODU/bObNrTWPfeydCSB/5Dwb72HOAvjrwnrAzaRU7OQMeEUhjbS3j3sMIV8DeqzGusb03g/wdXT3qMkhvHIpBe+9TnMb0TM/P1B1/wKORnLSKvZwAjfAIOLdOOSbgsoPK49cMY3DOK5MeJLR0UQU4E2orlaGwbl96BtqjwjPUH5edKQtaRWdow9rxloqv9aU2VRwK4YpBlEsOk5qsd6yZ2Zo2ZRZzrlgzGNQk/oZNnew5+VpPitp2crasQss8venk7KmVW8huw8mTTa1pHa8z54NsgbwCEUKQxe601Dc6/ldp4hc4/E9rhJc185u6B2WfwWNGfh6/zh1+cy4U7gHtsRhTiEN7LDZYTOP9FQPib9hEhMoIbWIOkWKbhMa837MpncPZWnX+q+06q+qHse+dbeU/Y18uwi98byX9pmw9M6vfflcdB0mL5hCHk6oGQchhCvRohevaRlPlODiVknw9QK8U060nIVAsudUb9UNFEGL1A6MKFvUDMDRFp3ZPjg6deOel2WAadKiBPc6Ej1vV+crbyK0bAR6i8K0bFWWIg7hagIBmcOgjj9pkZCzUUhGTvHnYsR90NEWx0uAiKY6ihiiKUk+ODXJ4g+m5wC7QEQIxfLADHCYFAQ/sVn2y8uc7uhyTlBL5QYtFbgFAHERYU8uUslirqUiFjCZGCbbqCoM0mkQof9kmXxq/OZTglRBsDQUcIoX7QsGXccaw2ZtX9/LTFXejywpgedjazeiwVlifvute9MfPVEedaQHjBMnpj84D03AcvfflMTkGfpcuY6xpDDQxEqgCcAydPOorQ5dfE0d2A/KGOIoPgJfDEYa/vDnZI45wRJDBIZV4VD5FHxf66fDrUmM/2pZGDQsOTYWGAhzVT6i/UHVhxZxtX6wd58BlyjxWUmBNKR8S6jwyObaLCo7etG6KrNPGTVPLOGvaRNTWJXN2WecArqHRh60cw0UbtnELN33Yhd341vZP5NgmNeA68BYaQchhCvQow4HG14nW4TR5r8GYO+hrULBX+hqYQXrPcfp5jtUH+4+pjnYtZrkDBFFQU8OIGpRcqTCQVjLFenS+jNSYbBkrsbky0SDIR+vwchYl8zQFZ1GTUso9Tso9PsF9kiZsOmb35nu+xfOFLd/gGFsd3zK8Y62nlwj6vdHdNNu9tau57va+tyMFdogZKTXMACMSke6vxPos+ZrjV0cbdyzLCTBy/it7gixL/jGA83+wMcjCFOCU3zq180ceszlV8mU7Edcxd2JTuiT4Kux6UCqHcybhl2HXzCQqZE6aX4gdbRO4OP+oBxwdf6sFXDv9qw7wH1s9Obv0PmWbuNfwwM3dDjsKAXaJs5TT1krCPeIcLZ8TEdUGcYr6O1ZJJVdklebUl3VvlKHRG3tg0rnf2VnSQgU/SsZVQFoqxUFGPvG31oNDjzvL4NjjDmI8+rgrBBVc/dNQfozLIjTqzwFLiDMhD2eBf8SQcnOmaomI6xNXWyo1RE8ZN1wK3NAyjUvVom7kKV9Ii76ZBVtYi7ql/Pzmd/XjoZrncyNmeGRyhsBDhMUgox7W1zDUaxGEHKZAjxq9jVsZmpGvtDYDsMXboeAlsIQZpFfmyjrXJxMlUAiQfITA0UEKo4O2lnMutbOxzMQpmolxFk6tWbitsQwNteOKGht2sxUzOoJ9VvDRpS8HP47Z7tcn/R/63jLlcuGZY9GkQNMulJx5Ls8MMvOqSjP8iY8PsFNmX7RNz7zaHj/rWhviGfeHci5z7gW7nNmIcjPjMu1+zhXqzaz7G9Zdz7yO1px8A2prAr637mycHu4v3lB4b12+gcg/dQXFxstLiDbeXURt4zvXMU9X8H42z3U7WJ3Qmou8Tm4qqTUTVkGX2Qq0sMy8/7HY5c0EiY5fup1lk3eSnaKcX6f5jeRZWnLqPLsxVoC6GStoEcfbyQvkbCYVgPrZTywI93M4uXTwwhVrPaaK2U4ynXrlm6OJpjOvfHNrsrm3oIx/NekIVoe9nXiAQMM9mHyM7sYExCn8YsjFJCTMatbNRAR8svKNySj/FE9IeteGDl4H/b4NnXodjDdu6MzrYHvjhsq8D7GbJg6RiWDjMLRsxAbv6omaVv5Yb/cZDtpentzNQwG9ayYC1MMGDwjAqJfyQv+4e/0K3gMDDGOPTACS3NMrQ7aWIYRvbUuEs13ZMgzDW4/elZlzaCbYOc8NOwe0dA5osP7OxpI9da0YsqOLLEJjdnSBZWiVHV1wIfoF3eLR4fNjwYvRWCi4qNVoVUK4mNXoWyULKlHyxax5K2zxq963qmajCoIDr0uFDqG22m7/ASplhpdPRpOcZ3n4mjRjMNPjx6YFV7N9B1ultNRuI3xz2ujdCaXt3K3mPQmFt3xH5aIbPjTpChntJ6F9KaP/LnRQzBh9HBpoeAN8N7duokLOXRuV4r7ZSKV/5r4lCUzHic6szflNTTq3NhdvatIFa3PtLU1sS/e1WWNolu4/HhtfO35Evcfj1TePH6bt+EcqydbAyddRu0ZTMg3bNZyQedSu8XQsk3FT77iv4QxI/nVtTH/sf9fm1EdjdmXPKGc6KQmLUCZCkkZHy/azjwWrwbuircqrto654DF5CliNy+apYfXOGo4MtUG1/mjV9UdUfbSa6iOuPVpt7REc3Y4WNYzXeBibgby2B7Ibyuv1UMYNBe6sm9bWaNYDeprW6wFtB/XEP3E9qH9uQ4F6whvtYxQNbwfqAe5hM8QDgh3kF/rHPdKPAzk0QA/12AQ92DceSvKl8Co0UhZbuQCItI4+LhsOVpAvmxmwiC2bH7R3mlajSYDVq0J0DZWpbM1GY1xV3QwOYCSABItArMzZ8Ds2WGO/8WZ0rpZ/k13wfDX/BpvguXr+G23Nmn6BL6r6gXRd11/bmaP2P+p0DlsDuQ06RAUOWgd/wqnswZYcdVjt0Y4gNLj2cDsQHmJ7vBfI33dax91rVa/lUbyA+B7HC+/oXqryaAcSWn+tCpqbj/BS7M7Mq11H3rBpa9rERm3bfrMjCpu1MfdmM5T7O7XFd4qzFq1bBXmN9s3SFujXchKZJAG2E4OzV73E4hDdUfPNZ/cLGQDlekFuO4ivjq1blFnqOpQFiRqUlYbz/fVZ1nblqsxVCmKSVwARhgib4YvFJ3ZuN5fTzJx/rkItFbGRAwBI6+gTHh3Ekzq8QiatYLnTkY7pci+F85yh5w90jGvBlCr8QMe4EsOoVFHzHry1Q/38HuxxZyro93h3O1tDvzf3tDNV9LuPlJ+qL+uIvfc4lje8M0jf2/G8ZeeYfr+O6Z+28esNa+e9Eds/d2vvPO9X4f1z353NM//MRYD/1C1r3351n3rnaOmz434a5m+OB5MwYR6EOLqpre8Dp05QH3p0RvuGN7/RuVSlfoqjKsd66Mb8RnMbm3A1t4Et+QvNHX5ogz7g7OX0ZecAIchgpEUyBPRXSEFIPzkebZpU+sAcBfrT4b7wTIF3A+YPOFb19mIT+38wCyYFNE1NFnDMvJ6Ys6Zy2MUJq9SJSY5A48gLy2oSlp8RXBcFABFOt8LxufZVymqzuMptUW3BCAxKaiuBGVFB7cQNzbJ0yh/qlJ7mAJygrTmCCY8I15rHqX5hurwv1XkH8HHi70zXdyaac5A0TvC9aXpt+twsk/1Bbqh9PPevmr4Bn7c3MAZjVGCH32jtoV06AEFtjKNiR7nWvSjIYAa0qIV/S6s+Za/YnXWkPjp1JP5QE8w0+AQUb9QXpJ9kl74o9yQPzBDmnfjytbX2kVaZEIc45SUPzNBKeL2hO7lPjCOY+NPh4UknIvzZeQ+hbkEbypHRVG/Onr559Tp7pUuf80iARwQKMAAt+nGhbtLqDKT1OdRo1Eo/rtWORq3CRqfX4GOgGTg3ugevG8FQuWa01DON9OcIBdKz3DCOKVtpF0fpBK3ikFwNjgpt6CBUXegoNz3o18dOYLEIE5qM8qSMxrf64NgD2g1SbbhCrOlWQ43fYFV+gBAQF+sHFQYiQhCHghX8aCpJWonIk9WCWPJ68Lvw04DxYSdpgUFFnwBMg45AESLMgleaktUkSHKqEExeGSYRYn2pPMgLxb+oMaX6QHNxn9GaCqMHxUi6PdeF5TXyFgQgir4BRJQjcHNtS7IkaDCbdoeq9rJpDwi6sWzaQ45qJ7uunbq0cB4JLusLX9FX+EYh1TWGr8a390ak0jpDswXu2rLsPrYb04o3wVxT27jqX0zG6U/tW/PTDPbF/YPlsdYGtnsI6yPuTLxqJDytrPvRR73k2UzZi77RTl7MVLvQt1vKq5V29/mwr/xH9hia7BYQlFq1vdycWHV93Owng80f3qlAbJjQ3O4i3oOCsXgLCrqjY/mCj8/XVCDK5BAUZnkYNOjHW+cd2jKP9CkhDxWsYc5M8A9blCay6Fm+bFQ/blR3jpnYpid91Ig+bER7y0xi11M+Z8TfNPqedWJeaN88g4VNG+dlmdHMsWkp2YLrPiTQS0wcjEFoCjuOlJ79u1NWBwj2S9Gbm4BU720isd541lHO3ef862zTe3zlPYzkLOYcoAVov1W8xGohY2ZODdsci0zICzC2CHInJIAEi0BALUwatSffxYuPoRff0YOPbQ++a+893njvH/yI2qT3zKBHTPs/fvCMW2S523jjbzn6SEOprD5WEcjGkXhaCmKR3wxvp29CfSBEhUquVN5rbSkeUEQyLWSpEctW2lPZO0NOZIK/0b4aaPk0YT5+okHaHQOojp7XLEejUerhc5hOOEwjyswkHqeWRmbkRU34jq1skGGkE71AWDkBiPDze8ZbryMAkw9dOTkAFkHIYbLSeWJq+NPQn6KhL8N+ag57HPLT9ZD/41XA8kqI2TYZt1bM49kBMtI9JG0zDT1nB/QQKUoFCVUlAgNtpEu+a/9g74Lfsu8wd5cwrdSpzF1S6aROUmhXAz7UPyn9CtAGGMyY8JYVV4YMSgxyAyBiIcZIi8pjVYFKmVWRTqORkKQf4eESHw6zWXw8JYUjqpgk5b2rX5/nb+nxlWpWo4itXACHAKSxj6aaSatRgNZjMKPpTWXJKEPEadNooI8ZpLE0waj6HxL7CiBGohogAaMqoCmpmQHyZUnPDphJS2aGUFm2ZGcJTAW1tCWnDXNpTp1CA4Uq3VX2Wyg5ijo/yYqqAxUawBqPCJtaBL3SnupGDw31KdEGDy0DElPubFCzZgdBc4pmzk4Fzak5e3YmaE7XMyh8E/nKpqFhExg1DFdGYcts/ijrnVn4IaQpbzEQzdUe4Dk5gGS+jsC7jMqlJakA8XxesdaMTvBP2jOXLRdCg+a57rPQMGkmQssq0szv+hxnkNC8x7DYvskI8Pa7TKB30nrhvUUrVm80RvX77zTegEEL4b1GifHNRgPwbhOd3nk7xuD85gKEZzgTGJ0kaTqjhXMfJ9nEkTa40FISOzkDiHw0D5/k8Eqc4PgGSagBwKaOWelAuVGiMaeGcdIkEQfGUbOKo1QkNetISsdSs4mldIATq5u0OgNpfQ41Gn9DaTJKdcw1+8hK4WkOY6sXRlctzbPXjGCoWjNaynV0N0N0JxcaIju4xCqqw4trIjo4Nnc3nxv9ShGeRhRkMQ06tMLkpK71bk4vYJtXrOAtUK0L/Ox+GxBEhBtuqBCiveOGiR9uttz4sb0iJ7W7QicFNR6Q8iYPQelTAEr5TUvbojd5QHWLwbTCxcGRzvF5/vo8fpNvYRk5fCTLIvj9LIdl8GJCvTBhWp0JjKzeBgDXwAr4sNapL3t4uZXF4cMNrHsw4W2jbZneicu0hrLVBKigzSdQiexI0emE5XJ+wip/eKp+fQruUJFZBCGHKVCh/AjKhoMdb0Y4FCSECItBRj18qdEiCrKYBh3qNJ5+yxRFV6mrlSa5L6JmBKF3ng2nfQGpKbMGwBVaI+ZKrZe60i8bWVDZ8cKL+4BxzfECa/mIS71xZfByP3A2vKumpwTW99sbP+D6/u3OD2qB/92tH37uexJnVzoWVOL8EEAyC0QgzBEhLB67rXUxkJkpLOrmCkf4Dd1pNSWqqDsVtHnSiQh/dt6r1a2Ur+vqy2OV+pUo92f/WdfIH7+genPOFnzKErlG52LCp1ofN5S5GvFpl8aBd2PDEtiARixLbMSozFiE5szQpaRrneQgs00ile1moc6Bi5iz4Heu02ssW3UYlbSBh1UqO3tovY1jJzgbSLXj6cB3VBCAJPwfnNOK5wRSfVIKsaellgBWLEvQVQmrrkqwRQmrLUrwNQmrr0kwJQlrnqS+ghkXEDe5IuZnXoUi/H2fvuX70enqEhGqmhMQ61oUBLBROTx62bnCHZ52tPAKZLOLt3XsVYdVsu8bP1VWzU4gP4vvaBrVtYKyGX2x1GeJRnO91OMbKZn1JRP5bK8ZYrO/areaNnPhAPBXTqHhtbP6XCmCPHBBIQIPzK1RhgADc2sWIYD6YwDF1UKMhfVCgsYVQ4BbwvcH6K5fkjHoCiAJqyIQgq4Qlqm/rdVsgNHp4MPtj9HZ4CPYQqOLgo+TdC5D09QvE3/e1aEsUcvcDxP/Vgm0Hi6TP078G9N4gRxnf5j425asBMWGrII3zViRdGlDHaty72lgwx3nsY73WRxA62jLDv6FnO6uXAu74t04ldYx9x09CTwdyongM2HdBxw5v7h/plf6So9f6XH+WSu89/xx6wZa4TZOhJhB2suMrauRdn5NNlVKu7wl2/olgRD7uFCz590gAj17QUJNO4GBMtK1dtRAXDuL85XIfcTUWExARXKLMTcdM0ho6UBmHHqR97LQGveHatC1hxrYt4ZaAjI+7tQDGLf6CtxoBQaCY7xRiHxlW4+2Re3Ayri4YVib50jfnpxSb99R8Q05BHkKasAyRbUIPEVcaU9973MDoD/1juCmqtQHpHCyurTkbFYfrkwZCuPGmIFob9pzTCO5wP0sNv9V5ps1y7n0HZEKSbOAAgmFdgHGSV91/vA+KUJVMwZiXTmGAL6rRkdPZfuJzr4MJ9qXovMvxEk2rejit+JTk5kK5MKlEKlQjBHoUdJWdiGGpTgR6sU4kNvlOITsglykI6W6SYfVkioiOxyjpsQw7m4c6MOFOAqG5eTUYpyGHe4InqEotxakwIL6NdEHXAJrA3/k9IFXwtkBnzZ9x5o0pfwR+qV1RdLJqJTmVUmFRbT/Z9emRAyfR/TQrQ8KKpLsj/KZA4vjXwYrynAOPM7/hEEU4ZToJP/24Mgk23lub5ULvb9g0aCYIBiDG9gAsOAbmoAMoGwUm9wbUEBEtQVEUAxjg5A0a8PLcEQEZ0dJWb84/6e83BbsFEUowXmhISQwo6xFOM5PxCB+r4j39rAIUdy3I8R5x9rr0O7CqnjvDEEbO2cAgRj/BduG2DYIQhrGIaVtXqV9w8IFTGxu6KXsvNnVyxj8xt5ep3U5HxCkBFKf96Xo2lmB1Pe8KcZVZiD1RGRmMz1wadFAFrVNot00urusSZKNN7o3Uid5K4qnSTGCELPIKFbZZQXcdjvKA2QVp3EoH4E0qc00FgCUI1ZBtACzmnkHiS5e0XeYWrb3qF7VD3C1rn+hOT+FVjOgfaRaEfpQufoW44X+gbC4RILRRgWF4J5w/1Z9ZVdgmFaNuhvWGVKjziPvv9HFNWkOUwVvHtX1cAHOhI8b1ansztHQnWjzjpb2JNt7NAy41p/KIFzqN06cBSWUZRuW0AoKeMUQG/UaW3LhhmsO9Ij0AAYYNAhGaIHlAQx15pPfYqXlvLetobae8OYJhfHt4r80/zp71vtx/t+P82/1r6sISJI2kJFwHudTXD8tYw62l7+mmQUk2edeZCw8peVgFwP9+4HjaNc4MHkVghI6xjDEjg3CZfhzZ1WaxmDtBVNJk2Fw6KNSSZOjQcxjU0nnLXnW0KIkfWppXRorRHGFQk+YcAkpNCVzmISxhPDIhjr/yt2hCRnuCM/ReBdk4m4cLZXNEfBwiTZMUAdMsutCdMxaXfg4a6+lqnsuUIwR2EAZDnDzyMSHSLNVjjXlaZ6del1TnmamKI4tKT8tyJmgqOqigu26CyJcVl4w6aL24uQc3t9VXojcllYA4qouELMbxzY0LUquKxs1ZGsbDWqrGxv60jLW9SF3bmkpWEb8+aWF8AL+xlnm2VerBbDMzU6zohROqB6IZMF29XkyJtx9m0yIb36YDH7g/qtk71m7FcKtuctIzDcNXvpVfuT3bT4XhNyeBqluZ9Lc1iDxbiY3Wxsk2M3kv7K/gephSJPdaYA2gvKIbDoVYLAjVYS+sSnVx6U9qSChQYnA2KQkeGgV6a2TKi/ljCQ1YpFbABAFkQbz6EgTbRqmxuODfbRpGKbLZ0j30p7ph+mNJ0k31F7b2bftFDN5B483+pAT7OTxRjPy9+NYt7XGzZYbESKPeoAN/GYZqwr38OAHNXqOGUzxU0x3LpXOls/c3iKdN0YOLTkWwW4dh1XwevjGJqTFmcDI4m0AcAmsgG6dRLtiXG2LMeG2GJApw10xpDnVHTLBIUGGW22gWO+1AamvVMODsKYO0ahsTuFhXZ1mRLtxJd/EDw6o1cWv3M91G7/xPe/08f/YB7CjJvvb9vsYk9EdojK+WyobXf30iDR6+vkJYvz3FXNrf6QZe/tj3aa7v+VnuA/dzJbSaW/nS+i1dzMmNtvbOXPOtQzqZRZFE9xGEU54/0A84fXTh01TEdn32ir1b7YE6IPfhzde8zLX0gylellmLszQyheCrP4PuWb0+qYK3QCwxXYIuUI8BbpSvJa61M/lrcfrO6b8ub7yBBrPgGCml524JK+pc5nhTctiy6zfsxy+zO4dSzgfcHm1E9Xda2mcQ0fqGtiOl7q57U2jJrbzNXC+8amuk+3uabw8l6F1LuZUhuHyVNyJDPQDVyciZ/HfTWwuZZuUcOoIMZ48YlSmjwYufrytOgkWTyICt6YRYLQc+YX+85v0Q9uAueBXJszE+YYVy0Jb1cRmLMsi29W0DFmIhSnbti05c/fMu0J0Z9buRalJwByoUQ8bXBNuNKfNaD67szNM+GaVZ0rlMGlzJlQeEd+wZStYtuCpjSk4EYoBT2tNJTGr6n96c8AWvTxmiuQWtzpoy+QWv0LoCuWWYJXQloNdWnJm6SrhukCNSLclakz8hlXHbLr4JUzDKJTLS3ROyku8lPm7V2lbgiVNe5m2bYmXNd2F2oj6A9dqDq+VpsyNi2Vpc/NyIfX7s1fUWP1O03UDhTW5GJelrrbmVkM3l2S12rmlZmv1RVG/oT/o6UYD4oZuZYI0fV93fZ9WlCoi9zYkiH8fAix4I0LUvxNJT7CkHbAZGZIRuhsZsxS2HRnyFP74cbPzpA8PiRV98KsjJ93ODGLbz4xQ0NCstfD6W+LupbnIA4CQCGLMghea0q41nVMrQYQJmCde/sl9t/po+VBpnefnZ17K+5ofv+avuW4wPafakx2ChLZgxiPCjeZ8XsFPEro3VAthbymHavmzsbusnz1eywu+bJyRGKpYAyQ0gG80Lit+Y+fxst9aTssiissK5eNlv6W8Z94CNtBi5uNlv698Y88c2wMGzfOFQQuaNBO1bZJs2fr9KWwz2Sw9icWoTGMNHCayFkOc+JUFidD2dLa5hJ6f0Daf1PtNO84G9eHKkLkwrk2ZifVNa9bgqphJNrosfpoNL0ww0V5as0XXRpmzbfHFMQZtxHvXJlqaUAsuWo4LLgZRCy4WqyBpyk1dKhWqhROMCBRPOBAUMF0cPU0i1DlRkNusKELv6ICNJ7QWvfOE1eT2nmjok1lU7kuyQpJaMcsRoCPbPhQ5fkY8BFgAImrgn3CwO0fK3G75+JX/SnbvEi9jz6ViHbTKA6JkXjT3JBMb6ZiCkZ8gK8fjwf91ls49zs9fck3+Xj4DHkCExSCjHiaNcnc7iRR39Zh0ECnu+lHpMFLczePSQcy247wtk/auwhaYq3cds+DkvJuABaKDUEu+uSowEEQgiQcABRhDgDuNmz0vBjZ3YoBt/tQI/ri7iPX0/EWkkwsuIp8YYx9tPemM3SHCgtM6sxAJTsyeWioEPLvFneDH5Sluuw3u4DTLbVpa93HPlG1vBXT6blrH1lFJ9cxoDAPeICAjoJAFZUHC98eN00Kw6bBjxngWDnIXv2mzA9qYawil3d922zH326537l2SAmLbBsqhawuX2LbJYLd6aUGae5+oUbHt3AepGhPbEqdpx82i6KWJc9Dur8u457jV39Zxz7IlwOWeAHeLuGQxTir1Ce/NPEUPfm/nKAIIQehG/f+Ufz7aZkzWDJJPzg6BJm9JQUkPbykgW2apHQsk/zPrLQsgMTSbPQvumtOaupPRLZktqxyTXk79O9vwXViRH03cVQGQwe+roOAh3FpBJbLmXhWqd1Dq3us6dYTm3hSpK5BQD79xAeKDTsaYuh4Ez5yph++SIkx9UDLfScX8nxq2MZItMpZtABeLnG2b4lSTnHlkw/z8zDtHdHOtw88/PHtxlQcAIQZ64wK4g4GUdq7ASaUisnOFmlAIxY0rcDqRFY0Oiswef/8PnzZX8zc4RKK6/haNeVzhHzHJrrpLk1x93qAJrjxszYSXXe3JhOdaq9Of9JXjGs4Uy7gw3cGEczW6ZzBFis+R9H80ZFPSCzMBAA==';
+let CATALOG=[],catalogPromise;
+async function inflateCatalogue(){
+ const bytes=Uint8Array.from(atob(CATALOG_GZIP_B64),c=>c.charCodeAt(0));
+ if(!('DecompressionStream' in window))throw new Error('This browser needs DecompressionStream support.');
+ const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+ return await new Response(stream).text();
+}
+function expressionTokens(e){return e.match(/\d+|[()+\-*/^]/g)||[]}
+function parseExact(e){
+ const a=expressionTokens(e);let i=0;
+ function atom(){let t=a[i++];if(t==='('){let v=sum();if(a[i++]!==')')throw 0;return v}if(!/^\d+$/.test(t||''))throw 0;return new Q(BigInt(t))}
+ function power(){let v=atom();if(a[i]==='^'){i++;let x=power();if(!x.int()||x.n<0n||x.n>12n)throw 0;let z=new Q(1n);for(let k=0n;k<x.n;k++)z=z.mul(v);v=z}return v}
+ function product(){let v=power();while(a[i]==='*'||a[i]==='/'){let op=a[i++],x=power();v=op==='*'?v.mul(x):v.div(x)}return v}
+ function sum(){let v=product();while(a[i]==='+'||a[i]==='-'){let op=a[i++],x=product();v=op==='+'?v.add(x):v.sub(x)}return v}
+ const v=sum();if(i!==a.length)throw 0;return v
+}
+function compileFamily(lines,id){
+ if(lines.length!==4)return null;
+ const es=lines.map(x=>x.replace(/^k\d+\s*:?=\s*/,'').replace(/;\s*$/,'').replace(/\s+/g,''));
+ const nums=es.map(e=>e.match(/\d+/g)||[]),sk=es.map(e=>e.replace(/\d+/g,'#').replace(/\((#\*#)\)/g,'$1'));
+ if(!nums[0].length||!sk.every(x=>x===sk[0])||!nums.every(x=>x.length===nums[0].length))return null;
+ const src=nums[0][0][0];if(!nums.flat().every(x=>new RegExp('^'+src+'+$').test(x)))return null;
+ const lens=nums[0].map((_,j)=>nums.map(row=>row[j].length));
+ const delta=lens.map(x=>x[3]-x[2]);
+ if(!lens.some(x=>new Set(x).size>1)||delta.some(x=>x<0||x>3))return null;
+ return{id,src:+src,shape:sk[0],lens,delta,example:es[0]}
+}
+function catalogueName(e,delta){
+ let core=e.includes('^')?'Power':e.includes('*')&&e.includes('/')?'Product and quotient':e.includes('*')?'Product structure':e.includes('/')?'Quotient structure':'Linear structure';
+ const groups=new Set(delta.filter(Boolean)).size,n=delta.filter(Boolean).length;
+ return core+(n>1?' · synchronized block growth':' · repeated-block growth')
+}
+function renderCatalogueExpr(t,d,step){let j=0;return t.example.replace(/\d+/g,()=>{const s=t.lens[j++],len=step<4?s[step]:s[3]+(step-3)*(s[3]-s[2]);if(len<1||len>30)throw 0;return String(d).repeat(len)})}
+function cataloguePatternsFor(seed,d,terms,limit){
+ const out=new Map();
+ for(const t of CATALOG)for(let offset=0;offset<=5;offset++){
+   let first;try{first=parseExact(renderCatalogueExpr(t,d,offset))}catch{continue}
+   if(!first.int()||first.n!==seed)continue;
+   const rows=[];let good=true;
+   for(let n=0;n<terms;n++){let expr=renderCatalogueExpr(t,d,offset+n),v;try{v=parseExact(expr)}catch{good=false;break}if(!v.int()||v.n<=0n||v.n.toString().length>100){good=false;break}rows.push({target:v.n,expr})}
+   if(!good||rows.every(r=>r.target===seed))continue;
+   // Manually catalogued source-digit families are retained as authoritative.
+   // Cross-digit generalizations must additionally preserve the visible target
+   // digits from one row to the next, which blocks mathematically valid but
+   // visually unhelpful sequences.
+   if(t.src!==d&&!hasVisibleNumberPattern(rows))continue;
+   const sig=rows.map(r=>r.target).join(',')+'|'+rows.map(r=>r.expr).join('|');
+   if(!out.has(sig))out.set(sig,{d,name:catalogueName(t.example,t.delta),rows,score:rows[0].expr.length+(t.src===d?0:8),quality:100+(t.src===d?15:0),catalogue:true,sourceDigit:t.src})
+ }
+ return [...out.values()].sort((a,b)=>b.quality-a.quality||a.score-b.score).slice(0,limit)
+}
+async function ensureCatalog(){
+ if(catalogPromise)return catalogPromise;
+ catalogPromise=inflateCatalogue().then(raw=>{
+   const chunks=raw.replace(/^=+\s*$/gm,'\n\n').split(/\n\s*\n/);let id=0;
+   CATALOG=chunks.map(c=>compileFamily(c.split(/\r?\n/).map(x=>x.trim()).filter(x=>/^k\d+\s*:?=/.test(x)),++id)).filter(Boolean);
+   return CATALOG;
+ }).catch(err=>{console.error(err);CATALOG=[];return CATALOG});
+ return catalogPromise
+}
+patternsFor=function(seed,d,terms,limit){
+ const learned=cataloguePatternsFor(seed,d,terms,Math.max(limit*3,60));
+ const searched=qualityPatternsFor(seed,d,terms,Math.max(limit*2,40));
+ const all=new Map();
+ for(const p of [...learned,...searched]){const k=p.rows.map(r=>r.target).join(',')+'|'+p.rows.map(r=>r.expr).join('|');if(!all.has(k))all.set(k,p)}
+ return [...all.values()].sort((a,b)=>(b.catalogue?1:0)-(a.catalogue?1:0)||(b.quality||0)-(a.quality||0)||a.score-b.score).slice(0,limit)
+};
+
+function addRangeResult(store,p,limit){
+ const seed=p.rows[0].target.toString(),key=seed+'|'+p.d,bucket=store.get(key)||[];
+ const sig=p.rows.map(r=>r.target).join(',')+'|'+p.rows.map(r=>r.expr).join('|');
+ if(!bucket.some(x=>x._sig===sig))bucket.push({...p,querySeed:p.rows[0].target,_sig:sig});
+ bucket.sort((a,b)=>(b.catalogue?1:0)-(a.catalogue?1:0)||(b.quality||0)-(a.quality||0)||a.score-b.score);
+ if(bucket.length>limit)bucket.length=limit;store.set(key,bucket)
+}
+function intervalPatternsFor(from,to,d,terms,limit){
+ const store=new Map();
+ // Scan the learned catalogue once.
+ for(const t of CATALOG)for(let offset=0;offset<=5;offset++){
+   let first;try{first=parseExact(renderCatalogueExpr(t,d,offset))}catch{continue}
+   if(!first.int()||first.n<from||first.n>to)continue;
+   const rows=[];let good=true;
+   for(let n=0;n<terms;n++){let expr,v;try{expr=renderCatalogueExpr(t,d,offset+n);v=parseExact(expr)}catch{good=false;break}if(!v.int()||v.n<=0n||v.n.toString().length>100){good=false;break}rows.push({target:v.n,expr})}
+   if(!good||rows.every(r=>r.target===first.n)||t.src!==d&&!hasVisibleNumberPattern(rows))continue;
+   addRangeResult(store,{d,name:catalogueName(t.example,t.delta),rows,score:rows[0].expr.length+(t.src===d?0:8),quality:100+(t.src===d?15:0),catalogue:true,sourceDigit:t.src},limit)
+ }
+ // Scan the original structural search once for the whole interval.
+ for(const rule of T){const max=rule.slots>=7?3:4;vectors(rule.slots,max,L=>{let v;try{v=rule.eval(d,L)}catch{return}if(!v.int()||v.n<from||v.n>to)return;const masks=(1<<rule.slots)-1;for(let mask=1;mask<=masks;mask++){const rows=[];let good=true;for(let n=1;n<=terms;n++){let z;try{z=grow(rule,d,L,mask,n)}catch{good=false;break}if(!z.v.int()||z.v.n<=0n||z.v.n.toString().length>70){good=false;break}rows.push({target:z.v.n,expr:z.e})}if(!good||rows.every(r=>r.target===v.n)||!hasVisibleNumberPattern(rows))continue;const quality=qualityScore(rows);if(quality<Math.max(7,terms*2-1))continue;addRangeResult(store,{d,name:rule.name,rows,score:rows[0].expr.length+rule.slots*2,quality},limit)}})}
+ return [...store.values()].flat().sort((a,b)=>a.querySeed<b.querySeed?-1:a.querySeed>b.querySeed?1:a.d-b.d||b.quality-a.quality)
+}
+async function runInterval(){
+ const a=$('seed').value.trim(),b=$('end').value.trim();
+ if(!/^\d+$/.test(a)||!/^\d+$/.test(b)||BigInt(a)<1n||BigInt(b)<BigInt(a)){alert('Enter a valid increasing positive interval.');return}
+ const from=BigInt(a),to=BigInt(b);if(to-from>99n){alert('Choose an interval containing at most 100 numbers.');return}
+ const terms=+$('terms').value,limit=+$('limit').value,which=$('digit').value,digits=which==='all'?[1,2,3,4,5,6,7,8,9]:[+which];
+ $('go').disabled=true;$('progress').style.display='block';$('results').innerHTML='';$('singleSection').style.display='none';$('summary').style.display='none';$('actions').style.display='none';current=[];
+ await ensureCatalog();
+ for(let i=0;i<digits.length;i++){const d=digits[i];$('ptext').textContent=`Scanning interval with digit ${d} (${i+1}/${digits.length})…`;$('fill').style.width=Math.round(i/digits.length*100)+'%';await new Promise(r=>setTimeout(r,20));current.push(...intervalPatternsFor(from,to,d,terms,limit))}
+ $('fill').style.width='100%';$('ptext').textContent='Interval search complete';setTimeout(()=>$('progress').style.display='none',500);$('go').disabled=false;renderInterval(from,to)
+}
+function patternCard(p){const card=document.createElement('article');card.className='card';const lines=p.rows.map(r=>`<div class="line"><span class="key" style="color:${COL[p.d]}">k${r.target}</span><span class="assign">:=</span>${h(r.expr)};</div>`).join('');card.innerHTML=`<div class="ctop"><h3>${p.name}</h3><span class="ok">✓ exact</span></div><div class="lines">${lines}</div><div class="foot"><span>${p.catalogue?'Catalogue-derived structural rule':'Independent repeated-block growth'}</span><button class="copy">Copy</button></div>`;card.querySelector('.copy').onclick=()=>navigator.clipboard.writeText(text(p));return card}
+function renderInterval(from,to){const out=$('results');if(!current.length){out.innerHTML=`<div class="empty">No extendable family was found from <strong>${from}</strong> to <strong>${to}</strong> inside the selected structural search.</div>`;return}const seeds=[...new Set(current.map(p=>p.querySeed.toString()))];$('summary').innerHTML=`Interval <strong>${from}–${to}</strong>: found <strong>${current.length} distinct generators</strong> for <strong>${seeds.length} starting numbers</strong>. All displayed equalities passed exact verification.`;$('summary').style.display='block';$('actions').style.display='flex';for(const seed of seeds){const sec=document.createElement('section');sec.className='group';sec.innerHTML=`<div class="gh"><div><h2>Starting number ${seed}</h2><div class="meta">${current.filter(p=>p.querySeed.toString()===seed).length} retained generators</div></div></div><div class="cards"></div>`;for(const p of current.filter(x=>x.querySeed.toString()===seed))sec.querySelector('.cards').appendChild(patternCard(p));out.appendChild(sec)}}
+
+
+function addRangeResult(store,p,limit){
+ const seed=p.rows[0].target.toString(),key=seed+'|'+p.d,bucket=store.get(key)||[];
+ const sig=p.rows.map(r=>r.target).join(',')+'|'+p.rows.map(r=>r.expr).join('|');
+ if(!bucket.some(x=>x._sig===sig))bucket.push({...p,querySeed:p.rows[0].target,_sig:sig});
+ bucket.sort((a,b)=>(b.catalogue?1:0)-(a.catalogue?1:0)||(b.quality||0)-(a.quality||0)||a.score-b.score);
+ if(bucket.length>limit)bucket.length=limit;store.set(key,bucket)
+}
+function intervalPatternsFor(from,to,d,terms,limit){
+ const store=new Map();
+ // Scan the learned catalogue once.
+ for(const t of CATALOG)for(let offset=0;offset<=5;offset++){
+   let first;try{first=parseExact(renderCatalogueExpr(t,d,offset))}catch{continue}
+   if(!first.int()||first.n<from||first.n>to)continue;
+   const rows=[];let good=true;
+   for(let n=0;n<terms;n++){let expr,v;try{expr=renderCatalogueExpr(t,d,offset+n);v=parseExact(expr)}catch{good=false;break}if(!v.int()||v.n<=0n||v.n.toString().length>100){good=false;break}rows.push({target:v.n,expr})}
+   if(!good||rows.every(r=>r.target===first.n)||t.src!==d&&!hasVisibleNumberPattern(rows))continue;
+   addRangeResult(store,{d,name:catalogueName(t.example,t.delta),rows,score:rows[0].expr.length+(t.src===d?0:8),quality:100+(t.src===d?15:0),catalogue:true,sourceDigit:t.src},limit)
+ }
+ // Scan the original structural search once for the whole interval.
+ for(const rule of T){const max=rule.slots>=7?3:4;vectors(rule.slots,max,L=>{let v;try{v=rule.eval(d,L)}catch{return}if(!v.int()||v.n<from||v.n>to)return;const masks=(1<<rule.slots)-1;for(let mask=1;mask<=masks;mask++){const rows=[];let good=true;for(let n=1;n<=terms;n++){let z;try{z=grow(rule,d,L,mask,n)}catch{good=false;break}if(!z.v.int()||z.v.n<=0n||z.v.n.toString().length>70){good=false;break}rows.push({target:z.v.n,expr:z.e})}if(!good||rows.every(r=>r.target===v.n)||!hasVisibleNumberPattern(rows))continue;const quality=qualityScore(rows);if(quality<Math.max(7,terms*2-1))continue;addRangeResult(store,{d,name:rule.name,rows,score:rows[0].expr.length+rule.slots*2,quality},limit)}})}
+ return [...store.values()].flat().sort((a,b)=>a.querySeed<b.querySeed?-1:a.querySeed>b.querySeed?1:a.d-b.d||b.quality-a.quality)
+}
+async function runInterval(){
+ const a=$('seed').value.trim(),b=$('end').value.trim();
+ if(!/^\d+$/.test(a)||!/^\d+$/.test(b)||BigInt(a)<1n||BigInt(b)<BigInt(a)){alert('Enter a valid increasing positive interval.');return}
+ const from=BigInt(a),to=BigInt(b);if(to-from>99n){alert('Choose an interval containing at most 100 numbers.');return}
+ const terms=+$('terms').value,limit=+$('limit').value,which=$('digit').value,digits=which==='all'?[1,2,3,4,5,6,7,8,9]:[+which];
+ $('go').disabled=true;$('progress').style.display='block';$('results').innerHTML='';$('singleSection').style.display='none';$('summary').style.display='none';$('actions').style.display='none';current=[];
+ await ensureCatalog();
+ for(let i=0;i<digits.length;i++){const d=digits[i];$('ptext').textContent=`Scanning interval with digit ${d} (${i+1}/${digits.length})…`;$('fill').style.width=Math.round(i/digits.length*100)+'%';await new Promise(r=>setTimeout(r,20));current.push(...intervalPatternsFor(from,to,d,terms,limit))}
+ $('fill').style.width='100%';$('ptext').textContent='Interval search complete';setTimeout(()=>$('progress').style.display='none',500);$('go').disabled=false;renderInterval(from,to)
+}
+function patternCard(p){const card=document.createElement('article');card.className='card';const lines=p.rows.map(r=>`<div class="line"><span class="key" style="color:${COL[p.d]}">k${r.target}</span><span class="assign">:=</span>${h(r.expr)};</div>`).join('');card.innerHTML=`<div class="ctop"><h3>${p.name}</h3><span class="ok">✓ exact</span></div><div class="lines">${lines}</div><div class="foot"><span>${p.catalogue?'Catalogue-derived structural rule':'Independent repeated-block growth'}</span><button class="copy">Copy</button></div>`;card.querySelector('.copy').onclick=()=>navigator.clipboard.writeText(text(p));return card}
+function renderInterval(from,to){const out=$('results');if(!current.length){out.innerHTML=`<div class="empty">No extendable family was found from <strong>${from}</strong> to <strong>${to}</strong> inside the selected structural search.</div>`;return}const seeds=[...new Set(current.map(p=>p.querySeed.toString()))];$('summary').innerHTML=`Interval <strong>${from}–${to}</strong>: found <strong>${current.length} distinct generators</strong> for <strong>${seeds.length} starting numbers</strong>. All displayed equalities passed exact verification.`;$('summary').style.display='block';$('actions').style.display='flex';for(const seed of seeds){const sec=document.createElement('section');sec.className='group';sec.innerHTML=`<div class="gh"><div><h2>Starting number ${seed}</h2><div class="meta">${current.filter(p=>p.querySeed.toString()===seed).length} retained generators</div></div></div><div class="cards"></div>`;for(const p of current.filter(x=>x.querySeed.toString()===seed))sec.querySelector('.cards').appendChild(patternCard(p));out.appendChild(sec)}}
+
+let current=[];
+async function run(){const raw=$('seed').value.trim();if(!/^\d+$/.test(raw)||BigInt(raw)<1n){alert('Enter a positive whole number.');return}const seed=BigInt(raw),terms=+$('terms').value,limit=+$('limit').value,which=$('digit').value,digits=which==='all'?[1,2,3,4,5,6,7,8,9]:[+which];$('go').disabled=true;$('progress').style.display='block';$('results').innerHTML='';$('summary').style.display='none';$('actions').style.display='none';current=[];for(let i=0;i<digits.length;i++){const d=digits[i];$('ptext').textContent=`Searching digit ${d} (${i+1}/${digits.length})…`;$('fill').style.width=Math.round(i/digits.length*100)+'%';await new Promise(r=>setTimeout(r,25));current.push(...patternsFor(seed,d,terms,limit));}$('fill').style.width='100%';$('ptext').textContent='Search complete';setTimeout(()=>$('progress').style.display='none',500);$('go').disabled=false;render(seed)}
+// Exact dynamic-programming reference solver for the upper nine-digit panel.
+// It is intentionally independent of the pattern templates below it.
+function singleSolve(d,target,maxCopies=12){
+ const cap=d===1?5000:3200,bound=BigInt(target)*30n+100000n;
+ const tiers=Array.from({length:maxCopies+1},()=>new Map());
+ function add(cost,v,e){
+   if(cost>maxCopies||abs(v.n)>bound*v.d||v.d>10000n)return;
+   const key=v.key(),old=tiers[cost].get(key);
+   if((tiers[cost].size<cap||old||v.int()&&v.n===BigInt(target))&&(!old||e.length<old.e.length))tiers[cost].set(key,{v,e});
+ }
+ for(let k=1;k<=maxCopies;k++)add(k,rep(d,k),rs(d,k));
+ const wanted=BigInt(target)+'/1';
+ for(let cost=1;cost<=maxCopies;cost++){
+   if(tiers[cost].has(wanted))return{expr:tiers[cost].get(wanted).e,count:cost};
+   if(cost===1)continue;
+   for(let i=1;i<cost;i++){
+     const j=cost-i;
+     for(const A of tiers[i].values())for(const B of tiers[j].values()){
+       add(cost,A.v.add(B.v),`(${A.e}+${B.e})`);
+       add(cost,A.v.sub(B.v),`(${A.e}-${B.e})`);
+       add(cost,B.v.sub(A.v),`(${B.e}-${A.e})`);
+       add(cost,A.v.mul(B.v),`(${A.e}*${B.e})`);
+       if(B.v.n!==0n)add(cost,A.v.div(B.v),`(${A.e}/${B.e})`);
+       if(A.v.n!==0n)add(cost,B.v.div(A.v),`(${B.e}/${A.e})`);
+       // Exponentiation is allowed in the individual panel; factorial is not.
+       if(A.v.int()&&B.v.int()&&B.v.n>=2n&&B.v.n<=6n&&abs(A.v.n)<=10000n){
+         let p=1n;for(let k=0n;k<B.v.n;k++)p*=A.v.n;
+         add(cost,new Q(p),`(${A.e})^(${B.e})`);
+       }
+     }
+   }
+   if(tiers[cost].has(wanted))return{expr:tiers[cost].get(wanted).e.replace(/^\((.*)\)$/,'$1'),count:cost};
+ }
+ // Guaranteed construction. Since d/d=1 and (d+d)/d=2, binary Horner
+ // expansion represents every positive integer using only the chosen digit.
+ const bits=BigInt(target).toString(2),one=`(${d}/${d})`,two=`((${d}+${d})/${d})`;
+ let e=one,count=2;
+ for(const bit of bits.slice(1)){
+   e=`(${e}*${two}${bit==='1'?`+${one}`:''})`;
+   count+=3+(bit==='1'?2:0);
+ }
+ return{expr:e.replace(/^\((.*)\)$/,'$1'),count,fallback:true};
+}
+function prettyIndividual(e){
+ // Flatten simple additive chains produced by the dynamic-programming tree.
+ let old='';
+ while(old!==e){old=e;
+   e=e.replace(/\(\((\d+)\s*([+-])\s*(\d+)\)\s*([+-])\s*(\d+)\)/g,'($1$2$3$4$5)');
+   e=e.replace(/\((\d+)\s*\+\s*\((\d+)\s*\+\s*(\d+)\)\)/g,'($1+$2+$3)');
+   e=e.replace(/\((\d+)\s*\-\s*\((\d+)\s*\-\s*(\d+)\)\)/g,'($1-$2+$3)');
+   e=e.replace(/-\(\((\d+)\s*\-\s*(\d+)\)\)/g,'-$1+$2');
+   e=e.replace(/-\((\d+)\s*\-\s*(\d+)\)/g,'-$1+$2');
+   e=e.replace(/\(\(([^()]+)\)\)/g,'($1)');
+ }
+ return e;
+}
+async function renderSingles(seed){
+ const box=$('singleResults');box.innerHTML='';$('singleSection').style.display='block';
+ for(let d=1;d<=9;d++){
+   $('ptext').textContent=`Finding individual representation with digit ${d}…`;
+   await new Promise(r=>setTimeout(r,8));
+   const r=singleSolve(d,seed,12),card=document.createElement('article');card.className='card';card.dataset.d=d;
+   card.innerHTML=`<div class="ctop"><h3><span class="digit" style="display:inline-grid;width:28px;height:28px;font-size:14px;background:${COL[d]}">${d}</span> Digit ${d}</h3><span class="ok">✓ ${r.fallback?'constructive':'short'} representation</span></div><div class="lines"><div class="line"><span class="key" style="color:${COL[d]}">k${seed}</span><span class="assign">:=</span>${h(prettyIndividual(r.expr))}; <small>[${r.count}×${d}${r.fallback?'; guaranteed':''}]</small></div></div><div class="foot pattern-status"><span>Pattern search pending</span></div>`;
+   box.appendChild(card);
+ }
+}
+const patternSearchRun=run;
+run=async function(){
+ if($('mode').value==='interval'){await runInterval();return}
+ const raw=$('seed').value.trim();if(!/^\d+$/.test(raw)||BigInt(raw)<1n){alert('Enter a positive whole number.');return}
+ $('go').disabled=true;$('progress').style.display='block';$('fill').style.width='0%';
+ await renderSingles(Number(raw));
+ $('ptext').textContent='Compiling verified structural catalogue…';
+ await ensureCatalog();
+ await patternSearchRun();
+ document.querySelectorAll('#singleResults .card').forEach(card=>{
+   const d=+card.dataset.d,n=current.filter(p=>p.d===d).length,status=card.querySelector('.pattern-status');
+   status.innerHTML=n?`<span style="color:#22683d;font-weight:bold">✓ ${n} extendable pattern${n===1?'':'s'} found below</span>`:'<span style="color:#8a5b22">No selected pattern found in the current structural search</span>';
+ });
+};
+function h(x){return x.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
+function render(seed){const out=$('results');if(!current.length){out.innerHTML=`<div class="empty">No extendable family was found for <strong>${seed}</strong> inside this finite structural search.<br>This does not prove that no pattern exists. Try another digit or a larger future search engine.</div>`;return}const digs=[...new Set(current.map(x=>x.d))],seqs=new Set(current.map(x=>x.rows.map(r=>r.target).join(',')));$('summary').innerHTML=`Found <strong>${current.length} distinct generators</strong> using <strong>${digs.length} digit${digs.length>1?'s':''}</strong> and producing <strong>${seqs.size} target sequences</strong>. All displayed equalities passed exact verification.`;$('summary').style.display='block';$('actions').style.display='flex';for(const d of digs){const a=current.filter(x=>x.d===d),sec=document.createElement('section');sec.className='group';sec.innerHTML=`<div class="gh"><span class="digit" style="background:${COL[d]}">${d}</span><div><h2>Patterns using only digit ${d}</h2><div class="meta">${a.length} distinct generators retained</div></div></div><div class="cards"></div>`;for(const p of a){const card=document.createElement('article');card.className='card';const lines=p.rows.map(r=>`<div class="line"><span class="key" style="color:${COL[d]}">k${r.target}</span><span class="assign">:=</span>${h(r.expr)};</div>`).join('');card.innerHTML=`<div class="ctop"><h3>${p.name}</h3><span class="ok">✓ exact</span></div><div class="lines">${lines}</div><div class="foot"><span>${p.catalogue?'Catalogue-derived structural rule':'Independent repeated-block growth'}</span><button class="copy">Copy</button></div>`;card.querySelector('.copy').onclick=()=>navigator.clipboard.writeText(text(p));sec.querySelector('.cards').appendChild(card)}out.appendChild(sec)}}
+const text=p=>p.rows.map(r=>`k${r.target}:=${r.expr};`).join('\n');function dl(name,data,type){const a=document.createElement('a'),u=URL.createObjectURL(new Blob([data],{type}));a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),500)}
+$('txt').onclick=()=>dl('general-single-digit-patterns.txt',current.map(p=>`# Seed ${p.querySeed||p.rows[0].target} · Digit ${p.d} — ${p.name}\n${text(p)}`).join('\n\n'),'text/plain;charset=utf-8');
+function xmlCell(v,type='String'){return `<Cell><Data ss:Type="${type}">${String(v).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}</Data></Cell>`}
+$('xls').onclick=()=>{const heads=['Seed','Digit','Pattern','Term','Target','Representation','Verified','Source'];let rows='<Row>'+heads.map(x=>xmlCell(x)).join('')+'</Row>';for(const p of current)p.rows.forEach((r,i)=>{rows+='<Row>'+xmlCell(p.querySeed||p.rows[0].target)+xmlCell(p.d,'Number')+xmlCell(p.name)+xmlCell(i+1,'Number')+xmlCell(r.target)+xmlCell(r.expr)+xmlCell('YES')+xmlCell(p.catalogue?'Catalogue-derived':'Structural search')+'</Row>'});const book=`<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Styles><Style ss:ID="Header"><Font ss:Bold="1"/><Interior ss:Color="#DCEEF7" ss:Pattern="Solid"/></Style></Styles><Worksheet ss:Name="Patterns"><Table>${rows}</Table></Worksheet></Workbook>`;dl('general-single-digit-patterns.xls',book,'application/vnd.ms-excel')};$('go').onclick=run;$('seed').addEventListener('keydown',e=>{if(e.key==='Enter')run()});$('end').addEventListener('keydown',e=>{if(e.key==='Enter')run()});$('mode').onchange=()=>{const interval=$('mode').value==='interval';document.querySelectorAll('.intervalOnly').forEach(x=>x.style.display=interval?'block':'none');$('seedLabel').textContent=interval?'Starting target':'Starting target';$('singleSection').style.display='none'};document.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{$('mode').value='single';$('mode').onchange();$('seed').value=b.dataset.n;run()});
+const extraLimit=document.createElement('option');extraLimit.value='50';extraLimit.textContent='50';$('limit').appendChild(extraLimit);$('limit').value='50';
+// Modern Excel export: a genuine OOXML .xlsx package using an uncompressed
+// ZIP container. Inline strings preserve arbitrarily large integer targets.
+const CRC_TABLE=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=(c&1)?0xedb88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+function crc32(bytes){let c=0xffffffff;for(const b of bytes)c=CRC_TABLE[(c^b)&255]^(c>>>8);return(c^0xffffffff)>>>0}
+const le16=n=>[n&255,(n>>>8)&255],le32=n=>[n&255,(n>>>8)&255,(n>>>16)&255,(n>>>24)&255];
+function zipStore(files){
+ const enc=new TextEncoder(),out=[],central=[];let offset=0;
+ for(const [name,data] of files){const nb=enc.encode(name),db=typeof data==='string'?enc.encode(data):data,crc=crc32(db);const local=[...le32(0x04034b50),...le16(20),0,0,0,0,0,0,0,0,...le32(crc),...le32(db.length),...le32(db.length),...le16(nb.length),0,0,...nb,...db];out.push(...local);const cen=[...le32(0x02014b50),...le16(20),...le16(20),0,0,0,0,0,0,0,0,...le32(crc),...le32(db.length),...le32(db.length),...le16(nb.length),0,0,0,0,0,0,0,0,0,0,0,0,...le32(offset),...nb];central.push(...cen);offset+=local.length}
+ const centralOffset=out.length;out.push(...central,...le32(0x06054b50),0,0,0,0,...le16(files.length),...le16(files.length),...le32(central.length),...le32(centralOffset),0,0);return new Uint8Array(out)
+}
+function xlsxCol(n){let s='';for(n++;n;n=Math.floor((n-1)/26))s=String.fromCharCode(65+(n-1)%26)+s;return s}
+function xlsxText(v){return String(v).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g,'')}
+function createXlsx(){
+ const data=[['Seed','Digit','Pattern','Term','Target','Representation','Verified','Source']];for(const p of current)p.rows.forEach((r,i)=>data.push([String(p.querySeed||p.rows[0].target),String(p.d),p.name,String(i+1),String(r.target),r.expr,'YES',p.catalogue?'Catalogue-derived':'Structural search']));
+ const rows=data.map((row,ri)=>`<row r="${ri+1}">${row.map((v,ci)=>`<c r="${xlsxCol(ci)}${ri+1}" t="inlineStr"${ri===0?' s="1"':''}><is><t xml:space="preserve">${xlsxText(v)}</t></is></c>`).join('')}</row>`).join('');
+ const sheet=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols><col min="1" max="2" width="14" customWidth="1"/><col min="3" max="3" width="34" customWidth="1"/><col min="4" max="5" width="18" customWidth="1"/><col min="6" max="6" width="55" customWidth="1"/><col min="7" max="8" width="20" customWidth="1"/></cols><sheetData>${rows}</sheetData><autoFilter ref="A1:H${data.length}"/></worksheet>`;
+ const files=[
+  ['[Content_Types].xml','<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>'],
+  ['_rels/.rels','<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'],
+  ['xl/workbook.xml','<?xml version="1.0" encoding="UTF-8"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Patterns" sheetId="1" r:id="rId1"/></sheets></workbook>'],
+  ['xl/_rels/workbook.xml.rels','<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'],
+  ['xl/styles.xml','<?xml version="1.0" encoding="UTF-8"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><color rgb="FFFFFFFF"/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF176CA9"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/></cellXfs></styleSheet>'],
+  ['xl/worksheets/sheet1.xml',sheet]
+ ];return zipStore(files)
+}
+function orderedPatterns(order){const seedOf=p=>BigInt(p.querySeed||p.rows[0].target);return [...current].sort((a,b)=>{const sa=seedOf(a),sb=seedOf(b),seedCmp=sa<sb?-1:sa>sb?1:0;return order==='digit'?(a.d-b.d||seedCmp):(seedCmp||a.d-b.d)})}
+function txtBy(order){return orderedPatterns(order).map(p=>`# Seed ${p.querySeed||p.rows[0].target} · Digit ${p.d} — ${p.name}\n${text(p)}`).join('\n\n')}
+function sheetData(order){const data=[['Seed','Digit','Pattern','Term','Target','Representation','Verified','Source']];for(const p of orderedPatterns(order))p.rows.forEach((r,i)=>data.push([String(p.querySeed||p.rows[0].target),String(p.d),p.name,String(i+1),String(r.target),r.expr,'YES',p.catalogue?'Catalogue-derived':'Structural search']));return data}
+function downloadExcel(order){if(window.XLSX){const ws=XLSX.utils.aoa_to_sheet(sheetData(order));ws['!cols']=[{wch:18},{wch:10},{wch:36},{wch:10},{wch:24},{wch:62},{wch:12},{wch:22}];const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,order==='digit'?'By Digit':'By Number');XLSX.writeFile(wb,`single-digit-patterns-by-${order}.xlsx`)}else{const saved=current;current=orderedPatterns(order);try{dl(`single-digit-patterns-by-${order}.xlsx`,createXlsx(),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')}finally{current=saved}}}
+$('txt').textContent='TXT by number';$('txt').onclick=()=>dl('single-digit-patterns-by-number.txt',txtBy('number'),'text/plain;charset=utf-8');
+$('txtDigit').onclick=()=>dl('single-digit-patterns-by-digit.txt',txtBy('digit'),'text/plain;charset=utf-8');
+$('xls').textContent='Excel by number (.xlsx)';$('xls').onclick=()=>downloadExcel('number');
+$('xlsDigit').onclick=()=>downloadExcel('digit');
+</script></body></html>

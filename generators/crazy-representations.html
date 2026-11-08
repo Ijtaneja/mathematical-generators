@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crazy Representations of Natural Numbers: 1→9 and 9→1 Generator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&family=Fira+Code:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#edf4fb; --paper:#fafdff; --ink:#102a43; --ink2:#38536b;
+  --rule:#c6d7e8; --gold:#b27a12; --gold-lt:#e4eef8;
+  --blue:#0b3d91; --blue-lt:#d7e7fa; --red:#8b2635; --red-lt:#f8e1e6;
+  --grn:#126b55; --grn-lt:#d5eee7;
+  --mono:'Fira Code',monospace; --serif:'Crimson Pro',Georgia,serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--ink);font-family:var(--serif);min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(var(--rule) 1px,transparent 1px);
+  background-size:100% 32px;opacity:0.35;pointer-events:none;z-index:0;}
+.page{position:relative;z-index:1;max-width:980px;margin:0 auto;padding:44px 36px 60px;}
+.header{background:linear-gradient(135deg,#092b57,#0b4f87 58%,#126b91);border-bottom:3px solid #071f40;border-radius:12px;padding:24px 26px 20px;margin-bottom:28px;color:#f7fbff;display:block;box-shadow:0 8px 22px rgba(7,35,70,.18);}
+h1{font-family:var(--serif);font-size:2.5rem;font-weight:700;letter-spacing:-0.5px;}
+.title-main{display:block}.title-main em{color:#ffb2d0;font-style:italic;font-weight:700}.title-sub{display:block;color:#bfe5ff;font-size:.86em;margin-top:2px}.subtitle{display:block;font-size:1rem;color:#e0f1ff;font-style:italic;margin-top:10px;}
+.rules{background:var(--gold-lt);border-left:4px solid var(--gold);
+  padding:12px 16px;margin-bottom:24px;font-size:0.9rem;line-height:1.75;color:var(--ink2);}
+.rules strong{color:var(--gold);}
+.rules code{font-family:var(--mono);font-size:0.82rem;background:rgba(0,0,0,.06);
+  padding:1px 5px;border-radius:3px;}
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));
+  gap:14px;margin-bottom:18px;align-items:end;}
+.field{display:flex;flex-direction:column;gap:5px;}
+label{font-size:0.72rem;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--ink2);font-family:var(--mono);}
+input[type=number],select{font-family:var(--mono);font-size:0.95rem;
+  padding:8px 11px;border:1.5px solid var(--rule);border-radius:6px;
+  background:var(--paper);color:var(--ink);outline:none;transition:border-color .2s;width:100%;}
+input[type=number]:focus,select:focus{border-color:var(--blue);}
+.toggles{display:flex;gap:6px;flex-wrap:wrap;}
+.toggle{font-family:var(--mono);font-size:0.75rem;padding:5px 11px;
+  border:1.5px solid var(--rule);border-radius:20px;background:var(--paper);
+  color:var(--ink2);cursor:pointer;transition:all .15s;user-select:none;}
+.toggle.on{border-color:var(--blue);background:var(--blue-lt);color:var(--blue);}
+.toggle.on.fact{border-color:var(--grn);background:var(--grn-lt);color:var(--grn);}
+.toggle.on.sqrt2{border-color:var(--gold);background:var(--gold-lt);color:var(--gold);}
+.btn-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:18px 0;}
+button{font-family:var(--mono);font-size:0.88rem;padding:9px 20px;
+  border:1.5px solid var(--ink);border-radius:6px;background:var(--ink);
+  color:var(--bg);cursor:pointer;transition:all .15s;letter-spacing:.4px;}
+button:hover{background:var(--blue);border-color:var(--blue);}
+button:active{transform:translateY(1px);}
+button.stop{background:#8b2635;border-color:#8b2635;color:#fff}button.stop:disabled{opacity:.45;cursor:not-allowed}
+button.sec{background:transparent;color:var(--ink);}
+button.sec:hover{background:var(--ink);color:var(--bg);}
+#statusMsg{font-family:var(--mono);font-size:0.78rem;color:var(--ink2);}
+.prog{height:3px;background:var(--rule);border-radius:2px;margin-bottom:18px;
+  overflow:hidden;display:none;}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--gold));
+  border-radius:2px;transition:width .3s;width:0%;}
+.stats{display:flex;gap:22px;margin-bottom:18px;flex-wrap:wrap;}
+.stat{display:flex;flex-direction:column;gap:2px;}
+.sn{font-family:var(--serif);font-size:1.55rem;font-weight:700;color:var(--blue);line-height:1;}
+.sl{font-family:var(--mono);font-size:0.68rem;letter-spacing:1px;
+  text-transform:uppercase;color:var(--ink2);}
+.results-wrap{border:1.5px solid var(--rule);border-radius:8px;overflow:hidden;background:var(--paper);}
+.results-header{display:grid;grid-template-columns:90px repeat(3,1fr);
+  background:var(--ink);color:var(--bg);font-family:var(--mono);
+  font-size:0.72rem;letter-spacing:1.5px;text-transform:uppercase;
+  padding:9px 14px;gap:8px;}
+.rrow{display:grid;grid-template-columns:90px repeat(3,1fr);padding:8px 14px;
+  gap:8px;border-bottom:1px solid var(--rule);align-items:start;
+  animation:ri .12s ease both;font-size:0.9rem;}
+.rrow:last-child{border-bottom:none;}
+.rrow:nth-child(even){background:#fdfcfa;}
+.rrow:hover{background:var(--blue-lt);}
+@keyframes ri{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
+.rval{font-family:var(--serif);font-size:1.05rem;font-weight:700;
+  color:var(--ink);text-align:right;}
+.rbadge{display:inline-block;font-family:var(--mono);font-size:0.6rem;
+  letter-spacing:.5px;padding:1px 5px;border-radius:10px;margin-left:4px;
+  vertical-align:middle;text-transform:uppercase;}
+.bb{background:var(--grn-lt);color:var(--grn);}
+.ba{background:var(--blue-lt);color:var(--blue);}
+.bd{background:var(--red-lt);color:var(--red);}
+.rexpr{font-family:var(--mono);font-size:0.8rem;color:var(--blue);
+  word-break:break-all;line-height:1.6;}
+.rexpr.d{color:var(--red);}
+.rexpr.none{color:var(--ink2);font-style:italic;font-family:var(--serif);font-size:0.85rem;}
+.op{color:var(--gold);font-weight:500;}
+.msg{padding:36px;text-align:center;color:var(--ink2);font-style:italic;font-size:1.05rem;}
+.dl-row{display:flex;justify-content:flex-end;margin-top:14px;gap:10px;align-items:center;}
+.dl-info{font-family:var(--mono);font-size:0.75rem;color:var(--ink2);}
+footer{margin:42px auto 0;text-align:center;color:var(--ink2);font-family:var(--mono);font-size:.78rem;line-height:1.9}footer a{color:var(--blue);margin:0 5px}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="header">
+  <h1><span class="title-main"><em>Crazy Representations</em> of Natural Numbers</span><span class="title-sub">1→9, 9→1 and 9→0 Generator</span></h1>
+  <span class="subtitle">Digits in strict order · Every digit used exactly once</span>
+  <div class="credit">Created by Inder J. Taneja</div>
+</div>
+
+<div class="rules">
+  <strong>Rules:</strong>
+  Digits appear in exact sequence — ascending <code>1→9</code> or descending <code>9→1</code>.
+  Adjacent digits may be concatenated: <code>12</code>, <code>345</code>, etc.
+  Power <code>a^b</code>: exponent <strong>b must be the immediately next token</strong>.
+  Grouped power <code>(a op b)^c</code>: <strong>c must immediately follow the group</strong>.
+</div>
+
+<div class="controls">
+  <div class="field"><label>From</label>
+    <input type="number" id="from" value="1" min="1" max="9999999"></div>
+  <div class="field"><label>To</label>
+    <input type="number" id="to" value="200" min="1" max="9999999"></div>
+  <div class="field"><label>Expressions per number</label>
+    <select id="keep">
+      <option value="1">1 expression</option>
+      <option value="3" selected>3 expressions</option>
+      <option value="5">5 expressions</option>
+      <option value="0">All found</option>
+    </select>
+  </div>
+</div>
+
+<div class="controls" style="grid-template-columns:1fr 1fr;gap:14px;margin-bottom:6px">
+  <div class="field"><label>Operations</label>
+    <div class="toggles">
+      <span class="toggle on" id="t-basic" onclick="tog('basic')">+ − × ÷ ^</span>
+      <span class="toggle on fact" id="t-fact" onclick="tog('fact')">n! factorial</span>
+      <span class="toggle on sqrt2" id="t-sqrt" onclick="tog('sqrt')">√ square root</span>
+    </div>
+  </div>
+  <div class="field"><label>Show sides</label>
+    <div class="toggles">
+      <span class="toggle on" id="t-asc" onclick="togSide('asc')">↑ Ascending 1→9</span>
+      <span class="toggle on" id="t-desc" onclick="togSide('desc')">↓ Descending 9→1</span>
+      <span class="toggle" id="t-desc0" onclick="togSide('desc0')">↓ Descending 9→0</span>
+    </div>
+  </div>
+</div>
+
+<div class="btn-row">
+  <button id="searchBtn">▶ Generate</button>
+  <button class="stop" id="stopBtn" disabled>■ Stop</button>
+  <button class="sec" id="dlBtn">↓ Download .txt</button>
+  <button class="sec" id="xlsxBtn">↓ Download Excel</button>
+  <span id="statusMsg"></span>
+</div>
+
+<div class="prog" id="prog"><div class="prog-fill" id="fill"></div></div>
+
+<div class="stats" id="statsRow" style="display:none">
+  <div class="stat"><span class="sn" id="sTotal">0</span><span class="sl">Found</span></div>
+  <div class="stat"><span class="sn" id="sBoth" style="color:var(--grn)">0</span><span class="sl">Both sides</span></div>
+  <div class="stat"><span class="sn" id="sAsc" style="color:var(--blue)">0</span><span class="sl">↑ only</span></div>
+  <div class="stat"><span class="sn" id="sDesc" style="color:var(--red)">0</span><span class="sl">↓ only</span></div>
+  <div class="stat"><span class="sn" id="sNone" style="color:var(--ink2)">0</span><span class="sl">Not found</span></div>
+  <div class="stat"><span class="sn" id="sTime" style="color:var(--gold)">0ms</span><span class="sl">Compute time</span></div>
+</div>
+
+<div class="results-wrap" id="wrap"><div class="msg">Set a range and click Generate.</div></div>
+
+<div class="dl-row">
+  <span class="dl-info" id="dlInfo"></span>
+  <button class="sec" id="dlBtn2" style="display:none">↓ Download .txt</button>
+  <button class="sec" id="xlsxBtn2" style="display:none">↓ Download Excel</button>
+</div>
+
+</div><!-- .page -->
+
+<footer>Inder J. Taneja · <a href="https://numbers-magic.com/" target="_blank">Numbers Magic</a> · <a href="https://inderjtaneja.wordpress.com/" target="_blank">WordPress</a> · <a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/" target="_blank">Mathematical Generators</a></footer>
+<script>
+// ═══════════════════════════════════════════════════════════════════
+//  FAST SOLVER — product-of-operators approach
+//  For each split of digits into tokens, we try all 4^(n-1) op
+//  combinations between tokens. No state-space search. O(4^n) per split.
+//  Grouped parens handled by a separate pre-grouping pass.
+//  Powers: only a^b where b is the immediately next token.
+// ═══════════════════════════════════════════════════════════════════
+
+const LIMIT = 10_000_000;
+const FAC = {0:1,1:1,2:2,3:6,4:24,5:120,6:720,7:5040,8:40320,9:362880,10:3628800};
+
+function isPerfectSquare(n) {
+  if (!Number.isInteger(n) || n < 4) return false;
+  const r = Math.round(Math.sqrt(n));
+  return r * r === n;
+}
+
+// All unary variants of a single token (sqrt / factorial chains)
+function unaryVariants(val, expr, useFact, useSqrt) {
+  const res = [{val, expr}];
+  const seen = new Set([val]);
+  let q = [{val, expr}];
+  while (q.length) {
+    const nq = [];
+    for (const {val:v, expr:e} of q) {
+      if (useSqrt && isPerfectSquare(v)) {
+        const sv = Math.round(Math.sqrt(v));
+        if (!seen.has(sv)) {
+          seen.add(sv);
+          const nw = {val:sv, expr:`√(${e})`};
+          res.push(nw); nq.push(nw);
+        }
+      }
+      if (useFact && Number.isInteger(v) && v >= 3 && v <= 10 && FAC[v] !== undefined) {
+        const fv = FAC[v];
+        if (!seen.has(fv) && fv <= LIMIT) {
+          seen.add(fv);
+          const nw = {val:fv, expr:`${e}!`};
+          res.push(nw); nq.push(nw);
+        }
+      }
+    }
+    q = nq;
+  }
+  return res;
+}
+
+// Generate all digit-string splits (concatenation partitions)
+function* genSplits(digitStr) {
+  const n = digitStr.length;
+  for (let mask = 0; mask < (1 << (n-1)); mask++) {
+    const tokens = [];
+    let cur = digitStr[0];
+    for (let i = 0; i < n-1; i++) {
+      if (mask & (1 << i)) { tokens.push(cur); cur = digitStr[i+1]; }
+      else cur += digitStr[i+1];
+    }
+    tokens.push(cur);
+    yield tokens;
+  }
+}
+
+// Apply all 4^(n-1) op combinations to a token list (left-to-right folding)
+// This is O(4^(n-1)) and very fast for n<=9
+function applyAllOps(nums, exprs, results, keep) {
+  const n = nums.length;
+  if (n === 1) {
+    store(results, nums[0], exprs[0], keep);
+    return;
+  }
+  // 4 ops: + - * /
+  const opCount = 4 ** (n-1);
+  for (let mask = 0; mask < opCount; mask++) {
+    if (stopRequested) return;
+    let val = nums[0], ex = exprs[0];
+    let m = mask, ok = true;
+    for (let i = 0; i < n-1; i++) {
+      const op = m % 4; m = Math.floor(m/4);
+      const b = nums[i+1], eb = exprs[i+1];
+      if      (op===0) { val = val+b; ex = `(${ex}+${eb})`; }
+      else if (op===1) { val = val-b; ex = `(${ex}-${eb})`; }
+      else if (op===2) { val = val*b; ex = `(${ex}×${eb})`; }
+      else {
+        if (b===0 || !Number.isInteger(val/b)) { ok=false; break; }
+        val = val/b; ex = `(${ex}÷${eb})`;
+      }
+      if (!Number.isInteger(val) || Math.abs(val) > LIMIT) { ok=false; break; }
+    }
+    if (ok && val > 0 && val <= LIMIT) store(results, val, ex, keep);
+  }
+}
+
+// Strict digit order: only a op b (never swap to b op a)
+function applyAllOpsSymm(nums, exprs, results, keep) {
+  applyAllOps(nums, exprs, results, keep);
+}
+
+function store(results, val, expr, keep) {
+  if (!Number.isInteger(val) || val <= 0 || val > LIMIT) return;
+  if (!results.has(val)) results.set(val, []);
+  const arr = results.get(val);
+  const cap = keep === 0 ? Infinity : keep;
+  const simplified = simplifyExpr(expr);
+  if (arr.length < cap && !arr.includes(simplified)) arr.push(simplified);
+}
+
+// ─── MAIN BUILD ──────────────────────────────────────────────────────────────
+
+function buildSide(digitStr, useFact, useSqrt, keep) {
+  const results = new Map();
+
+  for (const tokens of genSplits(digitStr)) {
+    if (stopRequested) break;
+    const nums = tokens.map(Number);
+    const exprs = tokens.slice();
+    const n = nums.length;
+
+    // 1. Plain ops between original tokens
+    applyAllOpsSymm(nums, exprs, results, keep);
+
+    // 2. Simple power: replace adjacent pair (nums[j], nums[j+1]) with nums[j]^nums[j+1]
+    //    Exponent must be the immediately NEXT token (nums[j+1]).
+    for (let j = 0; j < n-1; j++) {
+      const base = nums[j], exp = nums[j+1];
+      if (base > 0 && Number.isInteger(exp) && exp >= 1 && exp <= 9) {
+        const pv = base ** exp;
+        if (Number.isFinite(pv) && Number.isInteger(pv) && pv > 0 && pv <= LIMIT) {
+          const pe = `(${exprs[j]})^${exp}`;
+          const newNums = [...nums.slice(0,j), pv, ...nums.slice(j+2)];
+          const newExprs = [...exprs.slice(0,j), pe, ...exprs.slice(j+2)];
+          applyAllOpsSymm(newNums, newExprs, results, keep);
+        }
+      }
+    }
+
+    // 3. Grouped paren: (tokens[g0..g1]) combined with one op set, then:
+    //    a) used plain in remaining expression
+    //    b) raised to power of tokens[g1] (the immediately next token)
+    if (n >= 3) {
+      for (let g0 = 0; g0 < n; g0++) {
+        for (let g1 = g0+2; g1 <= n; g1++) {
+          const grp = nums.slice(g0, g1);
+          const grpE = exprs.slice(g0, g1);
+          const gs = grp.length;
+          // Try all ops within the group
+          const innerCount = 4 ** (gs-1);
+          for (let im = 0; im < innerCount; im++) {
+            let gv = grp[0], ge = grpE[0], ok = true, mm = im;
+            for (let k = 0; k < gs-1; k++) {
+              const op = mm%4; mm=Math.floor(mm/4);
+              const bv=grp[k+1], be=grpE[k+1];
+              if      (op===0){gv+=bv;ge=`${ge}+${be}`;}
+              else if (op===1){gv-=bv;ge=`${ge}-${be}`;}
+              else if (op===2){gv*=bv;ge=`${ge}×${be}`;}
+              else{if(bv===0||!Number.isInteger(gv/bv)){ok=false;break;}gv=gv/bv;ge=`${ge}÷${be}`;}
+              if(!Number.isInteger(gv)||Math.abs(gv)>LIMIT){ok=false;break;}
+            }
+            if (!ok) continue;
+            const parenEx = `(${ge})`;
+
+            // 3a. Grouped power: next token is the exponent
+            if (g1 < n) {
+              const et = nums[g1], ee2 = exprs[g1];
+              if (gv > 0 && Number.isInteger(et) && et >= 1 && et <= 9) {
+                const pv = gv ** et;
+                if (Number.isFinite(pv) && Number.isInteger(pv) && pv > 0 && pv <= LIMIT) {
+                  const powEx = `${parenEx}^${et}`;
+                  const newNums = [...nums.slice(0,g0), pv, ...nums.slice(g1+1)];
+                  const newExprs = [...exprs.slice(0,g0), powEx, ...exprs.slice(g1+1)];
+                  applyAllOpsSymm(newNums, newExprs, results, keep);
+                }
+              }
+            }
+
+            // 3b. Plain grouping: use gv as a single token in remaining expression
+            if (g1 < n || g0 > 0) { // must have something outside
+              const newNums = [...nums.slice(0,g0), gv, ...nums.slice(g1)];
+              const newExprs = [...exprs.slice(0,g0), parenEx, ...exprs.slice(g1)];
+              if (newNums.length < n) { // group must reduce token count
+                applyAllOpsSymm(newNums, newExprs, results, keep);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // 4. Unary substitutions: combine factorial/square-root variants across
+    // all tokens. Some valid representations need more than one unary change.
+    const walkUnary = (i, pickedNums, pickedExprs) => {
+      if (i === n) {
+        applyAllOpsSymm(pickedNums, pickedExprs, results, keep);
+        for (let j=0;j<n-1;j++) {
+          const base=pickedNums[j], exp=pickedNums[j+1];
+          if (base>0 && Number.isInteger(exp) && exp>=1 && exp<=9) {
+            const pv=base**exp;
+            if (Number.isFinite(pv) && Number.isInteger(pv) && pv<=LIMIT) {
+              const pnums=[...pickedNums.slice(0,j),pv,...pickedNums.slice(j+2)];
+              const pexprs=[...pickedExprs.slice(0,j),`(${pickedExprs[j]})^${exp}`,...pickedExprs.slice(j+2)];
+              applyAllOpsSymm(pnums,pexprs,results,keep);
+            }
+          }
+        }
+        return;
+      }
+      for (const u of unaryVariants(nums[i],exprs[i],useFact,useSqrt)) {
+        if (u.val<=LIMIT) walkUnary(i+1,[...pickedNums,u.val],[...pickedExprs,u.expr]);
+      }
+    };
+    walkUnary(0,[],[]);
+  }
+
+  return results;
+}
+
+// ─── EXPRESSION SIMPLIFIER (minimal parentheses) ────────────────────────────
+// Parses expression into AST, re-prints with only necessary parens.
+// Precedence: + - (1)  < × ÷ (2)  < ^ (3)  < unary/atom (4)
+// Rules:
+//   Left child needs parens  if its prec < parent prec
+//   Right child needs parens if its prec < parent prec
+//                            OR parent is - or ÷ and right prec == parent prec
+//   Outer parens on root are always removed
+
+const PREC = {'+':1,'-':1,'×':2,'÷':2,'^':3};
+
+function parseExpr(s) {
+  let pos = 0;
+
+  function peek() { return s[pos] || ''; }
+  function consume(c) {
+    if (c && s[pos] !== c) throw new Error(`Expected '${c}' at ${pos} in "${s}"`);
+    return s[pos++];
+  }
+
+  function parseAdditive() {
+    let left = parseMultiplicative();
+    while (peek()==='+' || peek()==='-') {
+      const op = consume();
+      left = {t:'bin', op, left, right: parseMultiplicative()};
+    }
+    return left;
+  }
+
+  function parseMultiplicative() {
+    let left = parsePower();
+    while (peek()==='×' || peek()==='÷') {
+      const op = consume();
+      left = {t:'bin', op, left, right: parsePower()};
+    }
+    return left;
+  }
+
+  function parsePower() {
+    let base = parsePostfix();
+    if (peek()==='^') { consume('^'); return {t:'bin', op:'^', left:base, right:parsePostfix()}; }
+    return base;
+  }
+
+  function parsePostfix() {
+    let node = parsePrimary();
+    while (peek()==='!') { consume('!'); node = {t:'post', op:'!', child:node}; }
+    return node;
+  }
+
+  function parsePrimary() {
+    if (peek()==='(') {
+      consume('(');
+      const node = parseAdditive();
+      consume(')');
+      let n = node;
+      while (peek()==='!') { consume('!'); n = {t:'post', op:'!', child:n}; }
+      return n;
+    }
+    if (s.startsWith('√', pos) || s.startsWith('sqrt', pos)) {
+      if (s.startsWith('sqrt', pos)) pos += 4; else pos++;
+      consume('(');
+      const inner = parseAdditive();
+      consume(')');
+      let n = {t:'pre', op:'√', child:inner};
+      while (peek()==='!') { consume('!'); n = {t:'post', op:'!', child:n}; }
+      return n;
+    }
+    let num = '';
+    while (/\d/.test(peek())) num += consume();
+    if (num) return {t:'num', val:num};
+    throw new Error(`Unexpected '${peek()}' at ${pos} in "${s}"`);
+  }
+
+  const ast = parseAdditive();
+  if (pos !== s.length) throw new Error(`Trailing chars at ${pos} in "${s}"`);
+  return ast;
+}
+
+function unparse(node, parentOp=null, isRight=false) {
+  if (node.t === 'num') return node.val;
+
+  if (node.t === 'pre') {
+    // √ always wraps its argument
+    return `√(${unparse(node.child)})`;
+  }
+
+  if (node.t === 'post') {
+    // ! — wrap child in parens only if it's a binary op
+    const inner = node.child.t === 'bin'
+      ? `(${unparse(node.child)})`
+      : unparse(node.child);
+    return `${inner}!`;
+  }
+
+  if (node.t === 'bin') {
+    const {op, left, right} = node;
+    const p = PREC[op];
+
+    // Render children, then decide wrapping
+    let lStr = unparse(left,  op, false);
+    let rStr = unparse(right, op, true);
+
+    if (left.t === 'bin') {
+      if (PREC[left.op] < p) lStr = `(${unparse(left)})`;
+    }
+    if (right.t === 'bin') {
+      const rp = PREC[right.op];
+      const needsParens = rp < p || ((op==='-'||op==='÷') && rp===p);
+      if (needsParens) rStr = `(${unparse(right)})`;
+    }
+
+    return `${lStr}${op}${rStr}`;
+  }
+  return '';
+}
+
+function simplifyExpr(expr) {
+  try {
+    const ast = parseExpr(expr);
+    return unparse(ast);
+  } catch(e) {
+    return expr; // fallback: return original on parse error
+  }
+}
+
+// ─── EXPRESSION FORMATTER ────────────────────────────────────────────────────
+
+function fmtExpr(expr) {
+  let r='', i=0;
+  while (i < expr.length) {
+    const c = expr[i];
+    if (c==='^') {
+      let exp=''; i++;
+      while (i<expr.length && /\d/.test(expr[i])) { exp+=expr[i]; i++; }
+      r += `<sup>${exp}</sup>`;
+    } else if ('+-×÷'.includes(c)) {
+      r += `<span class="op">${c}</span>`; i++;
+    } else { r+=c; i++; }
+  }
+  return r;
+}
+
+// ─── UI STATE ────────────────────────────────────────────────────────────────
+
+const ops  = {basic:true, fact:true, sqrt:true};
+const sides = {asc:true, desc:true, desc0:false};
+
+function tog(op) {
+  ops[op]=!ops[op];
+  const el=document.getElementById(`t-${op}`);
+  const cls = op==='fact'?'toggle on fact':op==='sqrt'?'toggle on sqrt2':'toggle on';
+  el.className = ops[op] ? cls : 'toggle';
+}
+function togSide(s) {
+  sides[s]=!sides[s];
+  document.getElementById(`t-${s}`).className='toggle'+(sides[s]?' on':'');
+}
+
+// ─── SEARCH ──────────────────────────────────────────────────────────────────
+
+let lastLines=[],lastRows=[],stopRequested=false;
+const stopBtn=document.getElementById('stopBtn');
+stopBtn.addEventListener('click',()=>{stopRequested=true;document.getElementById('statusMsg').textContent='Stopping after the current calculation step…';});
+
+document.getElementById('searchBtn').addEventListener('click', async () => {
+  const from = parseInt(document.getElementById('from').value);
+  const to   = parseInt(document.getElementById('to').value);
+  const keepRaw = parseInt(document.getElementById('keep').value);
+  const keep = keepRaw === 0 ? 999 : keepRaw;
+  const useFact = ops.fact, useSqrt = ops.sqrt;
+  const showAsc = sides.asc, showDesc = sides.desc, showDesc0 = sides.desc0;
+  stopRequested=false;stopBtn.disabled=false;
+
+  if (isNaN(from)||isNaN(to)||from<1||to<from) {
+    document.getElementById('statusMsg').textContent='⚠ Invalid range'; return;
+  }
+  if (!showAsc && !showDesc && !showDesc0) {
+    document.getElementById('statusMsg').textContent='⚠ Select at least one side'; return;
+  }
+
+  const wrap=document.getElementById('wrap');
+  const prog=document.getElementById('prog');
+  const fill=document.getElementById('fill');
+  const status=document.getElementById('statusMsg');
+  const statsRow=document.getElementById('statsRow');
+
+  wrap.innerHTML='<div class="msg">Computing…</div>';
+  prog.style.display='block'; fill.style.width='5%';
+  status.textContent=''; statsRow.style.display='none';
+  document.getElementById('dlBtn2').style.display='none';
+  document.getElementById('dlInfo').textContent='';
+  lastLines=[];
+  lastRows=[];
+
+  // Yield to browser to render "Computing…"
+  await new Promise(r=>setTimeout(r,20));
+
+  const t0 = performance.now();
+
+  let fwdMap=new Map(), revMap=new Map(), rev0Map=new Map();
+
+  if (showAsc) {
+    fill.style.width='20%';
+    fwdMap = buildSide('123456789', useFact, useSqrt, keep);
+  }
+  if (stopRequested) { stopBtn.disabled=true; prog.style.display='none'; status.textContent='Stopped. Press Generate to restart.'; return; }
+  fill.style.width='50%';
+  await new Promise(r=>setTimeout(r,10));
+
+  if (showDesc) {
+    fill.style.width='55%';
+    revMap = buildSide('987654321', useFact, useSqrt, keep);
+  }
+  if (stopRequested) { stopBtn.disabled=true; prog.style.display='none'; status.textContent='Stopped. Press Generate to restart.'; return; }
+  if (showDesc0) {
+    fill.style.width='68%';
+    rev0Map = buildSide('9876543210', useFact, useSqrt, keep);
+  }
+  if (stopRequested) { stopBtn.disabled=true; prog.style.display='none'; status.textContent='Stopped. Press Generate to restart.'; return; }
+  fill.style.width='85%';
+  await new Promise(r=>setTimeout(r,10));
+
+  const elapsed = Math.round(performance.now()-t0);
+
+  // Render results for requested range
+  const rows=[];
+  const ascLines=[], descLines=[], desc0Lines=[];   // separate sections for download
+  let cntBoth=0,cntAsc=0,cntDesc=0,cntDesc0=0,cntNone=0;
+
+  for (let v=from; v<=to; v++) {
+    const hasFwd=fwdMap.has(v), hasRev=revMap.has(v);
+    const hasRev0=rev0Map.has(v);
+    const fExprs=hasFwd?fwdMap.get(v):[];
+    const rExprs=hasRev?revMap.get(v):[];
+    const zExprs=hasRev0?rev0Map.get(v):[];
+
+    let badge='',bCls='';
+    if(hasFwd&&hasRev){badge='both';bCls='bb';cntBoth++;}
+    else if(hasFwd){badge='↑ only';bCls='ba';cntAsc++;}
+    else if(hasRev){badge='↓ only';bCls='bd';cntDesc++;}
+    else if(hasRev0){badge='↓0 only';bCls='bd';cntDesc0++;}
+    else{cntNone++;}
+
+    const fCell = fExprs.length
+      ? fExprs.map(e=>`<div class="rexpr">${fmtExpr(e)}</div>`).join('')
+      : `<div class="rexpr none">— not found —</div>`;
+    const rCell = rExprs.length
+      ? rExprs.map(e=>`<div class="rexpr d">${fmtExpr(e)}</div>`).join('')
+      : `<div class="rexpr none">— not found —</div>`;
+    const zCell = zExprs.length
+      ? zExprs.map(e=>`<div class="rexpr d">${fmtExpr(e)}</div>`).join('')
+      : `<div class="rexpr none">— not found —</div>`;
+
+    rows.push(`<div class="rrow" style="animation-delay:${Math.min(rows.length*2,200)}ms">
+      <div class="rval">${v}<span class="rbadge ${bCls}">${badge}</span></div>
+      <div>${fCell}</div><div>${rCell}</div><div>${zCell}</div>
+    </div>`);
+    lastRows.push({value:v,ascending:fExprs.slice(),descending:rExprs.slice(),descending0:zExprs.slice()});
+
+    // Ascending section
+    if (fExprs.length) fExprs.forEach(e => ascLines.push(`k ${v} = ${e};`));
+    else if (showAsc)  ascLines.push(`k ${v} = (not found);`);
+
+    // Descending section
+    if (rExprs.length) rExprs.forEach(e => descLines.push(`k ${v} = ${e};`));
+    else if (showDesc) descLines.push(`k ${v} = (not found);`);
+    if (zExprs.length) zExprs.forEach(e => desc0Lines.push(`k ${v} = ${e};`));
+    else if (showDesc0) desc0Lines.push(`k ${v} = (not found);`);
+  }
+
+  // Build download content: ascending block first, then descending block
+  const dlParts = [];
+  if (showAsc && ascLines.length) {
+    dlParts.push('='.repeat(40));
+    dlParts.push('  Ascending  1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9');
+    dlParts.push('='.repeat(40));
+    dlParts.push(...ascLines);
+  }
+  if (showAsc && showDesc && ascLines.length && descLines.length) {
+    dlParts.push('');  // blank line between sections
+  }
+  if (showDesc && descLines.length) {
+    dlParts.push('='.repeat(40));
+    dlParts.push('  Descending  9 → 8 → 7 → 6 → 5 → 4 → 3 → 2 → 1');
+    dlParts.push('='.repeat(40));
+    dlParts.push(...descLines);
+  }
+  if (showDesc0 && desc0Lines.length) {
+    dlParts.push('='.repeat(40));
+    dlParts.push('  Descending  9 → 8 → 7 → 6 → 5 → 4 → 3 → 2 → 1 → 0');
+    dlParts.push('='.repeat(40));
+    dlParts.push(...desc0Lines);
+  }
+
+  lastLines = dlParts;
+  const found=cntBoth+cntAsc+cntDesc+cntDesc0;
+
+  wrap.innerHTML=`
+    <div class="results-header">
+      <div>Value</div><div>↑ Ascending 1→9</div><div>↓ Descending 9→1</div><div>↓ Descending 9→0</div>
+    </div>${rows.join('')}`;
+
+  document.getElementById('sTotal').textContent=found.toLocaleString();
+  document.getElementById('sBoth').textContent=cntBoth.toLocaleString();
+  document.getElementById('sAsc').textContent=cntAsc.toLocaleString();
+  document.getElementById('sDesc').textContent=cntDesc.toLocaleString();
+  document.getElementById('sNone').textContent=cntNone.toLocaleString();
+  document.getElementById('sTime').textContent=
+    elapsed<1000?`${elapsed}ms`:`${(elapsed/1000).toFixed(1)}s`;
+  statsRow.style.display='flex';
+  fill.style.width='100%';
+  status.textContent=`Done — ${(to-from+1).toLocaleString()} values checked.`;
+  stopBtn.disabled=true;
+  document.getElementById('dlInfo').textContent=`${ascLines.length + descLines.length + desc0Lines.length} expressions ready`;
+  document.getElementById('dlBtn2').style.display='';
+  document.getElementById('xlsxBtn2').style.display='';
+  setTimeout(()=>{prog.style.display='none';fill.style.width='0%';},500);
+});
+
+function doDownload() {
+  if (!lastLines.length) return;
+  const blob=new Blob([lastLines.join('\n')],{type:'text/plain'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='expressions.txt';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+async function doExcel(){
+  if(!lastRows.length)return;
+  if(typeof ExcelJS==='undefined'){alert('Excel support is unavailable.');return;}
+  const wb=new ExcelJS.Workbook(),ws=wb.addWorksheet('Representations');
+  ws.addRow(['Crazy Representations of Natural Numbers: 1→9 and 9→1 Generator']);
+  ws.addRow(['Created by Inder J. Taneja']);
+  ws.addRow(['Natural number','Ascending 1→9','Descending 9→1','Descending 9→0']);
+  lastRows.forEach(x=>ws.addRow([x.value,x.ascending.join(' | ')||'not found',x.descending.join(' | ')||'not found',x.descending0.join(' | ')||'not found']));
+  ws.getRow(1).font={bold:true,size:14,color:{argb:'FF0B3D91'}};ws.getRow(2).font={italic:true,color:{argb:'FF38536B'}};ws.getRow(3).font={bold:true,color:{argb:'FFFFFFFF'}};ws.getRow(3).fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF0B3D91'}};
+  ws.getColumn(1).width=18;ws.getColumn(2).width=55;ws.getColumn(3).width=55;ws.getColumn(4).width=55;
+  const blob=new Blob([await wb.xlsx.writeBuffer()],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='crazy-representations.xlsx';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+}
+document.getElementById('dlBtn').addEventListener('click',doDownload);
+document.getElementById('dlBtn2').addEventListener('click',doDownload);
+document.getElementById('xlsxBtn').addEventListener('click',doExcel);
+document.getElementById('xlsxBtn2').addEventListener('click',doExcel);
+document.addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('searchBtn').click();});
+</script>
+</body>
+</html>

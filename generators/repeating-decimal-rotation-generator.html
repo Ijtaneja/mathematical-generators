@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Repeating Decimals and Digit Rotation Families Generator — Inder J. Taneja</title>
+<meta name="description" content="An interactive generator by Inder J. Taneja for repeating decimal blocks, colored digit rotations, and multiplication families, including the two families for 1/13.">
+<style>
+:root{color-scheme:dark;--bg:#080f24;--panel:#14233b;--edge:#b99cf3;--cyan:#73d5de;--muted:#b9c9e1;--gold:#f7da7c}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#1c2543,var(--bg) 65%);color:#fff;font:16px/1.5 system-ui,sans-serif;padding:clamp(14px,3vw,45px)}
+.frame{max-width:1500px;margin:auto;border:3px solid var(--edge);border-radius:27px;padding:clamp(16px,3vw,34px);outline:1px solid var(--cyan);outline-offset:-10px;box-shadow:0 0 35px #a080ee18}
+header{text-align:center;padding:28px 24px}.card{position:relative;background:linear-gradient(135deg,#19263e,#111c32);border:1px solid #526481;border-left:6px solid var(--strip);border-radius:18px;box-shadow:0 12px 28px #0002;margin-bottom:24px}.title-card{--strip:#c8a0ff}.examples-card{--strip:#73d5de;padding:22px 26px}.examples-card h2{margin:0;color:var(--cyan);font-size:22px}.examples-card p{margin:7px 0 16px;color:var(--muted)}.workspace-card{--strip:#f7da7c;padding:clamp(14px,2vw,26px)}.workspace-card>.section-title:first-child{margin-top:0}h1{font-size:clamp(25px,3vw,42px);margin:0 0 6px;color:#d1b9ff}header p{margin:4px;color:var(--muted)}
+.eyebrow{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--cyan)!important;margin-bottom:12px!important}.intro{max-width:940px;margin:15px auto 0!important}.guide{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:15px;margin:0 0 24px}.guide article{background:linear-gradient(135deg,#192a43,#172039);border:1px solid #64738f;border-left:4px solid var(--accent);border-radius:13px;padding:17px}.guide h2{font-size:18px;color:var(--accent);margin:0 0 7px}.guide p{font-size:14px;margin:0;color:var(--muted)}.section-title{text-align:center;font-size:21px;color:#d1b9ff;margin:25px 0 12px}.help{margin:10px auto 0;text-align:center;color:var(--muted);font-size:14px}.notes details{border:1px solid #536584;border-radius:13px;padding:15px 18px;background:#121e34}.notes summary{cursor:pointer;font-weight:600;color:var(--cyan)}.notes details p{margin:12px 0 0}.examples{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;margin:15px 0 0}.examples button{border:1px solid #64738f;border-radius:12px;padding:9px 20px;font-size:18px;color:#cfdbef}.examples button[aria-pressed="true"]{background:#164754;border-color:var(--cyan);color:#fff}.examples{justify-content:flex-start}
+.controls{display:flex;gap:14px;align-items:end;justify-content:center;flex-wrap:wrap;background:var(--panel);border:1px solid #536584;border-radius:16px;padding:20px}label{display:grid;gap:6px;font-size:14px;color:var(--muted)}select,input,button{font:inherit;color:white;background:#243655;border:1px solid #7282a5;border-radius:9px;padding:10px 14px}input[type=number]{width:115px}button{cursor:pointer;font-weight:600}button:hover{background:#354c75}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--gold);outline-offset:3px}button.primary{background:#534681;border-color:#b99cf3}button:disabled{opacity:.45;cursor:default}.error{color:#ffadaf;text-align:center;min-height:24px;margin:10px 0}
+.summary{text-align:center;padding:20px 0}.fraction{font-size:clamp(22px,2.5vw,35px);overflow-wrap:anywhere}.repeat{text-decoration:overline;text-decoration-thickness:1px;font-family:ui-monospace,monospace}.meta{color:var(--gold);margin:10px 0}.stage{border:2px solid var(--cyan);border-radius:19px;padding:20px;text-align:center;background:linear-gradient(120deg,#182c43,#161d37)}#equation{font-size:clamp(17px,2vw,27px);overflow-wrap:anywhere;color:var(--muted)}.digits{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;white-space:nowrap;letter-spacing:.03em}.hero{display:flex;justify-content:safe center;overflow-x:auto;padding:12px 0;font-size:clamp(27px,4vw,62px)}.digit{display:inline-block}.hero.animate .digit{animation:arrive .55s ease both;animation-delay:calc(var(--i)*12ms)}@keyframes arrive{from{opacity:.2;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}#rotation{color:var(--muted)}.progress{height:5px;background:#334263;border-radius:6px;margin-top:15px;overflow:hidden}.progress i{display:block;height:100%;background:linear-gradient(90deg,var(--cyan),var(--edge));width:0;transition:width .2s}
+.families{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,430px),1fr));gap:22px;margin-top:24px}.family{border:2px solid var(--family);border-radius:18px;background:#101d33;overflow:hidden}.family h2{font-size:22px;margin:0;padding:14px;text-align:center;background:#24314b;color:var(--family)}.seed{color:var(--muted);text-align:center;padding:12px;overflow-wrap:anywhere}.rows{max-height:550px;overflow:auto;padding:8px 12px 15px}.product{display:flex;align-items:center;gap:12px;padding:9px 12px;margin:4px 0;border:1px solid transparent;border-radius:8px;font-size:clamp(16px,1.6vw,23px);cursor:pointer}.product .mult{min-width:75px;color:#d0dbef}.product .digits{overflow:auto;padding-bottom:3px}.product.active{background:#2b405f;border-color:var(--family)}.product:hover{background:#20314b}.checks{border:1px solid #596d8d;border-radius:14px;padding:17px;text-align:center;margin-top:24px;color:var(--gold);overflow-wrap:anywhere}.notes{color:var(--muted);margin:22px 0;font-size:15px}.downloads{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}footer{text-align:center;border-top:1px solid #596d8d;padding-top:22px;margin-top:28px;color:var(--muted)}footer a{color:#a4cdff;overflow-wrap:anywhere}footer p{margin:7px}.links{display:flex;justify-content:center;gap:8px 22px;flex-wrap:wrap}
+@media(prefers-reduced-motion:reduce){.hero.animate .digit{animation:none}.progress i{transition:none}}
+
+/* Independent cards without an enclosing page border */
+.frame{border:0;outline:none;border-radius:0;padding:0;box-shadow:none;max-width:1400px}
+.card{margin-bottom:28px;box-shadow:0 8px 22px #0002}
+.guide{margin:0 0 28px;gap:18px}
+footer{background:linear-gradient(135deg,#19263e,#111c32);border:1px solid #526481;border-left:6px solid #c8a0ff;border-radius:18px;padding:24px;margin-top:28px;box-shadow:0 8px 22px #0002}
+
+/* Golden page contrasts with independent blue and plum cards */
+body{background:linear-gradient(135deg,#fff3d6 0%,#f3dfae 55%,#ebd29a 100%);background-attachment:fixed}
+.title-card{background:linear-gradient(125deg,#302343,#1d2945);border-color:#67547f;--strip:#d1adff}
+.examples-card{background:linear-gradient(125deg,#153e4c,#192d46);border-color:#467b87;--strip:#7ee6dc}
+.guide article{background:linear-gradient(135deg,#263653,#192740);border-color:#5e7396}
+.workspace-card{background:linear-gradient(135deg,#172943,#111f36);border-color:#49617f;--strip:#f5cd70}
+footer{background:linear-gradient(125deg,#302343,#1d2945);border-color:#67547f}
+.card{box-shadow:0 9px 24px #42301426}
+
+/* Uniform golden side strips */
+.card{--strip:#f5cf72;border-left-color:#f5cf72}
+.guide article,footer{border-left-color:#f5cf72}
+</style>
+</head>
+<body><main class="frame">
+<header class="card title-card"><p class="eyebrow">Recreational Mathematics · Interactive Animation</p><h1>Repeating Decimals and<br>Digit Rotation Families Generator</h1><p>Created by Inder J. Taneja</p><p class="intro">Discover how the repeating digits of a fraction form cyclic patterns under multiplication. Generate the repeating block of 1/n, watch its products animate, and compare the families of rotations side by side.</p></header>
+<section class="card examples-card" aria-labelledby="examples-title"><h2 id="examples-title">Featured examples</h2><p>Select from 15 fractions to explore short and long repeating blocks. Compare one-family examples such as 1/7 and 1/17, two families for 1/13, three for 1/31, or several shorter families for 1/37 and 1/41.</p><div class="examples" aria-label="Choose a featured fraction"><button type="button" data-example="7" aria-pressed="false">1/7</button><button type="button" data-example="11" aria-pressed="false">1/11</button><button type="button" data-example="13" aria-pressed="false">1/13</button><button type="button" data-example="17" aria-pressed="false">1/17</button><button type="button" data-example="19" aria-pressed="false">1/19</button><button type="button" data-example="23" aria-pressed="false">1/23</button><button type="button" data-example="29" aria-pressed="false">1/29</button><button type="button" data-example="31" aria-pressed="false">1/31</button><button type="button" data-example="37" aria-pressed="false">1/37</button><button type="button" data-example="41" aria-pressed="false">1/41</button><button type="button" data-example="43" aria-pressed="false">1/43</button><button type="button" data-example="47" aria-pressed="false">1/47</button><button type="button" data-example="59" aria-pressed="false">1/59</button><button type="button" data-example="61" aria-pressed="false">1/61</button><button type="button" data-example="97" aria-pressed="false">1/97</button></div></section>
+<section class="guide" aria-label="What to explore"><article style="--accent:#73d5de"><h2>Repeating decimal blocks</h2><p>The bar above the digits means that the block repeats indefinitely. Leading zeros remain part of the block.</p></article><article style="--accent:#c8a0ff"><h2>Multiplication and rotation</h2><p>Colored positions help you follow the cyclic shifts. Watch the automatic animation, pause it, step through the products, or select a result directly.</p></article><article style="--accent:#ed8caf"><h2>Two families for 1/13</h2><p>Compare the six rotations of 076923 with the six rotations of 153846. Other denominators may produce one or several families.</p></article></section>
+<section class="card workspace-card" aria-labelledby="generator-title"><h2 class="section-title" id="generator-title">Choose a fraction and animate its products</h2>
+<div class="controls">
+<label>Featured fraction<select id="example"><option value="7">1/7</option><option value="11">1/11</option><option value="13">1/13</option><option value="17">1/17</option><option value="19">1/19</option><option value="23">1/23</option><option value="29">1/29</option><option value="31">1/31</option><option value="37">1/37</option><option value="41">1/41</option><option value="43">1/43</option><option value="47">1/47</option><option value="59">1/59</option><option value="61">1/61</option><option value="97">1/97</option><option value="custom">Custom denominator</option></select></label>
+<label>Denominator<input id="denominator" type="number" min="3" max="199" value="7"></label>
+<button id="generate" class="primary">Generate</button>
+<label>Seconds per step<select id="speed"><option value="500">0.5</option><option value="1000">1</option><option value="1500" selected>1.5</option><option value="2500">2.5</option><option value="4000">4</option></select></label>
+<button id="play" class="primary">❚❚ Pause</button><button id="stop">■ Stop</button><button id="previous" aria-label="Previous multiplier">← Previous</button><button id="next">Next →</button><button id="reset">Reset</button>
+<label>Animation order<select id="order"><option value="multiplier">By multiplier</option><option value="rotation">By family and rotation</option></select></label>
+</div>
+<p class="help">Choose an example or enter a denominator from 3 to 199, excluding multiples of 2 or 5. The animation starts automatically when you select or generate a fraction. Use Pause/Resume to hold a product, or Stop to return to the first product. Family panels are arranged by rotation.</p>
+<p class="error" id="error" role="alert"></p>
+<section class="summary"><div class="fraction" id="fraction"></div><div class="meta" id="meta"></div></section>
+<section class="stage" aria-label="Animated multiplication"><div id="equation"></div><div class="digits hero" id="hero"></div><div id="rotation" aria-live="polite"></div><div class="progress"><i id="progress"></i></div></section>
+<h2 class="section-title">Compare the rotation families</h2>
+<section class="families" id="families" aria-label="Rotation families"></section>
+<div class="checks" id="checks"></div>
+<div class="notes"><details><summary>Understanding the mathematics and the colors</summary><p>Within each family, colors follow positions in its seed block. Repeated occurrences of the same digit can therefore have different colors. Every displayed multiplier applies to the original repeating block of 1/n, including the products in other families.</p><p>A rotation moves digits from one end of the block to the other without changing their cyclic order. The repeating blocks of k/n fall into families under these shifts. When k and n have a common factor, a shorter block may repeat inside the displayed block.</p><p>If B is the integer represented by the repeating block and L is its length, then n × B = 10<sup>L</sup> − 1: a number consisting of L nines. This identity is displayed below the family panels.</p><p>The CSV download retains leading zeros through text formulas when opened in Excel. The TXT download lists the complete products and their families.</p></details></div>
+<div class="downloads"><button id="download">Download all products (TXT)</button><button id="csv">Download all products (CSV)</button></div>
+</section>
+<footer><p>Created by Inder J. Taneja</p><div class="links"><a href="https://numbers-magic.com/" target="_blank" rel="noopener">Numbers-Magic</a><a href="https://inderjtaneja.wordpress.com/" target="_blank" rel="noopener">WordPress</a><a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/" target="_blank" rel="noopener">Mathematical Generators</a></div><section aria-labelledby="references-title" style="margin-top:24px;padding-top:18px;border-top:1px solid #596d8d"><h2 id="references-title" style="font-size:19px;color:var(--cyan);margin:0 0 12px">References</h2><div class="links"><a href="https://en.wikipedia.org/wiki/Cyclic_number" target="_blank" rel="noopener">Cyclic Number — Wikipedia</a><a href="https://mathworld.wolfram.com/FullReptendPrime.html" target="_blank" rel="noopener">Full Reptend Prime — Wolfram MathWorld</a></div></section></footer>
+</main>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);let model=null,sequence=[],position=0,timer=null;
+const accents=['#c8a0ff','#ed8caf','#7be0df','#f7da7c','#82baff','#8be6b2'];
+const rotate=(s,k)=>s.slice(k)+s.slice(0,k);
+function compute(n){
+ if(!Number.isInteger(n)||n<3||n>199)throw Error('Choose an integer denominator from 3 to 199.');
+ if(n%2===0||n%5===0)throw Error('Choose a denominator coprime to 10 (not divisible by 2 or 5).');
+ let remainder=1,base='';do{remainder*=10;base+=Math.floor(remainder/n);remainder%=n;}while(remainder!==1);
+ const original=BigInt(base),families=[],items=[];
+ for(let k=1;k<n;k++){
+  const text=(original*BigInt(k)).toString().padStart(base.length,'0');let family=-1,shift=0;
+  for(let j=0;j<families.length;j++){const at=(families[j].seed+families[j].seed).indexOf(text);if(at>=0&&at<base.length){family=j;shift=at;break;}}
+  if(family<0){family=families.length;families.push({seed:text,k,members:[]});}
+  const item={k,text,family,shift};families[family].members.push(item);items.push(item);
+ }
+ if(original*BigInt(n)!==10n**BigInt(base.length)-1n)throw Error('Repeating-block verification failed.');
+ return{n,base,families,items};
+}
+function digitNodes(text,shift){
+ const f=document.createDocumentFragment();[...text].forEach((c,i)=>{const s=document.createElement('span');s.className='digit';s.textContent=c;s.style.color=`hsl(${((i+shift)%text.length)*360/text.length} 90% 72%)`;s.style.setProperty('--i',i);f.append(s);});return f;
+}
+function pause(){if(timer!==null)clearInterval(timer);timer=null;$('play').textContent='▶ Resume';}
+function buildSequence(){sequence=$('order').value==='multiplier'?model.items.slice():model.families.flatMap(f=>f.members.slice().sort((a,b)=>a.shift-b.shift||a.k-b.k));position=0;}
+function renderFamilies(){
+ const root=$('families');root.replaceChildren();
+ model.families.forEach((family,j)=>{
+  const panel=document.createElement('article');panel.className='family';panel.style.setProperty('--family',accents[j%accents.length]);
+  const h=document.createElement('h2');h.textContent=`Family ${j+1} · ${family.members.length} ${family.members.length===1?'rotation':'rotations'}`;panel.append(h);
+  const seed=document.createElement('div');seed.className='seed';seed.append(`${family.k}/${model.n} = 0.`);const s=document.createElement('span');s.className='repeat';s.textContent=family.seed;seed.append(s);panel.append(seed);
+  const rows=document.createElement('div');rows.className='rows';
+  family.members.slice().sort((a,b)=>a.shift-b.shift||a.k-b.k).forEach(item=>{
+   const row=document.createElement('div');row.className='product';row.dataset.k=item.k;row.tabIndex=0;row.setAttribute('role','button');row.setAttribute('aria-label',`Show multiplier ${item.k}`);
+   const mult=document.createElement('span');mult.className='mult';mult.textContent=`× ${item.k} =`;row.append(mult);
+   const digits=document.createElement('span');digits.className='digits';digits.append(digitNodes(item.text,item.shift));row.append(digits);
+   const choose=()=>{pause();position=sequence.findIndex(v=>v.k===item.k);show();};row.onclick=choose;row.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();choose();}};rows.append(row);
+  });panel.append(rows);root.append(panel);
+ });
+}
+function show(){
+ const item=sequence[position];$('equation').textContent=`${model.base} × ${item.k} =`;
+ const hero=$('hero');hero.classList.remove('animate');hero.replaceChildren(digitNodes(item.text,item.shift));void hero.offsetWidth;hero.classList.add('animate');
+ $('rotation').textContent=`Family ${item.family+1} · Left rotation by ${item.shift} ${item.shift===1?'place':'places'} · Step ${position+1} of ${sequence.length}`;
+ $('progress').style.width=`${100*(position+1)/sequence.length}%`;
+ document.querySelectorAll('.product').forEach(row=>{row.classList.toggle('active',Number(row.dataset.k)===item.k);row.setAttribute('aria-pressed',String(Number(row.dataset.k)===item.k));});
+}
+function generate(){
+ pause();$('error').textContent='';try{const next=compute(Number($('denominator').value));model=next;buildSequence();document.querySelectorAll("[data-example]").forEach(button=>button.setAttribute("aria-pressed",String(Number(button.dataset.example)===model.n)));
+ $('fraction').replaceChildren(`1/${model.n} = 0.`);const r=document.createElement('span');r.className='repeat';r.textContent=model.base;$('fraction').append(r);
+ $('meta').textContent=`${model.base.length} repeating digits · ${model.families.length} rotation ${model.families.length===1?'family':'families'} · ${model.items.length} products`;
+ $('checks').textContent=`${model.base} × ${model.n} = ${'9'.repeat(model.base.length)}`;renderFamilies();show();play();
+ }catch(e){$('error').textContent=e.message;}
+}
+function play(){if(!model)return;if(timer!==null){pause();return;}$('play').textContent='❚❚ Pause';timer=setInterval(()=>{position=(position+1)%sequence.length;show();},Number($('speed').value));}
+$('example').onchange=()=>{if($('example').value!=='custom'){$('denominator').value=$('example').value;generate();}};
+document.querySelectorAll('[data-example]').forEach(button=>button.onclick=()=>{$('example').value=button.dataset.example;$('denominator').value=button.dataset.example;generate();});
+$('denominator').oninput=()=>{$('example').value='custom';};$('denominator').onkeydown=e=>{if(e.key==='Enter')generate();};$('generate').onclick=generate;$('play').onclick=play;$('stop').onclick=()=>{pause();position=0;show();$('play').textContent='▶ Start';};
+$('previous').onclick=()=>{pause();position=(position-1+sequence.length)%sequence.length;show();};$('next').onclick=()=>{pause();position=(position+1)%sequence.length;show();};$('reset').onclick=()=>{pause();position=0;show();};
+$('order').onchange=()=>{pause();buildSequence();show();};$('speed').onchange=()=>{if(timer!==null){pause();play();}};
+function download(csv){
+ if(!model)return;pause();let text;
+ if(csv){text='Denominator,Multiplier,Base block,Product block,Family,Left rotation\r\n'+model.items.map(v=>[model.n,v.k,'="'+model.base+'"','="'+v.text+'"',v.family+1,v.shift].join(',')).join('\r\n');}
+ else{text=`Repeating Decimals and Digit Rotations\nCreated by Inder J. Taneja\n1/${model.n} = 0.(${model.base}) repeating\n\n`+model.items.map(v=>`${model.base} x ${v.k} = ${v.text} | Family ${v.family+1} | Left rotation ${v.shift}`).join('\n')+`\n\n${model.base} x ${model.n} = ${'9'.repeat(model.base.length)}\n`;}
+ const url=URL.createObjectURL(new Blob([text],{type:csv?'text/csv;charset=utf-8':'text/plain;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download=`Repeating-Decimal-${model.n}.${csv?'csv':'txt'}`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+$('download').onclick=()=>download(false);$('csv').onclick=()=>download(true);generate();
+</script></body></html>

@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Digit Power Sum — Number Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f5f7f8;
+  --ink: #203047;
+  --muted: #6c7b89;
+  --border: #d4dee5;
+  --accent: #b85f4a;
+  --accent2: #287c7c;
+  --gold: #b88a3b;
+  --surface: #ffffff;
+  --surface2: #eaf1f3;
+  --radius: 6px;
+  --mono: 'Space Mono', monospace;
+  --serif: 'Crimson Pro', Georgia, serif;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--serif);
+  min-height: 100vh;
+  padding: 3rem 1.5rem 5rem;
+}
+
+/* paper texture overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+
+.wrap {
+  position: relative;
+  z-index: 1;
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+/* ── header ── */
+header {
+  border: 1px solid #c2d3da;
+  border-bottom: 3px solid #31596c;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #d9e5e9 0%, #eef0ed 54%, #f1e5dc 100%);
+  padding: 1.35rem 1.5rem 1.5rem;
+  margin-bottom: 2.5rem;
+  position: relative;
+  box-shadow: 0 8px 24px rgba(32, 48, 71, 0.08);
+}
+
+.issue-line {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid #9fb9c4;
+  border-radius: 999px;
+  background: linear-gradient(100deg, #c8dde2 0%, #e8d9cf 100%);
+}
+
+.issue-line span:first-child { color: var(--accent2); font-weight: 700; }
+.issue-line span:last-child { color: var(--accent); letter-spacing: 0.08em; white-space: nowrap; }
+
+h1 {
+  font-family: var(--serif);
+  font-size: clamp(2.4rem, 6vw, 4.2rem);
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: #142b43;
+  text-wrap: balance;
+}
+
+h1 em {
+  font-style: italic;
+  color: var(--accent);
+}
+
+.tagline {
+  margin-top: 0.5rem;
+  font-size: 1rem;
+  color: var(--muted);
+  font-style: italic;
+  padding-left: 0.8rem;
+  border-left: 2px solid var(--accent);
+}
+
+.creator-line {
+  margin-top: 0.65rem;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  color: var(--accent2);
+  display: inline-block;
+  padding: 0.35rem 0.7rem;
+  border-left: 3px solid var(--gold);
+  background: linear-gradient(90deg, #f4ead7, transparent);
+}
+
+/* ── controls ── */
+.controls-band {
+  background: linear-gradient(135deg, #5f7d8c 0%, #718b96 100%);
+  color: var(--bg);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.25rem 2rem;
+  align-items: end;
+}
+
+.ctrl-group label {
+  display: block;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #edf3f5;
+  margin-bottom: 6px;
+}
+
+.ctrl-group input[type="number"],
+.ctrl-group select {
+  width: 100%;
+  background: #edf3f4;
+  border: 1px solid #c8d7dc;
+  border-radius: 4px;
+  color: #294457;
+  font-family: var(--mono);
+  font-size: 13px;
+  padding: 8px 12px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.ctrl-group input:focus,
+.ctrl-group select:focus { border-color: var(--accent); }
+.ctrl-group select option { background: #edf3f4; color: #294457; }
+
+.radio-group {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.radio-pill {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid #c4d3d8;
+  background: rgba(255,255,255,0.08);
+  color: #f0f5f6;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.radio-pill.active {
+  background: #c98270;
+  border-color: #e0aa9b;
+  color: #fff;
+}
+
+.radio-pill:not(.active):hover { border-color: #8da5b7; color: var(--bg); }
+
+.run-btn {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 10px 28px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.18s;
+  white-space: nowrap;
+}
+
+.run-btn { background: #b96f5e; }
+.run-btn:hover { background: #c98270; transform: translateY(-1px); }
+.run-btn:active { transform: scale(0.97); }
+
+.run-btn.stop { background: #7c3e43; }
+.run-btn.stop:hover { background: #94505a; }
+.hint { grid-column: 1 / -1; color: #b8c5cf; font-size: 0.86rem; margin-top: -0.4rem; }
+
+/* ── stats strip ── */
+.stats-strip {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.5rem;
+  background: var(--surface);
+  margin-bottom: 1.5rem;
+  align-items: center;
+}
+
+.stat-item { text-align: center; }
+.stat-val {
+  font-family: var(--mono);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+}
+.stat-lbl {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+.strip-spacer { flex: 1; }
+
+.action-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.dl-btn {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 8px 18px;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dl-btn:hover { background: var(--ink); color: var(--bg); }
+.dl-btn.accent { border-color: var(--accent); color: var(--accent); }
+.dl-btn.accent:hover { background: var(--accent); color: #fff; }
+.dl-btn.excel { border-color: var(--accent2); color: var(--accent2); }
+.dl-btn.excel:hover { background: var(--accent2); color: #fff; }
+
+/* ── progress ── */
+.progress-bar-wrap {
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background: var(--accent);
+  width: 0%;
+  transition: width 0.1s;
+}
+
+/* ── results grid ── */
+#results-container {
+  columns: 2;
+  column-gap: 1.5rem;
+}
+
+@media (max-width: 600px) { #results-container { columns: 1; } }
+
+.result-entry {
+  break-inside: avoid;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+  border-left: 3px solid var(--accent);
+  animation: fadeIn 0.3s ease forwards;
+  opacity: 0;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.entry-number {
+  font-family: var(--mono);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.entry-badge {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.badge-orig { background: #f8eadb; color: #a96627; }
+.badge-new  { background: #dff1ed; color: #28776e; }
+.badge-allplus { background: #dcecf2; color: #286d86; }
+.badge-pow { background: #eee6f3; color: #76578a; }
+
+.entry-eq {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.7;
+  margin-top: 4px;
+}
+
+.power-group {
+  display: block;
+}
+
+.sign-pos { color: var(--accent2); }
+.sign-neg { color: var(--accent); }
+
+/* ── empty/loading state ── */
+#empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--muted);
+  font-style: italic;
+  font-size: 1.2rem;
+}
+
+.spinner {
+  display: inline-block;
+  width: 18px; height: 18px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── formula box ── */
+.formula-box {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 2rem;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink);
+  line-height: 1.8;
+}
+
+.formula-box strong {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* ── download box ── */
+.dl-box {
+  display: none;
+  margin-top: 2.5rem;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.dl-box-header {
+  background: var(--ink);
+  color: var(--bg);
+  padding: 0.75rem 1.5rem;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dl-box-body {
+  background: var(--surface);
+  padding: 1.5rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 580px) { .dl-box-body { grid-template-columns: 1fr; } }
+
+.dl-opts label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: block;
+  margin-bottom: 5px;
+}
+
+.dl-opts select, .dl-opts input[type="text"] {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 7px 10px;
+  outline: none;
+  margin-bottom: 12px;
+  transition: border-color 0.15s;
+}
+
+.dl-opts select:focus, .dl-opts input:focus { border-color: var(--accent); }
+.dl-opts select option { background: var(--surface2); }
+
+.dl-preview-area {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.85rem 1rem;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  white-space: pre-wrap;
+  word-break: break-all;
+  min-height: 130px;
+  max-height: 180px;
+  overflow-y: auto;
+  line-height: 1.7;
+}
+
+.dl-preview-area span { color: var(--accent); }
+
+.dl-meta {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 8px;
+  display: flex;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+}
+
+.dl-meta b { color: var(--ink); }
+
+.dl-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 1.25rem;
+}
+
+.dl-primary-btn {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 11px 20px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+
+.dl-primary-btn:hover { background: #ca735e; }
+
+.dl-secondary-btn {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 9px 20px;
+  background: transparent;
+  color: var(--ink);
+  border: 1.5px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+
+.dl-secondary-btn:hover { border-color: var(--ink); }
+
+/* ── footer ── */
+footer {
+  margin-top: 4rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1.5rem;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.footer-credit {
+  width: 100%;
+  color: var(--ink);
+  font-weight: 700;
+  margin-bottom: 0.2rem;
+}
+
+.footer-links {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 1rem;
+  letter-spacing: 0.03em;
+}
+
+.footer-links a {
+  color: var(--accent2);
+  text-decoration: none;
+}
+
+.footer-links a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="issue-line">
+      <span>Recreational Mathematics</span>
+      <span id="run-date"></span>
+    </div>
+    <h1>Selfie-Type <em>Digit Power Sum</em><br>Number Generator</h1>
+    <p class="creator-line">Created by Inder J. Taneja</p>
+    <p class="tagline">Find all N where N = Σ ±dᵢ¹ + Σ ±dᵢ² + Σ ±dᵢ³</p>
+  </header>
+
+  <div class="formula-box">
+    <strong>Rule:</strong> For a number N with digits d₁, d₂, …, dₖ — assign each digit a sign (+ or −) independently for each power level 1, 2, 3.<br>
+    If the total equals N itself, it qualifies. Example: <strong>336</strong> = (3+3+6) + (3²+3²+6²) + (3³+3³+6³) = 12 + 54 + 270 = 336 ✓
+  </div>
+
+  <div class="controls-band">
+    <div class="ctrl-group">
+      <label>Search from</label>
+      <input type="number" id="range-from" value="1" min="1" max="99999">
+    </div>
+    <div class="ctrl-group">
+      <label>Search to</label>
+      <input type="number" id="range-to" value="5000" min="2" max="99999">
+    </div>
+    <div class="ctrl-group">
+      <label>Sign mode</label>
+      <div class="radio-group">
+        <button class="radio-pill active" data-mode="signed" onclick="setMode(this)">± Signs</button>
+        <button class="radio-pill" data-mode="plus" onclick="setMode(this)">+ Only</button>
+        <button class="radio-pill" data-mode="both" onclick="setMode(this)">Both</button>
+      </div>
+    </div>
+    <div class="ctrl-group">
+      <label>Max powers</label>
+      <select id="max-power">
+        <option value="3" selected>1, 2, 3</option>
+        <option value="2">1, 2</option>
+        <option value="4">1, 2, 3, 4</option>
+        <option value="5">1, 2, 3, 4, 5</option>
+        <option value="all">All powers (1 → 5)</option>
+      </select>
+    </div>
+    <div class="ctrl-group" style="align-self:end">
+      <button class="run-btn" id="run-btn" onclick="runSearch()">▶ Run Search</button>
+    </div>
+    <div class="hint">Signed mode permits an independent + or − sign for every digit at every selected power. Results are shown once for each matching power.</div>
+  </div>
+
+  <div class="stats-strip" id="stats-strip" style="display:none">
+    <div class="stat-item">
+      <div class="stat-val" id="stat-found">0</div>
+      <div class="stat-lbl">Matches</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val" id="stat-range">—</div>
+      <div class="stat-lbl">Range</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val" id="stat-time">—</div>
+      <div class="stat-lbl">ms</div>
+    </div>
+    <div class="strip-spacer"></div>
+    <div class="action-row">
+      <button class="dl-btn" onclick="copyResults()">⧉ Copy</button>
+      <button class="dl-btn" onclick="downloadTxtDirect()">↓ TXT</button>
+      <button class="dl-btn excel" onclick="downloadExcel()">▣ Excel</button>
+    </div>
+  </div>
+
+  <div class="progress-bar-wrap"><div class="progress-bar" id="pbar"></div></div>
+
+  <div id="empty-state">Configure the search above and press <strong>Run Search</strong> to find magic numbers.</div>
+  <div id="results-container"></div>
+
+  <!-- ── Download Box ── -->
+  <div class="dl-box" id="dl-box">
+    <div class="dl-box-header">
+      <span>↓ Save results as text file</span>
+      <span id="dl-box-count">0 numbers</span>
+    </div>
+    <div class="dl-box-body">
+      <div class="dl-opts">
+        <label>File name</label>
+        <input type="text" id="dl-fname" value="digit-power-numbers">
+
+        <label>Format</label>
+        <select id="dl-fmt" onchange="refreshDlPreview()">
+          <option value="txt">Plain text  (.txt)</option>
+          <option value="csv">CSV spreadsheet  (.csv)</option>
+          <option value="md">Markdown  (.md)</option>
+          <option value="log">Log file with timestamps  (.log)</option>
+        </select>
+
+        <label>Line endings</label>
+        <select id="dl-le" onchange="refreshDlPreview()">
+          <option value="lf">LF — Unix / Mac</option>
+          <option value="crlf">CRLF — Windows</option>
+        </select>
+
+        <label>Include</label>
+        <select id="dl-include" onchange="refreshDlPreview()">
+          <option value="both">Numbers + equations</option>
+          <option value="nums">Numbers only</option>
+          <option value="eq">Equations only</option>
+        </select>
+
+        <div class="dl-buttons">
+          <button class="dl-primary-btn" onclick="doDownloadTxt()">↓ Download file</button>
+          <button class="dl-secondary-btn" onclick="copyResults()">⧉ Copy to clipboard</button>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Preview</div>
+        <div class="dl-preview-area" id="dl-preview">—</div>
+        <div class="dl-meta">
+          Lines: <b id="dl-meta-lines">0</b>
+          Size: <b id="dl-meta-size">0 B</b>
+          Format: <b id="dl-meta-fmt">.txt</b>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-credit">Inder J. Taneja</div>
+    <div class="footer-links">
+      <a href="https://numbers-magic.com/" target="_blank" rel="noopener">numbers-magic.com</a>
+      <a href="https://inderjtaneja.wordpress.com/" target="_blank" rel="noopener">inderjtaneja.wordpress.com</a>
+      <a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/" target="_blank" rel="noopener">Mathematical Generators</a>
+    </div>
+    <span id="footer-date"></span>
+  </footer>
+</div>
+
+<script>
+let signMode = 'signed';
+let foundNumbers = [];
+let searchToken = 0;
+
+document.getElementById('run-date').textContent = new Date().toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'});
+document.getElementById('footer-date').textContent = new Date().toISOString();
+
+function setMode(btn) {
+  document.querySelectorAll('.radio-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  signMode = btn.dataset.mode;
+}
+
+function digitPowerSumAllPlus(n, maxP) {
+  const digits = String(n).split('').map(Number);
+  let t = 0;
+  for (let p = 1; p <= maxP; p++) for (const d of digits) t += Math.pow(d, p);
+  return t;
+}
+
+function findSignedSolution(n, maxP) {
+  const digits = String(n).split('').map(Number);
+  const nd = digits.length;
+  const terms = [];
+  for (let p = 0; p < maxP; p++) {
+    for (let i = 0; i < nd; i++) terms.push(Math.pow(digits[i], p + 1));
+  }
+  // Meet-in-the-middle: at most 2^(terms/2) sums instead of 2^terms.
+  // This keeps 4- and 5-digit searches practical for powers 4 and 5.
+  if (terms.length > 30) return null;
+  const mid = Math.floor(terms.length / 2);
+  const left = terms.slice(0, mid), right = terms.slice(mid);
+  const sums = new Map();
+  for (let mask = 0; mask < (1 << left.length); mask++) {
+    let sum = 0;
+    for (let j = 0; j < left.length; j++) sum += (mask & (1 << j)) ? -left[j] : left[j];
+    if (!sums.has(sum)) sums.set(sum, mask);
+  }
+  for (let rmask = 0; rmask < (1 << right.length); rmask++) {
+    let rsum = 0;
+    for (let j = 0; j < right.length; j++) rsum += (rmask & (1 << j)) ? -right[j] : right[j];
+    const lmask = sums.get(n - rsum);
+    if (lmask !== undefined) {
+      let mask = lmask;
+      for (let j = 0; j < right.length; j++) if (rmask & (1 << j)) mask |= (1 << (mid + j));
+      return { mask, digits, nd };
+    }
+  }
+  return null;
+}
+
+function buildEqHTML(digits, mask, nd, maxP) {
+  const parts = [];
+  for (let p = 0; p < maxP; p++) {
+    let inner = '';
+    digits.forEach((d, i) => {
+      const bit = p * nd + i;
+      const isNeg = (mask >> bit) & 1;
+      const sign = isNeg ? '−' : '+';
+      const cls = isNeg ? 'sign-neg' : 'sign-pos';
+      inner += `<span class="${cls}">${i===0 && !isNeg ? '' : sign}${d}<sup>${p+1}</sup></span>`;
+    });
+    parts.push(`(${inner})`);
+  }
+  return parts.join(' + ');
+}
+
+function buildEqText(digits, mask, nd, maxP) {
+  const parts = [];
+  for (let p = 0; p < maxP; p++) {
+    let inner = '';
+    digits.forEach((d, i) => {
+      const bit = p * nd + i;
+      const isNeg = (mask >> bit) & 1;
+      if (isNeg) {
+        inner += '-' + d + '^' + (p+1);
+      } else {
+        inner += (inner === '' ? '' : '+') + d + '^' + (p+1);
+      }
+    });
+    parts.push('(' + inner + ')');
+  }
+  return parts.join(' + ');
+}
+
+function runSearch() {
+  const from = Math.max(1, parseInt(document.getElementById('range-from').value) || 1);
+  const to   = Math.min(99999, parseInt(document.getElementById('range-to').value) || 5000);
+  if (to < from) {
+    document.getElementById('empty-state').style.display = '';
+    document.getElementById('empty-state').textContent = 'Please choose a final value greater than or equal to the starting value.';
+    return;
+  }
+  const maxPVal = document.getElementById('max-power').value;
+  const maxPList = maxPVal === 'all' ? [1,2,3,4,5] : [parseInt(maxPVal)];
+  const mode = signMode;
+
+  foundNumbers = [];
+  const myToken = ++searchToken;
+  const runBtn = document.getElementById('run-btn');
+  runBtn.textContent = '■ Stop Search';
+  runBtn.classList.add('stop');
+  runBtn.onclick = () => { searchToken++; };
+  const container = document.getElementById('results-container');
+  container.innerHTML = '';
+  document.getElementById('empty-state').innerHTML = '<span class="spinner"></span> Searching…';
+  document.getElementById('stats-strip').style.display = 'none';
+
+  const t0 = performance.now();
+  const pbar = document.getElementById('pbar');
+  const total = to - from + 1;
+
+  let idx = from;
+  let animDelay = 0;
+
+  function chunk() {
+    if (myToken !== searchToken) {
+      finishSearch(from, Math.max(from, idx - 1), t0, true);
+      return;
+    }
+    const end = Math.min(idx + 200, to + 1);
+    for (let n = idx; n < end; n++) {
+      for (const maxP of maxPList) {
+      let sol = null;
+      let isAllPlus = digitPowerSumAllPlus(n, maxP) === n;
+
+      if (mode === 'plus') {
+        if (isAllPlus) sol = { mask: 0, digits: String(n).split('').map(Number), nd: String(n).length };
+      } else if (mode === 'signed') {
+        sol = findSignedSolution(n, maxP);
+      } else {
+        if (isAllPlus) sol = { mask: 0, digits: String(n).split('').map(Number), nd: String(n).length };
+        else sol = findSignedSolution(n, maxP);
+      }
+
+      if (sol) {
+        foundNumbers.push({ n, sol, isAllPlus, maxP });
+
+        const div = document.createElement('div');
+        div.className = 'result-entry';
+        div.style.animationDelay = Math.min(animDelay, 500) + 'ms';
+        animDelay += 40;
+
+        let badges = '';
+        if (n === 336) badges += '<span class="entry-badge badge-orig">✦ original</span>';
+        if (isAllPlus && mode !== 'plus') badges += '<span class="entry-badge badge-allplus">all +</span>';
+        else if (!isAllPlus && mode !== 'plus') badges += '<span class="entry-badge badge-new">± signs</span>';
+        badges += '<span class="entry-badge badge-pow">p1–' + maxP + '</span>';
+
+        const eqHTML = buildEqHTML(sol.digits, sol.mask, sol.nd, maxP);
+        div.innerHTML = `
+          <div class="entry-number">${n.toLocaleString()}${badges}</div>
+          <div class="entry-eq">${n} = ${eqHTML}</div>`;
+        container.appendChild(div);
+      }
+      } // end maxPList loop
+    }
+    idx = end;
+    pbar.style.width = Math.round((idx - from) / total * 100) + '%';
+
+    if (idx <= to) {
+      requestAnimationFrame(chunk);
+    } else {
+      finishSearch(from, to, t0, false);
+    }
+  }
+  requestAnimationFrame(chunk);
+}
+
+function finishSearch(from, to, t0, stopped) {
+  const elapsed = Math.round(performance.now() - t0);
+  const runBtn = document.getElementById('run-btn');
+  runBtn.textContent = '▶ Run Search';
+  runBtn.classList.remove('stop');
+  runBtn.onclick = runSearch;
+  document.getElementById('empty-state').style.display = foundNumbers.length ? 'none' : '';
+  if (!foundNumbers.length) document.getElementById('empty-state').textContent = stopped ? 'Search stopped before a match was found.' : 'No numbers found in this range with the chosen settings.';
+  document.getElementById('stats-strip').style.display = 'flex';
+  document.getElementById('stat-found').textContent = foundNumbers.length;
+  document.getElementById('stat-range').textContent = from.toLocaleString() + '–' + to.toLocaleString();
+  document.getElementById('stat-time').textContent = elapsed;
+  document.getElementById('pbar').style.width = stopped ? '0%' : '100%';
+  if (!stopped) setTimeout(() => document.getElementById('pbar').style.width = '0%', 1500);
+  const box = document.getElementById('dl-box');
+  box.style.display = foundNumbers.length ? 'block' : 'none';
+  if (foundNumbers.length) {
+    document.getElementById('dl-box-count').textContent = foundNumbers.length + ' matches';
+    refreshDlPreview();
+  }
+}
+
+// ── Downloads ──
+function buildContent(fmt, include) {
+  const le = document.getElementById('dl-le').value === 'crlf' ? '\r\n' : '\n';
+  fmt = fmt || document.getElementById('dl-fmt').value;
+  include = include || document.getElementById('dl-include').value;
+
+  const header = [
+    'DIGIT POWER SUM NUMBERS',
+    'Generated: ' + new Date().toISOString(),
+    'Mode: ' + signMode + ' | Found: ' + foundNumbers.length,
+    '='.repeat(50),
+    ''
+  ];
+
+  if (fmt === 'csv') {
+    const rows = ['number,equation,digits,type'];
+    foundNumbers.forEach(({ n, sol, isAllPlus, maxP }) => {
+      const eq = include === 'nums' ? '' : buildEqText(sol.digits, sol.mask, sol.nd, maxP).replace(/,/g,';');
+      const num = include === 'eq' ? '' : n;
+      rows.push(`${num},"${eq}","${sol.digits.join('')}",${isAllPlus ? 'all+' : 'signed'}`);
+    });
+    return rows.join(le);
+  }
+
+  if (fmt === 'md') {
+    const lines = ['# Digit Power Sum Numbers', '', `> Generated: ${new Date().toISOString()}  `, `> Mode: **${signMode}** | Found: **${foundNumbers.length}**`, '', '| N | Type | Equation |', '|---|------|----------|'];
+    foundNumbers.forEach(({ n, sol, isAllPlus, maxP }) => {
+      const eq = include === 'nums' ? '—' : buildEqText(sol.digits, sol.mask, sol.nd, maxP);
+      const num = include === 'eq' ? '—' : `**${n}**`;
+      lines.push(`| ${num} | ${isAllPlus ? 'all+' : '±'} | \`${eq}\` |`);
+    });
+    return lines.join(le);
+  }
+
+  if (fmt === 'log') {
+    const stamp = new Date().toISOString();
+    const lines = header.map(l => `[${stamp}] ${l}`);
+    foundNumbers.forEach(({ n, sol, isAllPlus, maxP }) => {
+      const eq = include === 'nums' ? '' : ' = ' + buildEqText(sol.digits, sol.mask, sol.nd, maxP);
+      const num = include === 'eq' ? buildEqText(sol.digits, sol.mask, sol.nd, maxP) : n + eq;
+      lines.push(`[${stamp}] ${num}`);
+    });
+    return lines.join(le);
+  }
+
+  // plain txt
+  const lines = [...header];
+  foundNumbers.forEach(({ n, sol, isAllPlus, maxP }) => {
+    if (include === 'nums') { lines.push(String(n)); return; }
+    if (include === 'eq')  { lines.push(buildEqText(sol.digits, sol.mask, sol.nd, maxP)); return; }
+    lines.push(`${n} = ${buildEqText(sol.digits, sol.mask, sol.nd, maxP)}`);
+  });
+  return lines.join(le);
+}
+
+function refreshDlPreview() {
+  if (!foundNumbers.length) return;
+  const fmt = document.getElementById('dl-fmt').value;
+  const content = buildContent(fmt);
+  const preview = content.substring(0, 600) + (content.length > 600 ? '\n…' : '');
+  document.getElementById('dl-preview').textContent = preview;
+  const bytes = new Blob([content]).size;
+  document.getElementById('dl-meta-lines').textContent = content.split('\n').length;
+  document.getElementById('dl-meta-size').textContent = bytes < 1024 ? bytes + ' B' : (bytes/1024).toFixed(1) + ' KB';
+  document.getElementById('dl-meta-fmt').textContent = '.' + fmt;
+}
+
+function doDownloadTxt() {
+  const fmt = document.getElementById('dl-fmt').value;
+  const fname = (document.getElementById('dl-fname').value || 'digit-power-numbers').replace(new RegExp('\\.'+fmt+'$'),'') + '.' + fmt;
+  triggerDL(buildContent(fmt), fname, 'text/plain');
+}
+
+function downloadTxtDirect() {
+  if (!foundNumbers.length) return;
+  triggerDL(buildContent('txt', 'both'), 'selfie-type-digit-power-sum-numbers.txt', 'text/plain;charset=utf-8');
+}
+
+function excelEscape(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\"/g, '&quot;');
+}
+
+function downloadExcel() {
+  if (!foundNumbers.length) return;
+  const rows = foundNumbers.map(({n, sol, isAllPlus, maxP}) => {
+    const type = isAllPlus ? 'All plus' : 'Signed';
+    const powers = '1–' + maxP;
+    const equation = buildEqText(sol.digits, sol.mask, sol.nd, maxP);
+    return `<tr><td>${n}</td><td>${type}</td><td>${powers}</td><td>${excelEscape(equation)}</td></tr>`;
+  }).join('');
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>table{border-collapse:collapse;font-family:Arial}th,td{border:1px solid #b7c8d2;padding:6px 10px}th{background:#dceff0;color:#203047}</style></head><body><h2>Selfie-Type Digit Power Sum Numbers</h2><p>Created by Inder J. Taneja</p><table><tr><th>Number</th><th>Type</th><th>Powers</th><th>Equation</th></tr>${rows}</table></body></html>`;
+  triggerDL(html, 'selfie-type-digit-power-sum-numbers.xls', 'application/vnd.ms-excel;charset=utf-8');
+}
+
+function triggerDL(content, name, mime) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type: mime }));
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function copyResults() {
+  const content = foundNumbers.length ? buildContent(document.getElementById('dl-fmt') ? document.getElementById('dl-fmt').value : 'txt') : '';
+  navigator.clipboard.writeText(content).then(() => alert('Copied to clipboard!'));
+}
+</script>
+</body>
+</html>

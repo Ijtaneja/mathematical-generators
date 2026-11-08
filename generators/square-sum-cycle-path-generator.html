@@ -1,0 +1,679 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Square-Sum Cycle & Open-Path Generator: Multiple Solutions — Inder J. Taneja</title>
+<style>
+:root{--ink:#3a2208;--ink2:#6b4a1c;--soft:#8a6a3c;--gold1:#f7e3a4;--gold2:#d2a032;--gold3:#7a5208;--cream:#fbf6ea;--cream2:#efe4c8;--ok:#2f7d3a;--warn:#a8650c;--bad:#a8322b}
+*{box-sizing:border-box}
+body{margin:0;background:#e9dcb8;color:var(--ink);font-family:Georgia,"Times New Roman",serif}
+.frame{max-width:1420px;margin:18px auto;padding:16px;border-radius:30px;background:linear-gradient(135deg,var(--gold1),var(--gold2) 45%,var(--gold3));box-shadow:0 18px 40px rgba(80,50,10,.35)}
+main{border-radius:20px;padding:36px 34px 40px;background:radial-gradient(circle at 30% 0%,#fffaf0,var(--cream) 40%,#f1e3bf);box-shadow:inset 8px 10px 26px rgba(70,45,10,.45),inset -2px -2px 8px rgba(255,250,235,.8)}
+.byline{margin:26px 0 -12px}.byline small{font-size:13px!important;padding:8px 16px!important;display:inline-block;border:1px solid #d9b45a;border-radius:99px;padding:7px 14px;text-transform:uppercase;letter-spacing:.14em;font:700 12px Georgia,serif;color:var(--ink2);background:linear-gradient(145deg,#fff7e2,#f1e2bb)}
+h1{font:700 clamp(38px,5.4vw,70px)/1.02 Georgia,serif;letter-spacing:-.02em;margin:0 0 12px;color:var(--ink)}
+h1 i{color:#a8650c}
+header p{font-size:19px;line-height:1.6;color:var(--ink2);max-width:900px;margin:0}
+.subtitle{display:inline-block;margin:2px 0 16px;padding:7px 22px;border-radius:99px;font:700 clamp(20px,2.4vw,28px) Georgia,serif;letter-spacing:.06em;color:#fbe7b0;background:linear-gradient(180deg,#5a3a14,#3a2208);box-shadow:0 4px 10px rgba(80,50,10,.3),inset 0 1px 0 rgba(255,255,255,.15)}
+header p.multi{margin-top:12px;padding:12px 16px;border-left:4px solid #d2a032;border-radius:0 12px 12px 0;background:linear-gradient(90deg,rgba(248,216,120,.25),rgba(248,216,120,0));font-size:18px}
+.card{border-radius:22px;border:2px solid #d9b45a;background:linear-gradient(150deg,var(--cream2),var(--cream) 55%,#fffdf6);box-shadow:inset 4px 5px 12px rgba(120,85,25,.22),inset -3px -3px 8px rgba(255,255,255,.85),0 10px 26px rgba(90,60,10,.14)}
+.controls{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;padding:18px 20px;margin:26px 0 12px}
+.controls label{font:700 12px Georgia,serif;text-transform:uppercase;letter-spacing:.08em;color:var(--ink2)}
+.controls input{display:block;width:150px;margin-top:7px;padding:11px 12px;border:1px solid #c9a75a;border-radius:11px;font:700 19px Georgia,serif;color:var(--ink);background:#fffdf7;box-shadow:inset 2px 2px 5px rgba(120,85,25,.18)}
+.btn{padding:13px 22px;border:0;border-radius:12px;font:700 16px Georgia,serif;cursor:pointer;color:#2a1a00;background:linear-gradient(180deg,#f8d878,#c8960a);box-shadow:0 4px 10px rgba(110,70,10,.3),inset 0 1px 0 rgba(255,255,255,.6)}
+.btn:hover{filter:brightness(1.06)} .btn:disabled{opacity:.45;cursor:default}
+.btn.dark{background:linear-gradient(180deg,#5a3a14,#3a2208);color:#fbe7b0}
+.btn.ghost{background:linear-gradient(180deg,#fffaf0,#efe1bd);color:var(--ink);border:1px solid #d9b45a;box-shadow:0 2px 6px rgba(110,70,10,.15)}
+.btn.sm{padding:8px 14px;font-size:14px;border-radius:10px}
+.presets{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 14px;color:var(--soft);font-size:14px;font-style:italic}
+.chip{border:1px solid #d9b45a;border-radius:99px;padding:6px 13px;background:linear-gradient(145deg,#fff7e2,#f1e2bb);font:700 14px Georgia,serif;color:var(--ink);cursor:pointer;font-style:normal}
+.chip:hover{background:#f8d878}
+.notice{border-radius:14px;padding:13px 18px;margin-bottom:18px;font-weight:700;background:linear-gradient(145deg,#f6ecd0,#fff8e6);border:1px solid #e0c27a;color:var(--ink2);display:flex;gap:12px;align-items:center}
+.notice.ok{border-color:#9cc59a;background:linear-gradient(145deg,#e8f3df,#f6fbf1);color:#2f6b2c}
+.notice.warn{border-color:#e3b36a;background:linear-gradient(145deg,#fbeccc,#fff7e6);color:#8a540c}
+.notice.bad{border-color:#e0a39c;background:linear-gradient(145deg,#f9e1dc,#fff4f1);color:#8f2d25}
+.spin{width:18px;height:18px;border-radius:50%;border:3px solid #e0c27a;border-top-color:#a8650c;animation:sp 1s linear infinite;flex:none}
+@keyframes sp{to{transform:rotate(360deg)}}
+.grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(360px,.75fr);gap:18px}
+.wheel{padding:14px}
+.wheelbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin:2px 4px 10px}
+.seg{display:inline-flex;border:1px solid #d9b45a;border-radius:11px;overflow:hidden}
+.seg button{border:0;padding:8px 13px;font:700 14px Georgia,serif;background:#fffaf0;color:var(--ink);cursor:pointer}
+.seg button.on{background:linear-gradient(180deg,#5a3a14,#3a2208);color:#fbe7b0}
+.wheel svg{width:100%;height:auto;display:block}
+aside{padding:22px 24px;display:flex;flex-direction:column;max-height:900px}
+.status{font:700 14px Georgia,serif}
+.status.cycle{color:var(--ok)} .status.path{color:var(--warn)} .status.partial{color:var(--bad)}
+h2{font:700 30px Georgia,serif;margin:8px 0 10px}
+h3{font:700 15px Georgia,serif;margin:16px 0 8px;color:var(--ink2);text-transform:uppercase;letter-spacing:.06em}
+.why{font-size:15px;line-height:1.55;color:var(--ink2);margin:0 0 4px}
+.why b{color:var(--ink)}
+.legend{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px 12px}
+.legend div{display:flex;align-items:center;gap:8px;font-size:16px}
+.sw{width:26px;height:16px;border-radius:5px;flex:none;box-shadow:inset 0 -2px 3px rgba(0,0,0,.2)}
+.legend em{font-style:normal;margin-left:auto;font-weight:700}
+.pathText{padding:12px;border-radius:12px;line-height:1.6;font:14px/1.6 Georgia,serif;max-height:110px;overflow:auto;background:#fffaf0;border:1px solid #ead7a6}
+.checks{overflow:auto;flex:1;min-height:120px;border-top:1px solid #e3cf9d}
+.checks div{display:flex;justify-content:space-between;padding:7px 4px;border-bottom:1px solid #efe1bd;font-size:15px}
+.checks b{font-weight:700}
+.dl{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.explain{padding:22px 28px;margin-top:18px}
+.allsol{padding:20px 24px;margin-top:18px}
+.solhead{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;justify-content:space-between;margin-bottom:12px}
+.solsub{color:var(--ink2);font-size:15px;font-style:italic}
+.solctl{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.solctl label{font:700 12px Georgia,serif;text-transform:uppercase;letter-spacing:.08em;color:var(--ink2)}
+.solctl input{display:block;width:110px;margin-top:6px;padding:9px 10px;border:1px solid #c9a75a;border-radius:10px;font:700 17px Georgia,serif;color:var(--ink);background:#fffdf7}
+.soltable{max-height:520px;overflow:auto;border:1px solid #e3cf9d;border-radius:12px;background:#fffdf7;margin-top:12px}
+.soltable table{width:100%;border-collapse:collapse;font-size:14px}
+.soltable th{position:sticky;top:0;background:linear-gradient(180deg,#f6e7bf,#efdcae);text-align:left;padding:8px 10px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2)}
+.soltable td{padding:7px 10px;border-top:1px solid #f0e3c2;vertical-align:top;line-height:1.5}
+.soltable td.n{font-weight:700;color:#a8650c;white-space:nowrap}
+.soltable tr{cursor:pointer}
+.soltable tr:hover td{background:#fbefcf}
+.soltable tr.on td{background:#dcebff}
+.starts{padding:20px 24px;margin:0 0 18px}
+.starts .chk{display:flex;align-items:center;gap:7px;font:700 13px Georgia,serif;color:var(--ink2);padding-bottom:10px;cursor:pointer}
+.starts .chk input{width:auto;display:inline;margin:0}
+.stsum{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 12px}
+.stsum .pillv{border:1px solid #9cc59a;border-radius:99px;padding:7px 14px;background:linear-gradient(145deg,#e8f3df,#f6fbf1);font:700 15px Georgia,serif;color:#2f6b2c;cursor:pointer}
+.stsum .pillv:hover{filter:brightness(.96)}
+.stsum .pillv small{font-weight:600;color:#5a7d3a}
+.starts details{margin-top:10px} .starts summary{cursor:pointer;font:700 14px Georgia,serif;color:var(--ink2)}
+.soltable td.okc{color:var(--ok);font-weight:700;white-space:nowrap} .soltable td.noc{color:var(--bad);font-weight:700;white-space:nowrap} .soltable td.unk{color:var(--warn);font-weight:700;white-space:nowrap}
+.soltable .show{font:700 12px Georgia,serif;color:#1f5fb0;white-space:nowrap}
+.explain p{line-height:1.65;color:var(--ink2);margin:8px 0}
+footer{text-align:center;color:var(--soft);padding:26px 10px 16px;font-size:15px}
+footer .fname{font-weight:700;color:var(--ink2);margin-bottom:12px}footer .links{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}footer .links{gap:14px}footer a{color:#2a1a00;text-decoration:none;font-weight:700;padding:11px 20px;border-radius:14px;word-break:break-all;background:linear-gradient(180deg,#fff2c4 0%,#f3cf6c 45%,#d9a538 55%,#c48d22 100%);border:1px solid #8a5a10;box-shadow:inset 0 2px 0 rgba(255,255,255,.75),inset 0 -3px 5px rgba(110,70,10,.35),0 5px 0 #8a5a10,0 9px 16px rgba(80,50,10,.35);text-shadow:0 1px 0 rgba(255,245,210,.8);transform:translateY(0);transition:transform .08s,box-shadow .08s,filter .15s}footer a:hover{filter:brightness(1.07)}footer a:active{transform:translateY(4px);box-shadow:inset 0 2px 4px rgba(110,70,10,.4),0 1px 0 #8a5a10,0 3px 6px rgba(80,50,10,.3)}
+.parts{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:22px 0 4px}
+.parts a{display:block;text-decoration:none;color:var(--ink);border:1.5px solid #d9b45a;border-radius:16px;padding:12px 14px 13px;background:linear-gradient(150deg,#fff8e4,#f3e3b8);box-shadow:0 3px 8px rgba(110,70,10,.15);transition:transform .15s}
+.parts a:hover{transform:translateY(-2px);background:linear-gradient(150deg,#fffbef,#f8dc8e)}
+.parts b{display:block;font:700 16px Georgia,serif;margin:6px 0 3px}
+.parts span{display:block;font-size:13.5px;line-height:1.4;color:var(--ink2)}
+.pno{display:inline-flex!important;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;font:700 16px Georgia,serif!important;color:#fbe7b0!important;background:linear-gradient(180deg,#5a3a14,#3a2208)}
+.ptitle{display:flex;align-items:center;gap:10px;margin:26px 0 12px;font:700 21px Georgia,serif;color:var(--ink)}
+.ptitle .pno{width:34px;height:34px;font-size:18px!important}
+.ptitle small{font:italic 500 15px Georgia,serif;color:var(--ink2)}
+.altnote{margin:0 0 8px;font-size:14px;color:var(--ink2)}
+@media(max-width:900px){.parts{grid-template-columns:1fr}}
+.hide{display:none!important}
+@media(max-width:900px){main{padding:24px 14px}.grid{grid-template-columns:1fr}.controls input{width:120px}aside{max-height:none}.checks{max-height:380px}}
+@media(max-width:520px){.frame{margin:0;border-radius:0;padding:8px}.controls label{flex:1 1 40%}.controls input{width:100%}}
+</style>
+</head>
+<body>
+<div class="frame"><main>
+<header>
+  <h1>Square-Sum Cycle<br><i>& Open-Path Generator</i></h1>
+  <div class="subtitle">Multiple Solutions</div>
+  <p>Arrange every integer of an interval so that each pair of neighbours adds up to a perfect square. The generator first looks for a closed cycle; if no cycle exists, it looks for a complete open path. It says “impossible” only when this is proved.</p>
+  <p class="multi">An interval often has <b>many different closed cycles</b> — different ways to arrange the same numbers on a circle. For example, 1–32 and 1–33 have exactly one each, 1–34 has 11, 1–35 has 57 and 1–40 has 64. A cycle turned round or read backwards is the same cycle, so it is counted once. Use <b>Alternative solutions</b> to list every cycle of an interval, draw any of them, and download the complete list.</p>
+  <nav class="parts">
+    <a href="#part1"><span class="pno">1</span><b>Cycle or open path</b><span>Enter an interval: the generator draws a closed square-sum cycle, or an open path when no cycle exists — or proves it impossible.</span></a>
+    <a href="#part2"><span class="pno">2</span><b>Alternative solutions</b><span>Every different closed cycle of the same interval — step through them, list and count them all, download the full list.</span></a>
+    <a href="#part3"><span class="pno">3</span><b>Which starts close?</b><span>For a fixed end b, find every start a for which a–b has a closed cycle.</span></a>
+  </nav>
+</header>
+
+<div class="byline"><small>Created by Inder J. Taneja</small></div>
+<div class="ptitle" id="part1"><span class="pno">1</span>Closed cycle or open path <small>— enter an interval</small></div>
+<section class="controls card">
+  <label>Start<input id="a" type="number" min="1" max="5000" value="1"></label>
+  <label>End<input id="b" type="number" min="2" max="5000" value="32"></label>
+  <label>Search time (s)<input id="t" type="number" min="1" max="120" value="10"></label>
+  <button class="btn" id="go">Search interval</button>
+  <button class="btn dark hide" id="stop">■ Stop</button>
+</section>
+<div class="presets">Try:
+  <button class="chip" data-i="1-15">1–15</button><button class="chip" data-i="1-24">1–24</button><button class="chip" data-i="1-31">1–31</button>
+  <button class="chip" data-i="1-32">1–32</button><button class="chip" data-i="2-34">2–34</button><button class="chip" data-i="2-35">2–35</button>
+  <button class="chip" data-i="3-35">3–35</button><button class="chip" data-i="40-60">40–60</button><button class="chip" data-i="1-100">1–100</button>
+</div>
+<div class="notice" id="notice"><span>Enter an interval and press “Search interval”.</span></div>
+
+
+
+<section class="grid hide" id="result">
+  <div class="card wheel">
+    <p class="altnote">Press <b>↻ Another arrangement</b> to draw a different cycle of the same interval — or list them all in part 2 below.</p>
+    <div class="wheelbar">
+      <div class="seg" id="view"><button data-v="cycle" class="on">Cycle order</button><button data-v="natural">Natural order</button></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn ghost sm" id="again">↻ Another arrangement</button>
+        <button class="btn ghost sm" id="svg">SVG</button>
+        <button class="btn ghost sm" id="png">PNG</button>
+      </div>
+    </div>
+    <div id="fig"></div>
+  </div>
+  <aside class="card">
+    <b class="status" id="status"></b>
+    <h2 id="title"></h2>
+    <div id="why"></div>
+    <p class="why" id="count"></p>
+    <h3>Square sums used</h3>
+    <div class="legend" id="legend"></div>
+    <h3 id="ordH">Order</h3>
+    <p class="pathText" id="pathText"></p>
+    <h3>Neighbour verification</h3>
+    <div class="checks" id="checks"></div>
+    <div class="dl"><button class="btn sm" id="txt">Download TXT result</button></div>
+  </aside>
+</section>
+
+<div class="ptitle hide" id="part2"><span class="pno">2</span>Alternative solutions <small>— every different closed cycle of the interval</small></div>
+<section class="card allsol hide" id="allsol">
+  <div class="solhead">
+    <div><span class="solsub">every different closed cycle for <b id="solIv"></b> — rotations and reversals count as one</span></div>
+    <div class="solctl">
+      <label>Time limit (s)<input id="solT" type="number" min="1" max="600" value="20"></label>
+      <button class="btn" id="solGo">List all closed cycles</button>
+      <button class="btn dark hide" id="solStop">■ Stop</button>
+    </div>
+  </div>
+  <div class="notice" id="solNote"><span>Press “List all closed cycles” to find every solution.</span></div>
+  <div class="dl hide" id="solDl"><button class="btn sm" id="solTxt">Download all (TXT)</button><button class="btn sm ghost" id="solCsv">Download all (CSV / Excel)</button></div>
+  <div class="soltable hide" id="solTable"></div>
+</section>
+
+<div class="ptitle" id="part3"><span class="pno">3</span>Which starts close? <small>— valid starts for a fixed end</small></div>
+<section class="card starts" id="starts">
+  <div class="solhead">
+    <div><span class="solsub">for a fixed end <b>b</b>, find every start <b>a</b> for which <b>a–b</b> has a closed cycle</span></div>
+    <div class="solctl">
+      <label>End b<input id="stB" type="number" min="3" max="400" value="48"></label>
+      <label>Time per start (s)<input id="stT" type="number" min="1" max="120" value="10"></label>
+      <label class="chk"><input id="stCount" type="checkbox"> count the cycles too</label>
+      <button class="btn" id="stGo">Find valid starts</button>
+      <button class="btn dark hide" id="stStop">■ Stop</button>
+    </div>
+  </div>
+  <div class="notice" id="stNote"><span>Enter an end b and press “Find valid starts”. Every start from 1 to b − 2 is checked.</span></div>
+  <div class="stsum hide" id="stSum"></div>
+  <div class="dl hide" id="stDl"><button class="btn sm" id="stTxt">Download (TXT)</button><button class="btn sm ghost" id="stCsv">Download (CSV / Excel)</button></div>
+  <details class="hide" id="stMore"><summary>Every start, with the reason</summary><div class="soltable" id="stTable"></div></details>
+</section>
+
+<section class="card explain">
+  <h3>How to read the result</h3>
+  <p>The generator has three parts: <b>1</b> a closed cycle or an open path for an interval, <b>2</b> the alternative solutions — every different closed cycle of that interval, listed and counted — and <b>3</b> which starts give a closed cycle for a fixed end.</p>
+  <p><b>Closed cycle</b> — every neighbouring pair, including the last and the first number, adds up to a perfect square.</p>
+  <p><b>Open path</b> — every neighbouring pair adds up to a square, but the two ends do not. The circle is left open between the ends.</p>
+  <p><b>Proved impossible</b> — either a simple counting argument (a number with no square-sum partner, a number with only one partner inside a cycle, more than two such numbers in a path, or a graph in separate pieces) or a complete search of every arrangement. <b>Not found in time</b> only means the search stopped: try a longer search time.</p>
+  <p><b>Alternative solutions</b> (part 2) lists every different closed cycle of the interval (a cycle turned round or read backwards counts once). Click a row to draw it; download the whole list as TXT or CSV for Excel. If the time limit ends first, the list says “at least”, so raise the time limit for the complete answer.</p>
+  <p><b>Which starts close?</b> fixes the end <b>b</b> and tests every start <b>a</b> = 1, 2, …, b − 2. Most starts are ruled out at once by the counting argument (some number has fewer than two square-sum partners — for example, for ends 41 to 48 the number 32 keeps only the partner 17 once 4 is left out). The few that remain are settled by a search that stops at the first closed cycle, or proves there is none. Tick <b>count the cycles too</b> to also count every closed cycle of each valid start. Click a valid start to draw a cycle.</p>
+  <p><b>Cycle order</b> places the numbers around the circle in the order of the cycle, with each square sum in a coloured box between neighbours. <b>Natural order</b> places 1, 2, 3, … around the circle and draws each square-sum link as a coloured chord.</p>
+</section>
+<footer><div class="fname">Inder J. Taneja Mathematical Generators</div>
+  <div class="links"><a href="https://numbers-magic.com/" target="_blank" rel="noopener">numbers-magic.com</a><a href="https://inderjtaneja.wordpress.com/" target="_blank" rel="noopener">inderjtaneja.wordpress.com</a><a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/" target="_blank" rel="noopener">taneja-mathematical-generators.ijtaneja.chatgpt.site</a></div></footer>
+</main></div>
+
+<script id="engine">// ---- Square-sum cycle / path search engine (runs inside a Web Worker; also testable in Node) ----
+const isSq = v => { const r = Math.round(Math.sqrt(v)); return r * r === v; };
+function graph(a, b){
+  const adj = []; for (let v = 0; v <= b; v++) adj.push([]);
+  for (let v = a; v <= b; v++) for (let k = Math.ceil(Math.sqrt(2 * v + 1)); k * k - v <= b; k++){ const w = k * k - v; if (w > v && w >= a) { adj[v].push(w); adj[w].push(v); } }
+  return adj;
+}
+function rngOf(seed){ let s = seed >>> 0 || 1; return () => { s ^= s << 13; s >>>= 0; s ^= s >>> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; }; }
+
+// structural proofs: return {cycle:false, path:false, reason} where impossible
+function structural(adj, verts){
+  const out = {cycle: null, path: null, cycleReason: '', pathReason: ''};
+  const iso = verts.filter(v => adj[v].length === 0), one = verts.filter(v => adj[v].length === 1);
+  if (iso.length){ const r = `${iso.slice(0, 6).join(', ')}${iso.length > 6 ? ', …' : ''} ${iso.length > 1 ? 'have' : 'has'} no partner in the interval whose sum is a perfect square`;
+    out.cycle = false; out.path = false; out.cycleReason = out.pathReason = r; return out; }
+  if (one.length){ out.cycle = false; out.cycleReason = `${one.slice(0, 6).join(', ')}${one.length > 6 ? ', …' : ''} ${one.length > 1 ? 'have' : 'has'} only one square-sum partner, so ${one.length > 1 ? 'they' : 'it'} cannot sit inside a closed cycle`; }
+  if (one.length > 2){ out.path = false; out.pathReason = `${one.length} numbers (${one.slice(0, 6).join(', ')}${one.length > 6 ? ', …' : ''}) have only one partner, but an open path has only two ends`; }
+  // connectivity
+  const seen = new Set([verts[0]]), st = [verts[0]];
+  while (st.length){ const v = st.pop(); for (const w of adj[v]) if (!seen.has(w)){ seen.add(w); st.push(w); } }
+  if (seen.size < verts.length){ const r = 'the square-sum graph splits into separate pieces, so no single chain can visit every number';
+    out.cycle = false; out.path = false; out.cycleReason = out.cycleReason || r; out.pathReason = out.pathReason || r; }
+  return out;
+}
+
+// randomized rotation–extension (Pósa) search
+function posa(adj, verts, needCycle, deadline, rng, tick, best){
+  const N = verts.length, pos = new Int32Array(adj.length).fill(-1), ones = verts.filter(v => adj[v].length === 1);
+  let restarts = 0;
+  while (performance.now() < deadline){
+    restarts++; pos.fill(-1);
+    const startPool = (!needCycle && ones.length) ? ones : verts;
+    const path = [startPool[Math.floor(rng() * startPool.length)]]; pos[path[0]] = 0;
+    let steps = 0; const limit = 40 * N + 2000;
+    while (steps++ < limit){
+      if ((steps & 1023) === 0){ if (performance.now() > deadline) break; tick && tick(path.length); }
+      const end = path[path.length - 1];
+      if (path.length > best.len){ best.len = path.length; best.path = path.slice(); }
+      if (path.length === N){
+        if (!needCycle) return path.slice();
+        if (adj[end].includes(path[0])) return path.slice();
+      }
+      // extension: Warnsdorff choice among unvisited neighbours, random tie-break
+      let bw = -1, bd = 1e9;
+      for (const w of adj[end]) if (pos[w] < 0){ let d = 0; for (const u of adj[w]) if (pos[u] < 0) d++; d += rng() * .9; if (d < bd){ bd = d; bw = w; } }
+      if (bw >= 0){ pos[bw] = path.length; path.push(bw); continue; }
+      // rotation: pick a neighbour of the end inside the path, reverse the tail after it
+      const nb = []; for (const w of adj[end]) if (pos[w] >= 0 && pos[w] < path.length - 2) nb.push(w);
+      if (!nb.length || rng() < .04){ // occasionally work on the other end
+        if (!needCycle && ones.length && ones.includes(path[0]) && !nb.length) break;
+        if (needCycle || !ones.includes(path[0])){ path.reverse(); path.forEach((v, i) => pos[v] = i); continue; }
+      }
+      if (!nb.length) break;
+      const piv = pos[nb[Math.floor(rng() * nb.length)]];
+      for (let i = piv + 1, j = path.length - 1; i < j; i++, j--){ const t = path[i]; path[i] = path[j]; path[j] = t; pos[path[i]] = i; pos[path[j]] = j; }
+    }
+  }
+  return null;
+}
+
+// exhaustive search with safe pruning; returns {found, path} or throws 'time'
+function exact(adj, verts, needCycle, deadline){
+  const N = verts.length, vis = new Uint8Array(adj.length), path = [];
+  let calls = 0;
+  const availCycle = (u, end, s) => { let c = 0; for (const w of adj[u]) if (!vis[w] || w === end || w === s) c++; return c; };
+  function ok(end, s){
+    let ones = 0;
+    for (const u of verts){ if (vis[u]) continue;
+      if (needCycle){ if (availCycle(u, end, s) < 2) return false; }
+      else { let c = 0; for (const w of adj[u]) if (!vis[w] || w === end) c++; if (c === 0) return false; if (c === 1 && ++ones > 2) return false; } }
+    return true;
+  }
+  function rec(s){
+    if ((++calls & 4095) === 0 && performance.now() > deadline) throw 'time';
+    const end = path[path.length - 1];
+    if (path.length === N) return !needCycle || adj[end].includes(s);
+    if (!ok(end, s)) return false;
+    const cand = adj[end].filter(w => !vis[w]).sort((p, q) => adj[p].filter(u => !vis[u]).length - adj[q].filter(u => !vis[u]).length);
+    for (const w of cand){ vis[w] = 1; path.push(w); if (rec(s)) return true; path.pop(); vis[w] = 0; }
+    return false;
+  }
+  const ones = verts.filter(v => adj[v].length === 1);
+  const starts = needCycle ? [verts.slice().sort((p, q) => adj[p].length - adj[q].length)[0]] : (ones.length ? [ones[0]] : verts);
+  for (const s of starts){ vis.fill(0); path.length = 0; vis[s] = 1; path.push(s); if (rec(s)) return {found: true, path: path.slice()}; }
+  return {found: false};
+}
+
+function canonical(p, cycle){
+  if (!cycle){ return p[0] <= p[p.length - 1] ? p.slice() : p.slice().reverse(); }
+  const n = p.length, i = p.indexOf(Math.min(...p)), r = []; for (let k = 0; k < n; k++) r.push(p[(i + k) % n]);
+  if (r[n - 1] < r[1]){ const q = [r[0]]; for (let k = n - 1; k > 0; k--) q.push(r[k]); return q; }
+  return r;
+}
+
+// main entry: options {a, b, seconds, seed, avoid}
+function solve(o, report){
+  const t0 = performance.now(), T = o.seconds * 1000, a = o.a, b = o.b;
+  const adj = graph(a, b), verts = []; for (let v = a; v <= b; v++) verts.push(v);
+  const N = verts.length, rng = rngOf(o.seed || 12345), st = structural(adj, verts), best = {len: 0, path: null};
+  let lastPh = -1e9; const ph = (phase) => { const now = performance.now(); if (now - lastPh < 120) return; lastPh = now; report && report({type: 'progress', phase, elapsed: now - t0, best: best.len, N}); };
+  const avoid = o.avoid ? o.avoid.join(',') : null;
+  const done = (kind, path, extra) => ({type: 'done', kind, values: canonical(path, kind === 'cycle'), N, elapsed: performance.now() - t0, ...extra});
+  let cycleStatus = st.cycle === false ? 'impossible' : 'unknown', cycleReason = st.cycleReason;
+  const posaUntil = (need, until, label) => { ph(label); let tries = 0;
+    while (performance.now() < until){ const c = posa(adj, verts, need, until, rng, () => ph(label), best); if (!c) return null;
+      if (need && avoid && canonical(c, true).join(',') === avoid && tries++ < 30) continue; return c; } return null; };
+  const cap = s => Math.min(t0 + s * 1000, t0 + T);
+  if (st.cycle !== false){
+    let c = posaUntil(true, cap(.4), 'Searching for a closed cycle…');
+    if (!c && N <= 80){ ph('Checking every possibility for a closed cycle…');
+      try { const r = exact(adj, verts, true, t0 + T * .5); if (r.found) c = r.path; else { cycleStatus = 'impossible'; cycleReason = 'a complete search of every arrangement found no closed cycle'; } } catch (e) {} }
+    if (!c && cycleStatus !== 'impossible') c = posaUntil(true, t0 + T * .6, 'Searching for a closed cycle…');
+    if (c) return done('cycle', c);
+  }
+  if (st.path !== false){
+    let p = posaUntil(false, Math.min(performance.now() + 400, t0 + T), 'Searching for an open path…'), pathStatus = 'unknown', pathReason = '';
+    if (!p && N <= 80){ ph('Checking every possibility for an open path…');
+      try { const r = exact(adj, verts, false, t0 + T * .9); if (r.found) p = r.path; else { pathStatus = 'impossible'; pathReason = 'a complete search of every arrangement found no open path'; } } catch (e) {} }
+    if (!p && pathStatus !== 'impossible') p = posaUntil(false, t0 + T, 'Searching for an open path…');
+    if (p) return done('path', p, {cycleStatus, cycleReason});
+    return finishPartial(pathStatus, pathReason);
+  }
+  return finishPartial('impossible', st.pathReason);
+  function finishPartial(pathStatus, pathReason){
+    if (!best.path){ ph('Finding the longest square-sum chain…'); posa(adj, verts, false, performance.now() + Math.min(1500, T * .2), rng, null, best); }
+    const bp = best.path || [verts[0]];
+    return {type: 'done', kind: 'partial', values: canonical(bp, false), N, elapsed: performance.now() - t0, cycleStatus, cycleReason: cycleReason || st.cycleReason, pathStatus, pathReason};
+  }
+}
+
+// enumerate all distinct closed cycles (rotations/reversals counted once), with pruning and a time limit
+function enumCycles(o, report){
+  const t0 = performance.now(), deadline = t0 + o.seconds * 1000, cap = o.cap || 500; let lastRep = t0, sent = 0;
+  const adj = graph(o.a, o.b), verts = []; for (let v = o.a; v <= o.b; v++) verts.push(v);
+  const N = verts.length, vis = new Uint8Array(adj.length), path = [], list = []; let count = 0, calls = 0, complete = true;
+  if (verts.some(v => adj[v].length < 2)) return {type: 'cycles', count: 0, list, complete: true};
+  const s = verts.reduce((p, q) => adj[q].length < adj[p].length ? q : p);
+  const ok = end => { for (const u of verts){ if (vis[u]) continue; let c = 0; for (const w of adj[u]) if (!vis[w] || w === end || w === s) c++; if (c < 2) return false; } return true; };
+  function rec(){
+    if ((++calls & 2047) === 0){ const now = performance.now(); if (now > deadline) throw 'time';
+      if (report && now - lastRep > 400){ lastRep = now; report({type: 'progress', count, add: list.slice(sent), elapsed: now - t0}); sent = list.length; } }
+    const end = path[path.length - 1];
+    if (path.length === N){ if (adj[end].includes(s) && path[1] < end){ count++; if (list.length < cap) list.push(canonical(path, true)); } return; }
+    if (!ok(end)) return;
+    for (const w of adj[end]) if (!vis[w]){ vis[w] = 1; path.push(w); rec(); path.pop(); vis[w] = 0; }
+  }
+  vis[s] = 1; path.push(s);
+  try { rec(); } catch (e) { complete = false; }
+  return {type: 'cycles', count, list, complete};
+}
+// does a–b have a closed cycle? stops at the first one (null = undecided in time)
+function hasCycle(a, b, seconds){
+  const adj0 = graph(a, b), verts = []; for (let v = a; v <= b; v++) verts.push(v); const N = verts.length;
+  const st = structural(adj0, verts); if (st.cycle === false) return {r: false, how: 'count', reason: st.cycleReason};
+  const adj = adj0.map(l => l ? l.slice().sort((p, q) => adj0[p].length - adj0[q].length) : l);
+  const s = verts.reduce((p, q) => adj[q].length < adj[p].length ? q : p), vis = new Uint8Array(adj.length), path = [s]; vis[s] = 1;
+  let calls = 0; const deadline = performance.now() + seconds * 1000;
+  const ok = end => { for (const u of verts){ if (vis[u]) continue; let c = 0; for (const w of adj[u]) if (!vis[w] || w === end || w === s) c++; if (c < 2) return false; } return true; };
+  function rec(){ if ((++calls & 2047) === 0 && performance.now() > deadline) throw 'time'; const end = path[path.length - 1];
+    if (path.length === N){ if (adj[end].includes(s)) throw 'found'; return; }
+    if (!ok(end)) return; for (const w of adj[end]) if (!vis[w]){ vis[w] = 1; path.push(w); rec(); path.pop(); vis[w] = 0; } }
+  try { rec(); return {r: false, how: 'search', reason: 'a complete search of every arrangement finds no closed cycle'}; }
+  catch (e){ if (e === 'found') return {r: true, cycle: canonical(path, true)}; return {r: null, how: 'time', reason: 'not decided within the time limit'}; }
+}
+function startOne(o){ const h = hasCycle(o.a, o.b, o.seconds), row = {type: 'one', a: o.a, r: h.r, how: h.how || 'found', reason: h.reason || '', cycle: h.cycle || null};
+  if (h.r && o.count){ const c = enumCycles({a: o.a, b: o.b, seconds: o.seconds, cap: 1}); row.count = c.count; row.complete = c.complete; } return row; }
+function startsScan(o, report){
+  const b = o.b, rows = [], t0 = performance.now();
+  for (let a = 1; a <= b - 2; a++){
+    const h = hasCycle(a, b, o.seconds), row = {a, r: h.r, how: h.how || 'found', reason: h.reason || '', cycle: h.cycle || null};
+    if (h.r && o.count){ const c = enumCycles({a, b, seconds: o.seconds, cap: 1}); row.count = c.count; row.complete = c.complete; }
+    rows.push(row); report && report({type: 'progress', a, b, valid: rows.filter(x => x.r).map(x => x.a), elapsed: performance.now() - t0});
+  }
+  return {type: 'starts', b, rows, elapsed: performance.now() - t0};
+}
+
+</script>
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+const isSq = v => { const r = Math.round(Math.sqrt(v)); return r * r === v; };
+const FIX = {2: '#b8860b', 3: '#e0703a', 4: '#d23f7a', 5: '#8e57d0', 6: '#2f74d0', 7: '#17998a', 8: '#3d9a48', 9: '#c0392b', 10: '#5d6d7e', 11: '#9a6b2f', 12: '#6a4bb0'};
+const col = s => { const k = Math.round(Math.sqrt(s)); return FIX[k] || `hsl(${(k * 47) % 360},55%,44%)`; };
+const GLUE = "\nonmessage = e => { postMessage({type: 'hello'}); if (e.data.one){ postMessage(startOne(e.data)); return; } if (e.data.enumerate){ postMessage(enumCycles(e.data, e.data.progress ? m => postMessage(m) : null)); return; } postMessage(solve(e.data, m => postMessage(m))); };";
+let workerURL = null, workersOK = true;
+try { workerURL = URL.createObjectURL(new Blob([$('engine').textContent + GLUE], {type: 'text/javascript'})); } catch (e) { workersOK = false; }
+// run a job in a background worker; if workers are blocked (e.g. a sandboxed preview), run it in the page instead
+function task(msg, onProgress, onDone){
+  let w = null, settled = false, dog = null;
+  const inline = () => { if (settled) return; settled = true; workersOK = false; if (w){ try { w.terminate(); } catch (e) {} }
+    setTimeout(() => { let r; try { r = msg.one ? startOne(msg) : msg.enumerate ? enumCycles(msg) : solve(msg, null); } catch (e) { r = {type: 'error', message: String(e)}; } onDone(r); }, 40); };
+  if (!workersOK || !workerURL){ inline(); return {stop(){ settled = true; }}; }
+  try { w = new Worker(workerURL); } catch (e) { inline(); return {stop(){ settled = true; }}; }
+  dog = setTimeout(inline, 1500);
+  w.onmessage = e => { const m = e.data; if (settled) return; clearTimeout(dog);
+    if (m.type === 'hello') return; if (m.type === 'progress'){ onProgress && onProgress(m); return; }
+    settled = true; w.terminate(); onDone(m); };
+  w.onerror = e => { clearTimeout(dog); inline(); };
+  try { w.postMessage(msg); } catch (e) { clearTimeout(dog); inline(); }
+  return {stop(){ settled = true; clearTimeout(dog); try { w.terminate(); } catch (e) {} }};
+}
+let worker = null, res = null, view = 'cycle', A = 1, B = 32, T0 = 0, enumW = null, cyc = null, ci = 0;
+
+function setNotice(html, cls, busy){ const n = $('notice'); n.className = 'notice' + (cls ? ' ' + cls : ''); n.innerHTML = (busy ? '<span class="spin"></span>' : '') + '<span>' + html + '</span>'; }
+function busy(on){ $('go').disabled = on; $('again').disabled = on; $('stop').classList.toggle('hide', !on); document.querySelectorAll('.chip').forEach(c => c.disabled = on); }
+
+function run(opts, onDone){
+  if (worker) worker.stop();
+  busy(true); T0 = performance.now(); setNotice('Searching…', '', true);
+  worker = task(opts, m => setNotice(`${m.phase} &nbsp;·&nbsp; ${(m.elapsed / 1000).toFixed(1)} s &nbsp;·&nbsp; longest chain so far ${m.best} of ${m.N}`, '', true),
+    m => { worker = null; busy(false); if (m.type === 'error'){ setNotice('Something went wrong: ' + m.message, 'bad'); return; } onDone(m); });
+}
+function search(){
+  let a = Math.floor(+$('a').value || 1), b = Math.floor(+$('b').value || 2), t = Math.max(1, Math.min(120, +$('t').value || 10));
+  if (a > b) [a, b] = [b, a]; a = Math.max(1, a); b = Math.min(5000, Math.max(b, a + 1));
+  $('a').value = a; $('b').value = b; $('t').value = t; A = a; B = b;
+  run({a, b, seconds: t, seed: (Math.random() * 1e9) | 0}, show);
+}
+$('go').onclick = search;
+$('stop').onclick = () => { if (worker){ worker.stop(); worker = null; } busy(false); setNotice('Search stopped. Nothing was proved; press “Search interval” to try again.', 'warn'); };
+document.querySelectorAll('.chip').forEach(c => c.onclick = () => { const [a, b] = c.dataset.i.split('-'); $('a').value = a; $('b').value = b; search(); });
+['a', 'b', 't'].forEach(id => $(id).addEventListener('keydown', e => { if (e.key === 'Enter') search(); }));
+$('again').onclick = () => { if (!res) return;
+  if (cyc && cyc.complete && res.kind === 'cycle'){
+    if (cyc.count === 1){ setNotice(`${A}–${B} has exactly one closed cycle — there is no other arrangement.`, 'warn'); return; }
+    if (ci + 1 < cyc.list.length || cyc.count <= cyc.list.length){ ci = (ci + 1) % cyc.list.length; showCycle(); return; } } const t = Math.max(1, Math.min(8, +$('t').value || 5));
+  run({a: A, b: B, seconds: t, seed: (Math.random() * 1e9) | 0, avoid: res.kind === 'cycle' ? res.values : null}, r => {
+    const same = r.kind === res.kind && r.values.join() === res.values.join(); show(r); if (same) setNotice('No different arrangement was found this time — try again.', 'warn'); }); };
+document.querySelectorAll('#view button').forEach(b => b.onclick = () => { view = b.dataset.v; document.querySelectorAll('#view button').forEach(x => x.classList.toggle('on', x === b)); if (res) $('fig').innerHTML = svgOf(res, view); });
+
+function sumsOf(r){ const v = r.values, m = r.kind === 'cycle' ? v.length : v.length - 1; return Array.from({length: m}, (_, i) => v[i] + v[(i + 1) % v.length]); }
+function verify(r){ const v = r.values, s = sumsOf(r), set = new Set(v);
+  const all = r.kind === 'partial' || (v.length === B - A + 1 && set.size === v.length && v.every(x => x >= A && x <= B));
+  return all && s.every(isSq); }
+
+// ---- All solutions: complete list of every closed cycle ----
+let solW = null, sol = null, solPart = null;
+function solReset(){ if (solW){ solW.stop(); solW = null; } sol = null; $('solTable').classList.add('hide'); $('solDl').classList.add('hide');
+  $('solGo').disabled = false; $('solStop').classList.add('hide');
+  $('allsol').classList.toggle('hide', !res); $('part2').classList.toggle('hide', !res); if (!res) return; $('solIv').textContent = `${A}–${B}`;
+  if (res.kind !== 'cycle'){ $('solGo').disabled = true; $('solNote').className = 'notice warn';
+    $('solNote').innerHTML = '<span>' + (res.cycleStatus === 'impossible' ? `There are <b>no</b> closed cycles for ${A}–${B} (proved), so there is nothing to list.` : `No closed cycle was found for ${A}–${B} in the time given, so nothing can be listed.`) + '</span>'; return; }
+  $('solNote').className = 'notice'; $('solNote').innerHTML = `<span>Press “List all closed cycles” to find every solution for ${A}–${B}. Small intervals take a moment; larger ones can need much longer.</span>`; }
+function solRun(){
+  if (!res || res.kind !== 'cycle') return; if (solW) solW.stop();
+  const t = Math.max(1, Math.min(600, +$('solT').value || 20)); $('solT').value = t;
+  const key = A + '-' + B, t0 = performance.now(); $('solGo').disabled = true; $('solStop').classList.remove('hide');
+  $('solNote').className = 'notice'; $('solNote').innerHTML = `<span class="spin"></span><span>Searching every arrangement of ${A}–${B} (up to ${t} s)…</span>`;
+  let part = {count: 0, list: []};
+  solPart = () => ({part, key, t0});
+  solW = task({enumerate: true, progress: true, a: A, b: B, seconds: t, cap: 20000}, m => { part.count = m.count; for (const c of m.add) if (part.list.length < 20000) part.list.push(c);
+      $('solNote').innerHTML = `<span class="spin"></span><span>Searching every arrangement of ${A}–${B} (up to ${t} s)… &nbsp;·&nbsp; <b>${m.count}</b> found so far &nbsp;·&nbsp; ${(m.elapsed / 1000).toFixed(1)} s</span>`; }, d => { solW = null; $('solGo').disabled = false; $('solStop').classList.add('hide');
+    if (key !== A + '-' + B || d.type !== 'cycles') return;
+    d.list.sort((p, q) => { for (let i = 0; i < p.length; i++) if (p[i] !== q[i]) return p[i] - q[i]; return 0; });
+    sol = d; solShow((performance.now() - t0) / 1000);
+    if (d.complete){ cyc = {count: d.count, list: d.list, complete: true}; ci = Math.max(0, d.list.findIndex(c => c.join() === res.values.join())); countLine(); } });
+}
+function solShow(secs){
+  const d = sol, shown = Math.min(d.list.length, 1000);
+  $('solNote').className = 'notice ' + (d.complete ? 'ok' : 'warn');
+  $('solNote').innerHTML = '<span>' + (d.complete
+    ? (d.count === 1 ? `✓ Complete search: <b>exactly one</b> closed cycle for ${A}–${B}.` : `✓ Complete search: <b>exactly ${d.count}</b> different closed cycles for ${A}–${B}.`)
+    : `The time limit (${$('solT').value} s) ended: <b>at least ${d.count}</b> closed cycles for ${A}–${B}. Raise the time limit for the complete list.`)
+    + ` <i>(${secs.toFixed(1)} s${d.list.length < d.count ? ` · ${d.list.length} kept` : ''}${shown < d.list.length ? ` · first ${shown} shown, all ${d.list.length} in the downloads` : ''})</i></span>`;
+  const rows = d.list.slice(0, shown).map((c, i) => `<tr data-i="${i}"><td class="n">${i + 1}</td><td>${c.join(' · ')} · <i>(${c[0]})</i></td><td class="show">▶ show</td></tr>`).join('');
+  $('solTable').innerHTML = `<table><thead><tr><th>#</th><th>Cycle (each neighbouring sum is a perfect square)</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+  $('solTable').classList.remove('hide'); $('solDl').classList.remove('hide');
+}
+$('solGo').onclick = solRun;
+$('solStop').onclick = () => { if (solW){ solW.stop(); solW = null; } $('solGo').disabled = false; $('solStop').classList.add('hide');
+  const P = solPart && solPart(); solPart = null;
+  if (P && P.key === A + '-' + B && P.part.count > 0){ const L = P.part.list.slice().sort((p, q) => { for (let i = 0; i < p.length; i++) if (p[i] !== q[i]) return p[i] - q[i]; return 0; });
+    sol = {type: 'cycles', count: P.part.count, list: L, complete: false}; solShow((performance.now() - P.t0) / 1000);
+    $('solNote').innerHTML = `<span>Stopped: <b>at least ${sol.count}</b> closed cycles for ${A}–${B} were found before the stop (shown below). Run again with a longer time limit for the complete list.</span>`; return; }
+  $('solNote').className = 'notice warn'; $('solNote').innerHTML = '<span>Stopped before any cycle was listed — press the button again, perhaps with a longer time limit.</span>'; };
+$('solTable').addEventListener('click', e => { const tr = e.target.closest('tr[data-i]'); if (!tr || !sol) return; const i = +tr.dataset.i;
+  res = Object.assign({}, res, {kind: 'cycle', values: sol.list[i]}); if (sol.complete){ cyc = {count: sol.count, list: sol.list, complete: true}; ci = i; }
+  show(res, true); $('solTable').querySelectorAll('tr.on').forEach(r => r.classList.remove('on')); tr.classList.add('on');
+  $('result').scrollIntoView({behavior: 'smooth', block: 'start'}); });
+const solName = ext => `square-sum-cycles-all-${A}-${B}.${ext}`;
+$('solTxt').onclick = () => { if (!sol) return; const head = [`All closed square-sum cycles — Interval ${A}–${B} (${B - A + 1} numbers)`, 'Created by Inder J. Taneja · numbers-magic.com',
+    sol.complete ? `Complete search: exactly ${sol.count} different closed cycles (rotations and reversals count as one).` : `Search stopped by the time limit: at least ${sol.count} closed cycles.`, ''];
+  save(new Blob([head.concat(sol.list.map((c, i) => `${i + 1}.\t${c.join(' ')} (${c[0]})`)).join('\n')], {type: 'text/plain'}), solName('txt')); };
+$('solCsv').onclick = () => { if (!sol) return; const n = sol.list[0].length, hdr = ['#'].concat(Array.from({length: n}, (_, i) => 'p' + (i + 1)));
+  save(new Blob(['\ufeff' + [hdr.join(',')].concat(sol.list.map((c, i) => [i + 1].concat(c).join(','))).join('\r\n')], {type: 'text/csv'}), solName('csv')); };
+
+
+// ---- Which starts close? ----
+let stW = null, stRes = null;
+function stBusy(on){ $('stGo').disabled = on; $('stStop').classList.toggle('hide', !on); }
+function stRun(){
+  if (stW) stW.stop();
+  const b = Math.max(3, Math.min(400, Math.floor(+$('stB').value || 48))), t = Math.max(1, Math.min(120, +$('stT').value || 10)), cnt = $('stCount').checked;
+  $('stB').value = b; $('stT').value = t; stBusy(true);
+  ['stSum', 'stDl', 'stMore'].forEach(id => $(id).classList.add('hide'));
+  const run = {b, rows: [], count: cnt, t0: performance.now(), stopped: false}; stRes = run;
+  const note = () => { const v = run.rows.filter(r => r.r).map(r => r.a); $('stNote').className = 'notice';
+    $('stNote').innerHTML = `<span class="spin"></span><span>Checking every start for the end ${b}: a = ${run.rows.length + 1} of ${b - 2} &nbsp;·&nbsp; valid so far: <b>${v.join(', ') || 'none'}</b> &nbsp;·&nbsp; ${((performance.now() - run.t0) / 1000).toFixed(1)} s</span>`; };
+  const next = () => {
+    if (stRes !== run || run.stopped) return;
+    const a = run.rows.length + 1; if (a > b - 2){ run.elapsed = performance.now() - run.t0; stW = null; stBusy(false); stShow(); return; }
+    note();
+    stW = task({one: true, a, b, seconds: t, count: cnt}, null, d => { if (stRes !== run || run.stopped) return;
+      if (d.type !== 'one'){ stW = null; stBusy(false); $('stNote').className = 'notice bad'; $('stNote').innerHTML = '<span>Something went wrong: ' + (d.message || '') + '</span>'; return; }
+      run.rows.push(d); setTimeout(next, 0); });
+  };
+  next();
+}
+function stShow(){
+  const d = stRes, b = d.b, ok = d.rows.filter(r => r.r), unk = d.rows.filter(r => r.r === null), last = d.rows.length, part = last < b - 2;
+  d.elapsed = d.elapsed || (performance.now() - d.t0);
+  const nCount = d.rows.filter(r => r.how === 'count').length, nSearch = d.rows.filter(r => r.how === 'search').length;
+  $('stNote').className = 'notice ' + (unk.length || part ? 'warn' : 'ok');
+  $('stNote').innerHTML = '<span>' + (part ? `Stopped after checking a = 1 … ${last} of ${b - 2}. ` : '') + (ok.length
+      ? `${unk.length || part ? '' : '✓ '}End ${b}: <b>${ok.length}</b> valid start${ok.length > 1 ? 's' : ''}${part ? ' so far' : ''} — closed cycles exist for <b>${ok.map(r => r.a + '–' + b).join(', ')}</b>.`
+      : `End ${b}: <b>no</b> start ${part ? 'checked so far ' : ''}gives a closed cycle.`)
+    + ` <i>(${nCount} start${nCount === 1 ? '' : 's'} ruled out by counting partners, ${nSearch} by a complete search${unk.length ? `, <b>${unk.length} undecided</b> (${unk.map(r => r.a).join(', ')}) — raise the time per start` : ''} · ${(d.elapsed / 1000).toFixed(1)} s)</i></span>`;
+  const cntTxt = r => d.count ? (r.complete ? ` · <small>${r.count} cycle${r.count === 1 ? '' : 's'}</small>` : ` · <small>≥ ${r.count} cycles</small>`) : '';
+  $('stSum').innerHTML = ok.map(r => `<button class="pillv" data-a="${r.a}" title="Draw a closed cycle for ${r.a}–${b}">${r.a}–${b}${cntTxt(r)}</button>`).join('');
+  $('stSum').classList.toggle('hide', !ok.length);
+  const rows = d.rows.map(r => `<tr data-a="${r.a}"><td class="n">${r.a}–${b}</td>`
+    + (r.r ? `<td class="okc">✓ closes</td><td>${d.count ? (r.complete ? `exactly ${r.count} closed cycle${r.count === 1 ? '' : 's'}` : `at least ${r.count} closed cycles (time limit)`) : 'a closed cycle exists'}</td><td class="show">▶ show</td>`
+       : r.r === null ? `<td class="unk">? undecided</td><td>${r.reason}</td><td></td>` : `<td class="noc">✗ no cycle</td><td>${r.reason}</td><td></td>`) + '</tr>').join('');
+  $('stTable').innerHTML = `<table><thead><tr><th>Interval</th><th>Closed cycle?</th><th>Reason / count</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+  $('stMore').classList.remove('hide'); $('stDl').classList.remove('hide');
+}
+function stOpen(a){ if (!stRes) return; $('a').value = a; $('b').value = stRes.b; search(); $('notice').scrollIntoView({behavior: 'smooth', block: 'start'}); }
+$('stGo').onclick = stRun;
+$('stStop').onclick = () => { if (stW){ stW.stop(); stW = null; } stBusy(false); if (!stRes) return; stRes.stopped = true;
+  if (stRes.rows.length) stShow(); else { $('stNote').className = 'notice warn'; $('stNote').innerHTML = '<span>Stopped before the first start was checked. Press “Find valid starts” to run again.</span>'; } };
+$('stB').addEventListener('keydown', e => { if (e.key === 'Enter') stRun(); });
+$('stSum').addEventListener('click', e => { const p = e.target.closest('[data-a]'); if (p) stOpen(+p.dataset.a); });
+$('stTable').addEventListener('click', e => { const tr = e.target.closest('tr[data-a]'); if (!tr || !stRes) return; const r = stRes.rows[+tr.dataset.a - 1]; if (r && r.r) stOpen(r.a); });
+const stLine = r => r.r ? 'closes' + (stRes.count ? (r.complete ? ` · exactly ${r.count} cycles` : ` · at least ${r.count} cycles`) : '') : (r.r === null ? 'undecided: ' : 'no cycle: ') + r.reason;
+$('stTxt').onclick = () => { if (!stRes) return; const b = stRes.b, ok = stRes.rows.filter(r => r.r);
+  const L = [`Square-sum closed cycles ending at ${b} — which starts close?`, 'Created by Inder J. Taneja · numbers-magic.com', '',
+    `Valid starts: ${ok.map(r => r.a + '–' + b).join(', ') || 'none'} (${ok.length})` + (stRes.rows.length < b - 2 ? `  [stopped after a = ${stRes.rows.length}]` : ''), ''].concat(stRes.rows.map(r => `${r.a}–${b}\t${stLine(r)}`));
+  save(new Blob([L.join('\n')], {type: 'text/plain'}), `square-sum-valid-starts-end-${b}.txt`); };
+$('stCsv').onclick = () => { if (!stRes) return; const b = stRes.b, q = v => '"' + String(v).replace(/"/g, '""') + '"';
+  const L = ['start,end,closed cycle,cycles,complete count,reason'].concat(stRes.rows.map(r => [r.a, b, r.r ? 'yes' : r.r === null ? 'undecided' : 'no', r.count ?? '', r.r && stRes.count ? (r.complete ? 'yes' : 'no') : '', q(r.reason)].join(',')));
+  save(new Blob(['﻿' + L.join('\r\n')], {type: 'text/csv'}), `square-sum-valid-starts-end-${b}.csv`); };
+
+function showCycle(){ res = Object.assign({}, res, {values: cyc.list[ci]}); show(res, true); }
+function countLine(){ const el = $('count'); if (!cyc || res.kind !== 'cycle'){ el.innerHTML = ''; return; }
+  el.innerHTML = cyc.complete ? (cyc.count === 1 ? `This is the <b>only</b> closed cycle for ${A}–${B} (rotations and reversals count as one).` : `There are exactly <b>${cyc.count}</b> different closed cycles for ${A}–${B}${cyc.list.length < cyc.count ? ` (the first ${cyc.list.length} can be browsed)` : ''}. Showing cycle <b>${ci + 1}</b> of ${cyc.count} — press “Another arrangement”.`)
+    : `At least <b>${cyc.count}</b> different closed cycles exist for ${A}–${B} (counting stopped after 2 s).`; }
+function enumerate(){
+  if (enumW) enumW.stop(); cyc = null; countLine(); if (res.kind !== 'cycle' || res.N > 60) return;
+  const key = A + '-' + B; $('count').innerHTML = '<i>Counting all different cycles…</i>';
+  enumW = task({enumerate: true, a: A, b: B, seconds: workersOK ? 2 : 1, cap: 500}, null, d => { enumW = null; if (key !== A + '-' + B || d.type !== 'cycles') return;
+    cyc = d; ci = Math.max(0, cyc.list.findIndex(c => c.join() === res.values.join())); if (ci === 0 && cyc.list.length && cyc.list[0].join() !== res.values.join()){ cyc.list.unshift(res.values); }
+    countLine(); });
+}
+function show(r, keep){
+  res = r; const v = r.values, n = r.N, sums = sumsOf(r), ok = verify(r);
+  const secs = (r.elapsed / 1000).toFixed(2), lo = A, hi = B;
+  if (!ok){ setNotice('Internal check failed — please report this interval.', 'bad'); return; }
+  const cyc = r.cycleStatus === 'impossible' ? `A closed cycle is <b>proved impossible</b>: ${r.cycleReason}.` : 'No closed cycle was found in the time given (not proved impossible).';
+  if (r.kind === 'cycle') setNotice(`✓ Closed square-sum cycle found for ${lo}–${hi} (${n} numbers) in ${secs} s.`, 'ok');
+  else if (r.kind === 'path') setNotice(`Open square-sum path found for ${lo}–${hi}. ${r.cycleStatus === 'impossible' ? 'A closed cycle is proved impossible.' : 'No closed cycle was found in the time given.'}`, 'warn');
+  else setNotice(r.pathStatus === 'impossible' ? `No closed cycle and no open path exist for ${lo}–${hi} — proved. The figure shows the longest chain found.` : `No cycle or complete path was found for ${lo}–${hi} in the time given (not proved impossible). Try a longer search time.`, 'bad');
+  $('result').classList.remove('hide');
+  const st = $('status'); st.className = 'status ' + r.kind;
+  st.textContent = r.kind === 'cycle' ? '✓ Verified closed cycle' : r.kind === 'path' ? '✓ Verified open path' : 'Incomplete chain';
+  $('title').textContent = r.kind === 'partial' ? `Interval ${lo}–${hi} · ${v.length} of ${n} numbers` : `Interval ${lo}–${hi} · ${n} numbers`;
+  let why = '';
+  if (r.kind === 'cycle') why = `<p class="why">Last joins first: <b>${v[v.length - 1]} + ${v[0]} = ${v[v.length - 1] + v[0]} = ${Math.sqrt(v[v.length - 1] + v[0])}²</b></p>`;
+  if (r.kind === 'path') why = `<p class="why">Ends <b>${v[0]}</b> and <b>${v[v.length - 1]}</b> do not join (${v[0]} + ${v[v.length - 1]} = ${v[0] + v[v.length - 1]}).</p><p class="why">${cyc}</p>`;
+  if (r.kind === 'partial') why = `<p class="why">${cyc}</p><p class="why">${r.pathStatus === 'impossible' ? `An open path is <b>proved impossible</b>: ${r.pathReason}.` : 'No complete open path was found in the time given.'}</p>`;
+  $('why').innerHTML = why;
+  const cnt = {}; sums.forEach(s => cnt[s] = (cnt[s] || 0) + 1);
+  $('legend').innerHTML = Object.keys(cnt).map(Number).sort((p, q) => p - q).map(s => `<div><span class="sw" style="background:${col(s)}"></span>${s} = ${Math.sqrt(s)}²<em style="color:${col(s)}">× ${cnt[s]}</em></div>`).join('');
+  $('ordH').textContent = r.kind === 'cycle' ? 'Cycle order' : r.kind === 'path' ? 'Path order' : 'Longest chain found';
+  $('pathText').textContent = v.join(' → ') + (r.kind === 'cycle' ? ` → ${v[0]}` : '');
+  $('checks').innerHTML = sums.map((s, i) => `<div><span>${v[i]} + ${v[(i + 1) % v.length]}</span><b style="color:${col(s)}">= ${s} = ${Math.sqrt(s)}² ✓</b></div>`).join('');
+  $('fig').innerHTML = svgOf(r, view);
+  if (keep) countLine(); else { enumerate(); solReset(); }
+}
+
+// ---- the figure ----
+function svgOf(r, mode){
+  const v = r.values, n = v.length, cyc = r.kind === 'cycle', N = r.N;
+  const big = mode === 'natural' ? N : n;
+  const t = big <= 40 ? 30 : big <= 70 ? 25 : big <= 120 ? 20 : big <= 250 ? 14 : 8;
+  const showNum = big <= 250, showPill = mode === 'cycle' && n <= 150;
+  const per = mode === 'cycle' ? (showPill ? 2 * t + 10 : t + 6) : t + 6;
+  const R = Math.max(250, big * per / (2 * Math.PI)), S = Math.round(2 * R + 2 * t + 110), C = S / 2;
+  const span = mode === 'cycle' && !cyc ? Math.PI * 1.8 : Math.PI * 2, a0 = -Math.PI / 2 + (Math.PI * 2 - span) / 2;
+  const fs = Math.max(6, Math.round(t * .5));
+  let o = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${S} ${S}" font-family="Georgia,'Times New Roman',serif">`;
+  o += `<defs><radialGradient id="bg" cx="50%" cy="45%" r="60%"><stop offset="0" stop-color="#fffdf6"/><stop offset=".7" stop-color="#f8efd8"/><stop offset="1" stop-color="#efe1bd"/></radialGradient>
+  <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fde7a8"/><stop offset=".55" stop-color="#ebb956"/><stop offset="1" stop-color="#c08a26"/></linearGradient>
+  <linearGradient id="tileEnd" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd3c4"/><stop offset="1" stop-color="#d9674c"/></linearGradient>
+  <radialGradient id="glass" cx="38%" cy="32%" r="72%"><stop offset="0" stop-color="#ffffff" stop-opacity=".8"/><stop offset=".4" stop-color="#cfe6ff" stop-opacity=".35"/><stop offset=".8" stop-color="#5b9be0" stop-opacity=".4"/><stop offset="1" stop-color="#1f5fb0" stop-opacity=".7"/></radialGradient>
+  <radialGradient id="glassEnd" cx="38%" cy="32%" r="72%"><stop offset="0" stop-color="#ffffff" stop-opacity=".92"/><stop offset=".45" stop-color="#ffd9cc" stop-opacity=".5"/><stop offset="1" stop-color="#d9674c" stop-opacity=".7"/></radialGradient>
+  <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d8ecff"/><stop offset=".5" stop-color="#4f8fd8"/><stop offset="1" stop-color="#1b4e94"/></linearGradient>
+  <linearGradient id="pill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fdeaa8"/><stop offset=".5" stop-color="#e9b84e"/><stop offset="1" stop-color="#b9821f"/></linearGradient>
+  <linearGradient id="hi" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+  <filter id="sh" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="1.5" stdDeviation="1.4" flood-color="#6b4210" flood-opacity=".45"/></filter></defs>`;
+  o += `<rect width="${S}" height="${S}" rx="${S * .04}" fill="url(#bg)"/>`;
+  o += `<circle cx="${C}" cy="${C}" r="${R}" fill="none" stroke="#e6d3a4" stroke-width="1"/>`;
+  const pt = (ang, rad) => [C + rad * Math.cos(ang), C + rad * Math.sin(ang)];
+  const rc = t * .62;   // transparent 3D glass circles for the numbers
+  const tile = (x, y, label, end) => { const X = x.toFixed(1), Y = y.toFixed(1);
+    return `<g><circle cx="${X}" cy="${(y + rc * .12).toFixed(1)}" r="${rc.toFixed(1)}" fill="#1b3f73" fill-opacity=".18"/>` +
+    `<circle cx="${X}" cy="${Y}" r="${rc.toFixed(1)}" fill="url(#${end ? 'glassEnd' : 'glass'})" stroke="url(#rim)" stroke-width="${t > 14 ? 1.8 : .8}"/>` +
+    `<ellipse cx="${(x - rc * .12).toFixed(1)}" cy="${(y - rc * .48).toFixed(1)}" rx="${(rc * .58).toFixed(1)}" ry="${(rc * .3).toFixed(1)}" fill="url(#hi)"/>` +
+    (showNum ? `<text x="${X}" y="${(y + fs * .36).toFixed(1)}" text-anchor="middle" font-size="${fs}" font-weight="700" fill="#0f2c55" stroke="#f4f9ff" stroke-width="${(fs * .16).toFixed(1)}" paint-order="stroke">${label}</text>` : '') + '</g>'; };
+  if (mode === 'cycle'){
+    const ang = i => a0 + i * span / (cyc ? n : Math.max(1, n - 1));
+    const m = cyc ? n : n - 1;
+    for (let i = 0; i < m; i++){ const j = (i + 1) % n, s = v[i] + v[j], c = col(s);
+      const p = ang(i), q = cyc && j === 0 ? a0 + 2 * Math.PI : ang(j);
+      const d = Math.min((q - p) * .45, rc / R), [x1, y1] = pt(p + d, R), [x2, y2] = pt(q - d, R), large = (q - p - 2 * d) > Math.PI ? 1 : 0;
+      o += `<path d="M${x1.toFixed(1)} ${y1.toFixed(1)} A${R} ${R} 0 ${large} 1 ${x2.toFixed(1)} ${y2.toFixed(1)}" fill="none" stroke="${c}" stroke-width="${Math.max(2, t * .16)}" stroke-linecap="round"/>`;
+      if (showPill){ const mid = (p + q) / 2, [px, py] = pt(mid, R - t * 1.5), w = String(s).length * fs * .62 + fs * .8, h = fs * 1.35;
+        [p, q].forEach(an => { const [tx, ty] = pt(an, R), dx = px - tx, dy = py - ty, L = Math.hypot(dx, dy) || 1, ex = tx + dx / L * rc, ey = ty + dy / L * rc;
+          o += `<line x1="${px.toFixed(1)}" y1="${py.toFixed(1)}" x2="${ex.toFixed(1)}" y2="${ey.toFixed(1)}" stroke="#b9821f" stroke-opacity=".75" stroke-width="${Math.max(1, t * .045).toFixed(2)}" stroke-linecap="round"/>`; });
+        o += `<rect x="${(px - w / 2).toFixed(1)}" y="${(py - h / 2).toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="${h * .3}" fill="url(#pill)" stroke="#8a5a10" stroke-width="${Math.max(.6, t * .03).toFixed(2)}" filter="url(#sh)"/>`;
+        o += `<text x="${px.toFixed(1)}" y="${(py + fs * .3).toFixed(1)}" text-anchor="middle" font-size="${(fs * .85).toFixed(1)}" font-weight="700" fill="#3a2208">${s}</text>`; }
+    }
+    v.forEach((x, i) => { const [px, py] = pt(ang(i), R); o += tile(px, py, x, !cyc && (i === 0 || i === n - 1)); });
+  } else {
+    const lo = A, ang = x => -Math.PI / 2 + (x - lo) * 2 * Math.PI / N;
+    const m = cyc ? n : n - 1, lw = Math.max(1.2, Math.min(3.2, 90 / N * 1.6));
+    for (let i = 0; i < m; i++){ const p = v[i], q = v[(i + 1) % n], s = p + q; const [x1, y1] = pt(ang(p), R - t * .6), [x2, y2] = pt(ang(q), R - t * .6);
+      o += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${col(s)}" stroke-width="${lw}" stroke-opacity=".9" stroke-linecap="round"/>`; }
+    const inPath = new Set(v);
+    for (let x = lo; x < lo + N; x++){ const [px, py] = pt(ang(x), R); o += tile(px, py, x, !cyc && (x === v[0] || x === v[n - 1])).replace('<g ', inPath.has(x) ? '<g ' : '<g opacity=".35" '); }
+  }
+  const ttl = cyc ? 'CLOSED CYCLE' : r.kind === 'path' ? 'OPEN PATH' : 'INCOMPLETE CHAIN';
+  const note = cyc ? `last joins first: ${v[n - 1]} + ${v[0]} = ${v[n - 1] + v[0]}` : r.kind === 'path' ? `ends ${v[0]} and ${v[n - 1]} do not join` : `longest chain found: ${n} of ${N}`;
+  const tf = Math.max(22, Math.min(54, R * .11));
+  if (mode === 'cycle'){
+    o += `<text x="${C}" y="${C - tf * 1.25}" text-anchor="middle" font-size="${(tf * .62).toFixed(1)}" font-weight="700" fill="#1f5fb0" letter-spacing="${(tf * .12).toFixed(1)}">SQUARE SUMS</text>`;
+    o += `<text x="${C}" y="${C - tf * .15}" text-anchor="middle" font-size="${tf}" font-weight="700" fill="#a8650c" letter-spacing="1">${ttl}</text>`;
+    o += `<text x="${C}" y="${C + tf * .75}" text-anchor="middle" font-size="${tf * .45}" font-style="italic" fill="#6b4a1c">${note}</text>`;
+    o += `<text x="${C}" y="${C + tf * 1.6}" text-anchor="middle" font-size="${(tf * .5).toFixed(1)}" font-weight="700" fill="#1f5fb0" letter-spacing="1">Interval: ${A}–${B}</text>`;
+  }
+  o += `<text x="${C}" y="${(S - 16).toFixed(1)}" text-anchor="middle" font-size="${Math.max(15, S * .025).toFixed(1)}" font-weight="700" fill="#4a2c08" stroke="#fffaf0" stroke-width="3" paint-order="stroke" letter-spacing=".5">Interval ${A}–${B} · Inder J. Taneja · numbers-magic.com</text>`;
+  return o + '</svg>';
+}
+
+// ---- downloads ----
+const save = (blob, name) => { const u = URL.createObjectURL(blob), l = document.createElement('a'); l.href = u; l.download = name; document.body.appendChild(l); l.click(); l.remove(); setTimeout(() => URL.revokeObjectURL(u), 2000); };
+const base = () => `square-sum-${res.kind}-${A}-${B}${view === 'natural' ? '-natural' : ''}`;
+$('svg').onclick = () => res && save(new Blob([svgOf(res, view)], {type: 'image/svg+xml'}), base() + '.svg');
+$('png').onclick = () => { if (!res) return;
+  const W = 2400, svg = svgOf(res, view).replace('<svg ', `<svg width="${W}" height="${W}" `), img = new Image();
+  const fail = why => setNotice('PNG could not be made here (' + why + '). Use SVG, or open the page in your browser.', 'warn');
+  img.onload = () => { try {
+      const c = document.createElement('canvas'); c.width = W; c.height = W; const g = c.getContext('2d'); g.drawImage(img, 0, 0, W, W);
+      const viaURL = () => { const a = document.createElement('a'); a.href = c.toDataURL('image/png'); a.download = base() + '.png'; document.body.appendChild(a); a.click(); a.remove(); };
+      if (c.toBlob) c.toBlob(b => b ? save(b, base() + '.png') : viaURL(), 'image/png'); else viaURL();
+    } catch (e) { fail(e.message || 'canvas blocked'); } };
+  img.onerror = () => fail('image could not be drawn');
+  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg); };
+$('txt').onclick = () => { if (!res) return; const v = res.values, s = sumsOf(res);
+  const head = [`Square-sum ${res.kind === 'cycle' ? 'closed cycle' : res.kind === 'path' ? 'open path' : 'longest chain found'} — Interval ${A}–${B} (${res.N} numbers)`, 'Created by Inder J. Taneja · numbers-magic.com', ''];
+  if (res.kind !== 'cycle') head.push('Closed cycle: ' + (res.cycleStatus === 'impossible' ? 'proved impossible — ' + res.cycleReason : 'not found in the time given'));
+  if (res.kind === 'partial') head.push('Open path: ' + (res.pathStatus === 'impossible' ? 'proved impossible — ' + res.pathReason : 'not found in the time given'));
+  head.push('', 'Order: ' + v.join(' ') + (res.kind === 'cycle' ? ' (' + v[0] + ')' : ''), '', 'Position\tNumber\tNext\tSquare sum');
+  const rows = s.map((x, i) => `${i + 1}\t${v[i]}\t${v[(i + 1) % v.length]}\t${x} = ${Math.sqrt(x)}^2`);
+  save(new Blob([head.concat(rows).join('\n')], {type: 'text/plain'}), base().replace('-natural', '') + '.txt'); };
+search();
+})();
+</script>
+</body>
+</html>

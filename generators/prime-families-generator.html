@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prime Families — Primes in Prime</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --bg:#E4F3D9;
+    --surface:#FBFFF8;
+    --surface-alt:#EFF6D8;
+    --border:#C9D9A9;
+    --ink:#1F2B1D;
+    --ink-soft:#64705B;
+    --accent:#4F8A45;
+    --accent-ink:#FFFFFF;
+    --accent-soft:#E0F0D8;
+    --brass:#B28520;
+    --brass-soft:#FFF2C7;
+    --radius-sm:9px;
+    --radius-md:14px;
+    --radius-lg:22px;
+    --shadow:0 12px 34px rgba(59,94,48,.12),0 2px 8px rgba(59,94,48,.06);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:linear-gradient(135deg,#DDEFCF 0%,#EDF5D3 52%,#D7EECF 100%);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .page{
+    max-width:880px;
+    margin:0 auto;
+    position:relative;
+    padding:2.5rem 1.5rem 4rem;
+  }
+  header.hero{
+    position:relative;
+    overflow:hidden;
+    margin-bottom:1.5rem;
+    padding:2.1rem 2.2rem;
+    border:1px solid rgba(79,138,69,.28);
+    border-radius:28px;
+    background:linear-gradient(125deg,rgba(253,255,249,.97),rgba(230,244,215,.96) 58%,rgba(255,244,202,.91));
+    box-shadow:var(--shadow);
+  }
+  .kicker{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12.5px;
+    display:inline-flex;
+    letter-spacing:0.1em;
+    color:var(--brass);
+    margin-bottom:0.75rem;
+    padding:.38rem .7rem;
+    background:var(--brass-soft);
+    border-radius:999px;
+  }
+  h1{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:clamp(2.15rem,4.8vw,3.25rem);
+    line-height:1.04;
+    margin:0 0 0.7rem;
+    letter-spacing:-0.025em;
+    color:#111111;
+  }
+  h1 .title-line{display:block;}
+  h1 .title-line:last-child{margin-top:.12em;font-size:.72em;color:var(--accent);font-style:italic;letter-spacing:-.012em;}
+  h1 em{
+    font-style:italic;
+    font-weight:500;
+    color:var(--accent);
+  }
+  .hero p{
+    font-size:16px;
+    line-height:1.55;
+    color:var(--ink-soft);
+    max-width:66ch;
+    margin:0;
+  }
+  .hero-example{
+    margin-top:1.15rem;
+    display:flex;
+    align-items:baseline;
+    gap:0.55rem;
+    flex-wrap:wrap;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:14px;
+    color:var(--ink-soft);
+    background:rgba(255,255,255,.68);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:.72rem .9rem;
+    width:fit-content;
+  }
+  .hero-example .seed{
+    font-weight:600;
+    color:var(--accent);
+    font-size:16px;
+  }
+  .hero-example .arrow{color:var(--brass);}
+  .credit-line{
+    margin-top:0.85rem;
+    font-size:12.5px;
+    color:var(--accent);
+    font-weight:700;
+  }
+
+  /* Tabs */
+  .tabs{
+    display:flex;
+    gap:0.4rem;
+    border-bottom:1px solid var(--border);
+    margin-bottom:1.35rem;
+    padding:0 .9rem;
+    background:rgba(248,251,255,.7);
+    border-radius:14px 14px 0 0;
+  }
+  .tab-btn{
+    font-family:'Inter',sans-serif;
+    font-size:14.5px;
+    font-weight:500;
+    color:var(--ink-soft);
+    background:none;
+    border:none;
+    padding:0.7rem 0.2rem;
+    margin-right:1.4rem;
+    cursor:pointer;
+    position:relative;
+    top:1px;
+  }
+  .tab-btn.active{
+    color:var(--ink);
+    border-bottom:2px solid var(--accent);
+  }
+  .panel{display:none;}
+  .panel.active{display:block;}
+
+  /* Cards */
+  .card{
+    background:rgba(248,251,255,.96);
+    border:1px solid var(--border);
+    border-radius:var(--radius-lg);
+    padding:1.5rem 1.6rem;
+    box-shadow:var(--shadow);
+    margin-bottom:1.4rem;
+  }
+  .field-row{
+    display:flex;
+    gap:0.7rem;
+    align-items:flex-end;
+    flex-wrap:wrap;
+  }
+  label{
+    display:block;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin-bottom:0.35rem;
+  }
+  input[type=text],input[type=number]{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:16px;
+    padding:0.68rem 0.78rem;
+    border:1px solid var(--border);
+    border-radius:var(--radius-sm);
+    background:#FBFDFF;
+    color:var(--ink);
+    width:180px;
+  }
+  input[type=text]:focus,input[type=number]:focus{
+    outline:none;
+    border-color:var(--accent);
+    box-shadow:0 0 0 4px rgba(79,138,69,.11);
+  }
+  button.primary{
+    font-family:'Inter',sans-serif;
+    font-size:14px;
+    font-weight:600;
+    background:linear-gradient(135deg,var(--accent),#6FA85C);
+    color:var(--accent-ink);
+    border:none;
+    border-radius:var(--radius-sm);
+    padding:0.62rem 1.15rem;
+    cursor:pointer;
+  }
+  button.primary:hover{background:linear-gradient(135deg,#3D7337,var(--accent));}
+  button.primary:disabled{opacity:0.5;cursor:default;}
+  button.ghost{
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    font-weight:500;
+    background:transparent;
+    color:var(--ink-soft);
+    border:1px solid var(--border);
+    border-radius:var(--radius-sm);
+    padding:0.5rem 0.9rem;
+    cursor:pointer;
+  }
+  button.ghost:hover{background:var(--surface-alt);color:var(--ink);}
+  button.ghost:disabled{opacity:0.4;cursor:default;}
+
+  .note{
+    font-size:13.5px;
+    margin-top:0.85rem;
+    color:var(--ink-soft);
+  }
+  .note.warn{color:var(--accent);}
+  .note.ok{color:#3A5A34;}
+
+  /* Stat strip */
+  .stats{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+    gap:0.9rem;
+    margin:1.3rem 0 0.3rem;
+  }
+  .stat{
+    background:linear-gradient(135deg,#E5F2D7,#FFF2C7);
+    border-radius:var(--radius-md);
+    padding:0.75rem 0.9rem;
+    border:1px solid var(--border);
+  }
+  .stat .label{font-size:11.5px;color:var(--ink-soft);margin-bottom:0.25rem;}
+  .stat .val{font-family:'IBM Plex Mono',monospace;font-size:19px;font-weight:600;}
+  .stat .val.accent{color:var(--accent);}
+
+  /* Family results */
+  .family-groups{margin-top:1.4rem;}
+  .len-group{margin-bottom:1.1rem;}
+  .len-group .len-label{
+    font-size:12px;
+    color:var(--ink-soft);
+    margin-bottom:0.5rem;
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .chip-row{display:flex;flex-wrap:wrap;gap:0.45rem;}
+  .chip{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:14px;
+    padding:0.32rem 0.65rem;
+    border-radius:999px;
+    background:#EDF5DE;
+    border:1px solid var(--border);
+    color:var(--ink);
+  }
+  .chip.seed{
+    background:linear-gradient(135deg,var(--accent),#6FA85C);
+    color:var(--accent-ink);
+    border-color:var(--accent);
+    font-weight:600;
+  }
+
+  .export-row{
+    display:flex;
+    gap:0.6rem;
+    margin-top:1.3rem;
+    padding-top:1.2rem;
+    border-top:1px solid var(--border);
+  }
+
+  /* Interval prime cards (Explorer) */
+  .prime-card{
+    border:1px solid var(--border);
+    border-radius:var(--radius-md);
+    margin-bottom:0.55rem;
+    overflow:hidden;
+  }
+  .prime-card-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:0.6rem;
+    padding:0.6rem 0.9rem;
+    cursor:pointer;
+    background:var(--surface-alt);
+  }
+  .prime-card-header .ph-left{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:14.5px;
+    font-weight:600;
+    color:var(--ink);
+  }
+  .prime-card-header .ph-right{
+    display:flex;
+    align-items:center;
+    gap:0.6rem;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12.5px;
+    color:var(--ink-soft);
+  }
+  .prime-card-header .toggle-icon{
+    color:var(--brass);
+    font-size:12px;
+    transition:transform 0.15s ease;
+  }
+  .prime-card.open .toggle-icon{transform:rotate(90deg);}
+  .prime-card-body{
+    display:none;
+    padding:0.9rem 0.9rem 1rem;
+  }
+  .prime-card.open .prime-card-body{display:block;}
+  .interval-summary{
+    font-size:13.5px;
+    color:var(--ink-soft);
+    margin-bottom:0.9rem;
+  }
+
+  /* Search panel */
+  .preset-row{display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;}
+  .preset-btn{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;
+    padding:0.5rem 0.85rem;
+    border-radius:var(--radius-sm);
+    border:1px solid var(--border);
+    background:var(--surface);
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .preset-btn.active{
+    border-color:var(--accent);
+    color:var(--accent);
+    background:var(--accent-soft);
+  }
+  .range-fields{display:none;gap:0.7rem;margin-bottom:1rem;}
+  .range-fields.show{display:flex;}
+
+  .progress-wrap{margin-top:1.1rem;}
+  .progress-bar{
+    height:6px;
+    background:var(--surface-alt);
+    border-radius:999px;
+    overflow:hidden;
+  }
+  .progress-fill{
+    height:100%;
+    background:var(--brass);
+    width:0%;
+    transition:width 0.12s linear;
+  }
+  .progress-text{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin-top:0.4rem;
+  }
+
+  table.leaderboard{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:1.1rem;
+    font-size:14px;
+  }
+  table.leaderboard th{
+    text-align:left;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    font-weight:500;
+    padding:0.4rem 0.6rem;
+    border-bottom:1px solid var(--border);
+  }
+  table.leaderboard td{
+    padding:0.55rem 0.6rem;
+    border-bottom:1px solid var(--border);
+    font-family:'IBM Plex Mono',monospace;
+  }
+  table.leaderboard tr.rank-row{cursor:pointer;}
+  table.leaderboard tr.rank-row:hover td{background:var(--surface-alt);}
+  table.leaderboard td.rank{color:var(--brass);font-weight:600;width:2.4rem;}
+  table.leaderboard td.seed{color:var(--accent);font-weight:600;}
+
+  footer{
+    margin-top:3rem;
+    padding:1.3rem 1.5rem;
+    border:1px solid var(--border);
+    border-radius:16px;
+    background:rgba(248,251,255,.72);
+    font-size:13px;
+    color:var(--ink-soft);
+    line-height:1.9;
+    text-align:center;
+  }
+  footer a{color:var(--brass);text-decoration:none;}
+  footer a:hover{text-decoration:underline;}
+
+  @media (max-width:520px){
+    .page{padding:1rem .8rem 2.5rem;}
+    header.hero{padding:1.5rem 1.2rem;border-radius:20px;}
+    input[type=text],input[type=number]{width:140px;}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="hero">
+    <div class="kicker">RECREATIONAL NUMBER THEORY</div>
+    <h1><span class="title-line">Prime Families</span><span class="title-line">Primes in Prime</span></h1>
+    <p>Take every digit of a prime, rearrange any subset of them, and see how many more primes were hiding inside it all along.</p>
+    <div class="hero-example">
+      <span class="seed">317</span>
+      <span class="arrow">→</span>
+      <span>3, 7, 13, 17, 31, 37, 71, 73, 137, 173, 317</span>
+    </div>
+    <div class="credit-line">Created by <strong>Inder J. Taneja</strong></div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="explorer">Explorer</button>
+    <button class="tab-btn" data-tab="search">Richest Search</button>
+  </nav>
+
+  <!-- EXPLORER -->
+  <section class="panel active" id="panel-explorer">
+    <div class="card">
+      <div class="preset-row" id="explorerModeRow">
+        <button class="preset-btn active" data-mode="single">Single prime</button>
+        <button class="preset-btn" data-mode="interval">Interval</button>
+      </div>
+
+      <div id="singleFields" class="field-row">
+        <div>
+          <label for="seedInput">Seed number</label>
+          <input type="text" id="seedInput" inputmode="numeric" value="317" maxlength="9">
+        </div>
+        <button class="primary" id="findBtn">Find family</button>
+      </div>
+
+      <div id="intervalFields" class="field-row" style="display:none;">
+        <div>
+          <label for="intFrom">From</label>
+          <input type="number" id="intFrom" value="300" min="2">
+        </div>
+        <div>
+          <label for="intTo">To</label>
+          <input type="number" id="intTo" value="400" min="2">
+        </div>
+        <button class="primary" id="findIntervalBtn">Find primes &amp; families</button>
+        <button class="ghost" id="intStopBtn" style="display:none;">Stop</button>
+      </div>
+
+      <div class="note" id="explorerNote"></div>
+
+      <!-- single-seed results -->
+      <div id="singleResults">
+        <div class="stats" id="explorerStats" style="display:none;">
+          <div class="stat"><div class="label">Seed</div><div class="val accent" id="statSeed">–</div></div>
+          <div class="stat"><div class="label">Digits</div><div class="val" id="statDigits">–</div></div>
+          <div class="stat"><div class="label">Family size</div><div class="val" id="statFamily">–</div></div>
+          <div class="stat"><div class="label">Richest length</div><div class="val" id="statRichest">–</div></div>
+        </div>
+
+        <div class="family-groups" id="familyGroups"></div>
+
+        <div class="export-row" id="explorerExportRow" style="display:none;">
+          <button class="ghost" id="exportTxtBtn">Export .txt</button>
+          <button class="ghost" id="exportXlsxBtn">Export .xlsx</button>
+        </div>
+      </div>
+
+      <!-- interval results -->
+      <div id="intervalResultsWrap" style="display:none;">
+        <div class="progress-wrap" id="intProgressWrap" style="display:none;">
+          <div class="progress-bar"><div class="progress-fill" id="intProgressFill"></div></div>
+          <div class="progress-text" id="intProgressText"></div>
+        </div>
+        <div id="intervalCards"></div>
+        <div class="export-row" id="intervalExportRow" style="display:none;">
+          <button class="ghost" id="exportIntTxtBtn">Export .txt</button>
+          <button class="ghost" id="exportIntXlsxBtn">Export .xlsx</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RICHEST SEARCH -->
+  <section class="panel" id="panel-search">
+    <div class="card">
+      <label>Scan range</label>
+      <div class="preset-row" id="presetRow">
+        <button class="preset-btn active" data-preset="3">3-digit primes</button>
+        <button class="preset-btn" data-preset="4">4-digit primes</button>
+        <button class="preset-btn" data-preset="5">5-digit primes</button>
+        <button class="preset-btn" data-preset="custom">Custom range</button>
+      </div>
+      <div class="range-fields" id="rangeFields">
+        <div>
+          <label for="rangeFrom">From</label>
+          <input type="number" id="rangeFrom" value="100000" min="2">
+        </div>
+        <div>
+          <label for="rangeTo">To</label>
+          <input type="number" id="rangeTo" value="120000" min="2">
+        </div>
+      </div>
+      <div class="field-row">
+        <button class="primary" id="scanBtn">Scan for richest primes</button>
+        <button class="ghost" id="stopBtn" style="display:none;">Stop</button>
+      </div>
+      <div class="note" id="searchNote"></div>
+
+      <div class="progress-wrap" id="progressWrap" style="display:none;">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText"></div>
+      </div>
+
+      <div id="leaderboardWrap" style="display:none;">
+        <table class="leaderboard">
+          <thead>
+            <tr><th>Rank</th><th>Seed</th><th>Digits</th><th>Family size</th></tr>
+          </thead>
+          <tbody id="leaderboardBody"></tbody>
+        </table>
+        <div class="export-row">
+          <button class="ghost" id="exportSearchTxtBtn">Export .txt</button>
+          <button class="ghost" id="exportSearchXlsxBtn">Export .xlsx</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Inder J. Taneja<br>
+    <a href="https://numbers-magic.com/" target="_blank" rel="noopener">numbers-magic.com</a> ·
+    <a href="https://inderjtaneja.wordpress.com/" target="_blank" rel="noopener">inderjtaneja.wordpress.com</a> ·
+    <a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/" target="_blank" rel="noopener">taneja-mathematical-generators.ijtaneja.chatgpt.site</a>
+  </footer>
+
+</div>
+
+<script>
+/* ---------- core math ---------- */
+function isPrime(n){
+  if(n<2) return false;
+  if(n<4) return true;
+  if(n%2===0) return false;
+  for(let i=3;i*i<=n;i+=2){ if(n%i===0) return false; }
+  return true;
+}
+function combinations(arr,r){
+  const result=[]; const n=arr.length; const combo=[];
+  function build(start){
+    if(combo.length===r){ result.push(combo.slice()); return; }
+    for(let i=start;i<n;i++){ combo.push(arr[i]); build(i+1); combo.pop(); }
+  }
+  build(0);
+  return result;
+}
+function uniquePermutations(arr){
+  const a=arr.slice().sort();
+  const results=[]; const used=new Array(a.length).fill(false); const current=[];
+  function backtrack(){
+    if(current.length===a.length){ results.push(current.join('')); return; }
+    for(let i=0;i<a.length;i++){
+      if(used[i]) continue;
+      if(i>0 && a[i]===a[i-1] && !used[i-1]) continue;
+      used[i]=true; current.push(a[i]);
+      backtrack();
+      current.pop(); used[i]=false;
+    }
+  }
+  backtrack();
+  return results;
+}
+function digitPrimeFamily(seedStr){
+  const digits=seedStr.split('');
+  const n=digits.length;
+  const primesFound=new Set();
+  for(let r=1;r<=n;r++){
+    const combos=combinations(digits,r);
+    const multisetSeen=new Set();
+    for(const combo of combos){
+      const key=combo.slice().sort().join('');
+      if(multisetSeen.has(key)) continue;
+      multisetSeen.add(key);
+      const perms=uniquePermutations(combo);
+      for(const p of perms){
+        if(p[0]==='0') continue;
+        const val=parseInt(p,10);
+        if(isPrime(val)) primesFound.add(val);
+      }
+    }
+  }
+  return Array.from(primesFound).sort((a,b)=>a-b);
+}
+
+/* ---------- tabs ---------- */
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
+  });
+});
+function goToExplorerWith(seed){
+  document.querySelector('.tab-btn[data-tab="explorer"]').click();
+  document.querySelector('#explorerModeRow .preset-btn[data-mode="single"]').click();
+  document.getElementById('seedInput').value=seed;
+  runExplorer();
+}
+
+/* ---------- explorer ---------- */
+let lastFamily=null, lastSeed=null;
+
+function runExplorer(){
+  const raw=document.getElementById('seedInput').value.trim();
+  const noteEl=document.getElementById('explorerNote');
+  if(!/^[0-9]{1,9}$/.test(raw) || raw[0]==='0'){
+    noteEl.className='note warn';
+    noteEl.textContent='Enter a whole number up to 9 digits, no leading zero.';
+    document.getElementById('explorerStats').style.display='none';
+    document.getElementById('explorerExportRow').style.display='none';
+    document.getElementById('familyGroups').innerHTML='';
+    return;
+  }
+  const seed=parseInt(raw,10);
+  const seedIsPrime=isPrime(seed);
+  const family=digitPrimeFamily(raw);
+  lastFamily=family; lastSeed=seed;
+
+  noteEl.className='note '+(seedIsPrime?'ok':'warn');
+  noteEl.textContent=seedIsPrime
+    ? seed+' is prime — its digit family follows below.'
+    : seed+' is not itself prime, but its digits can still be rearranged into the primes below.';
+
+  document.getElementById('statSeed').textContent=seed.toLocaleString();
+  document.getElementById('statDigits').textContent=raw.length;
+  document.getElementById('statFamily').textContent=family.length;
+  const byLen={};
+  family.forEach(v=>{ const l=String(v).length; byLen[l]=(byLen[l]||0)+1; });
+  let richestLen=0, richestCount=-1;
+  Object.keys(byLen).forEach(l=>{ if(byLen[l]>richestCount){ richestCount=byLen[l]; richestLen=l; } });
+  document.getElementById('statRichest').textContent=richestLen+'-digit ('+richestCount+')';
+  document.getElementById('explorerStats').style.display='grid';
+
+  const groupsEl=document.getElementById('familyGroups');
+  renderFamilyChips(groupsEl,family,seed);
+
+  document.getElementById('explorerExportRow').style.display='flex';
+}
+
+/* shared chip-group renderer, used by both single-seed and interval results */
+function renderFamilyChips(containerEl,family,seed){
+  containerEl.innerHTML='';
+  const byLen={};
+  family.forEach(v=>{ const l=String(v).length; byLen[l]=(byLen[l]||0)+1; });
+  const lengths=Object.keys(byLen).map(Number).sort((a,b)=>a-b);
+  lengths.forEach(len=>{
+    const wrap=document.createElement('div');
+    wrap.className='len-group';
+    const label=document.createElement('div');
+    label.className='len-label';
+    label.textContent=len+'-digit primes';
+    wrap.appendChild(label);
+    const row=document.createElement('div');
+    row.className='chip-row';
+    family.filter(v=>String(v).length===len).forEach(v=>{
+      const chip=document.createElement('span');
+      chip.className='chip'+(v===seed?' seed':'');
+      chip.textContent=v.toLocaleString();
+      row.appendChild(chip);
+    });
+    wrap.appendChild(row);
+    containerEl.appendChild(wrap);
+  });
+}
+
+document.getElementById('findBtn').addEventListener('click',runExplorer);
+document.getElementById('seedInput').addEventListener('keydown',e=>{ if(e.key==='Enter') runExplorer(); });
+
+document.getElementById('exportTxtBtn').addEventListener('click',()=>{
+  if(!lastFamily) return;
+  const lines=[
+    '================================================',
+    '  PRIME FAMILIES GENERATOR — Explorer result',
+    '================================================',
+    '  Seed        : '+lastSeed,
+    '  Family size : '+lastFamily.length,
+    '  Generated   : '+new Date().toLocaleString(),
+    '================================================',
+    '',
+    lastFamily.join(', '),
+    ''
+  ].join('\n');
+  downloadText('prime-family-'+lastSeed+'.txt',lines);
+});
+document.getElementById('exportXlsxBtn').addEventListener('click',()=>{
+  if(!lastFamily) return;
+  const rows=[['Prime','Digits']];
+  lastFamily.forEach(v=>rows.push([v,String(v).length]));
+  downloadXlsx('prime-family-'+lastSeed+'.xlsx',rows,'Family');
+});
+
+/* ---------- explorer mode toggle (single vs interval) ---------- */
+document.querySelectorAll('#explorerModeRow .preset-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('#explorerModeRow .preset-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const mode=btn.dataset.mode;
+    document.getElementById('singleFields').style.display= mode==='single' ? 'flex' : 'none';
+    document.getElementById('intervalFields').style.display= mode==='interval' ? 'flex' : 'none';
+    document.getElementById('singleResults').style.display= mode==='single' ? 'block' : 'none';
+    document.getElementById('intervalResultsWrap').style.display= mode==='interval' && lastIntervalResults ? 'block' : 'none';
+    document.getElementById('explorerNote').textContent='';
+  });
+});
+
+/* ---------- interval scan (Explorer) ---------- */
+let intScanning=false, intStopRequested=false, lastIntervalResults=null, lastIntervalRange=null;
+
+document.getElementById('findIntervalBtn').addEventListener('click',()=>{
+  const from=parseInt(document.getElementById('intFrom').value,10);
+  const to=parseInt(document.getElementById('intTo').value,10);
+  const noteEl=document.getElementById('explorerNote');
+  if(!Number.isFinite(from)||!Number.isFinite(to)||from<2||to<=from){
+    noteEl.className='note warn';
+    noteEl.textContent='Enter a valid interval (To must be greater than From).';
+    return;
+  }
+  if(to-from>200000){
+    noteEl.className='note warn';
+    noteEl.textContent='Interval too wide — keep spans under 200,000 to stay responsive.';
+    return;
+  }
+  startIntervalScan(from,to);
+});
+document.getElementById('intStopBtn').addEventListener('click',()=>{ intStopRequested=true; });
+
+function startIntervalScan(from,to){
+  intScanning=true; intStopRequested=false;
+  lastIntervalRange=[from,to];
+  document.getElementById('findIntervalBtn').disabled=true;
+  document.getElementById('intStopBtn').style.display='inline-block';
+  document.getElementById('intProgressWrap').style.display='block';
+  document.getElementById('intervalResultsWrap').style.display='block';
+  document.getElementById('intervalCards').innerHTML='';
+  document.getElementById('intervalExportRow').style.display='none';
+  document.getElementById('explorerNote').className='note';
+  document.getElementById('explorerNote').textContent='';
+
+  const total=to-from+1;
+  let n=from;
+  const results=[];
+  const CHUNK_MS=25;
+
+  function step(){
+    if(intStopRequested){ finish(true); return; }
+    const t0=performance.now();
+    while(performance.now()-t0<CHUNK_MS && n<=to){
+      if(isPrime(n)){
+        const family=digitPrimeFamily(String(n));
+        results.push({seed:n, digits:String(n).length, family});
+      }
+      n++;
+    }
+    const pct=Math.min(100, Math.round(((n-from)/total)*100));
+    document.getElementById('intProgressFill').style.width=pct+'%';
+    document.getElementById('intProgressText').textContent=
+      'Scanning '+from.toLocaleString()+'–'+to.toLocaleString()+' … '+pct+'% ('+results.length+' primes found so far)';
+    if(n<=to){
+      setTimeout(step,0);
+    } else {
+      finish(false);
+    }
+  }
+
+  function finish(stopped){
+    intScanning=false;
+    document.getElementById('findIntervalBtn').disabled=false;
+    document.getElementById('intStopBtn').style.display='none';
+    lastIntervalResults=results;
+    renderIntervalResults(results, from, to, stopped);
+  }
+
+  step();
+}
+
+function renderIntervalResults(results, from, to, stopped){
+  const container=document.getElementById('intervalCards');
+  container.innerHTML='';
+
+  const summary=document.createElement('div');
+  summary.className='interval-summary';
+  const DISPLAY_CAP=250;
+  const shown=results.slice(0,DISPLAY_CAP);
+  summary.textContent=(stopped?'Stopped early. ':'')+results.length.toLocaleString()+' prime'+(results.length===1?'':'s')+' found between '+from.toLocaleString()+' and '+to.toLocaleString()+
+    (results.length>DISPLAY_CAP ? ' — showing the first '+DISPLAY_CAP+' below (all are included in the export).' : '.');
+  container.appendChild(summary);
+
+  shown.forEach(r=>{
+    const card=document.createElement('div');
+    card.className='prime-card';
+    const header=document.createElement('div');
+    header.className='prime-card-header';
+    header.innerHTML='<span class="ph-left">'+r.seed.toLocaleString()+'</span>'+
+      '<span class="ph-right">'+r.digits+' digit'+(r.digits===1?'':'s')+' · family '+r.family.length+' <span class="toggle-icon">▶</span></span>';
+    const body=document.createElement('div');
+    body.className='prime-card-body';
+    header.addEventListener('click',()=>{
+      card.classList.toggle('open');
+      if(card.classList.contains('open') && !body.dataset.rendered){
+        renderFamilyChips(body,r.family,r.seed);
+        body.dataset.rendered='1';
+      }
+    });
+    card.appendChild(header);
+    card.appendChild(body);
+    container.appendChild(card);
+  });
+
+  document.getElementById('intProgressText').textContent=
+    (stopped?'Stopped early. ':'Done. ')+results.length.toLocaleString()+' primes found in '+from.toLocaleString()+'–'+to.toLocaleString()+'.';
+  document.getElementById('intervalExportRow').style.display = results.length ? 'flex' : 'none';
+}
+
+document.getElementById('exportIntTxtBtn').addEventListener('click',()=>{
+  if(!lastIntervalResults || !lastIntervalRange) return;
+  const [from,to]=lastIntervalRange;
+  const lines=[
+    '================================================',
+    '  PRIME FAMILIES GENERATOR — Interval result',
+    '================================================',
+    '  Interval    : '+from+' – '+to,
+    '  Primes found: '+lastIntervalResults.length,
+    '  Generated   : '+new Date().toLocaleString(),
+    '================================================',
+    ''
+  ];
+  lastIntervalResults.forEach(r=>{
+    lines.push('--------------------------------------------------');
+    lines.push(r.seed+'  ('+r.digits+' digits)  →  family size '+r.family.length);
+    lines.push('  '+r.family.join(', '));
+  });
+  lines.push('--------------------------------------------------');
+  downloadText('prime-families-interval-'+from+'-'+to+'.txt', lines.join('\n')+'\n');
+});
+document.getElementById('exportIntXlsxBtn').addEventListener('click',()=>{
+  if(!lastIntervalResults || !lastIntervalRange) return;
+  const [from,to]=lastIntervalRange;
+  const rows=[['Prime','Digits','Family size','Family']];
+  lastIntervalResults.forEach(r=>rows.push([r.seed,r.digits,r.family.length,r.family.join(', ')]));
+  downloadXlsx('prime-families-interval-'+from+'-'+to+'.xlsx',rows,'Interval');
+});
+
+/* ---------- richest search ---------- */
+let currentPreset='3';
+let scanning=false;
+let stopRequested=false;
+let lastLeaderboard=null;
+
+document.querySelectorAll('.preset-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    currentPreset=btn.dataset.preset;
+    const rangeFields=document.getElementById('rangeFields');
+    if(currentPreset==='custom'){
+      rangeFields.classList.add('show');
+    } else {
+      rangeFields.classList.remove('show');
+    }
+  });
+});
+
+function presetRange(preset){
+  if(preset==='3') return [100,999];
+  if(preset==='4') return [1000,9999];
+  if(preset==='5') return [10000,99999];
+  return null;
+}
+
+document.getElementById('scanBtn').addEventListener('click',()=>{
+  let from,to;
+  if(currentPreset==='custom'){
+    from=parseInt(document.getElementById('rangeFrom').value,10);
+    to=parseInt(document.getElementById('rangeTo').value,10);
+  } else {
+    [from,to]=presetRange(currentPreset);
+  }
+  const noteEl=document.getElementById('searchNote');
+  if(!Number.isFinite(from)||!Number.isFinite(to)||from<2||to<=from){
+    noteEl.className='note warn';
+    noteEl.textContent='Enter a valid range (To must be greater than From).';
+    return;
+  }
+  if(to-from>200000){
+    noteEl.className='note warn';
+    noteEl.textContent='Range too wide — keep spans under 200,000 to stay responsive.';
+    return;
+  }
+  startScan(from,to);
+});
+
+document.getElementById('stopBtn').addEventListener('click',()=>{ stopRequested=true; });
+
+function startScan(from,to){
+  scanning=true; stopRequested=false;
+  document.getElementById('scanBtn').disabled=true;
+  document.getElementById('stopBtn').style.display='inline-block';
+  document.getElementById('progressWrap').style.display='block';
+  document.getElementById('leaderboardWrap').style.display='none';
+  document.getElementById('searchNote').className='note';
+  document.getElementById('searchNote').textContent='';
+
+  const total=to-from+1;
+  let n = from;
+  const results=[];
+  const CHUNK_MS=25;
+
+  function step(){
+    if(stopRequested){ finish(true); return; }
+    const t0=performance.now();
+    while(performance.now()-t0<CHUNK_MS && n<=to){
+      if(isPrime(n)){
+        const fam=digitPrimeFamily(String(n));
+        results.push({seed:n, digits:String(n).length, size:fam.length});
+      }
+      n++;
+    }
+    const pct=Math.min(100, Math.round(((n-from)/total)*100));
+    document.getElementById('progressFill').style.width=pct+'%';
+    document.getElementById('progressText').textContent=
+      'Scanning '+from.toLocaleString()+'–'+to.toLocaleString()+' … '+pct+'% ('+results.length+' primes checked)';
+    if(n<=to){
+      setTimeout(step,0);
+    } else {
+      finish(false);
+    }
+  }
+
+  function finish(stopped){
+    scanning=false;
+    document.getElementById('scanBtn').disabled=false;
+    document.getElementById('stopBtn').style.display='none';
+    results.sort((a,b)=>b.size-a.size);
+    lastLeaderboard=results.slice(0,25);
+    renderLeaderboard(lastLeaderboard);
+    document.getElementById('progressText').textContent=
+      (stopped?'Stopped early. ':'Done. ')+results.length.toLocaleString()+' primes scanned in '+from.toLocaleString()+'–'+to.toLocaleString()+'.';
+    document.getElementById('leaderboardWrap').style.display= results.length ? 'block' : 'none';
+    if(!results.length){
+      document.getElementById('searchNote').className='note warn';
+      document.getElementById('searchNote').textContent='No primes found in that range.';
+    }
+  }
+
+  step();
+}
+
+function renderLeaderboard(rows){
+  const body=document.getElementById('leaderboardBody');
+  body.innerHTML='';
+  rows.forEach((r,i)=>{
+    const tr=document.createElement('tr');
+    tr.className='rank-row';
+    tr.innerHTML='<td class="rank">'+(i+1)+'</td><td class="seed">'+r.seed.toLocaleString()+'</td><td>'+r.digits+'</td><td>'+r.size+'</td>';
+    tr.addEventListener('click',()=>goToExplorerWith(r.seed));
+    body.appendChild(tr);
+  });
+}
+
+document.getElementById('exportSearchTxtBtn').addEventListener('click',()=>{
+  if(!lastLeaderboard) return;
+  const lines=[
+    '================================================',
+    '  PRIME FAMILIES GENERATOR — Richest Search',
+    '================================================',
+    '  Generated : '+new Date().toLocaleString(),
+    '================================================',
+    ''
+  ];
+  lastLeaderboard.forEach((r,i)=>{
+    lines.push((i+1)+'. '+r.seed+'  ('+r.digits+' digits)  → family size '+r.size);
+  });
+  downloadText('prime-families-richest.txt',lines.join('\n')+'\n');
+});
+document.getElementById('exportSearchXlsxBtn').addEventListener('click',()=>{
+  if(!lastLeaderboard) return;
+  const rows=[['Rank','Seed','Digits','Family size']];
+  lastLeaderboard.forEach((r,i)=>rows.push([i+1,r.seed,r.digits,r.size]));
+  downloadXlsx('prime-families-richest.xlsx',rows,'Leaderboard');
+});
+
+/* ---------- download helpers ---------- */
+function downloadText(filename,text){
+  const blob=new Blob([text],{type:'text/plain'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function downloadXlsx(filename,rows,sheetName){
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,sheetName||'Sheet1');
+  XLSX.writeFile(wb,filename);
+}
+
+/* ---------- init ---------- */
+runExplorer();
+</script>
+</body>
+</html>

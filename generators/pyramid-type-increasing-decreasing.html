@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pyramid-Type Representations Increasing and Decreasing Order Generator</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+
+/* Layout: a working tool — header band, control panel, then each pyramid as a full-width "plate", one row per k */
+/* Surfaces: recessed wells (inset light from top-left) on a soft lavender ground; controls are raised */
+:root{
+  --bg:#e2eeec; --panel:#eef6f5; --ink:#12302d; --muted:#46645f; --line:#c6dcd8;
+  --base:#0d6b63; --exp:#b5581a; --minus:#c0284f; --plus:#1f7f4c; --accent:#128a7e; --accent2:#0a5c55; --accent-ink:#ffffff;
+  --chip:#d7ebe8; --rowhi:rgba(255,255,255,.6);
+  --well-a:#cfe4e0; --well-b:#f5fbfa; --raise-a:#fbfefe; --raise-b:#dcedea;
+  --sh-d:rgba(18,92,85,.28); --sh-l:rgba(255,255,255,.95); --edge:rgba(255,255,255,.75);
+  --hero-a:#0a4743; --hero-b:#147a70; --hero-ink:#f2fbf9; --hero-muted:#d3efea; --hero-gold:#f2b56b; --hero-lilac:#9fe6da;
+  --nval:#0a5c55;
+  --f-math:"STIX Two Text","Cambria Math","Times New Roman",serif;
+  --f-ui:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1e1d; --panel:#132927; --ink:#e4f5f2; --muted:#a3c7c1; --line:#244440;
+  --base:#7fded1; --exp:#f3ac62; --minus:#ff809b; --plus:#82d9a6; --accent:#38bfae; --accent2:#178f82; --accent-ink:#ffffff;
+  --chip:#1a3633; --rowhi:rgba(255,255,255,.04);
+  --well-a:#091514; --well-b:#1a3532; --raise-a:#1f3d3a; --raise-b:#132927;
+  --sh-d:rgba(0,0,0,.6); --sh-l:rgba(120,220,205,.12); --edge:rgba(140,230,215,.12); --nval:#f2c46d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1e1d; --panel:#132927; --ink:#e4f5f2; --muted:#a3c7c1; --line:#244440;
+  --base:#7fded1; --exp:#f3ac62; --minus:#ff809b; --plus:#82d9a6; --accent:#38bfae; --accent2:#178f82; --accent-ink:#ffffff;
+  --chip:#1a3633; --rowhi:rgba(255,255,255,.04);
+  --well-a:#091514; --well-b:#1a3532; --raise-a:#1f3d3a; --raise-b:#132927;
+  --sh-d:rgba(0,0,0,.6); --sh-l:rgba(120,220,205,.12); --edge:rgba(140,230,215,.12); --nval:#f2c46d; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);background-image:radial-gradient(circle at 15% 0%,var(--raise-a),transparent 55%),radial-gradient(circle at 100% 100%,var(--well-a),transparent 60%);background-attachment:fixed;color:var(--ink);font-family:var(--f-ui);font-size:15px;line-height:1.5}
+/* recessed 3D well */
+.panel,.plate,.tablewrap{background:linear-gradient(155deg,var(--well-a) 0%,var(--well-b) 70%);border:1px solid var(--edge);border-radius:16px;box-shadow:inset 7px 7px 14px var(--sh-d),inset -7px -7px 14px var(--sh-l),0 1px 0 var(--sh-l)}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px;display:flex;flex-direction:column;gap:20px}
+header{display:flex;flex-direction:column;gap:8px;padding:26px 28px 24px;border-radius:18px;background:linear-gradient(135deg,var(--hero-a) 0%,var(--hero-b) 100%);border:1.5px solid rgba(242,181,107,.55);padding-top:32px;box-shadow:8px 8px 20px var(--sh-d),-6px -6px 16px var(--sh-l),inset 0 1px 0 rgba(255,255,255,.12),inset 0 -14px 30px rgba(0,0,0,.16);position:relative;overflow:hidden}
+header::after{content:"";position:absolute;right:-60px;top:-80px;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(242,181,107,.22),transparent 70%);pointer-events:none}
+header::before{content:"";position:absolute;left:0;right:0;top:0;height:7px;background:linear-gradient(90deg,#a8711f 0%,#f6d48a 22%,#d99a3c 45%,#fff0c4 62%,#d39235 80%,#a8711f 100%);box-shadow:0 2px 6px rgba(0,0,0,.25),inset 0 -1px 0 rgba(120,70,10,.5)}
+header>*{position:relative}
+.lede{border-top-color:rgba(242,181,107,.45)!important}
+h1{background:linear-gradient(100deg,var(--hero-ink) 0%,var(--hero-lilac) 60%,var(--hero-gold) 100%);-webkit-background-clip:text;background-clip:text;color:transparent;font-family:var(--f-math);font-weight:600;font-size:clamp(26px,3.8vw,40px);line-height:1.15;margin:0;text-wrap:balance}
+.h1sub{display:block}
+.byline{font-size:15px;color:var(--hero-gold);font-weight:600;margin:0;letter-spacing:.02em}
+.lede{color:var(--hero-muted);max-width:76ch;margin:0;padding-top:10px;border-top:1px solid rgba(255,255,255,.14)}
+.formula{font-family:var(--f-math);font-size:18px;color:var(--hero-ink)}
+.formula sup{color:var(--hero-gold)}
+.tabs{display:flex;gap:12px;flex-wrap:wrap;padding:8px;border-radius:16px;background:linear-gradient(155deg,var(--well-a),var(--well-b));border:1px solid var(--edge);box-shadow:inset 5px 5px 10px var(--sh-d),inset -5px -5px 10px var(--sh-l)}
+.tab{font:inherit;font-weight:600;font-size:14.5px;color:var(--base);padding:10px 20px;cursor:pointer;border-radius:12px;border:1px solid var(--edge);background:linear-gradient(160deg,var(--raise-a),var(--raise-b));box-shadow:4px 4px 9px var(--sh-d),-4px -4px 9px var(--sh-l),inset 0 1px 0 rgba(255,255,255,.6);transition:transform .12s,box-shadow .12s,color .12s}
+.tab:hover{transform:translateY(-1px);box-shadow:5px 6px 12px var(--sh-d),-4px -4px 9px var(--sh-l),inset 0 1px 0 rgba(255,255,255,.6)}
+.tab:active{transform:translateY(1px)}
+.tab[aria-selected="true"]{color:#fff;border-color:rgba(242,181,107,.7);background:linear-gradient(160deg,var(--accent),var(--accent2));box-shadow:inset 3px 3px 7px rgba(0,0,0,.35),inset -2px -2px 5px rgba(255,255,255,.15),0 0 0 2px rgba(242,181,107,.25);transform:none}
+.tab:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.view{display:flex;flex-direction:column;gap:16px}
+.panel{padding:18px 20px;display:flex;flex-direction:column;gap:14px}
+.controls{display:flex;flex-wrap:wrap;gap:14px 18px;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label,.lbl{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+input[type=number],select{font:inherit;font-family:var(--f-mono);background:linear-gradient(160deg,var(--well-a),var(--well-b));color:var(--ink);border:1px solid var(--edge);border-radius:9px;padding:8px 10px;width:120px;box-shadow:inset 3px 3px 6px var(--sh-d),inset -3px -3px 6px var(--sh-l)}
+select{width:auto;font-family:var(--f-ui)}
+.checks{display:flex;flex-wrap:wrap;gap:8px 18px}
+.checks label{display:flex;gap:6px;align-items:center;cursor:pointer;font-size:14px}
+.btn{font:inherit;font-weight:600;border-radius:10px;padding:9px 18px;border:1px solid transparent;background:linear-gradient(160deg,var(--accent),var(--accent2));color:var(--accent-ink);cursor:pointer;box-shadow:4px 4px 10px var(--sh-d),-3px -3px 8px var(--sh-l),inset 0 1px 0 rgba(255,255,255,.25);transition:transform .12s,box-shadow .12s}
+.btn:active{transform:translateY(1px);box-shadow:inset 3px 3px 7px rgba(0,0,0,.3)}
+.btn.ghost{background:linear-gradient(160deg,var(--raise-a),var(--raise-b));color:var(--accent);border-color:var(--edge)}
+.btn:hover{filter:brightness(1.08)}
+.btn:disabled{opacity:.55;cursor:wait}
+.seg{display:inline-flex;gap:3px;padding:3px;border:1px solid var(--edge);border-radius:11px;align-self:flex-end;background:linear-gradient(160deg,var(--well-a),var(--well-b));box-shadow:inset 3px 3px 6px var(--sh-d),inset -3px -3px 6px var(--sh-l)}
+.seg button{font:inherit;font-size:13.5px;background:transparent;color:var(--muted);border:0;border-radius:8px;padding:6px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:linear-gradient(160deg,var(--raise-a),var(--raise-b));color:var(--accent);font-weight:600;box-shadow:2px 2px 5px var(--sh-d),-2px -2px 5px var(--sh-l)}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.summary{font-size:14px;color:var(--muted)}
+.summary b{color:var(--ink);font-family:var(--f-mono);font-weight:500}
+.plates{display:flex;flex-direction:column;gap:14px}
+.plate{padding:20px 14px;overflow-x:auto}
+.plate-note{font-size:12.5px;color:var(--muted);text-align:center;margin-top:8px}
+.pyr{display:grid;grid-template-columns:auto auto auto auto;gap:2px 0;justify-content:center;align-items:center;min-width:max-content;margin:0 auto}
+.pyr.aligned{justify-content:start}
+.krow{display:contents}
+.kchip{font-family:var(--f-mono);font-size:12px;color:var(--accent);font-weight:500;background:linear-gradient(160deg,var(--raise-a),var(--raise-b));border-radius:20px;padding:3px 10px;box-shadow:2px 2px 5px var(--sh-d),-2px -2px 5px var(--sh-l);white-space:nowrap;justify-self:end}
+.expr{font-family:var(--f-math);font-size:clamp(17px,2.1vw,24px);white-space:nowrap;padding:6px 10px;border-radius:6px}
+.lhs{font-family:var(--f-math);font-size:clamp(17px,2.1vw,24px);font-weight:600;white-space:nowrap;justify-self:end;text-align:right;padding:6px 0 6px 14px}
+.pyr .expr{text-align:left;padding-left:4px}
+.pyr .kchip{margin-right:6px}
+.pyr .tools{margin-left:14px}
+.krow:hover .expr{background:var(--rowhi);box-shadow:0 1px 4px var(--sh-d)}
+.expr .n{font-weight:600}
+.expr .eq{margin:0 .25em}
+.expr .b{color:var(--base)}
+.expr sup{color:var(--exp);font-size:.62em;margin-left:.04em}
+.expr .op{margin:0 .22em}
+.expr .op.m{color:var(--minus)}
+.expr.none{color:var(--muted);font-style:italic;font-size:16px}
+.tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.krow .tools{flex-wrap:nowrap;white-space:nowrap}
+.cnt{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.ok{color:var(--plus);font-size:13px;font-weight:600}
+.bad{color:var(--minus);font-size:13px;font-weight:600}
+.mini{font:inherit;font-size:12.5px;background:linear-gradient(160deg,var(--raise-a),var(--raise-b));border:1px solid var(--edge);color:var(--accent);border-radius:7px;padding:3px 9px;cursor:pointer;box-shadow:2px 2px 5px var(--sh-d),-2px -2px 4px var(--sh-l)}
+.mini:active{box-shadow:inset 2px 2px 4px var(--sh-d)}
+.mini:hover{color:var(--accent2)}
+.mini.dl{background:linear-gradient(160deg,var(--accent),var(--accent2));color:var(--accent-ink);font-weight:600;padding:5px 12px}
+.note{font-size:13px;color:var(--muted);margin:0}
+.out{font-family:var(--f-mono);font-size:12.5px;background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:10px;white-space:pre;overflow:auto;max-height:260px;margin:0}
+table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+.tablewrap{overflow:auto;max-height:560px;padding:6px}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{position:sticky;top:0;background:var(--panel);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+td.num{font-family:var(--f-mono)}
+td .expr{font-size:16px;padding:0}
+tr.click{cursor:pointer}
+tr.click:hover td{background:var(--rowhi)}
+.pill{display:inline-block;font-size:11.5px;font-weight:600;border-radius:20px;padding:1px 8px;margin-right:4px;background:linear-gradient(160deg,var(--raise-a),var(--raise-b));box-shadow:1px 1px 3px var(--sh-d)}
+.pill.u{color:var(--accent)}
+.pill.p{color:var(--plus)}
+.stats{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:14px;color:var(--muted)}
+.stats b{color:var(--ink);font-family:var(--f-mono);font-weight:500}
+.about{font-size:14.5px;max-width:none}
+.about p{margin:0}
+.refs{gap:12px;font-size:14.5px;line-height:1.6}
+.refs h2{font-family:var(--f-math);font-weight:600;font-size:24px;margin:0;color:var(--accent2);padding-bottom:6px;border-bottom:2px solid transparent;border-image:linear-gradient(90deg,#d99a3c,#f6d48a 40%,transparent) 1}
+.refs p{margin:0}
+.refs-main .ref{display:block;margin-top:4px}
+.refs ol{margin:0;padding-left:1.6em;display:flex;flex-direction:column;gap:9px}
+.refs li::marker{color:var(--exp);font-weight:600}
+.refs .site{display:block;color:var(--muted);font-size:13.5px}
+.refs a{color:var(--accent);text-decoration:none;overflow-wrap:anywhere}
+.refs a:hover{text-decoration:underline}
+footer{border-top:1px solid var(--line);padding-top:16px;font-size:13.5px;color:var(--muted);display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px}
+footer .who{color:var(--ink);font-weight:600;font-size:15px}
+footer .links{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:6px}
+footer .links a{font:inherit;font-weight:600;font-size:14px;color:var(--base);text-decoration:none;padding:9px 18px;border-radius:12px;border:1px solid var(--edge);background:linear-gradient(160deg,var(--raise-a),var(--raise-b));box-shadow:4px 4px 9px var(--sh-d),-4px -4px 9px var(--sh-l),inset 0 1px 0 rgba(255,255,255,.6);transition:transform .12s,box-shadow .12s,color .12s,border-color .12s;overflow-wrap:anywhere}
+footer .links a:hover{transform:translateY(-1px);color:var(--accent);border-color:rgba(242,181,107,.7);box-shadow:5px 6px 12px var(--sh-d),-4px -4px 9px var(--sh-l),0 0 0 2px rgba(242,181,107,.25)}
+footer .links a:active{transform:translateY(1px);box-shadow:inset 3px 3px 7px var(--sh-d)}
+footer .links a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:7px 14px;border-radius:6px;font-size:13.5px;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw}
+.toast.show{opacity:1}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+@media (max-width:560px){.krow .tools{grid-column:3;grid-row:auto;justify-self:start;margin:0 0 6px 4px}.pyr{grid-template-columns:auto auto auto}}
+
+.expr .fa{color:var(--exp);margin-left:.02em}
+.expr .eq{margin:0 .35em;color:var(--muted)}
+.expr .n{color:var(--nval)}
+.expr .digits{color:var(--base)}
+.expr.wait{color:var(--muted);font-style:italic;font-size:16px}
+.tag{font-size:11.5px;font-weight:600;border-radius:20px;padding:1px 8px;background:linear-gradient(160deg,var(--raise-a),var(--raise-b));box-shadow:1px 1px 3px var(--sh-d);color:var(--muted)}
+.progress{font-size:13.5px;color:var(--accent);font-weight:600;min-height:1.2em}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Pyramid-Type Representations<span class="h1sub">Increasing and Decreasing Order Generator</span></h1>
+    <p class="byline">Created by Inder J. Taneja</p>
+    <p class="lede">Write a number using the digits <span class="formula">k, k−1, …, 2, 1, 0</span> in decreasing order, or <span class="formula">1, 2, …, k</span> in increasing order, each exactly once, with joining of digits (as in 54 or 876), <span class="formula">+ − × ÷</span>, powers and factorials. Each row of the pyramid adds one more digit, from the smallest possible k up to k = 9.</p>
+  </header>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tab-pyr" aria-selected="true" data-view="v-pyr">Pyramid</button>
+    <button class="tab" role="tab" id="tab-scan" aria-selected="false" data-view="v-scan">Range scan</button>
+    <button class="tab" role="tab" id="tab-dl" aria-selected="false" data-view="v-dl">Download</button>
+    <button class="tab" role="tab" id="tab-about" aria-selected="false" data-view="v-about">How it works</button>
+  </div>
+
+  <section id="v-pyr" class="view">
+    <div class="panel">
+      <div class="controls">
+        <div class="seg" role="group" aria-label="Input mode">
+          <button id="modeSingle" aria-pressed="true">Single number</button>
+          <button id="modeInt" aria-pressed="false">Interval</button>
+        </div>
+        <div class="field" id="fSingle"><label for="inN">Number N</label><input type="number" id="inN" value="21" step="1" min="0"></div>
+        <div class="field" id="fA" hidden><label for="inA">From N</label><input type="number" id="inA" value="20" step="1" min="0"></div>
+        <div class="field" id="fB" hidden><label for="inB">To N</label><input type="number" id="inB" value="30" step="1" min="0"></div>
+        <div class="field"><label for="inOrder">Digit order</label><select id="inOrder"><option value="dec" selected>Decreasing: k … 2 1 0</option><option value="inc">Increasing: 1 2 … k</option><option value="inc0">Increasing with 0!: 0! 1 2 … k</option></select></div>
+        <div class="field"><label for="inFrom">From k</label><select id="inFrom"><option value="min">smallest possible</option></select></div>
+        <div class="field"><label for="inTo">To k</label><select id="inTo"></select></div>
+        <div class="field"><label for="inPick">Row choice</label><select id="inPick"><option value="first" selected>Simplest found</option><option value="random">Random</option></select></div>
+        <button class="btn" id="goBtn">Generate</button>
+        <button class="btn ghost" id="shuffleBtn">Shuffle all rows</button>
+      </div>
+      <div class="checks">
+        <label><input type="checkbox" id="oConcat" checked> Join digits (54, 876, 10)</label>
+        <label><input type="checkbox" id="oFact" checked> Factorial (including (3!)! = 720)</label>
+        <label><input type="checkbox" id="oPow" checked> Powers</label>
+        <label><input type="checkbox" id="oDiv" checked> Division</label>
+        <label><input type="checkbox" id="oNeg" checked> Unary minus (−4 + …)</label>
+        <label><input type="checkbox" id="oPow0"> Allow x<sup>0</sup></label>
+        <label><input type="checkbox" id="oZero"> Allow × 0 to absorb digits</label>
+      </div>
+      <div class="checks">
+        <label><input type="checkbox" id="optRepeatN"> Repeat N on every row</label>
+        <label id="lSkip" hidden><input type="checkbox" id="optSkip" checked> Hide numbers with no representation</label>
+      </div>
+      <p class="note" id="intNote" hidden>Interval mode builds one pyramid per number, up to 100 numbers at a time.</p>
+      <p class="progress" id="progress"></p>
+    </div>
+    <div class="bar">
+      <div class="summary" id="summary"></div>
+      <div class="seg" role="group" aria-label="Layout">
+        <button id="layPyr" aria-pressed="true">Centered</button>
+        <button id="layAl" aria-pressed="false">Left</button>
+      </div>
+    </div>
+    <div class="plates" id="plates"></div>
+  </section>
+
+  <section id="v-scan" class="view" hidden>
+    <div class="panel">
+      <div class="controls">
+        <div class="field"><label for="scA">From N</label><input type="number" id="scA" value="1" step="1" min="0"></div>
+        <div class="field"><label for="scB">To N</label><input type="number" id="scB" value="200" step="1" min="0"></div>
+        <div class="field"><label for="scShow">Show</label><select id="scShow">
+          <option value="all">All numbers</option>
+          <option value="broken">Pyramids with a missing row</option>
+          <option value="k">Grouped by smallest k</option>
+        </select></div>
+        <button class="btn" id="scBtn">Scan</button>
+        <button class="btn ghost" id="scStop">Stop</button>
+      </div>
+      <p class="note">For each N the scan finds the smallest k and checks every row up to k = 9. Uses the options from the Pyramid tab. Up to 5 000 numbers per scan. Click a row to open its pyramid.</p>
+      <p class="progress" id="scProgress"></p>
+    </div>
+    <div class="stats" id="scStats"></div>
+    <div class="tablewrap"><table><thead><tr><th>N</th><th>Smallest k</th><th>Rows found</th><th>Missing rows</th><th>First row</th></tr></thead><tbody id="scBody"><tr><td colspan="5" class="note">Press Scan to fill this table.</td></tr></tbody></table></div>
+  </section>
+
+  <section id="v-dl" class="view" hidden>
+    <div class="panel">
+      <span class="lbl">Pyramids (current Pyramid tab)</span>
+      <div class="tools">
+        <button class="mini dl" id="dlPyrTxt">Download .txt</button>
+        <button class="mini dl" id="dlPyrXlsx">Download Excel (.xlsx)</button>
+        <button class="mini" id="cpTxt">Copy text</button>
+        <button class="mini" id="cpTex">Copy LaTeX</button>
+      </div>
+      <p class="note">The Excel file has two sheets: <b>Pyramids</b> (one row per k) and <b>Summary</b> (smallest k and which rows exist).</p>
+    </div>
+    <div class="panel">
+      <span class="lbl">Range scan (current Range scan tab)</span>
+      <div class="tools">
+        <button class="mini dl" id="dlScTxt">Download .txt</button>
+        <button class="mini dl" id="dlScXlsx">Download Excel (.xlsx)</button>
+        <button class="mini" id="cpSc">Copy table</button>
+      </div>
+    </div>
+    <div class="panel"><span class="lbl">Preview</span><pre class="out" id="outBox"></pre></div>
+  </section>
+
+  <section id="v-about" class="view" hidden>
+    <div class="panel about">
+      <p><b>The rule.</b> For a chosen k, the digits k, k−1, …, 2, 1, 0 are written in this decreasing order, each exactly once. Neighbouring digits may be joined into one number (54, 321, 876, 10). Between the numbers we may use +, −, ×, ÷, powers, factorials and brackets.</p>
+      <p><b>Increasing order.</b> The digits 1, 2, …, k are written in increasing order, each exactly once. A leading 0 cannot start a joined number and adds nothing on its own, so it is left out; with the option "Increasing with 0!", the row starts with 0! = 1, as in 0! + 1 + 2 + 34 = 38.</p>
+      <p><b>Why decreasing.</b> In increasing order the first digit would be 0, which cannot start a joined number and contributes nothing unless written as 0! = 1. In decreasing order the 0 comes last, where it is useful: × 0! (multiply by 1), + 0! or − 0! (add or subtract 1), joined as 10, or + 0.</p>
+      <p><b>The pyramid.</b> Starting from the smallest k that works for N, each new row uses one more digit, up to k = 9, where all ten digits 9 8 7 6 5 4 3 2 1 0 appear.</p>
+      <p><b>Notation.</b> A repeated factorial is written in full, (3!)! = 6! = 720 or ((2 + 1)!)!, so it cannot be confused with the double factorial 3!! = 3 × 1. 3!<sup>2</sup> means (3!)<sup>2</sup> = 36. Multiplication and division are read from left to right.</p>
+      <p><b>Fair use of 0.</b> By default x<sup>0</sup> = 1 and multiplying a long block of digits by 0 are not allowed, because they would let any digits disappear. A single digit times 0, such as 1 × 0, is allowed. Both tricks can be switched on in the options.</p>
+      <p><b>Search.</b> For each k, the generator first collects the values every block of consecutive digits can produce (exact fractions, kept within safe bounds), then searches for N by splitting the digit string into two parts and matching values. For k ≤ 4 the search is complete, so "none exists" is certain. For larger k the search keeps the simplest values of each block, so "none found" means none was found, not that none exists. The first use of each k takes a few seconds (up to about 15 seconds for k = 9); after that every number is answered in milliseconds.</p>
+      <p><b>Check.</b> Every displayed row is evaluated again from its text, and its digits are checked to read k, k−1, …, 0 in order (✓).</p>
+    </div>
+  </section>
+
+  <section class="panel refs" aria-labelledby="refsTitle">
+    <h2 id="refsTitle">References</h2>
+    <p class="refs-main">The work is due author's following publications:</p>
+    <ol>
+      <li>Inder J. Taneja, <i>Pyramid-Type Representations of Natural Numbers</i>, Zenodo, February 5, 2020, pp. 1-213, <a href="http://doi.org/10.5281/zenodo.3637662" target="_blank" rel="noopener">http://doi.org/10.5281/zenodo.3637662</a>.</li>
+      <li>Inder J. Taneja, <i>Pyramid-Type Representations of Natural Numbers from 1001 to 10000</i>, Zenodo, January 16, 2024, pp. 1-585, <a href="http://doi.org/10.5281/zenodo.10520278" target="_blank" rel="noopener">http://doi.org/10.5281/zenodo.10520278</a>.</li>
+      <li>Inder J. Taneja, <i>Pyramidical Representations of Natural Numbers</i>, RGMIA Research Report Collection, 19(2016), Art. 58, pp. 1-95, <a href="http://rgmia.org/papers/v19/v19a58.pdf" target="_blank" rel="noopener">http://rgmia.org/papers/v19/v19a58.pdf</a>.
+        <span class="site">Site link: Pyramidical-Type Representations of Natural Numbers, <a href="https://inderjtaneja.wordpress.com/2017/08/20/pyramidical-type-representations-of-natural-numbers" target="_blank" rel="noopener">https://inderjtaneja.wordpress.com/2017/08/20/pyramidical-type-representations-of-natural-numbers</a>.</span></li>
+    </ol>
+  </section>
+
+  <footer>
+    <span class="who">Inder J. Taneja</span>
+    <span class="links">
+      <a href="https://numbers-magic.com/" target="_blank" rel="noopener">numbers-magic.com</a>
+      <a href="https://inderjtaneja.wordpress.com/" target="_blank" rel="noopener">inderjtaneja.wordpress.com</a>
+      <a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/" target="_blank" rel="noopener">taneja-mathematical-generators.ijtaneja.chatgpt.site</a>
+    </span>
+  </footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// Decreasing-order representation engine: digits k, k-1, ..., 1, 0 in this order.
+// Values are exact rationals [n, d] (d > 0, reduced). Expressions are kept as small records.
+function makeDecEngine(){
+  const BOUND = 1e8, DEN = 1e4;
+  const FACT = [1,1,2,6,24,120,720,5040,40320,362880,3628800];
+  function gcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b){[a,b]=[b,a%b];}return a;}
+  function mk(n,d){ if(d<0){n=-n;d=-d;} const g=gcd(n,d)||1; n/=g; d/=g; if(!isFinite(n)||Math.abs(n)>BOUND||d>DEN) return null; return [n,d]; }
+  const key=v=>v[1]===1?String(v[0]):v[0]+'/'+v[1];
+
+  // expression record: {s: text, t: tag, neg: starts-with-unary-minus, c: cost}
+  // tags: 0 atom, 1 power, 2 product, 3 sum
+  const OPH={'+':'<span class="op">+</span>','−':'<span class="op m">−</span>','×':'<span class="op">×</span>','/':'<span class="op">/</span>'};
+  const atom=(s,c)=>({s,h:s,t:0,neg:false,c});
+  function paren(e){return {s:'('+e.s+')',h:'('+e.h+')',t:0,neg:false,c:e.c};}
+  function asAtom(e){return (e.t===0&&!e.neg)?e:paren(e);}
+
+  function combine(op,a,b){
+    // returns expression record for a op b (a, b records)
+    let s,t,h,neg=a.neg;
+    const c=a.c+b.c+(op==='/'||op==='^'?3:1);
+    if(op==='+'||op==='-'){
+      // flatten: a ± b becomes one sum; a − (x − y) is written a − x + y
+      const tb=termsOf(b);
+      const terms=termsOf(a).concat(op==='+'?tb:tb.map(q=>({sg:-q.sg,e:q.e})));
+      return sumOf(terms,c);
+    } else if(op==='*'||op==='/'){
+      const A=(a.t===3)?paren(a):a;
+      let B=b;
+      if(B.neg||B.t===3||(op==='/'&&B.t===2)) B=paren(B);
+      s=A.s+(op==='*'?' × ':'/')+B.s; t=2; neg=A.neg; h=A.h+(op==='*'?OPH['×']:OPH['/'])+B.h;
+    } else if(op==='^'){
+      const A=asAtom(a), B=asAtom(b);
+      s=A.s+'^'+B.s; t=1; neg=false; h=A.h+'<sup>'+b.h+'</sup>';
+    }
+    return {s,h,t,neg,c};
+  }
+  function unneg(e){ // strip a leading unary minus (text starts with '−', html starts with the minus span)
+    return {s:e.s.slice(1),h:e.h.slice(OPH['−'].length),t:e.t,neg:false,c:e.c};
+  }
+  function termsOf(e){
+    if(e.t===3&&e.terms) return e.terms;
+    if(e.neg) return [{sg:-1,e:unneg(e)}];
+    return [{sg:1,e}];
+  }
+  function sumOf(terms,c){
+    let s='',h='';
+    terms.forEach((q,i)=>{
+      if(i===0){ if(q.sg<0){s+='−';h+=OPH['−'];} }
+      else { s+=q.sg<0?' − ':' + '; h+=q.sg<0?OPH['−']:OPH['+']; }
+      s+=q.e.s; h+=q.e.h;
+    });
+    return {s,h,t:3,neg:terms[0].sg<0,c,terms};
+  }
+  function negate(e){
+    if(e.t===3) return sumOf(termsOf(e).map(q=>({sg:-q.sg,e:q.e})),e.c+1); // −(a − b) = −a + b
+    if(e.neg) return unneg(e); // −(−X) = X for a single term
+    return {s:'−'+e.s,h:OPH['−']+e.h,t:Math.max(e.t,2),neg:true,c:e.c+1};
+  }
+  function fact(e){ const A=e.isF?paren(e):asAtom(e); return {s:A.s+'!',h:A.h+'<span class="fa">!</span>',t:0,neg:false,c:e.c+1,isF:true}; } // (3!)! is written in full, never 3!!
+
+  function applyOp(op,x,y){
+    const [a,b]=x,[c,d]=y;
+    if(op==='+') return mk(a*d+c*b,b*d);
+    if(op==='-') return mk(a*d-c*b,b*d);
+    if(op==='*') return mk(a*c,b*d);
+    if(op==='/') return c===0?null:mk(a*d,b*c);
+    if(op==='^'){
+      if(d!==1) return null; // integer exponents only
+      let e=c; if(Math.abs(e)>99) return null;
+      if(a===0&&e<=0) return null;
+      if(Math.abs(a)>1||b>1){ if(Math.abs(e)>30) return null; }
+      const n=Math.pow(a,Math.abs(e)), m=Math.pow(b,Math.abs(e));
+      return e>=0?mk(n,m):mk(m,n);
+    }
+    return null;
+  }
+
+  // ---------------- per-k precomputation ----------------
+  // opts: {fact:true, pow:true, div:true, concat:true, neg:true}
+  function build(k,opts,cap,LIM){
+    cap=cap||2500; LIM=LIM||220;
+    const order=opts.order||'dec';
+    const digits=[];
+    if(order==='dec'){for(let d=k;d>=0;d--)digits.push(d);}        // k … 1 0
+    else if(order==='inc'){for(let d=1;d<=k;d++)digits.push(d);}   // 1 2 … k
+    else {for(let d=0;d<=k;d++)digits.push(d);}                     // 0! 1 2 … k (leading 0 only as 0!)
+    const n=digits.length;
+    const S={}; // S[i+','+j] = Map key -> {v, e}
+    const ops=['+','-','*']; if(opts.div) ops.push('/'); if(opts.pow) ops.push('^');
+    function add(M,v,e){ if(!v) return; const kk=key(v); const old=M.get(kk); if(!old||e.c<old.e.c||(e.c===old.e.c&&e.s.length<old.e.s.length)) M.set(kk,{v,e}); }
+    function closeUnary(M){
+      // factorials of small non-negative integers (and one more level: (3!)! = 720), negation
+      const add2=[];
+      for(const {v,e} of M.values()){
+        if(opts.fact&&v[1]===1&&v[0]>=0&&v[0]<=10){
+          const f=FACT[v[0]]; if(f!==v[0]||v[0]===0){ add2.push([[f,1],fact(e)]);
+            if(opts.fact&&f<=10&&f>=3&&f!==v[0]) add2.push([[FACT[f],1],fact(fact(e))]); }
+        }
+      }
+      for(const [v,e] of add2) add(M,v,e);
+      if(opts.neg){ const add3=[]; for(const {v,e} of M.values()) if(v[0]!==0) add3.push([[-v[0],v[1]],negate(e)]); for(const [v,e] of add3) add(M,v,e); }
+    }
+    function trim(M,c){
+      if(M.size<=c) return M;
+      const arr=[...M.values()].sort((x,y)=>x.e.c-y.e.c||Math.abs(x.v[0]/x.v[1])-Math.abs(y.v[0]/y.v[1]));
+      const out=new Map(); for(let i=0;i<c;i++){const r=arr[i];out.set(key(r.v),r);} return out;
+    }
+    for(let len=1;len<=n;len++){
+      for(let i=0;i+len<=n;i++){
+        const j=i+len-1, M=new Map();
+        // concatenated leaf
+        if(order==='inc0'&&i===0&&len===1){ // the leading 0 may only appear as 0! = 1
+          add(M,[1,1],fact(atom('0',0)));
+          if(opts.neg) add(M,[-1,1],negate(fact(atom('0',0))));
+          const arr=[...M.values()];const SM=new Map();for(const r of arr)SM.set(key(r.v),r);SM.arr=arr;S[i+','+j]=SM;continue;
+        }
+        if(len===1||(opts.concat&&digits[i]!==0)){
+          let num=0; for(let q=i;q<=j;q++) num=num*10+digits[q];
+          const txt=digits.slice(i,j+1).join('');
+          if(num<=BOUND) add(M,[num,1],atom(txt,len===1?0:1));
+        }
+        for(let m=i;m<j;m++){
+          const A=S[i+','+m], B=S[(m+1)+','+j], lenA=m-i+1, lenB=j-m;
+          const lim=len<=5?Infinity:LIM;
+          const Aa=A.arr.slice(0,lim), Ba=B.arr.slice(0,lim);
+          for(const x of Aa) for(const y of Ba) for(const op of ops){
+            if(op==='^'&&!opts.pow0&&y.v[0]===0) continue;
+            if(opts.noZeroTrick&&(op==='*'||op==='/')&&((x.v[0]===0&&lenB>1)||(y.v[0]===0&&lenA>1))) continue;
+            const v=applyOp(op,x.v,y.v); if(!v) continue;
+            const kk=key(v), c=x.e.c+y.e.c+(op==='/'||op==='^'?3:1), old=M.get(kk);
+            if(old&&old.e.c<=c) continue;
+            M.set(kk,{v,e:combine(op,x.e,y.e)});
+          }
+        }
+        closeUnary(M);
+        const sorted=trim(M,len<=3?1e9:(len===4?20000:(len===5?60000:cap)));
+        // keep sorted by cost for slicing
+        const arr=[...sorted.values()].sort((x,y)=>x.e.c-y.e.c);
+        const SM=new Map(); for(const r of arr) SM.set(key(r.v),r);
+        SM.arr=arr; S[i+','+j]=SM;
+      }
+    }
+    return {k,digits,S,ops,opts};
+  }
+
+  // ---------------- target search ----------------
+  function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}}
+  function solve(P,T,seed){
+    // returns expression record for value T using all digits, or null. seed>0 gives a randomized (different) form when possible
+    const n=P.digits.length, top=P.S['0,'+(n-1)];
+    const Tk=key(T);
+    const hit=top.get(Tk);
+    const rng=seed?mulberry(seed):null;
+    if(hit&&!rng) return hit.e;
+    // meet in the middle at the top split, then one level deeper
+    const ops=P.ops;
+    function need(op,a,T,side){ // a op b = T (side 'L': a is left) -> b ; or (side 'R': b is right value 'a') b op a = T -> left
+      if(side==='L'){
+        if(op==='+') return applyOp('-',T,a);
+        if(op==='-') return applyOp('-',a,T);
+        if(op==='*') return a[0]===0?null:applyOp('/',T,a);
+        if(op==='/') return T[0]===0?null:applyOp('/',a,T);
+        return null;
+      } else {
+        if(op==='+') return applyOp('-',T,a);
+        if(op==='-') return applyOp('+',T,a);
+        if(op==='*') return a[0]===0?null:applyOp('/',T,a);
+        if(op==='/') return a[0]===0?null:applyOp('*',T,a);
+        if(op==='^'){ // left^a = T, a small positive integer
+          if(a[1]!==1||a[0]<2||a[0]>12||T[1]!==1||T[0]<0) return null;
+          const r=Math.round(Math.pow(T[0],1/a[0])); return Math.pow(r,a[0])===T[0]?[r,1]:null;
+        }
+        return null;
+      }
+    }
+    function depthSolve(i,j,T,depth,skipHit){
+      const M=P.S[i+','+j]; const h=M.get(key(T)); if(h&&!skipHit) return h.e;
+      if(depth<=0||j-i<3) return null;
+      const splits=[];for(let m=i;m<j;m++)splits.push(m);
+      if(rng)for(let a=splits.length-1;a>0;a--){const r=Math.floor(rng()*(a+1));[splits[a],splits[r]]=[splits[r],splits[a]];}
+      for(const m of splits){
+        const A=P.S[i+','+m], B=P.S[(m+1)+','+j];
+        const lenA=m-i+1, lenB=j-m;
+        // iterate the smaller side's values
+        const iterA=lenA<=lenB;
+        const it=(iterA?A:B).arr; const lim=Math.min(it.length,depth>=2?220:900);
+        const off=rng?Math.floor(rng()*lim):0;
+        for(let qq=0;qq<lim;qq++){
+          const x=it[(qq+off)%lim];
+          for(const op of ops){
+            if(P.opts.noZeroTrick&&(op==='*'||op==='/')&&((x.v[0]===0&&(iterA?lenB:lenA)>1))) continue;
+            if(iterA){ if(op==='^') continue; const b=need(op,x.v,T,'L'); if(!b) continue;
+              if(P.opts.noZeroTrick&&(op==='*'||op==='/')&&b[0]===0&&lenA>1) continue;
+              const r=(depth>1&&lenB>=4)?depthSolve(m+1,j,b,depth-1):(B.get(key(b))||{}).e; if(r) return combine(op,x.e,r); }
+            else { const a=need(op,x.v,T,'R'); if(!a) continue;
+              if(P.opts.noZeroTrick&&(op==='*'||op==='/')&&a[0]===0&&lenB>1) continue;
+              const r=(depth>1&&lenA>=4)?depthSolve(i,m,a,depth-1):(A.get(key(a))||{}).e; if(r) return combine(op,r,x.e); }
+          }
+        }
+      }
+      return null;
+    }
+    const r=depthSolve(0,n-1,T,2,!!rng);
+    return r||(hit?hit.e:null);
+  }
+
+  // all distinct shown forms at top level (alternatives) for variety
+  function alternatives(P,T,max){
+    const n=P.digits.length, out=[], seen=new Set();
+    const top=P.S['0,'+(n-1)]; const h=top.get(key(T)); if(h){out.push(h.e);seen.add(h.e.s);}
+    for(let m=0;m<n-1&&out.length<max;m++){
+      const A=P.S['0,'+m], B=P.S[(m+1)+','+(n-1)];
+      for(const x of A.arr){
+        for(const op of P.ops){ if(op==='^') continue;
+          let b; const a=x.v;
+          if(op==='+') b=applyOp('-',T,a); else if(op==='-') b=applyOp('-',a,T); else if(op==='*') b=a[0]?applyOp('/',T,a):null; else b=T[0]?applyOp('/',a,T):null;
+          if(!b) continue; const y=B.get(key(b)); if(!y) continue;
+          const e=combine(op,x.e,y.e); if(!seen.has(e.s)){seen.add(e.s);out.push(e); if(out.length>=max) break;}
+        }
+        if(out.length>=max) break;
+      }
+    }
+    return out;
+  }
+
+  // independent checker: evaluate the displayed expression text exactly
+  function evaluate(s){
+    // tokens: numbers, + − × / ^ ! ( )
+    const toks=[];let i=0;const str=s.replace(/\s+/g,'');
+    while(i<str.length){const c=str[i];
+      if(/[0-9]/.test(c)){let j=i;while(j<str.length&&/[0-9]/.test(str[j]))j++;toks.push({n:[parseInt(str.slice(i,j)),1]});i=j;}
+      else {toks.push({o:c});i++;}}
+    let p=0;
+    const peek=()=>toks[p], eat=()=>toks[p++];
+    function primary(){
+      let t=eat(); let v;
+      if(t.o==='−'){ const x=unaryPow(); return x?mk(-x[0],x[1]):null; }
+      if(t.o==='('){ v=expr(); eat(); } else v=t.n;
+      while(peek()&&peek().o==='!'){eat(); if(!v||v[1]!==1||v[0]<0||v[0]>10) return null; v=[FACT[v[0]],1];}
+      return v;
+    }
+    function unaryPow(){ let b=primary(); if(peek()&&peek().o==='^'){eat(); const e=unaryPowNoNeg(); return (b&&e)?applyOp('^',b,e):null;} return b; }
+    function unaryPowNoNeg(){ return unaryPow(); }
+    function term(){ let v=unaryPow(); while(peek()&&(peek().o==='×'||peek().o==='/')){const o=eat().o;const w=unaryPow(); if(!v||!w) return null; v=applyOp(o==='×'?'*':'/',v,w);} return v; }
+    function expr(){ let v=term(); while(peek()&&(peek().o==='+'||peek().o==='−')){const o=eat().o;const w=term(); if(!v||!w) return null; v=applyOp(o==='+'?'+':'-',v,w);} return v; }
+    const v=expr(); return v;
+  }
+  function digitsOf(s){ return s.replace(/[^0-9]/g,''); }
+  return {build,solve,alternatives,evaluate,digitsOf,key};
+}
+
+
+// ---- search handler: runs inside a Web Worker, or on the page itself as a fallback ----
+function installHandler(self,E){
+  const cache={};
+  let current=0;
+  function optKey(o){return JSON.stringify(o);}
+  function getP(k,opts,id,label){
+    const ck=optKey(opts)+'|'+k; if(cache[ck]) return cache[ck];
+    self.postMessage({id,type:'progress',msg:`Preparing k = ${k}${label||''} (first use only)…`});
+    const P=E.build(k,opts,2500,160); cache[ck]=P; return P;
+  }
+  function pick(P,N,mode,seed){
+    if(mode!=='random') return E.solve(P,[N,1]);
+    let best=null; for(let i=0;i<4;i++){const e=E.solve(P,[N,1],seed*31+i*7919+1); if(e&&(!best||e.c<best.c))best=e;}
+    return best;
+  }
+  const tick=()=>new Promise(r=>setTimeout(r,0));
+  self.onmessage=async(ev)=>{
+    const m=ev.data;
+    if(m.type==='ping'){self.postMessage({type:'pong'});return;}
+    if(m.type==='cancel'){current=m.id;return;}
+    const id=m.id; if(m.type!=='alt') current=id;
+    if(m.type==='pyramid'){
+      for(const job of m.jobs){
+        const found=[]; let first=null;
+        for(let k=1;k<=m.kTo;k++){
+          if(current!==id) return;
+          if(m.kFrom!=='min'&&k<m.kFrom) continue;
+          const P=getP(k,m.opts,id);
+          const e=pick(P,job.N,m.mode,job.seed+k);
+          if(e&&first===null) first=k;
+          if(m.kFrom==='min'&&first===null) { continue; }
+          self.postMessage({id,type:'row',N:job.N,k,row:e?{s:e.s,h:e.h,c:e.c}:null,exact:k<=4});
+          await tick();
+        }
+        self.postMessage({id,type:'pyrDone',N:job.N,kmin:first});
+      }
+      self.postMessage({id,type:'done'});
+    } else if(m.type==='alt'){
+      const P=getP(m.k,m.opts,id);
+      let best=null;
+      for(let i=0;i<8;i++){const e=E.solve(P,[m.N,1],m.seed*101+i*7919+3); if(e&&e.s!==m.exclude&&(!best||e.c<best.c)) best=e;}
+      self.postMessage({id,type:'alt',N:m.N,k:m.k,pi:m.pi,ri:m.ri,row:best?{s:best.s,h:best.h,c:best.c}:null});
+    } else if(m.type==='scan'){
+      for(let k=1;k<=9;k++){ if(current!==id) return; getP(k,m.opts,id,' for the scan'); await tick(); }
+      const Ps=[];for(let k=1;k<=9;k++)Ps[k]=getP(k,m.opts,id);
+      let batch=[];
+      for(let N=m.a;N<=m.b;N++){
+        if(current!==id) return;
+        let kmin=null,ex=null,miss=[],found=0;
+        for(let k=1;k<=9;k++){const e=E.solve(Ps[k],[N,1]); if(e){found++; if(kmin===null){kmin=k;ex={s:e.s,h:e.h};}} else if(kmin!==null) miss.push(k);}
+        batch.push({N,kmin,found,miss,ex});
+        if(batch.length>=25){self.postMessage({id,type:'scanRows',rows:batch});batch=[];await tick();}
+      }
+      if(batch.length) self.postMessage({id,type:'scanRows',rows:batch});
+      self.postMessage({id,type:'scanDone'});
+    }
+  };
+}
+</script>
+
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const TITLE='Pyramid-Type Representations',SUB='Increasing and Decreasing Order Generator';
+// main-thread engine (independent checking, and fallback search)
+const EM=makeDecEngine();
+function makeLocalWorker(){
+  const page={onmessage:null,postMessage(m){setTimeout(()=>inner.onmessage({data:m}),0);},terminate(){}};
+  const inner={onmessage:null,postMessage(m){setTimeout(()=>page.onmessage&&page.onmessage({data:m}),0);}};
+  installHandler(inner,makeDecEngine());
+  return page;
+}
+let worker=null,workerOK=false;
+try{
+  const code=makeDecEngine.toString()+'\n'+installHandler.toString()+'\ninstallHandler(self, makeDecEngine());';
+  worker=new Worker(URL.createObjectURL(new Blob([code],{type:'text/javascript'})));
+}catch(e){ worker=null; }
+if(!worker){ worker=makeLocalWorker(); workerOK=true; }
+let reqId=0;
+function send(msg){ msg.id=++reqId; worker.postMessage(msg); return msg.id; }
+
+function readOpts(){return {order:$('inOrder').value,concat:$('oConcat').checked,fact:$('oFact').checked,pow:$('oPow').checked,div:$('oDiv').checked,neg:$('oNeg').checked,pow0:$('oPow0').checked,noZeroTrick:!$('oZero').checked};}
+for(let k=1;k<=9;k++){$('inFrom').insertAdjacentHTML('beforeend',`<option value="${k}">${k}</option>`);$('inTo').insertAdjacentHTML('beforeend',`<option value="${k}"${k===9?' selected':''}>${k}</option>`);}
+const ORDER_NAME={dec:'Decreasing order (k … 2 1 0)',inc:'Increasing order (1 2 … k)',inc0:'Increasing order with 0! (0! 1 2 … k)'};
+const digitStr=(k,order)=>{let s='';if(order==='inc'){for(let d=1;d<=k;d++)s+=d;}else if(order==='inc0'){for(let d=0;d<=k;d++)s+=d;}else{for(let d=k;d>=0;d--)s+=d;}return s;};
+function check(N,k,row){ if(!row) return false; const v=EM.evaluate(row.s); return !!v&&v[0]===N&&v[1]===1&&EM.digitsOf(row.s)===digitStr(k,curOpts.order); }
+
+let pyrs=[],curOpts={},mode='single',pyrId=0,busy=false,seedBase=Date.now()%10000;
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2200);}
+function readInt(id){const v=Math.round(Number($(id).value));return Number.isFinite(v)?v:null;}
+
+function generate(){
+  curOpts=readOpts();
+  let Ns=[];
+  if(mode==='single'){const N=readInt('inN');if(N===null||N<0){toast('Enter a whole number N ≥ 0');return;}Ns=[N];}
+  else{let a=readInt('inA'),b=readInt('inB');if(a===null||b===null){toast('Enter whole numbers for the interval');return;}if(b<a)[a,b]=[b,a];if(a<0)a=0;if(b-a>99){b=a+99;$('inB').value=b;toast('Interval limited to 100 numbers');}for(let N=a;N<=b;N++)Ns.push(N);}
+  const kFrom=$('inFrom').value==='min'?'min':Number($('inFrom').value), kTo=Number($('inTo').value);
+  if(kFrom!=='min'&&kFrom>kTo){toast('"From k" is larger than "To k"');return;}
+  pyrs=Ns.map(N=>({N,rows:{},kmin:null,done:false,seed:seedBase+N}));
+  pyrId=send({type:'pyramid',jobs:pyrs.map(p=>({N:p.N,seed:p.seed})),kFrom,kTo,opts:curOpts,mode:$('inPick').value});
+  busy=true;$('progress').textContent='Searching…';render();
+}
+function onMsg(ev){
+  const m=ev.data;
+  if(m.type==='pong'){workerOK=true;return;}
+  if(m.type==='progress'){ if(m.id===pyrId) $('progress').textContent=m.msg; else if(m.id===scanId) $('scProgress').textContent=m.msg; return; }
+  if(m.id===pyrId){
+    if(m.type==='row'){const p=pyrs.find(x=>x.N===m.N); if(p){p.rows[m.k]={row:m.row||null,exact:m.exact}; scheduleRender();} $('progress').textContent=`Searching N = ${m.N}, k = ${m.k}…`;}
+    else if(m.type==='pyrDone'){const p=pyrs.find(x=>x.N===m.N); if(p){p.done=true;p.kmin=m.kmin;} scheduleRender();}
+    else if(m.type==='done'){busy=false;$('progress').textContent='';render();}
+  }
+  if(m.type==='alt'){const p=pyrs[m.pi]; if(p&&p.rows[m.ri]){ if(m.row){p.rows[m.ri].row=m.row;render();} else toast('No other form found for this row'); } }
+  if(m.id===scanId){
+    if(m.type==='scanRows'){scanRows.push(...m.rows);$('scProgress').textContent=`Scanned ${scanRows.length} of ${scanTotal}…`; if(scanRows.length%100<25) renderScan();}
+    else if(m.type==='scanDone'){$('scProgress').textContent='';$('scBtn').disabled=false;renderScan();}
+  }
+}
+worker.onmessage=onMsg;
+if(!workerOK){
+  worker.postMessage({type:'ping'});
+  setTimeout(()=>{ if(!workerOK){ try{worker.terminate();}catch(e){} worker=makeLocalWorker(); worker.onmessage=onMsg; workerOK=true; generate(); } },3000);
+}
+let rq=null;function scheduleRender(){if(rq)return;rq=setTimeout(()=>{rq=null;render();},60);}
+
+function render(){
+  const repeat=$('optRepeatN').checked,skip=mode==='interval'&&$('optSkip').checked;
+  const aligned=$('layAl').getAttribute('aria-pressed')==='true';
+  let html='';
+  pyrs.forEach((p,pi)=>{
+    const ks=Object.keys(p.rows).map(Number).sort((a,b)=>a-b);
+    const any=ks.some(k=>p.rows[k].row);
+    if(skip&&p.done&&!any) return;
+    html+=`<div class="plate"><div class="pyr${aligned?' aligned':''}">`;
+    let first=true; const last=ks.filter(k=>p.rows[k].row).pop();
+    ks.forEach(k=>{
+      const r=p.rows[k];
+      html+=`<div class="krow"><span class="kchip">k = ${k}</span>`;
+      if(r.row){
+        const ok=check(p.N,k,r.row);
+        html+=`<span class="lhs">${(first||repeat)?`<span style="color:var(--nval)">${p.N}</span>`:''}</span><div class="expr"><span class="eq">:=</span><span class="digits">${r.row.h}</span>${k===last&&p.done?'.':''}</div>`;
+        html+=`<div class="tools"><span class="${ok?'ok':'bad'}" title="Checked again from the text">${ok?'✓':'✗'}</span><button class="mini" data-p="${pi}" data-k="${k}">Another</button></div>`;
+        first=false;
+      } else {
+        html+=`<span class="lhs"></span><div class="expr none">${r.exact?'no representation exists':'no representation found'} for k = ${k}</div><div class="tools"><span class="tag">${r.exact?'complete search':'search limit'}</span></div>`;
+      }
+      html+='</div>';
+    });
+    if(!ks.length) html+=`<div class="expr wait">${p.done?`${p.N}: no representation found for k ≤ ${$('inTo').value}`:`Searching ${p.N}…`}</div>`;
+    html+='</div>';
+    if(mode==='interval'&&p.done) html+=`<div class="plate-note">N = ${p.N} · smallest k: ${p.kmin??'none found'}</div>`;
+    html+='</div>';
+  });
+  $('plates').innerHTML=html||'<div class="plate"><div class="expr wait" style="text-align:center">Nothing to show yet.</div></div>';
+  const doneP=pyrs.filter(p=>p.done);
+  if(mode==='single'&&pyrs[0]){const p=pyrs[0];$('summary').innerHTML=p.done?(p.kmin?`Smallest k for <b>${p.N}</b>: <b>${p.kmin}</b> · rows found: <b>${Object.values(p.rows).filter(r=>r.row).length}</b>`:`<b>${p.N}</b>: no representation found up to k = ${$('inTo').value}`):`Searching <b>${p.N}</b>…`;}
+  else if(pyrs.length){$('summary').innerHTML=`Interval <b>${pyrs[0].N}</b> – <b>${pyrs[pyrs.length-1].N}</b> · finished: <b>${doneP.length}</b> of <b>${pyrs.length}</b>`;}
+  $('outBox').textContent=pyrTxt().slice(0,20000);
+}
+$('plates').addEventListener('click',e=>{const b=e.target.closest('button[data-p]');if(!b)return;const pi=+b.dataset.p,k=+b.dataset.k;const p=pyrs[pi];
+  worker.postMessage({id:++reqId,type:'alt',N:p.N,k,pi,ri:k,seed:Math.floor(Math.random()*1e6),opts:curOpts,exclude:p.rows[k].row.s});
+  if(busy){/* a running pyramid job continues; alt request was queued after it */}
+});
+
+/* ---------- exports ---------- */
+function optLine(o){const on=[];if(o.concat)on.push('joining');if(o.fact)on.push('factorial');if(o.pow)on.push('powers');if(o.div)on.push('division');if(o.neg)on.push('unary minus');if(o.pow0)on.push('x^0');if(!o.noZeroTrick)on.push('x × 0 absorption');return ORDER_NAME[o.order||'dec']+' · Allowed: '+on.join(', ');}
+function pyrTxt(){
+  const out=[TITLE,SUB,'Inder J. Taneja','numbers-magic.com',optLine(curOpts),''];
+  pyrs.forEach(p=>{const ks=Object.keys(p.rows).map(Number).sort((a,b)=>a-b);const pad=' '.repeat(String(p.N).length);let first=true;
+    ks.forEach(k=>{const r=p.rows[k];out.push((first?String(p.N):pad)+' := '+(r.row?r.row.s:`(${r.exact?'no representation exists':'no representation found'} for k = ${k})`)+`    [k = ${k}]`);first=false;});
+    if(!ks.length)out.push(`${p.N}: no representation found`);out.push('');});
+  return out.join('\n');
+}
+function toTex(h){return h.replace(/<sup>/g,'^{').replace(/<\/sup>/g,'}').replace(/<[^>]+>/g,'').replace(/×/g,' \\times ').replace(/−/g,'-');}
+function pyrTex(){return pyrs.map(p=>{const ks=Object.keys(p.rows).map(Number).sort((a,b)=>a-b).filter(k=>p.rows[k].row);if(!ks.length)return '';
+  return '\\begin{align*}\n'+ks.map((k,i)=>(i===0?`${p.N} `:'')+'&:= '+toTex(p.rows[k].row.h)).join(' \\\\\n')+'.\n\\end{align*}';}).filter(Boolean).join('\n\n');}
+function fileStem(){const o={dec:'decreasing',inc:'increasing',inc0:'increasing-0'}[curOpts.order||'dec'];if(!pyrs.length)return 'pyramid-type-'+o;return pyrs.length===1?`pyramid-type-${o}-${pyrs[0].N}`:`pyramid-type-${o}-${pyrs[0].N}-to-${pyrs[pyrs.length-1].N}`;}
+let dlApi=null;
+if(window.claude&&typeof window.claude.use==='function'){window.claude.use('downloads').then(d=>{dlApi=d;}).catch(()=>{});}
+function saveBlob(blob,name){
+  if(dlApi){dlApi.save({filename:name,data:blob}).then(()=>toast('Saved '+name)).catch(err=>{const c=err&&err.code;toast(c==='declined'?'Download cancelled':c==='rate_limited'?'A save prompt is already open':'Download is not available here. Use the copy buttons instead.');});return;}
+  if(window.claude){toast('Download is not available in this view. Use the copy buttons instead.');return;}
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);toast('Saving '+name);
+}
+function saveTxt(t,n){saveBlob(new Blob([t],{type:'text/plain;charset=utf-8'}),n);}
+function saveXlsx(wb,n){if(typeof XLSX==='undefined'){toast('The Excel library did not load. Check the connection and reload.');return;}const d=XLSX.write(wb,{bookType:'xlsx',type:'array'});saveBlob(new Blob([d],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),n);}
+function copy(text,label){navigator.clipboard.writeText(text).then(()=>toast(label+' copied')).catch(()=>{const box=$('outBox');box.textContent=text;$('tab-dl').click();const r=document.createRange();r.selectNodeContents(box);const s=getSelection();s.removeAllRanges();s.addRange(r);toast('Text selected — press Ctrl+C to copy');});}
+$('dlPyrTxt').onclick=()=>{if(!pyrs.length)return toast('Generate a pyramid first');saveTxt(pyrTxt(),fileStem()+'.txt');};
+$('dlPyrXlsx').onclick=()=>{if(!pyrs.length)return toast('Generate a pyramid first');if(typeof XLSX==='undefined')return toast('The Excel library did not load.');
+  const wb=XLSX.utils.book_new();const a=[[TITLE],[SUB],['Inder J. Taneja — numbers-magic.com'],[optLine(curOpts)],[],['N','k','Representation','Check']];
+  pyrs.forEach(p=>{Object.keys(p.rows).map(Number).sort((x,y)=>x-y).forEach(k=>{const r=p.rows[k];a.push([p.N,k,r.row?`${p.N} := ${r.row.s}`:(r.exact?'no representation exists':'no representation found'),r.row?(check(p.N,k,r.row)?'ok':'check'):''])});a.push([]);});
+  const ws=XLSX.utils.aoa_to_sheet(a);ws['!cols']=[{wch:10},{wch:5},{wch:80},{wch:7}];XLSX.utils.book_append_sheet(wb,ws,'Pyramids');
+  const h=['N','Smallest k'];for(let k=1;k<=9;k++)h.push('k='+k);const b=[h];
+  pyrs.forEach(p=>{const row=[p.N,p.kmin??'none'];for(let k=1;k<=9;k++){const r=p.rows[k];row.push(r?(r.row?'yes':(r.exact?'none':'not found')):'');}b.push(row);});
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(b),'Summary');saveXlsx(wb,fileStem()+'.xlsx');};
+$('cpTxt').onclick=()=>copy(pyrTxt(),'Text');
+$('cpTex').onclick=()=>copy(pyrTex(),'LaTeX');
+
+/* ---------- events ---------- */
+$('goBtn').onclick=generate;
+['inN','inA','inB'].forEach(id=>$(id).addEventListener('keydown',e=>{if(e.key==='Enter')generate();}));
+['inOrder','oConcat','oFact','oPow','oDiv','oNeg','oPow0','oZero'].forEach(id=>$(id).onchange=generate);
+$('optRepeatN').onchange=render;$('optSkip').onchange=render;
+function setMode(m){mode=m;const iv=m==='interval';$('modeInt').setAttribute('aria-pressed',iv);$('modeSingle').setAttribute('aria-pressed',!iv);$('fSingle').hidden=iv;$('fA').hidden=!iv;$('fB').hidden=!iv;$('lSkip').hidden=!iv;$('intNote').hidden=!iv;generate();}
+$('modeSingle').onclick=()=>setMode('single');$('modeInt').onclick=()=>setMode('interval');
+$('shuffleBtn').onclick=()=>{seedBase=Math.floor(Math.random()*1e6);$('inPick').value='random';generate();};
+function setLayout(al){$('layAl').setAttribute('aria-pressed',al);$('layPyr').setAttribute('aria-pressed',!al);render();}
+$('layPyr').onclick=()=>setLayout(false);$('layAl').onclick=()=>setLayout(true);
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>{x.setAttribute('aria-selected',x===t);$(x.dataset.view).hidden=x!==t;});});
+
+/* ---------- scan ---------- */
+let scanRows=[],scanId=-1,scanTotal=0,scanOpts={};
+$('scBtn').onclick=()=>{let a=readInt('scA'),b=readInt('scB');if(a===null||b===null){toast('Enter whole numbers for the range');return;}if(b<a)[a,b]=[b,a];if(a<0)a=0;if(b-a>4999){b=a+4999;$('scB').value=b;toast('Range limited to 5 000 numbers');}
+  scanRows=[];scanTotal=b-a+1;scanOpts=readOpts();$('scBtn').disabled=true;$('scBody').innerHTML='';scanId=send({type:'scan',a,b,opts:scanOpts});$('scProgress').textContent='Starting…';};
+$('scStop').onclick=()=>{if(scanId>0){worker.postMessage({type:'cancel',id:++reqId});scanId=-1;$('scBtn').disabled=false;$('scProgress').textContent='Stopped.';renderScan();}};
+$('scShow').onchange=renderScan;
+function filteredScan(){const f=$('scShow').value;let r=scanRows.slice();if(f==='broken')r=r.filter(x=>x.miss.length);if(f==='k')r.sort((x,y)=>(x.kmin||99)-(y.kmin||99)||x.N-y.N);return r;}
+function renderScan(){
+  if(!scanRows.length)return;const byK={};scanRows.forEach(r=>{const key=r.kmin||'none';byK[key]=(byK[key]||0)+1;});
+  const broken=scanRows.filter(r=>r.miss.length).length;
+  $('scStats').innerHTML=`Numbers: <b>${scanRows.length}</b> · with a missing row: <b>${broken}</b> · `+Object.keys(byK).map(k=>`smallest k = ${k}: <b>${byK[k]}</b>`).join(' · ');
+  const rows=filteredScan(),shown=rows.slice(0,1500);
+  $('scBody').innerHTML=shown.map(r=>`<tr class="click" data-n="${r.N}"><td class="num">${r.N}</td><td class="num">${r.kmin??'—'}</td><td class="num">${r.found}</td><td class="num">${r.miss.length?r.miss.map(k=>'k='+k).join(', '):''}</td><td>${r.ex?`<span class="expr">${r.ex.h}</span>`:''}</td></tr>`).join('')+(rows.length>1500?`<tr><td colspan="5" class="note">Showing 1500 of ${rows.length}; downloads include all.</td></tr>`:'')||'<tr><td colspan="5" class="note">No numbers match this filter.</td></tr>';
+}
+$('scBody').addEventListener('click',e=>{const tr=e.target.closest('tr[data-n]');if(!tr)return;$('inN').value=tr.dataset.n;$('tab-pyr').click();if(mode!=='single')setMode('single');else generate();window.scrollTo({top:0});});
+function scanStem(){return scanRows.length?`pyramid-type-decreasing-scan-${scanRows[0].N}-to-${scanRows[scanRows.length-1].N}`:'pyramid-type-decreasing-scan';}
+function scanTxt(){const out=[TITLE+' — '+SUB+' — Range scan','Inder J. Taneja','numbers-magic.com',optLine(scanOpts),''];out.push('N\tsmallest k\trows found\tmissing rows\tfirst row');
+  filteredScan().forEach(r=>out.push([r.N,r.kmin??'',r.found,r.miss.join(' '),r.ex?`${r.N} := ${r.ex.s}`:''].join('\t')));return out.join('\n');}
+$('dlScTxt').onclick=()=>{if(!scanRows.length)return toast('Run a range scan first');saveTxt(scanTxt(),scanStem()+'.txt');};
+$('dlScXlsx').onclick=()=>{if(!scanRows.length)return toast('Run a range scan first');if(typeof XLSX==='undefined')return toast('The Excel library did not load.');
+  const wb=XLSX.utils.book_new();const a=[[TITLE+' — '+SUB+' — Range scan'],['Inder J. Taneja — numbers-magic.com'],[optLine(scanOpts)],[],['N','Smallest k','Rows found','Missing rows','First row']];
+  filteredScan().forEach(r=>a.push([r.N,r.kmin??'none',r.found,r.miss.join(' '),r.ex?`${r.N} := ${r.ex.s}`:'']));const ws=XLSX.utils.aoa_to_sheet(a);ws['!cols']=[{wch:9},{wch:11},{wch:11},{wch:14},{wch:70}];XLSX.utils.book_append_sheet(wb,ws,'Scan');saveXlsx(wb,scanStem()+'.xlsx');};
+$('cpSc').onclick=()=>{if(!scanRows.length)return toast('Run a range scan first');copy(scanTxt(),'Table');};
+
+generate();
+})();
+</script>
+
+</html>

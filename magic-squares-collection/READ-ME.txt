@@ -1,0 +1,12 @@
+Magic Squares Generators - Complete Session Collection
+Created by Inder J. Taneja
+Updated October 8, 2026
+
+1. Extract the complete ZIP folder.
+2. Open index.html in your browser.
+3. Choose Open generator.
+4. Use the WordPress HTML link to download a snippet for a WordPress Custom HTML block.
+5. Use Excel/TXT buttons inside the generators to export results.
+
+Keep the generators and wordpress folders beside index.html.
+The collection contains the 15 current downloadable generators developed or updated in this session.

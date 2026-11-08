@@ -1,0 +1,2122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Multi-Magic Square Generator — Sequential Entries: Orders 3–12</title>
+<style>
+  :root{
+    --bg1:#eef4fb; --bg2:#dcebf7;
+    --accent:#2b6cb0; --accent-dark:#1a4971;
+    --text:#1e2a38; --muted:#5c6b7a;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background:linear-gradient(160deg,var(--bg1),var(--bg2));
+    color:var(--text); min-height:100vh; padding:28px 16px 60px;
+  }
+  .wrap{max-width:1000px;margin:0 auto;}
+  h1{
+    text-align:left; font-size:1.85rem; margin-bottom:4px;
+    background:linear-gradient(90deg,#0d2b4e,#2b6cb0,#4fb8c4,#c99a3a);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    font-weight:800; letter-spacing:.3px;
+  }
+  h1 .accent{background:none;-webkit-background-clip:initial;background-clip:initial;color:#c2622a;font-style:italic;}
+  .created-by{text-align:left; color:var(--muted); font-size:.85rem; margin-bottom:18px;}
+  .subtitle{text-align:left;color:var(--muted);margin-bottom:26px;font-size:.92rem;line-height:1.5;}
+  .panel{
+    background:linear-gradient(160deg,#ffffff 0%,#f2f7fc 55%,#e8f1fa 100%);
+    border-radius:16px; padding:22px 24px;
+    box-shadow:0 6px 24px rgba(30,60,100,.10); margin-bottom:22px;
+    border:1px solid rgba(43,108,176,.08);
+  }
+  .panel h2{font-size:.78rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:0 0 14px;font-weight:700;}
+  .order-panel{background:linear-gradient(145deg,#eee5f9,#faf6fe);border-color:#c9afe7;}
+  .order-panel h2{color:#6d3798;}
+  .order-panel button{background:#eadcf8;border-color:#c7a8e5;color:#63338d;}
+  .order-panel button:hover{background:#dec7f3;}
+  .order-panel button.active{background:#7943a7;border-color:#7943a7;color:#fff;}
+  .type-panel{background:linear-gradient(145deg,#e9f7ee,#f8fcf9);border-color:#aad9b8;}
+  .type-panel h2{color:#277348;}
+  .type-panel button{background:#e0f3e6;border-color:#a6d6b4;color:#21633e;}
+  .type-panel button:hover{background:#ccebd6;}
+  .type-panel button.active,.type-panel button.gold.active{background:#278454;border-color:#278454;color:#fff;}
+  .numbers-panel{background:linear-gradient(145deg,#fff0e3,#fffaf5);border-color:#edc7a4;}
+  .numbers-panel h2{color:#a35218;}
+  .numbers-panel #nInput{background:#fff8ed;border-color:#ddad79;color:#914517;}
+  .numbers-panel .generate-btn{background:linear-gradient(90deg,#c76b25,#a3481b);}
+  .numbers-panel .generate-btn:hover{background:linear-gradient(90deg,#d57930,#ae5424);}
+  .downloads-panel{background:linear-gradient(145deg,#edf5f9,#f9fcfd);border-color:#b9d5df;}
+  .downloads-panel h2{color:#246378;}
+  .type-group{flex-basis:100%;margin:6px 0 -2px;font-weight:800;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:#1f6b4a;}
+  .type-group:first-child{margin-top:0;}
+  .downloads-panel .controls button{background:#dceef4;border-color:#9bcbd9;color:#20596d;}
+  .downloads-panel .controls button:hover{background:#c6e3ec;}
+  .download-scope{display:flex;flex-wrap:wrap;gap:10px 22px;margin:0 0 16px;color:#20596d;font-weight:600;font-size:.9rem;}
+  .download-scope label{display:inline-flex;align-items:center;gap:7px;cursor:pointer;}
+  .download-scope input{accent-color:#246378;}
+  .controls{display:flex; gap:12px; flex-wrap:wrap; align-items:center;}
+  button{
+    padding:10px 20px; border-radius:9px; background:#eaf1f9;
+    color:var(--accent-dark); font-size:.92rem; font-weight:700; cursor:pointer;
+    transition:background .15s, transform .1s; border:1.5px solid #c7dbef;
+  }
+  button:hover{background:#dbe9f7;}
+  button:active{transform:scale(.97);}
+  button.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+  button.gold.active{background:#c2622a;border-color:#c2622a;}
+  .n-input-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+  .n-input-row input[type=number]{
+    width:90px;padding:10px 12px;border-radius:9px;border:1.5px solid #c7dbef;
+    font-size:1rem;font-weight:700;color:var(--accent-dark);text-align:center;
+  }
+  .generate-btn{background:linear-gradient(90deg,#2b6cb0,#1a4971);color:#fff;border:none;
+    padding:11px 26px;font-size:.95rem;}
+  .generate-btn:hover{background:linear-gradient(90deg,#3579c2,#1e5480);}
+  .desc{color:var(--muted);font-size:.92rem;line-height:1.6;margin:0 0 20px;}
+  .info-bar{display:flex; justify-content:flex-start; gap:24px; flex-wrap:wrap;
+    margin:0 0 18px; font-size:.86rem; color:var(--muted);}
+  .info-bar b{color:var(--text);}
+  .square-label{font-weight:700;color:var(--accent-dark);font-size:.86rem;margin-bottom:8px;}
+  table.square{border-collapse:collapse; margin:0 0 6px; border:1.5px solid var(--accent-dark); box-shadow:0 3px 10px rgba(30,60,100,.12);}
+  table.square td{text-align:center; vertical-align:middle; font-weight:700;
+    border:1px solid rgba(30,60,100,.25); color:#20344a;}
+  .faces-title{font-weight:700;color:var(--accent-dark);font-size:.95rem;margin:24px 0 14px;padding-top:18px;border-top:1px dashed #cfe0f1;}
+
+  .rearr-panel{background:linear-gradient(145deg,#fdeef3,#fff8fa);border-color:#eec0cf;}
+  .rearr-panel h2{color:#a02f58;}
+  .rearr-panel #rInput{background:#fff4f7;border-color:#e2a3b9;color:#8a2449;}
+  .rearr-panel .generate-btn{background:linear-gradient(90deg,#c7466f,#9d2a52);}
+  .rearr-panel .generate-btn:hover{background:linear-gradient(90deg,#d5557d,#ab3459);}
+  .rearr-note{color:var(--muted);font-size:.86rem;margin:0 0 10px;}
+  .rearr-grid{display:grid;grid-template-columns:repeat(3,max-content);gap:28px 36px;margin-top:18px;}
+  .rearr-ok{color:#1f7a45;font-size:.74rem;font-weight:700;margin-top:3px;}
+  .faces-grid{display:grid;grid-template-columns:repeat(3,max-content);gap:32px 42px;}
+  .face-col{text-align:center;padding:0 4px;}
+  .face-label{color:var(--muted);font-size:.78rem;margin-bottom:5px;font-weight:700;}
+  .details-face-title{font-weight:700;color:var(--accent-dark);font-size:.9rem;margin:20px 0 8px;}
+  table.details{border-collapse:collapse;width:100%;margin-bottom:6px;font-size:.85rem;}
+  table.details th, table.details td{text-align:left;padding:7px 10px;border:1px solid #d8e4f0;}
+  table.details th{background:#eaf1f9;color:var(--accent-dark);font-weight:700;}
+  table.details td.check{color:#2f8a4e;font-weight:700;text-align:center;}
+  table.details td.cross{color:#9aa5b1;text-align:center;}
+  footer{text-align:center; margin-top:30px; color:var(--muted); font-size:.82rem;}
+  footer a{color:var(--accent);text-decoration:none;}
+
+  /* Recessed 3D gradient cards */
+  .panel{
+    border:1px solid rgba(0,0,0,.10);
+    border-top-color:rgba(0,0,0,.20); border-left-color:rgba(0,0,0,.16);
+    border-bottom-color:rgba(255,255,255,.95); border-right-color:rgba(255,255,255,.85);
+    box-shadow:
+      inset 5px 6px 14px rgba(20,40,70,.20),
+      inset 2px 2px 3px rgba(20,40,70,.18),
+      inset -4px -4px 10px rgba(255,255,255,.85),
+      0 1px 0 rgba(255,255,255,.9),
+      0 -1px 0 rgba(0,0,0,.05);
+  }
+  .panel h2{text-shadow:0 1px 0 rgba(255,255,255,.85);}
+  .panel input[type=number],.panel input[type=text],.panel select{
+    box-shadow:inset 2px 2px 5px rgba(20,40,70,.18), inset -1px -1px 2px rgba(255,255,255,.8);}
+
+  .title-panel{background:linear-gradient(145deg,#fff1d6 0%,#ffe3b3 50%,#fbd4a0 100%);padding:24px 28px;}
+  .title-panel h1{margin-top:0;text-shadow:none;}
+  .title-panel .created-by{color:#7a4a1c;}
+  .title-panel .subtitle{color:#6b4a2b;margin-bottom:0;}
+
+  /* Recessed 3D gradient option buttons */
+  .order-panel button,.type-panel button{
+    box-shadow:inset 2px 3px 6px rgba(20,30,60,.22), inset -2px -2px 4px rgba(255,255,255,.8);
+    border-top-color:rgba(0,0,0,.22); border-left-color:rgba(0,0,0,.16);
+    border-bottom-color:rgba(255,255,255,.9); border-right-color:rgba(255,255,255,.8);
+    transition:background .15s, box-shadow .15s;}
+  .order-panel button{background:linear-gradient(145deg,#dcc8f1 0%,#ecdffa 55%,#f6eefd 100%);}
+  .order-panel button:hover{background:linear-gradient(145deg,#cfb6ea 0%,#e2d0f6 55%,#efe3fb 100%);}
+  .order-panel button.active{background:linear-gradient(145deg,#5a2c82 0%,#7943a7 50%,#9266bd 100%);
+    box-shadow:inset 3px 4px 9px rgba(0,0,0,.45), inset -2px -2px 4px rgba(255,255,255,.25);}
+  .type-panel button{background:linear-gradient(145deg,#c9e8d3 0%,#def3e5 55%,#effaf2 100%);}
+  .type-panel button:hover{background:linear-gradient(145deg,#b8dfc5 0%,#d0ecda 55%,#e6f6ec 100%);}
+  .type-panel button.active,.type-panel button.gold.active{background:linear-gradient(145deg,#1b6340 0%,#278454 50%,#45a073 100%);
+    box-shadow:inset 3px 4px 9px rgba(0,0,0,.45), inset -2px -2px 4px rgba(255,255,255,.25);}
+
+  /* ---------- page background picker (background only; cards keep their colours) ---------- */
+  body.bg-blue{background:linear-gradient(160deg,#e3f0fc,#cfe3f6);}
+  body.bg-yellow{background:linear-gradient(160deg,#fff9e3,#fdefc4);}
+  body.bg-mint{background:linear-gradient(160deg,#e6f7ef,#cdeedd);}
+  .style-bar{display:flex;flex-wrap:wrap;gap:10px 26px;align-items:center;margin:4px 0 14px;font-size:.85rem;color:#6b4a2b;font-weight:700;}
+  .style-bar .grp{display:inline-flex;align-items:center;gap:6px;}
+  .style-bar button{padding:5px 12px;font-size:.8rem;border-radius:999px;background:rgba(255,255,255,.65);border:1.5px solid #e2b77d;color:#7a4a1c;}
+  .style-bar button.on{background:#c2622a;border-color:#c2622a;color:#fff;}
+  .style-bar .sw{display:inline-block;width:14px;height:14px;border-radius:50%;vertical-align:-2px;margin-right:5px;border:1px solid rgba(0,0,0,.2);}
+  /* ---------- results card: a different colour for each order ---------- */
+  .results-panel.ord-3{background:linear-gradient(145deg,#f3edff,#e6dcfb);}
+  .results-panel.ord-4{background:linear-gradient(145deg,#e8f4ff,#d3e8fb);}
+  .results-panel.ord-5{background:linear-gradient(145deg,#ecefff,#d9defb);}
+  .results-panel.ord-6{background:linear-gradient(145deg,#eaf0f5,#d6e1ea);}
+  .results-panel.ord-7{background:linear-gradient(145deg,#e6f6f0,#cdeee2);}
+  .results-panel.ord-8{background:linear-gradient(145deg,#fdeef0,#f7d9de);}
+  .results-panel.ord-9{background:linear-gradient(145deg,#fff4e2,#fbe5c0);}
+  .results-panel.ord-10{background:linear-gradient(145deg,#eef6e6,#dbecca);}
+  .results-panel.ord-11{background:linear-gradient(145deg,#f1ecf7,#e0d6ee);}
+  .results-panel.ord-12{background:linear-gradient(145deg,#e7f3f6,#cfe6ec);}
+  /* ---------- 3D glass tiles ---------- */
+  .sq-wrap{display:inline-block;text-align:center;}
+  body.tiles-glass table.square{border-collapse:separate;border-spacing:var(--gap,3px);border:2px solid #20344a;border-radius:4px;box-shadow:0 3px 10px rgba(30,60,100,.12);background:rgba(255,255,255,.55);padding:0;}
+  body.tiles-glass table.square td{position:relative;border:none !important;padding:0;background:none !important;color:var(--tc,#20344a);}
+  body.tiles-glass table.square td .tl{position:absolute;inset:0;border-radius:22%;background:linear-gradient(145deg,var(--hi) 0%,var(--c) 52%,var(--sh) 100%);
+    box-shadow:0 2px 3px rgba(40,30,10,.35),inset 0 0 0 1px rgba(255,255,255,.75),inset 0 -2px 3px rgba(0,0,0,.10);}
+  body.tiles-glass table.square td .tl::after{content:"";position:absolute;left:7%;right:7%;top:6%;height:42%;border-radius:20% 20% 40% 40%;
+    background:linear-gradient(rgba(255,255,255,.62),rgba(255,255,255,0));}
+  body.tiles-glass table.square td .nv{position:relative;z-index:1;}
+  body.tiles-glass table.square td.bt::before,body.tiles-glass table.square td.bb::before,body.tiles-glass table.square td.bl::before,body.tiles-glass table.square td.br::before{
+    content:"";position:absolute;inset:calc(var(--gap,3px) / -2 - 1px);pointer-events:none;z-index:2;border:0 solid #20344a;}
+  body.tiles-glass table.square td.bt::before{border-top-width:2px;}
+  body.tiles-glass table.square td.bb::before{border-bottom-width:2px;}
+  body.tiles-glass table.square td.bl::before{border-left-width:2px;}
+  body.tiles-glass table.square td.br::before{border-right-width:2px;}
+  body.tiles-glass table.square td.bt.bb::before{border-top-width:2px;border-bottom-width:2px;}
+  .png-btn{margin-top:4px;padding:3px 10px;font-size:.72rem;border-radius:999px;background:#fff;border:1px solid #c7dbef;color:#1a4971;font-weight:700;}
+  .png-btn:hover{background:#eaf1f9;}
+
+/* Shared visual system with Prime Magic Squares */
+body{font:17px/1.45 'Gill Sans','Gill Sans MT',Calibri,sans-serif;color:#18354a;padding:28px 24px 40px}.wrap{max-width:1372px}h1,h1 .accent{background:none;color:#18354a;font-style:normal;font-size:clamp(27px,4vw,42px);line-height:1.15;font-weight:700;letter-spacing:0}.title-panel{background:linear-gradient(135deg,#f4faff,#bfd7e9);border-left:7px solid #b78d36;padding:24px 28px}.created-by{font-size:17px!important;color:#18354a!important;margin:12px 0 18px}.subtitle{font-size:16px;color:#36566a!important}.panel{border:1px solid #ffffffbb;border-radius:17px;box-shadow:inset 3px 3px 7px #8299aa55,inset -3px -3px 8px #ffffffd9,0 6px 15px #243d5010;padding:22px}.panel h2{font-size:22px;font-weight:600;text-transform:none;letter-spacing:0;color:#234b61}.order-panel{background:linear-gradient(135deg,#fff8e9,#ead7ae);border-left:6px solid #b78d36}.order-panel h2{color:#795c20}.type-panel{background:linear-gradient(135deg,#f6f9fc,#dde6ee)}.numbers-panel{background:linear-gradient(135deg,#eff9ef,#cfe2d2)}.rearr-panel{background:linear-gradient(135deg,#fff7ec,#eddbc7)}.downloads-panel{background:linear-gradient(135deg,#f1faf3,#d5e9d9)}#detailsPanel{background:linear-gradient(135deg,#fff9e9,#eadfbb)}button,input,select{font-family:inherit}.order-panel button,.type-panel button{border:1px solid #ffffffcf;border-radius:10px;color:#18354a;font-weight:400;font-size:17px;box-shadow:inset 2px 2px 4px #8a9faf70,inset -2px -2px 4px #ffffffd9,0 2px 4px #22384a12}.order-panel button{border-left:4px solid #c69a35;font-size:20px;min-width:115px}.order-panel button:nth-child(3n+1){background:linear-gradient(145deg,#e8f4ff,#a8cce8)}.order-panel button:nth-child(3n+2){background:linear-gradient(145deg,#fff3d9,#e8c47e)}.order-panel button:nth-child(3n){background:linear-gradient(145deg,#e4f6e9,#a8d2b3)}.type-panel button{background:linear-gradient(145deg,var(--button-high),var(--button-low))}.order-panel button.active,.type-panel button.active,.type-panel button.gold.active{background:linear-gradient(145deg,#25566b,#155f87);color:white;box-shadow:inset 3px 3px 6px #102b4560,inset -2px -2px 4px #ffffff25}.construction-group{width:100%;padding:17px 19px;border-radius:13px;border-left:6px solid #2b6c98;background:linear-gradient(135deg,#e9f4ff,#a8cce8);box-shadow:inset 3px 3px 7px #7b93a966,inset -3px -3px 7px #ffffffd9}.construction-group h3{margin:0 0 11px;color:#225b81;font-size:22px;font-weight:600}.construction-group+.construction-group{margin-top:10px;background:linear-gradient(135deg,#fff1df,#e9c0a0);border-left-color:#a76335}.construction-group+.construction-group h3{color:#8b4e29}.face-col{border:1px solid #ffffffbb;border-top:4px solid #23728b;border-radius:14px;padding:16px;background:linear-gradient(135deg,#f4faff,#d4e7f3);box-shadow:inset 3px 3px 7px #8299aa55,inset -3px -3px 8px #ffffffd9}.face-col:nth-child(3n+2){background:linear-gradient(135deg,#fff7ec,#eddbc7)}.face-col:nth-child(3n){background:linear-gradient(135deg,#f1faf3,#d5e9d9)}.square,.square .nv{font-family:Georgia,serif;font-variant-numeric:tabular-nums}.style-bar{color:#36566a;font-size:16px}.style-bar select{padding:7px 10px;border:1px solid #a8bfce;border-radius:8px;color:#18354a;background:white}.faces-grid,.rearr-grid,#baseArea,#detailsArea{overflow-x:auto;max-width:100%}body.bg-peach{background:linear-gradient(160deg,#faeee5,#efd7c7)}@media(max-width:700px){body{padding:16px 12px}.panel{padding:18px}.order-panel button{min-width:80px}.construction-group{padding:14px}.panel h2,.construction-group h3{font-size:20px}}
+
+/* Exterior sums; optional prime-style 3D tiles */
+table.square,body.tiles-glass table.square{border:0;box-shadow:none;background:transparent;border-collapse:separate;border-spacing:3px;padding:0}table.square th{border:0;background:transparent;white-space:nowrap;font-family:Georgia,serif;font-size:13px;text-align:center;padding:3px;vertical-align:middle;color:#8b6008}.sum-badge span{display:inline-block;padding:3px 6px;min-width:29px;border-radius:18px;background:linear-gradient(145deg,#fffef6,#f4e4bd);box-shadow:inset 1px 1px 3px #fff,0 2px 4px #18354a30}table.square .sum-green{color:#16764d}.sum-green span{background:linear-gradient(145deg,#fffef7,#e1f0df)}table.square .sum-order{font:600 12px 'Gill Sans',sans-serif;color:#625080}body.tiles-glass table.square td .tl{border-radius:10%;box-shadow:inset 2px 2px 3px #ffffff99,inset -2px -2px 3px #0002,0 2px 2px #0002}body.tiles-glass table.square td .tl::after{border-radius:10%;opacity:.65}.sq-wrap{max-width:100%;overflow-x:auto}body:not(.tiles-glass) table.square td{border-radius:0;box-shadow:none}
+body .faces-grid,body .rearr-grid{grid-template-columns:repeat(2,max-content)!important}.results-panel{background:linear-gradient(135deg,#f4faff,#d4e7f3)}@media(max-width:800px){body .faces-grid,body .rearr-grid{grid-template-columns:max-content!important}}</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="panel title-panel">
+  <h1><span class="accent">Multi-Magic Square Generator</span><br>Sequential Entries: Orders 3–12</h1>
+  <div class="created-by"><b>Created by: Inder J. Taneja</b></div>
+  <div class="style-bar" id="styleBar">
+    <label class="grp">Colour system <select id="colourSystem"><option value="original">Original colours</option><option value="ocean">Ocean blue</option><option value="peach">Peach &amp; plum</option><option value="mint">Mint &amp; gold</option></select></label>
+    <span class="grp">Tiles: <button data-tiles="glass">3D Glass</button><button data-tiles="classic">Classic</button></span>
+    <span class="grp">Background: <button data-bg="blue"><span class="sw" style="background:#cfe3f6"></span>Light blue</button><button data-bg="peach"><span class="sw" style="background:#efd7c7"></span>Peach</button><button data-bg="yellow"><span class="sw" style="background:#fdefc4"></span>Light yellow</button><button data-bg="mint"><span class="sw" style="background:#cdeedd"></span>Mint</button></span>
+  </div>
+  <div class="subtitle">Pick an order and a construction type to generate one base magic square (using numbers 1 to n²), then choose how many copies you want — the generator scales the numbers automatically (N copies use numbers 1 to N×n²) while keeping every copy magic.</div>
+  </div>
+
+  <div class="panel order-panel">
+    <h2>Order (n)</h2>
+    <div class="controls" id="orderStrip"></div>
+  </div>
+
+  <div class="panel type-panel">
+    <h2>Type</h2>
+    <div class="controls" id="typeStrip"></div>
+  </div>
+
+  <div class="panel numbers-panel">
+    <h2>How Many Squares? <span style="text-transform:none;letter-spacing:0;font-weight:500;">(optional)</span></h2>
+    <button type="button" class="generate-btn" id="moreToggle" aria-expanded="false" aria-controls="moreRow">+ Generate more squares</button>
+    <div class="n-input-row" id="moreRow" style="display:none;margin-top:14px;">
+      <input type="number" id="nInput" value="0" min="0" max="60">
+      <button class="generate-btn" id="genBtn">Generate</button>
+      <span id="nHint" style="color:var(--muted);font-size:.86rem;">0 = base square only. Type a number and press Generate.</span>
+    </div>
+  </div>
+
+<div class="panel rearr-panel">
+    <h2>Rearrangements <span style="text-transform:none;letter-spacing:0;font-weight:500;">(optional)</span></h2>
+    <p class="rearr-note">Other arrangements of the <b>same numbers</b> (1 to n² — 1–9 for order 3, 1–16 for order 4, 1–25 for order 5, …) that keep this type's magic properties. Each one is checked before it is shown.</p>
+    <button type="button" class="generate-btn" id="rearrToggle" aria-expanded="false" aria-controls="rearrRow">+ Show rearrangements</button>
+    <div id="rearrRow" style="display:none;margin-top:14px;">
+      <div class="n-input-row">
+        <input type="number" id="rInput" value="6" min="1" max="24">
+        <button class="generate-btn" id="rearrBtn">Generate alternatives</button>
+        <button class="generate-btn" id="rearrAgain" type="button">Different set</button>
+        <span id="rHint" style="color:var(--muted);font-size:.86rem;"></span>
+      </div>
+      <div class="rearr-grid" id="rearrArea"></div>
+    </div>
+  </div>
+
+  <div class="panel downloads-panel">
+    <h2>Downloads</h2>
+    <div class="download-scope" role="group" aria-label="Squares to download">
+      <label><input type="radio" name="downloadScope" value="screen" checked> Type on screen (one sheet)</label>
+      <label><input type="radio" name="downloadScope" value="all"> All types (one sheet per type)</label>
+    </div>
+    <div class="controls">
+      <button id="downloadTxtBtn" type="button">Download TXT</button>
+      <button id="downloadExcelBtn" type="button">Download Excel (.xlsx)</button>
+      <span id="downloadStatus" role="status" aria-live="polite"></span>
+    </div>
+  </div>
+
+  <div class="panel results-panel" id="resultsPanel">
+    <div class="desc" id="descArea"></div>
+    <div class="info-bar" id="infoBar"></div>
+    <div class="square-label" id="baseLabel"></div>
+    <div id="baseArea"></div>
+    <div class="faces-title" id="facesTitle"></div>
+    <div class="faces-grid" id="facesArea"></div>
+  </div>
+
+  <div class="panel" id="detailsPanel" style="display:none;">
+    <h2>Mathematical Details — Magic Rectangles Per Face</h2>
+    <div id="detailsArea"></div>
+  </div>
+</div>
+<footer>
+  Created by: <b>Inder J. Taneja</b><br>
+  <a href="https://numbers-magic.com" target="_blank" rel="noopener">numbers-magic.com</a> &middot;
+  <a href="https://inderjtaneja.wordpress.com/" target="_blank" rel="noopener">inderjtaneja.wordpress.com</a> &middot;
+  <a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/" target="_blank" rel="noopener">taneja-mathematical-generators.ijtaneja.chatgpt.site</a>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script>
+const DATA = [{"title": "Order 3×3", "types": [{"name": "Normal", "ord_word": "First", "desc": "Six 3×3 magic squares, each with its own magic sum (75, 78, 81, 84, 87, 90). Uses numbers 1–54.", "n": 3, "canon": [[4, 9, 2], [3, 5, 7], [8, 1, 6]], "is_equal_sum": false, "shade": "uniform", "components": []}]}, {"title": "Order 4×4", "types": [{"name": "Pandiagonal", "ord_word": "First", "desc": "Six 4×4 magic squares, all sharing the same magic sum 194. Uses numbers 1–96. This base square is pandiagonal (Nasik) — every broken diagonal also sums to 34.", "n": 4, "canon": [[7, 12, 1, 14], [2, 13, 8, 11], [16, 3, 10, 5], [9, 6, 15, 4]], "is_equal_sum": true, "shade": "uniform", "components": []}, {"name": "Perfect Pandiagonal", "ord_word": "Second", "desc": "Six 4×4 magic squares, all sharing the same magic sum 194. Uses numbers 1–96. This base square is pandiagonal (Nasik) — every broken diagonal also sums to 34. This is the classic perfect (panmagic) square of order 4: every 2×2 block, including those that wrap around the edges, also sums to 34.", "n": 4, "canon": [[1, 8, 11, 14], [12, 13, 2, 7], [6, 3, 16, 9], [15, 10, 5, 4]], "is_equal_sum": true, "shade": "uniform", "components": []}, {"name": "Striped", "ord_word": "Third", "desc": "Each face's 4×4 square splits into two 4×2 magic rectangles (dark/light halves), each rectangle's rows summing to 97, full square 194.", "n": 4, "canon": [[15, 2, 14, 3], [8, 9, 5, 12], [1, 16, 4, 13], [10, 7, 11, 6]], "is_equal_sum": true, "shade": "order4_striped", "components": [["Left 4×2", 0, 4, 0, 2], ["Right 4×2", 0, 4, 2, 4]]}]}, {"title": "Order 5×5", "types": [{"name": "Pandiagonal", "ord_word": "First", "desc": "Six 5×5 magic squares, each with its own magic sum (365, 370, 375, 380, 385, 390). Uses numbers 1–150.", "n": 5, "canon": [[1, 7, 13, 19, 25], [18, 24, 5, 6, 12], [10, 11, 17, 23, 4], [22, 3, 9, 15, 16], [14, 20, 21, 2, 8]], "is_equal_sum": false, "shade": "uniform", "components": []}, {"name": "Concentric", "ord_word": "Second", "desc": "A light 3×3 magic core (Σ 219–234) sits inside a darker 5×5 border; both are independently magic.", "n": 5, "canon": [[22, 25, 5, 7, 6], [2, 12, 17, 10, 24], [3, 11, 13, 15, 23], [18, 16, 9, 14, 8], [20, 1, 21, 19, 4]], "is_equal_sum": false, "shade": "order5_concentric", "components": [["Core 3×3", 1, 4, 1, 4]]}, {"name": "Cornered", "ord_word": "Third", "desc": "The construction grows from an upper-left 3×3 magic square (Σ 219–234), out through embedded 3×2/2×3 rectangles, to the full 5×5.", "n": 5, "canon": [[16, 11, 12, 23, 3], [9, 13, 17, 25, 1], [14, 15, 10, 7, 19], [5, 6, 22, 8, 24], [21, 20, 4, 2, 18]], "is_equal_sum": false, "shade": "order5_cornered", "components": [["Core 3×3", 0, 3, 0, 3], ["Rectangle 5×2", 0, 5, 3, 5], ["Rectangle 2×5", 3, 5, 0, 5]]}, {"name": "Cyclic-Border", "ord_word": "Fourth", "desc": "Four rotated 2×3/3×2 magic rectangles pinwheel around a single fixed center point — no 3×3 involved.", "n": 5, "canon": [[10, 24, 5, 12, 14], [16, 2, 21, 20, 6], [1, 25, 13, 7, 19], [23, 3, 17, 18, 4], [15, 11, 9, 8, 22]], "is_equal_sum": false, "shade": "order5_cyclic_border", "components": [["Top 2×3", 0, 2, 0, 3], ["Right 3×2", 0, 3, 3, 5], ["Bottom 2×3", 3, 5, 2, 5], ["Left 3×2", 2, 5, 0, 2]]}, {"name": "Semi-Striped", "ord_word": "Fifth", "desc": "A corner 3×3 magic square, plus one 3×2 and one 2×5 magic rectangle, combine to form the full 5×5.", "n": 5, "canon": [[23, 2, 14, 4, 22], [3, 12, 24, 19, 7], [13, 25, 1, 16, 10], [21, 18, 11, 9, 6], [5, 8, 15, 17, 20]], "is_equal_sum": false, "shade": "order5_semi_striped", "components": [["Core 3×3", 0, 3, 0, 3], ["Rectangle 3×2", 0, 3, 3, 5], ["Rectangle 2×5", 3, 5, 0, 5]]}, {"name": "Direct Semi-Striped: Full-width", "ord_word": "Sixth", "desc": "One three-row band and the remaining two-row bands. Every outlined rectangle has equal row sums and equal column sums; the whole square has equal rows, columns and both principal diagonals.", "n": 5, "canon": [[23, 2, 14, 4, 22], [3, 12, 24, 19, 7], [13, 25, 1, 16, 10], [21, 18, 11, 9, 6], [5, 8, 15, 17, 20]], "is_equal_sum": false, "shade": "direct_semi_5_5", "components": [["Band 1 · rectangle 1: 3×5", 0, 3, 0, 5], ["Band 2 · rectangle 1: 2×5", 3, 5, 0, 5]], "regions": [["b0_0", "b0_0", "b0_0", "b0_0", "b0_0"], ["b0_0", "b0_0", "b0_0", "b0_0", "b0_0"], ["b0_0", "b0_0", "b0_0", "b0_0", "b0_0"], ["b1_0", "b1_0", "b1_0", "b1_0", "b1_0"], ["b1_0", "b1_0", "b1_0", "b1_0", "b1_0"]], "tints": {"b0_0": 0.06, "b1_0": 0.32}}]}, {"title": "Order 6×6", "types": [{"name": "Normal", "ord_word": "First", "desc": "Six 6×6 magic squares, all sharing the same magic sum 651. Uses numbers 1–216.", "n": 6, "canon": [[1, 35, 34, 33, 2, 6], [30, 8, 28, 9, 11, 25], [24, 23, 15, 16, 20, 13], [18, 14, 21, 22, 17, 19], [7, 26, 10, 27, 29, 12], [31, 5, 3, 4, 32, 36]], "is_equal_sum": true, "shade": "uniform", "components": []}, {"name": "Concentric", "ord_word": "Second", "desc": "Six 6×6 squares, each sharing the same magic sum. A magic 4×4 core sits inside a one-cell-wide 6×6 border.", "n": 6, "canon": [[9, 26, 25, 24, 17, 10], [14, 30, 5, 8, 31, 23], [22, 1, 35, 34, 4, 15], [21, 36, 2, 3, 33, 16], [18, 7, 32, 29, 6, 19], [27, 11, 12, 13, 20, 28]], "is_equal_sum": true, "shade": "order6_concentric_nested", "components": [["Core 4×4", 1, 5, 1, 5]]}, {"name": "Cornered", "ord_word": "Third", "desc": "The construction grows from an upper-left 4×4 magic square (Σ 434) through embedded 2×6 magic rectangles (Σ 217) to the full 6×6.", "n": 6, "canon": [[17, 22, 11, 24, 29, 8], [12, 23, 18, 21, 27, 10], [26, 13, 20, 15, 35, 2], [19, 16, 25, 14, 9, 28], [4, 3, 36, 30, 6, 32], [33, 34, 1, 7, 5, 31]], "is_equal_sum": true, "shade": "order6_cornered", "components": [["Core 4×4", 0, 4, 0, 4], ["Rectangle 4×2", 0, 4, 4, 6], ["Rectangle 2×4", 4, 6, 0, 4], ["Corner 2×2", 4, 6, 4, 6]]}, {"name": "Border-Nested", "ord_word": "Fourth", "desc": "Grows from the inside out: a magic 2×4 rectangle is bordered by one cell on every side to become a 4×6 band (itself column-magic), then bordered again — this time only on top and bottom, with two single 1×6 rows — to complete the full 6×6. The generated squares share the same magic sum while preserving the row and column properties of the listed magic rectangles.", "n": 6, "canon": [[17, 22, 18, 16, 14, 24], [32, 25, 4, 10, 35, 5], [7, 1, 28, 11, 34, 30], [29, 36, 9, 26, 3, 8], [6, 12, 33, 27, 2, 31], [20, 15, 19, 21, 23, 13]], "is_equal_sum": true, "shade": "order6_border_nested", "components": [["Nested 2×4", 2, 4, 1, 5], ["Middle 4×6", 1, 5, 0, 6], ["Top 1×6", 0, 1, 0, 6], ["Bottom 1×6", 5, 6, 0, 6]], "face_mask": [[0, 0, 1, 1, 1, 0], [1, 0, 0, 0, 1, 1], [1, 1, 1, 0, 0, 0], [0, 0, 0, 1, 1, 1], [0, 1, 1, 1, 0, 0], [1, 1, 0, 0, 0, 1]]}, {"name": "Striped-1", "ord_word": "Fifth", "desc": "Three equal-sum 4×2 vertical strips (corners dark, middle light) stacked above one 2×6 horizontal strip. The generated squares share the same magic sum while preserving the row and column properties of the listed magic rectangles.", "n": 6, "canon": [[35, 2, 11, 26, 32, 5], [4, 33, 34, 3, 7, 30], [10, 27, 1, 36, 29, 8], [25, 12, 28, 9, 6, 31], [24, 22, 16, 17, 14, 18], [13, 15, 21, 20, 23, 19]], "is_equal_sum": true, "shade": "order6_striped", "components": [["Left 4×2", 0, 4, 0, 2], ["Middle 4×2", 0, 4, 2, 4], ["Right 4×2", 0, 4, 4, 6], ["Bottom 2×6", 4, 6, 0, 6]], "face_mask": [[1, 0, 0, 1, 1, 0], [0, 1, 0, 1, 1, 0], [1, 0, 1, 0, 0, 1], [0, 1, 1, 0, 0, 1], [0, 0, 1, 1, 0, 1], [1, 1, 0, 0, 1, 0]]}, {"name": "Striped-2", "ord_word": "Sixth", "desc": "Two equal-sum 2×4 core strips stacked together, alongside one equal-sum 4×2 rectangle (right) and one 2×6 strip (bottom) — obtained by transposing the left and middle 4×2 rectangles of Striped-1 into 2×4 strips. The generated squares share the same magic sum while preserving the row and column properties of the listed magic rectangles.", "n": 6, "canon": [[35, 4, 10, 25, 32, 5], [2, 33, 27, 12, 7, 30], [11, 34, 1, 28, 29, 8], [26, 3, 36, 9, 6, 31], [24, 22, 16, 17, 14, 18], [13, 15, 21, 20, 23, 19]], "is_equal_sum": true, "shade": "order6_striped2", "components": [["Core strip 1: 2×4", 0, 2, 0, 4], ["Core strip 2: 2×4", 2, 4, 0, 4], ["Right 4×2", 0, 4, 4, 6], ["Bottom 2×6", 4, 6, 0, 6]], "face_mask": [[1, 0, 1, 0, 1, 0], [0, 1, 0, 1, 1, 0], [0, 0, 1, 1, 0, 1], [1, 1, 0, 0, 0, 1], [0, 0, 1, 1, 0, 1], [1, 1, 0, 0, 1, 0]]}, {"name": "Striped-3", "ord_word": "Seventh", "desc": "Three horizontal 2×6 magic rectangles stacked to form a 6×6 magic square. Each rectangle has two rows summing to 111 and six columns summing to 37 in the base square. The generated faces share one magic sum. The generated squares share the same magic sum while preserving the row and column properties of the listed magic rectangles.", "n": 6, "canon": [[1, 3, 7, 35, 33, 32], [36, 34, 30, 2, 4, 5], [6, 10, 29, 28, 12, 26], [31, 27, 8, 9, 25, 11], [13, 15, 19, 23, 21, 20], [24, 22, 18, 14, 16, 17]], "is_equal_sum": true, "shade": "order6_striped3", "components": [["Top 2×6 magic rectangle", 0, 2, 0, 6], ["Middle 2×6 magic rectangle", 2, 4, 0, 6], ["Bottom 2×6 magic rectangle", 4, 6, 0, 6]], "face_mask": [[0, 0, 1, 1, 0, 1], [1, 1, 0, 0, 1, 0], [1, 0, 1, 1, 0, 0], [0, 1, 0, 0, 1, 1], [1, 0, 1, 1, 0, 0], [0, 1, 0, 0, 1, 1]]}]}, {"title": "Order 7×7", "types": [{"name": "Pandiagonal", "ord_word": "First", "desc": "Six 7×7 magic squares, each with its own magic sum (1015–1050). Uses numbers 1–294. This base square is pandiagonal (Nasik) — every broken diagonal also sums to 175.", "n": 7, "canon": [[1, 9, 17, 25, 33, 41, 49], [40, 48, 7, 8, 16, 24, 32], [23, 31, 39, 47, 6, 14, 15], [13, 21, 22, 30, 38, 46, 5], [45, 4, 12, 20, 28, 29, 37], [35, 36, 44, 3, 11, 19, 27], [18, 26, 34, 42, 43, 2, 10]], "is_equal_sum": false, "shade": "uniform", "components": []}, {"name": "Concentric", "ord_word": "Second", "desc": "A double-border structure: a magic 3×3 core, wrapped by a magic 5×5, wrapped by the full magic 7×7.", "n": 7, "canon": [[42, 38, 40, 5, 4, 2, 44], [1, 34, 37, 17, 19, 18, 49], [3, 14, 24, 29, 22, 36, 47], [43, 15, 23, 25, 27, 35, 7], [41, 30, 28, 21, 26, 20, 9], [39, 32, 13, 33, 31, 16, 11], [6, 12, 10, 45, 46, 48, 8]], "is_equal_sum": false, "shade": "order7_concentric", "components": [["Core 3×3", 2, 5, 2, 5], ["Inner 5×5", 1, 6, 1, 6]]}, {"name": "Cornered", "ord_word": "Third", "desc": "Nested corner growth: a magic 3×3 grows into a magic 5×5, then into the full 7×7, with embedded 2×5 and 2×7 rectangles.", "n": 7, "canon": [[26, 21, 28, 30, 20, 8, 42], [27, 25, 23, 33, 17, 12, 38], [22, 29, 24, 14, 36, 48, 2], [34, 32, 31, 13, 15, 45, 5], [16, 18, 19, 35, 37, 10, 40], [46, 49, 7, 47, 6, 11, 9], [4, 1, 43, 3, 44, 41, 39]], "is_equal_sum": false, "shade": "order7_cornered", "components": [["Core 3×3", 0, 3, 0, 3], ["Rectangle 5×2", 0, 5, 5, 7], ["Rectangle 2×5", 5, 7, 0, 5], ["Rectangle 7×2", 0, 7, 5, 7], ["Rectangle 2×7", 5, 7, 0, 7]]}, {"name": "Double-Layer", "ord_word": "Fourth", "desc": "A plus-shaped design: a magic 3×3 center, four arm rectangles (2×7), and four shared 2×2 corner blocks.", "n": 7, "canon": [[4, 30, 44, 32, 15, 13, 37], [46, 20, 6, 18, 35, 9, 41], [34, 16, 26, 21, 28, 17, 33], [42, 8, 27, 25, 23, 47, 3], [43, 7, 22, 29, 24, 39, 11], [1, 49, 48, 12, 19, 36, 10], [5, 45, 2, 38, 31, 14, 40]], "is_equal_sum": false, "shade": "order7_double_layer", "components": [["Core 3×3", 2, 5, 2, 5], ["Top 2×7", 0, 2, 0, 7], ["Bottom 2×7", 5, 7, 0, 7], ["Left 7×2", 0, 7, 0, 2], ["Right 7×2", 0, 7, 5, 7]]}, {"name": "Cyclic", "ord_word": "Fifth", "desc": "A magic 3×3 center encircled by a pinwheel of four rotated 2×5 magic rectangles.", "n": 7, "canon": [[6, 11, 41, 49, 18, 16, 34], [44, 39, 9, 1, 32, 46, 4], [47, 3, 28, 21, 26, 48, 2], [7, 43, 23, 25, 27, 10, 40], [17, 33, 24, 29, 22, 5, 45], [42, 8, 20, 35, 37, 19, 14], [12, 38, 30, 15, 13, 31, 36]], "is_equal_sum": false, "shade": "order7_cyclic", "components": [["Core 3×3", 2, 5, 2, 5], ["Top 2×5", 0, 2, 0, 5], ["Right 5×2", 0, 5, 5, 7], ["Bottom 2×5", 5, 7, 2, 7], ["Left 5×2", 2, 7, 0, 2]]}, {"name": "Sandwich", "ord_word": "Sixth", "desc": "Two 2×7 strips (top and bottom) and two 3×2 strips (left and right) sandwich a fully magic 3×3 core.", "n": 7, "canon": [[34, 30, 15, 38, 3, 9, 46], [16, 20, 35, 12, 47, 41, 4], [13, 37, 28, 21, 26, 40, 10], [44, 6, 23, 25, 27, 33, 17], [18, 32, 24, 29, 22, 2, 48], [45, 8, 49, 36, 19, 7, 11], [5, 42, 1, 14, 31, 43, 39]], "is_equal_sum": false, "shade": "order7_sandwich", "components": [["Core 3×3", 2, 5, 2, 5], ["Top 2×7", 0, 2, 0, 7], ["Bottom 2×7", 5, 7, 0, 7], ["Left 3×2", 2, 5, 0, 2], ["Right 3×2", 2, 5, 5, 7]]}, {"name": "Corner-Striped", "ord_word": "Seventh", "desc": "Grows from a 3×3 core, each growth stage split into two magic rectangles (3×2/2×5, then 5×2/2×7), each magic in both directions, to form the full 7×7.", "n": 7, "canon": [[3, 24, 48, 19, 31, 42, 8], [25, 49, 1, 35, 15, 17, 33], [47, 2, 26, 21, 29, 13, 37], [7, 46, 6, 34, 32, 14, 36], [43, 4, 44, 16, 18, 39, 11], [27, 20, 9, 22, 12, 40, 45], [23, 30, 41, 28, 38, 10, 5]], "is_equal_sum": false, "shade": "order7_cornerstriped", "components": [["Core 3×3", 0, 3, 0, 3], ["Rectangle 3×2", 0, 3, 3, 5], ["Rectangle 2×5", 3, 5, 0, 5], ["Rectangle 5×2", 0, 5, 5, 7], ["Rectangle 2×7", 5, 7, 0, 7]]}, {"name": "Direct Semi-Striped: Full-width", "ord_word": "Eighth", "desc": "One three-row band and the remaining two-row bands. Every outlined rectangle has equal row sums and equal column sums; the whole square has equal rows, columns and both principal diagonals.", "n": 7, "canon": [[2, 17, 47, 41, 7, 19, 42], [48, 33, 3, 9, 43, 31, 8], [29, 4, 25, 46, 6, 21, 44], [22, 37, 27, 13, 30, 26, 20], [24, 34, 23, 16, 39, 28, 11], [5, 15, 18, 40, 12, 49, 36], [45, 35, 32, 10, 38, 1, 14]], "is_equal_sum": false, "shade": "direct_semi_7_7", "components": [["Band 1 · rectangle 1: 2×7", 0, 2, 0, 7], ["Band 2 · rectangle 1: 3×7", 2, 5, 0, 7], ["Band 3 · rectangle 1: 2×7", 5, 7, 0, 7]], "regions": [["b0_0", "b0_0", "b0_0", "b0_0", "b0_0", "b0_0", "b0_0"], ["b0_0", "b0_0", "b0_0", "b0_0", "b0_0", "b0_0", "b0_0"], ["b1_0", "b1_0", "b1_0", "b1_0", "b1_0", "b1_0", "b1_0"], ["b1_0", "b1_0", "b1_0", "b1_0", "b1_0", "b1_0", "b1_0"], ["b1_0", "b1_0", "b1_0", "b1_0", "b1_0", "b1_0", "b1_0"], ["b2_0", "b2_0", "b2_0", "b2_0", "b2_0", "b2_0", "b2_0"], ["b2_0", "b2_0", "b2_0", "b2_0", "b2_0", "b2_0", "b2_0"]], "tints": {"b0_0": 0.06, "b1_0": 0.32, "b2_0": 0.58}}, {"name": "Direct Semi-Striped: 4+3", "ord_word": "Ninth", "desc": "One three-row band and the remaining two-row bands. Every outlined rectangle has equal row sums and equal column sums; the whole square has equal rows, columns and both principal diagonals. The marked 3×3 core also has equal diagonals.", "n": 7, "canon": [[40, 7, 6, 47, 11, 48, 16], [10, 43, 44, 3, 39, 2, 34], [21, 37, 20, 22, 42, 1, 32], [41, 9, 27, 23, 15, 25, 35], [13, 29, 28, 30, 18, 49, 8], [17, 31, 14, 38, 46, 5, 24], [33, 19, 36, 12, 4, 45, 26]], "is_equal_sum": false, "shade": "direct_semi_7_4_3", "components": [["Band 1 · rectangle 1: 2×4", 0, 2, 0, 4], ["Band 1 · rectangle 2: 2×3", 0, 2, 4, 7], ["Band 2 · rectangle 1: 3×4", 2, 5, 0, 4], ["Band 2 · rectangle 2: 3×3", 2, 5, 4, 7], ["Band 3 · rectangle 1: 2×4", 5, 7, 0, 4], ["Band 3 · rectangle 2: 2×3", 5, 7, 4, 7]], "regions": [["b0_0", "b0_0", "b0_0", "b0_0", "b0_1", "b0_1", "b0_1"], ["b0_0", "b0_0", "b0_0", "b0_0", "b0_1", "b0_1", "b0_1"], ["b1_0", "b1_0", "b1_0", "b1_0", "b1_1", "b1_1", "b1_1"], ["b1_0", "b1_0", "b1_0", "b1_0", "b1_1", "b1_1", "b1_1"], ["b1_0", "b1_0", "b1_0", "b1_0", "b1_1", "b1_1", "b1_1"], ["b2_0", "b2_0", "b2_0", "b2_0", "b2_1", "b2_1", "b2_1"], ["b2_0", "b2_0", "b2_0", "b2_0", "b2_1", "b2_1", "b2_1"]], "tints": {"b0_0": 0.06, "b0_1": 0.32, "b1_0": 0.58, "b1_1": 0.18, "b2_0": 0.45, "b2_1": 0.7}}]}, {"title": "Order 8×8", "types": [{"name": "Pandiagonal", "ord_word": "First", "desc": "Six 8×8 magic squares, all sharing the same magic sum 1540. Uses numbers 1–384. This base square is pandiagonal (Nasik) — every broken diagonal also sums to 260. Each face is composed of four equal-sum 4×4 magic squares.", "n": 8, "canon": [[7, 60, 1, 62, 15, 52, 9, 54], [2, 61, 8, 59, 10, 53, 16, 51], [64, 3, 58, 5, 56, 11, 50, 13], [57, 6, 63, 4, 49, 14, 55, 12], [23, 44, 17, 46, 31, 36, 25, 38], [18, 45, 24, 43, 26, 37, 32, 35], [48, 19, 42, 21, 40, 27, 34, 29], [41, 22, 47, 20, 33, 30, 39, 28]], "is_equal_sum": true, "shade": "order8_normal", "components": [["Block TL 4×4", 0, 4, 0, 4], ["Block TR 4×4", 0, 4, 4, 8], ["Block BL 4×4", 4, 8, 0, 4], ["Block BR 4×4", 4, 8, 4, 8]], "group": "Type-1"}, {"name": "Concentric", "ord_word": "Second", "desc": "A central 4×4 magic square enclosed by a two-cell-wide concentric border. Full-face magic sum 1540.", "n": 8, "canon": [[8, 2, 62, 64, 51, 13, 53, 7], [5, 46, 44, 17, 50, 18, 20, 60], [6, 16, 31, 36, 25, 38, 49, 59], [11, 22, 26, 37, 32, 35, 43, 54], [61, 24, 40, 27, 34, 29, 41, 4], [56, 42, 33, 30, 39, 28, 23, 9], [55, 45, 21, 48, 15, 47, 19, 10], [58, 63, 3, 1, 14, 52, 12, 57]], "is_equal_sum": true, "shade": "order8_concentric", "components": [["Core 4×4", 2, 6, 2, 6]], "group": "Type-1"}, {"name": "Cornered", "ord_word": "Third", "desc": "Cornered construction grows from order 4 to 6 and then to 8, nesting a magic 4×4 core inside embedded 4×2/2×4 and 6×2/2×6 rectangles.", "n": 8, "canon": [[31, 36, 25, 38, 43, 22, 13, 52], [26, 37, 32, 35, 23, 42, 1, 64], [40, 27, 34, 29, 41, 24, 54, 11], [33, 30, 39, 28, 49, 16, 9, 56], [18, 17, 44, 50, 20, 46, 7, 58], [47, 48, 21, 15, 19, 45, 53, 12], [10, 8, 62, 51, 6, 61, 60, 2], [55, 57, 3, 14, 59, 4, 63, 5]], "is_equal_sum": true, "shade": "order8_cornered", "components": [["Core 4×4", 0, 4, 0, 4], ["Rectangle 4×2", 0, 4, 4, 6], ["Rectangle 2×4", 4, 6, 0, 4], ["Corner 2×2 (inner)", 4, 6, 4, 6], ["Rectangle 6×2", 0, 6, 6, 8], ["Rectangle 2×6", 6, 8, 0, 6], ["Corner 2×2 (outer)", 6, 8, 6, 8]], "group": "Type-1"}, {"name": "Double-Layer", "ord_word": "Fourth", "desc": "A central 4×4 magic square plus four equal-sum 2×8 magic rectangles (top, bottom, left, right).", "n": 8, "canon": [[8, 57, 17, 20, 47, 46, 9, 56], [1, 64, 48, 45, 18, 19, 16, 49], [63, 2, 25, 40, 29, 36, 11, 54], [61, 4, 39, 26, 35, 30, 52, 13], [60, 5, 38, 27, 34, 31, 53, 12], [58, 7, 28, 37, 32, 33, 14, 51], [6, 59, 21, 24, 43, 42, 55, 10], [3, 62, 44, 41, 22, 23, 50, 15]], "is_equal_sum": true, "shade": "order8_doublelayer", "components": [["Core 4×4", 2, 6, 2, 6], ["Top 2×8", 0, 2, 0, 8], ["Bottom 2×8", 6, 8, 0, 8], ["Left 8×2", 0, 8, 0, 2], ["Right 8×2", 0, 8, 6, 8]], "group": "Type-1"}, {"name": "Cyclic", "ord_word": "Fifth", "desc": "A central 4×4 magic square surrounded cyclically by four equal-sum 2×6 pinwheel magic rectangles.", "n": 8, "canon": [[12, 57, 56, 4, 2, 64, 46, 19], [53, 8, 9, 61, 63, 1, 47, 18], [14, 51, 31, 36, 25, 38, 59, 6], [50, 15, 26, 37, 32, 35, 5, 60], [48, 17, 40, 27, 34, 29, 16, 49], [62, 3, 33, 30, 39, 28, 22, 43], [11, 54, 45, 44, 24, 23, 52, 7], [10, 55, 20, 21, 41, 42, 13, 58]], "is_equal_sum": true, "shade": "order8_cyclic", "components": [["Core 4×4", 2, 6, 2, 6], ["Top 2×6", 0, 2, 0, 6], ["Right 6×2", 0, 6, 6, 8], ["Bottom 2×6", 6, 8, 2, 8], ["Left 6×2", 2, 8, 0, 2]], "group": "Type-1"}, {"name": "Sandwich", "ord_word": "Sixth", "desc": "Two 2×8 magic rectangles (top and bottom) and two 4×2 magic rectangles (left and right) sandwich a central 4×4; every rectangle is magic in both directions.", "n": 8, "canon": [[3, 6, 58, 60, 61, 63, 1, 8], [62, 59, 7, 5, 4, 2, 64, 57], [44, 21, 28, 38, 39, 25, 48, 17], [41, 24, 37, 27, 26, 40, 45, 20], [22, 43, 32, 34, 35, 29, 18, 47], [23, 42, 33, 31, 30, 36, 19, 46], [50, 55, 14, 53, 52, 11, 16, 9], [15, 10, 51, 12, 13, 54, 49, 56]], "is_equal_sum": true, "shade": "order8_sandwich", "components": [["Top 2×8", 0, 2, 0, 8], ["Bottom 2×8", 6, 8, 0, 8], ["Left 4×2", 2, 6, 0, 2], ["Right 4×2", 2, 6, 6, 8], ["Center 4×4", 2, 6, 2, 6]], "group": "Type-1"}, {"name": "Border-Nested", "ord_word": "Seventh", "desc": "Two equal-sum 4×6 bands (each containing an independently magic, equal-sum nested 2×4 rectangle) plus two equal-sum 4×2 side strips, arranged pinwheel-style.", "n": 8, "canon": [[50, 49, 13, 20, 48, 15, 39, 26], [47, 23, 41, 44, 22, 18, 28, 37], [14, 42, 24, 21, 43, 51, 38, 27], [19, 16, 52, 45, 17, 46, 25, 40], [31, 34, 3, 64, 4, 5, 57, 62], [36, 29, 6, 56, 10, 53, 11, 59], [30, 35, 63, 9, 55, 12, 54, 2], [33, 32, 58, 1, 61, 60, 8, 7]], "is_equal_sum": true, "shade": "order8_pinwheelnested", "components": [["Top-right 4×2", 0, 4, 6, 8], ["Top-main 4×6", 0, 4, 0, 6], ["Top nested 2×4", 1, 3, 1, 5], ["Bottom-left 4×2", 4, 8, 0, 2], ["Bottom-main 4×6", 4, 8, 2, 8], ["Bottom nested 2×4", 5, 7, 3, 7]], "group": "Type-1"}, {"name": "Striped-1", "ord_word": "Eighth", "desc": "Eight equal-sum 2×4 magic rectangles arranged in a checkerboard pattern.", "n": 8, "canon": [[12, 54, 55, 9, 8, 58, 59, 5], [53, 11, 10, 56, 57, 7, 6, 60], [1, 63, 62, 4, 13, 51, 50, 16], [64, 2, 3, 61, 52, 14, 15, 49], [25, 39, 38, 28, 24, 42, 43, 21], [40, 26, 27, 37, 41, 23, 22, 44], [20, 46, 47, 17, 29, 35, 34, 32], [45, 19, 18, 48, 36, 30, 31, 33]], "is_equal_sum": true, "shade": "order8_striped1", "components": [["Block (0,0) 2×4", 0, 2, 0, 4], ["Block (0,1) 2×4", 0, 2, 4, 8], ["Block (1,0) 2×4", 2, 4, 0, 4], ["Block (1,1) 2×4", 2, 4, 4, 8], ["Block (2,0) 2×4", 4, 6, 0, 4], ["Block (2,1) 2×4", 4, 6, 4, 8], ["Block (3,0) 2×4", 6, 8, 0, 4], ["Block (3,1) 2×4", 6, 8, 4, 8]], "group": "Type-2: Striped"}, {"name": "Striped-2", "ord_word": "Ninth", "desc": "Two quadrants keep 2×4 blocks; two quadrants are rotated to 4×2 blocks — built by rotating the second and fourth 2×4 pairs of Striped-1 to 4×2.", "n": 8, "canon": [[12, 54, 55, 9, 8, 57, 13, 52], [53, 11, 10, 56, 58, 7, 51, 14], [1, 63, 62, 4, 59, 6, 50, 15], [64, 2, 3, 61, 5, 60, 16, 49], [25, 40, 20, 45, 24, 42, 43, 21], [39, 26, 46, 19, 41, 23, 22, 44], [38, 27, 47, 18, 29, 35, 34, 32], [28, 37, 17, 48, 36, 30, 31, 33]], "is_equal_sum": true, "shade": "order8_hybrid", "components": [["TL top 2×4", 0, 2, 0, 4], ["TL bottom 2×4", 2, 4, 0, 4], ["TR left 4×2", 0, 4, 4, 6], ["TR right 4×2", 0, 4, 6, 8], ["BL left 4×2", 4, 8, 0, 2], ["BL right 4×2", 4, 8, 2, 4], ["BR top 2×4", 4, 6, 4, 8], ["BR bottom 2×4", 6, 8, 4, 8]], "group": "Type-2: Striped"}, {"name": "Striped-3: Cornered-Striped", "ord_word": "Tenth", "desc": "Cornered-style striped: the upper-left splits into two equal-sum 2×4 rectangles and two equal-sum 4×2 rectangles, while the bottom half is two equal-sum 2×8 strips.", "n": 8, "canon": [[22, 44, 23, 41, 20, 45, 12, 53], [43, 21, 42, 24, 46, 19, 54, 11], [13, 51, 50, 16, 47, 18, 55, 10], [52, 14, 15, 49, 17, 48, 9, 56], [3, 61, 63, 58, 1, 8, 60, 6], [62, 4, 2, 7, 64, 57, 5, 59], [32, 25, 37, 27, 36, 30, 34, 39], [33, 40, 28, 38, 29, 35, 31, 26]], "is_equal_sum": true, "shade": "order8_corneredstriped", "components": [["TL top 2×4", 0, 2, 0, 4], ["TL bottom 2×4", 2, 4, 0, 4], ["TM 4×2", 0, 4, 4, 6], ["TR 4×2", 0, 4, 6, 8], ["Bottom-upper 2×8", 4, 6, 0, 8], ["Bottom-lower 2×8", 6, 8, 0, 8]], "group": "Type-2: Striped"}, {"name": "Striped-4: Cyclic", "ord_word": "Eleventh", "desc": "Same pinwheel of four 2×6 magic rectangles as Cyclic, but the central 4×4 is now divided into two independently magic 2×4 rectangles.", "n": 8, "canon": [[12, 57, 56, 4, 2, 64, 46, 19], [53, 8, 9, 61, 63, 1, 47, 18], [14, 51, 25, 28, 39, 38, 59, 6], [50, 15, 40, 37, 26, 27, 5, 60], [48, 17, 30, 31, 36, 33, 16, 49], [62, 3, 35, 34, 29, 32, 22, 43], [11, 54, 45, 44, 24, 23, 52, 7], [10, 55, 20, 21, 41, 42, 13, 58]], "is_equal_sum": true, "shade": "order8_cyclic2", "components": [["Center top 2×4", 2, 4, 2, 6], ["Center bottom 2×4", 4, 6, 2, 6], ["Top 2×6", 0, 2, 0, 6], ["Right 6×2", 0, 6, 6, 8], ["Bottom 2×6", 6, 8, 2, 8], ["Left 6×2", 2, 8, 0, 2]], "group": "Type-2: Striped"}, {"name": "Striped-5: Sandwich", "ord_word": "Twelfth", "desc": "Same frame as Sandwich — two 2×8 and two 4×2 magic rectangles — but the central 4×4 is divided into two independently magic horizontal 2×4 rectangles.", "n": 8, "canon": [[3, 6, 58, 60, 61, 63, 1, 8], [62, 59, 7, 5, 4, 2, 64, 57], [44, 21, 27, 37, 40, 26, 48, 17], [41, 24, 38, 28, 25, 39, 45, 20], [22, 43, 31, 33, 36, 30, 18, 47], [23, 42, 34, 32, 29, 35, 19, 46], [50, 55, 14, 53, 52, 11, 16, 9], [15, 10, 51, 12, 13, 54, 49, 56]], "is_equal_sum": true, "shade": "order8_sandwich_striped", "components": [["Top 2×8", 0, 2, 0, 8], ["Bottom 2×8", 6, 8, 0, 8], ["Left 4×2", 2, 6, 0, 2], ["Right 4×2", 2, 6, 6, 8], ["Center 2×4 (top)", 2, 4, 2, 6], ["Center 2×4 (bottom)", 4, 6, 2, 6]], "group": "Type-2: Striped"}]}, {"title": "Order 9×9", "types": [{"name": "Pandiagonal", "ord_word": "First", "desc": "Six 9×9 magic squares, all sharing the same magic sum. Uses numbers 1 to 486. This base square is pandiagonal (Nasik) — every broken diagonal also sums to the magic constant.", "n": 9, "canon": [[22, 71, 30, 27, 64, 32, 20, 69, 34], [35, 21, 67, 28, 23, 72, 33, 25, 65], [66, 31, 26, 68, 36, 19, 70, 29, 24], [40, 8, 75, 45, 1, 77, 38, 6, 79], [80, 39, 4, 73, 41, 9, 78, 43, 2], [3, 76, 44, 5, 81, 37, 7, 74, 42], [58, 53, 12, 63, 46, 14, 56, 51, 16], [17, 57, 49, 10, 59, 54, 15, 61, 47], [48, 13, 62, 50, 18, 55, 52, 11, 60]], "is_equal_sum": false, "shade": "order9_normal", "components": [["Block(0,0) 3×3", 0, 3, 0, 3], ["Block(0,1) 3×3", 0, 3, 3, 6], ["Block(0,2) 3×3", 0, 3, 6, 9], ["Block(1,0) 3×3", 3, 6, 0, 3], ["Block(1,1) 3×3", 3, 6, 3, 6], ["Block(1,2) 3×3", 3, 6, 6, 9], ["Block(2,0) 3×3", 6, 9, 0, 3], ["Block(2,1) 3×3", 6, 9, 3, 6], ["Block(2,2) 3×3", 6, 9, 6, 9]]}, {"name": "Normal", "ord_word": "Second", "desc": "Six 9×9 magic squares, all sharing the same magic sum. Uses numbers 1 to 486. Composed of nine independently magic 3×3 sub-squares arranged in a 3×3 grid of blocks.", "n": 9, "canon": [[31, 36, 29, 76, 81, 74, 13, 18, 11], [30, 32, 34, 75, 77, 79, 12, 14, 16], [35, 28, 33, 80, 73, 78, 17, 10, 15], [22, 27, 20, 40, 45, 38, 58, 63, 56], [21, 23, 25, 39, 41, 43, 57, 59, 61], [26, 19, 24, 44, 37, 42, 62, 55, 60], [67, 72, 65, 4, 9, 2, 49, 54, 47], [66, 68, 70, 3, 5, 7, 48, 50, 52], [71, 64, 69, 8, 1, 6, 53, 46, 51]], "is_equal_sum": false, "shade": "order9_normal", "components": [["Block(0,0) 3×3", 0, 3, 0, 3], ["Block(0,1) 3×3", 0, 3, 3, 6], ["Block(0,2) 3×3", 0, 3, 6, 9], ["Block(1,0) 3×3", 3, 6, 0, 3], ["Block(1,1) 3×3", 3, 6, 3, 6], ["Block(1,2) 3×3", 3, 6, 6, 9], ["Block(2,0) 3×3", 6, 9, 0, 3], ["Block(2,1) 3×3", 6, 9, 3, 6], ["Block(2,2) 3×3", 6, 9, 6, 9]]}, {"name": "Standard", "ord_word": "Third", "desc": "Six 9×9 magic squares, all sharing the same magic sum. Uses numbers 1 to 486. Magic in rows, columns and both main diagonals, without the extra pandiagonal or block structure of 1a/1b.", "n": 9, "canon": [[1, 18, 23, 35, 40, 48, 60, 65, 79], [33, 38, 52, 55, 72, 77, 8, 13, 21], [62, 67, 75, 6, 11, 25, 28, 45, 50], [27, 5, 10, 49, 30, 44, 74, 61, 69], [47, 34, 42, 81, 59, 64, 22, 3, 17], [76, 57, 71, 20, 7, 15, 54, 32, 37], [14, 19, 9, 39, 53, 31, 70, 78, 56], [43, 51, 29, 68, 73, 63, 12, 26, 4], [66, 80, 58, 16, 24, 2, 41, 46, 36]], "is_equal_sum": false, "shade": "order9_normal", "components": [["Block(0,0) 3×3", 0, 3, 0, 3], ["Block(0,1) 3×3", 0, 3, 3, 6], ["Block(0,2) 3×3", 0, 3, 6, 9], ["Block(1,0) 3×3", 3, 6, 0, 3], ["Block(1,1) 3×3", 3, 6, 3, 6], ["Block(1,2) 3×3", 3, 6, 6, 9], ["Block(2,0) 3×3", 6, 9, 0, 3], ["Block(2,1) 3×3", 6, 9, 3, 6], ["Block(2,2) 3×3", 6, 9, 6, 9]]}, {"name": "Concentric", "ord_word": "Fourth", "desc": "Six 9×9 magic squares, all sharing the same magic sum. Uses numbers 1 to 486. Nested concentric structure — the central 3×3, the 5×5, the 7×7, and the full 9×9 are each independently magic.", "n": 9, "canon": [[8, 80, 78, 76, 75, 12, 14, 16, 10], [1, 58, 54, 56, 21, 20, 18, 60, 81], [3, 17, 50, 53, 33, 35, 34, 65, 79], [5, 19, 30, 40, 45, 38, 52, 63, 77], [73, 59, 31, 39, 41, 43, 51, 23, 9], [71, 57, 46, 44, 37, 42, 36, 25, 11], [69, 55, 48, 29, 49, 47, 32, 27, 13], [67, 22, 28, 26, 61, 62, 64, 24, 15], [72, 2, 4, 6, 7, 70, 68, 66, 74]], "is_equal_sum": false, "shade": "order9_concentric", "components": [["Core 3×3", 3, 6, 3, 6], ["Ring 5×5", 2, 7, 2, 7], ["Ring 7×7", 1, 8, 1, 8]]}, {"name": "Cornered", "ord_word": "Fifth", "desc": "Six 9×9 magic squares, all sharing the same magic sum. Uses numbers 1 to 486. Grows from the top-left corner — the 3×3, the 5×5, the 7×7, and the full 9×9 are each independently magic.", "n": 9, "canon": [[38, 43, 42, 50, 32, 27, 55, 15, 67], [45, 41, 37, 46, 36, 62, 20, 8, 74], [40, 39, 44, 49, 33, 26, 56, 80, 2], [34, 35, 52, 31, 53, 65, 17, 10, 72], [48, 47, 30, 29, 51, 23, 59, 14, 68], [60, 54, 57, 18, 58, 21, 19, 77, 5], [22, 28, 25, 64, 24, 63, 61, 81, 1], [78, 75, 16, 13, 79, 76, 12, 11, 9], [4, 7, 66, 69, 3, 6, 70, 73, 71]], "is_equal_sum": false, "shade": "order9_cornered", "components": [["Core 3×3", 0, 3, 0, 3], ["Rectangle 2×5", 3, 5, 0, 5], ["Rectangle 5×2", 0, 5, 3, 5], ["Rectangle 2×7", 5, 7, 0, 7], ["Rectangle 7×2", 0, 7, 5, 7], ["Rectangle 2×9", 7, 9, 0, 9], ["Rectangle 9×2", 0, 9, 7, 9]]}, {"name": "Double-Layer", "ord_word": "Sixth", "desc": "Six 9×9 magic squares, all sharing the same magic sum. Uses numbers 1 to 486. A central 5×5 magic square plus four 2-wide arms (top, bottom, left, right), each summing to the full magic constant.", "n": 9, "canon": [[69, 16, 80, 12, 72, 17, 21, 56, 26], [13, 66, 2, 70, 10, 65, 61, 58, 24], [73, 9, 38, 34, 51, 32, 50, 6, 76], [68, 14, 44, 48, 31, 39, 43, 79, 3], [11, 71, 46, 36, 41, 52, 30, 7, 75], [78, 4, 42, 40, 53, 33, 37, 59, 23], [19, 63, 35, 47, 29, 49, 45, 22, 60], [20, 62, 55, 25, 77, 8, 67, 1, 54], [18, 64, 27, 57, 5, 74, 15, 81, 28]], "is_equal_sum": false, "shade": "order9_doublelayer", "components": [["Core 5×5", 2, 7, 2, 7], ["Top 2×9", 0, 2, 0, 9], ["Bottom 2×9", 7, 9, 0, 9], ["Left 9×2", 0, 9, 0, 2], ["Right 9×2", 0, 9, 7, 9]]}, {"name": "Sandwich", "ord_word": "Seventh", "desc": "Six 9×9 magic squares, all sharing the same magic sum. Uses numbers 1 to 486. A central 5×5 magic square, with full-width 2×9 top/bottom bands (each magic in both directions) sandwiching 5×2 left/right rectangles (each also magic in both directions).", "n": 9, "canon": [[25, 28, 58, 75, 26, 5, 17, 72, 63], [57, 54, 24, 7, 56, 77, 65, 10, 19], [66, 16, 45, 52, 29, 36, 43, 18, 64], [20, 62, 51, 33, 35, 42, 44, 15, 67], [55, 27, 32, 34, 41, 48, 50, 73, 9], [61, 21, 38, 40, 47, 49, 31, 76, 6], [3, 79, 39, 46, 53, 30, 37, 23, 59], [13, 22, 74, 80, 70, 81, 4, 14, 11], [69, 60, 8, 2, 12, 1, 78, 68, 71]], "is_equal_sum": false, "shade": "order9_sandwich", "components": [["Core 5×5", 2, 7, 2, 7], ["Top 2×9", 0, 2, 0, 9], ["Bottom 2×9", 7, 9, 0, 9], ["Left 5×2", 2, 7, 0, 2], ["Right 5×2", 2, 7, 7, 9]]}, {"name": "Cyclic", "ord_word": "Eighth", "desc": "Six 9×9 magic squares, all sharing the same magic sum. Uses numbers 1 to 486. A central 5×5 magic square (with a magic-constant-average center cell) surrounded cyclically by four equal-sum 2×7 pinwheel magic rectangles, each magic in both directions.", "n": 9, "canon": [[2, 72, 55, 1, 11, 78, 68, 16, 66], [80, 10, 27, 81, 71, 4, 14, 9, 73], [8, 74, 39, 37, 47, 32, 50, 54, 28], [21, 61, 43, 45, 35, 51, 31, 57, 25], [22, 60, 44, 38, 41, 40, 42, 18, 64], [67, 15, 49, 33, 53, 34, 36, 70, 12], [24, 58, 30, 52, 29, 48, 46, 63, 19], [69, 13, 23, 62, 26, 79, 17, 75, 5], [76, 6, 59, 20, 56, 3, 65, 7, 77]], "is_equal_sum": false, "shade": "order9_cyclic", "components": [["Core 5×5", 2, 7, 2, 7], ["Top 2×7", 0, 2, 0, 7], ["Right 7×2", 0, 7, 7, 9], ["Bottom 2×7", 7, 9, 2, 9], ["Left 7×2", 2, 9, 0, 2]]}, {"name": "Sandwich-Cyclic", "ord_word": "Ninth", "desc": "Six 9×9 magic squares, each with its own magic sum. Uses numbers 1 to 486. Combines the Sandwich frame (full-width 2×9 top/bottom bands sandwiching 5×2 left/right rectangles) with the Cyclic type's nested pinwheel 5×5 core (a fixed center surrounded by four 2×3/3×2 rectangles).", "n": 9, "canon": [[25, 28, 58, 75, 26, 5, 17, 72, 63], [57, 54, 24, 7, 56, 77, 65, 10, 19], [66, 16, 39, 37, 47, 32, 50, 18, 64], [20, 62, 43, 45, 35, 51, 31, 15, 67], [55, 27, 44, 38, 41, 40, 42, 73, 9], [61, 21, 49, 33, 53, 34, 36, 76, 6], [3, 79, 30, 52, 29, 48, 46, 23, 59], [13, 22, 74, 80, 70, 81, 4, 14, 11], [69, 60, 8, 2, 12, 1, 78, 68, 71]], "is_equal_sum": false, "shade": "order9_sandwichcyclic", "components": [["Top 2×9", 0, 2, 0, 9], ["Bottom 2×9", 7, 9, 0, 9], ["Left 5×2", 2, 7, 0, 2], ["Right 5×2", 2, 7, 7, 9], ["Inner Top 2×3", 2, 4, 2, 5], ["Inner Right 3×2", 2, 5, 5, 7], ["Inner Bottom 2×3", 5, 7, 4, 7], ["Inner Left 3×2", 4, 7, 2, 4]]}, {"name": "Corner-Striped", "ord_word": "Tenth", "desc": "Six 9×9 magic squares, all sharing the same magic sum. Uses numbers 1 to 486. Grows from a 3×3 core, each growth stage split into two magic rectangles (3×2/2×5, 5×2/2×7, 7×2/2×9), each magic in both directions.", "n": 9, "canon": [[79, 2, 42, 13, 69, 43, 39, 11, 71], [3, 40, 80, 64, 18, 50, 32, 54, 28], [41, 81, 1, 46, 36, 38, 44, 49, 33], [37, 21, 27, 72, 48, 51, 31, 52, 30], [45, 61, 55, 10, 34, 23, 59, 22, 60], [12, 67, 73, 35, 17, 26, 57, 75, 7], [70, 15, 9, 47, 65, 56, 25, 24, 58], [19, 8, 29, 66, 20, 76, 5, 78, 68], [63, 74, 53, 16, 62, 6, 77, 4, 14]], "is_equal_sum": false, "shade": "order9_cornerstriped", "components": [["Core 3×3", 0, 3, 0, 3], ["Rectangle 3×2", 0, 3, 3, 5], ["Rectangle 2×5", 3, 5, 0, 5], ["Rectangle 5×2", 0, 5, 5, 7], ["Rectangle 2×7", 5, 7, 0, 7], ["Rectangle 7×2", 0, 7, 7, 9], ["Rectangle 2×9", 7, 9, 0, 9]]}, {"name": "Direct Semi-Striped: Full-width", "ord_word": "Eleventh", "desc": "One three-row band and the remaining two-row bands. Every outlined rectangle has equal row sums and equal column sums; the whole square has equal rows, columns and both principal diagonals.", "n": 9, "canon": [[6, 64, 9, 67, 3, 1, 74, 75, 70], [76, 18, 73, 15, 79, 81, 8, 7, 12], [60, 11, 61, 54, 25, 69, 58, 14, 17], [22, 71, 21, 28, 57, 13, 24, 68, 65], [30, 29, 45, 51, 27, 38, 55, 46, 48], [41, 44, 42, 33, 47, 53, 31, 43, 35], [52, 50, 36, 39, 49, 32, 37, 34, 40], [23, 66, 78, 80, 10, 26, 19, 62, 5], [59, 16, 4, 2, 72, 56, 63, 20, 77]], "is_equal_sum": false, "shade": "direct_semi_9_9", "components": [["Band 1 · rectangle 1: 2×9", 0, 2, 0, 9], ["Band 2 · rectangle 1: 2×9", 2, 4, 0, 9], ["Band 3 · rectangle 1: 3×9", 4, 7, 0, 9], ["Band 4 · rectangle 1: 2×9", 7, 9, 0, 9]], "regions": [["b0_0", "b0_0", "b0_0", "b0_0", "b0_0", "b0_0", "b0_0", "b0_0", "b0_0"], ["b0_0", "b0_0", "b0_0", "b0_0", "b0_0", "b0_0", "b0_0", "b0_0", "b0_0"], ["b1_0", "b1_0", "b1_0", "b1_0", "b1_0", "b1_0", "b1_0", "b1_0", "b1_0"], ["b1_0", "b1_0", "b1_0", "b1_0", "b1_0", "b1_0", "b1_0", "b1_0", "b1_0"], ["b2_0", "b2_0", "b2_0", "b2_0", "b2_0", "b2_0", "b2_0", "b2_0", "b2_0"], ["b2_0", "b2_0", "b2_0", "b2_0", "b2_0", "b2_0", "b2_0", "b2_0", "b2_0"], ["b2_0", "b2_0", "b2_0", "b2_0", "b2_0", "b2_0", "b2_0", "b2_0", "b2_0"], ["b3_0", "b3_0", "b3_0", "b3_0", "b3_0", "b3_0", "b3_0", "b3_0", "b3_0"], ["b3_0", "b3_0", "b3_0", "b3_0", "b3_0", "b3_0", "b3_0", "b3_0", "b3_0"]], "tints": {"b0_0": 0.06, "b1_0": 0.32, "b2_0": 0.58, "b3_0": 0.18}}, {"name": "Direct Semi-Striped: 3+3+3", "ord_word": "Twelfth", "desc": "One three-row band and the remaining two-row bands. Every outlined rectangle has equal row sums and equal column sums; the whole square has equal rows, columns and both principal diagonals. The marked 3×3 core also has equal diagonals.", "n": 9, "canon": [[42, 77, 4, 7, 43, 73, 68, 10, 45], [40, 5, 78, 75, 39, 9, 14, 72, 37], [17, 46, 60, 55, 47, 21, 8, 67, 48], [65, 36, 22, 27, 35, 61, 74, 15, 34], [28, 69, 26, 70, 1, 52, 56, 13, 54], [19, 51, 53, 23, 41, 59, 29, 31, 63], [76, 3, 44, 30, 81, 12, 38, 79, 6], [16, 49, 58, 50, 62, 11, 64, 57, 2], [66, 33, 24, 32, 20, 71, 18, 25, 80]], "is_equal_sum": false, "shade": "direct_semi_9_3_3_3", "components": [["Band 1 · rectangle 1: 2×3", 0, 2, 0, 3], ["Band 1 · rectangle 2: 2×3", 0, 2, 3, 6], ["Band 1 · rectangle 3: 2×3", 0, 2, 6, 9], ["Band 2 · rectangle 1: 2×3", 2, 4, 0, 3], ["Band 2 · rectangle 2: 2×3", 2, 4, 3, 6], ["Band 2 · rectangle 3: 2×3", 2, 4, 6, 9], ["Band 3 · rectangle 1: 3×3", 4, 7, 0, 3], ["Band 3 · rectangle 2: 3×3", 4, 7, 3, 6], ["Band 3 · rectangle 3: 3×3", 4, 7, 6, 9], ["Band 4 · rectangle 1: 2×3", 7, 9, 0, 3], ["Band 4 · rectangle 2: 2×3", 7, 9, 3, 6], ["Band 4 · rectangle 3: 2×3", 7, 9, 6, 9]], "regions": [["b0_0", "b0_0", "b0_0", "b0_1", "b0_1", "b0_1", "b0_2", "b0_2", "b0_2"], ["b0_0", "b0_0", "b0_0", "b0_1", "b0_1", "b0_1", "b0_2", "b0_2", "b0_2"], ["b1_0", "b1_0", "b1_0", "b1_1", "b1_1", "b1_1", "b1_2", "b1_2", "b1_2"], ["b1_0", "b1_0", "b1_0", "b1_1", "b1_1", "b1_1", "b1_2", "b1_2", "b1_2"], ["b2_0", "b2_0", "b2_0", "b2_1", "b2_1", "b2_1", "b2_2", "b2_2", "b2_2"], ["b2_0", "b2_0", "b2_0", "b2_1", "b2_1", "b2_1", "b2_2", "b2_2", "b2_2"], ["b2_0", "b2_0", "b2_0", "b2_1", "b2_1", "b2_1", "b2_2", "b2_2", "b2_2"], ["b3_0", "b3_0", "b3_0", "b3_1", "b3_1", "b3_1", "b3_2", "b3_2", "b3_2"], ["b3_0", "b3_0", "b3_0", "b3_1", "b3_1", "b3_1", "b3_2", "b3_2", "b3_2"]], "tints": {"b0_0": 0.06, "b0_1": 0.32, "b0_2": 0.58, "b1_0": 0.18, "b1_1": 0.45, "b1_2": 0.7, "b2_0": 0.06, "b2_1": 0.32, "b2_2": 0.58, "b3_0": 0.18, "b3_1": 0.45, "b3_2": 0.7}}]}, {"title": "Order 10×10", "types": [{"name": "Normal", "ord_word": "First", "desc": "Six 10×10 magic squares, all sharing the same magic sum. Uses numbers 1 to 600.", "n": 10, "canon": [[1, 64, 85, 13, 99, 72, 36, 50, 28, 57], [43, 12, 37, 9, 54, 81, 98, 26, 80, 65], [70, 96, 23, 51, 87, 48, 75, 14, 2, 39], [95, 88, 10, 34, 21, 17, 42, 59, 66, 73], [38, 71, 16, 90, 45, 69, 4, 97, 53, 22], [19, 30, 62, 77, 8, 56, 83, 35, 94, 41], [74, 49, 58, 25, 20, 93, 67, 82, 31, 6], [52, 7, 91, 46, 63, 40, 29, 78, 15, 84], [27, 33, 44, 92, 76, 5, 60, 61, 89, 18], [86, 55, 79, 68, 32, 24, 11, 3, 47, 100]], "is_equal_sum": true, "shade": "uniform", "components": []}, {"name": "Concentric", "ord_word": "Second", "desc": "Six 10×10 magic squares, all sharing the same magic sum. Uses numbers 1 to 600. A central 4×4, a 6×6 ring, an 8×8 ring, and the full 10×10 are each independently magic.", "n": 10, "canon": [[91, 86, 16, 84, 18, 14, 4, 98, 2, 92], [13, 26, 20, 80, 82, 69, 31, 71, 25, 88], [89, 23, 64, 62, 35, 68, 36, 38, 78, 12], [11, 24, 34, 49, 54, 43, 56, 67, 77, 90], [96, 29, 40, 44, 55, 50, 53, 61, 72, 5], [1, 79, 42, 58, 45, 52, 47, 59, 22, 100], [93, 74, 60, 51, 48, 57, 46, 41, 27, 8], [7, 73, 63, 39, 66, 33, 65, 37, 28, 94], [95, 76, 81, 21, 19, 32, 70, 30, 75, 6], [9, 15, 85, 17, 83, 87, 97, 3, 99, 10]], "is_equal_sum": true, "shade": "order10_concentric", "components": [["Core 4×4", 3, 7, 3, 7], ["Ring 6×6", 2, 8, 2, 8], ["Ring 8×8", 1, 9, 1, 9]]}, {"name": "Cornered", "ord_word": "Third", "desc": "Six 10×10 magic squares, all sharing the same magic sum. Uses numbers 1 to 600. Grows from the top-left corner — the 4×4, 6×6, 8×8, and full 10×10 are each independently magic.", "n": 10, "canon": [[49, 54, 43, 56, 61, 40, 31, 70, 18, 83], [44, 55, 50, 53, 41, 60, 19, 82, 5, 96], [58, 45, 52, 47, 59, 42, 72, 29, 94, 7], [51, 48, 57, 46, 67, 34, 27, 74, 99, 2], [36, 35, 62, 68, 38, 64, 25, 76, 95, 6], [65, 66, 39, 33, 37, 63, 71, 30, 10, 91], [28, 26, 80, 69, 24, 79, 78, 20, 88, 13], [73, 75, 21, 32, 77, 22, 81, 23, 8, 93], [15, 84, 12, 90, 9, 98, 97, 85, 1, 14], [86, 17, 89, 11, 92, 3, 4, 16, 87, 100]], "is_equal_sum": true, "shade": "order10_cornered", "components": [["Core 4×4", 0, 4, 0, 4], ["Rectangle 2×6", 4, 6, 0, 6], ["Rectangle 6×2", 0, 6, 4, 6], ["Rectangle 2×8", 6, 8, 0, 8], ["Rectangle 8×2", 0, 8, 6, 8], ["Rectangle 2×10", 8, 10, 0, 10], ["Rectangle 10×2", 0, 10, 8, 10]]}, {"name": "Double-Layer", "ord_word": "Fourth", "desc": "Six 10×10 magic squares, each with its own magic sum. Uses numbers 1 to 600. A central 6×6 magic square plus four full-width 2-wide arms (top, bottom, left, right), each summing to the full magic constant.", "n": 10, "canon": [[69, 87, 8, 27, 10, 99, 72, 95, 25, 13], [14, 32, 93, 74, 91, 2, 29, 6, 88, 76], [85, 16, 49, 60, 61, 38, 33, 62, 24, 77], [84, 17, 68, 59, 47, 35, 52, 42, 18, 83], [90, 11, 65, 41, 34, 63, 64, 36, 3, 98], [23, 78, 39, 53, 43, 54, 48, 66, 96, 5], [12, 89, 45, 46, 67, 55, 50, 40, 71, 30], [79, 22, 37, 44, 51, 58, 56, 57, 4, 97], [21, 73, 75, 86, 70, 1, 9, 81, 82, 7], [28, 80, 26, 15, 31, 100, 92, 20, 94, 19]], "is_equal_sum": false, "shade": "order10_doublelayer", "components": [["Core 6×6", 2, 8, 2, 8], ["Top 2×10", 0, 2, 0, 10], ["Bottom 2×10", 8, 10, 0, 10], ["Left 10×2", 0, 10, 0, 2], ["Right 10×2", 0, 10, 8, 10]]}, {"name": "Cyclic", "ord_word": "Fifth", "desc": "Six 10×10 magic squares, all sharing the same magic sum. Uses numbers 1 to 600. A central 6×6 magic square surrounded cyclically by four equal-sum 2×8 pinwheel magic rectangles, each magic in both directions.", "n": 10, "canon": [[3, 1, 99, 97, 96, 6, 94, 8, 9, 92], [98, 100, 2, 4, 5, 95, 7, 93, 11, 90], [25, 76, 33, 67, 66, 65, 34, 38, 91, 10], [75, 26, 62, 40, 60, 41, 43, 57, 89, 12], [27, 74, 56, 55, 47, 48, 52, 45, 88, 13], [73, 28, 50, 46, 53, 54, 49, 51, 14, 87], [72, 29, 39, 58, 42, 59, 61, 44, 86, 15], [70, 31, 63, 37, 35, 36, 64, 68, 16, 85], [32, 69, 17, 83, 19, 81, 24, 22, 78, 80], [30, 71, 84, 18, 82, 20, 77, 79, 23, 21]], "is_equal_sum": true, "shade": "order10_cyclic", "components": [["Core 6×6", 2, 8, 2, 8], ["Top 2×8", 0, 2, 0, 8], ["Right 8×2", 0, 8, 8, 10], ["Bottom 2×8", 8, 10, 2, 10], ["Left 8×2", 2, 10, 0, 2]]}, {"name": "Sandwich", "ord_word": "Sixth", "desc": "Six 10×10 magic squares, each with its own magic sum. Uses numbers 1 to 600. A central 6×6 magic square, with full-width 2×10 top/bottom bands (each magic in both directions) sandwiching 6×2 left/right rectangles (each also magic in both directions).", "n": 10, "canon": [[97, 73, 29, 80, 86, 88, 22, 10, 14, 6], [4, 28, 72, 21, 15, 13, 79, 91, 87, 95], [84, 17, 67, 33, 38, 58, 51, 56, 82, 19], [32, 69, 35, 64, 39, 53, 55, 57, 11, 90], [74, 27, 63, 41, 34, 54, 59, 52, 3, 98], [9, 92, 40, 60, 65, 49, 42, 47, 99, 2], [78, 23, 62, 37, 66, 44, 46, 48, 100, 1], [26, 75, 36, 68, 61, 45, 50, 43, 8, 93], [12, 20, 96, 24, 71, 83, 76, 85, 7, 31], [89, 81, 5, 77, 30, 18, 25, 16, 94, 70]], "is_equal_sum": false, "shade": "order10_sandwich", "components": [["Core 6×6", 2, 8, 2, 8], ["Top 2×10", 0, 2, 0, 10], ["Bottom 2×10", 8, 10, 0, 10], ["Left 6×2", 2, 8, 0, 2], ["Right 6×2", 2, 8, 8, 10]]}, {"name": "Nested-Concentric", "ord_word": "Seventh", "desc": "Six 10×10 magic squares, all sharing the same magic sum. Uses numbers 1 to 600. Four independently magic 4×4 squares (each with both diagonals magic) arranged as a 2×2 grid, enclosed by a single-width border to complete the 10×10.", "n": 10, "canon": [[91, 86, 16, 84, 18, 14, 4, 98, 2, 92], [13, 47, 58, 19, 78, 39, 66, 27, 70, 88], [89, 22, 75, 50, 55, 30, 67, 42, 63, 12], [11, 82, 23, 54, 43, 74, 31, 62, 35, 90], [96, 51, 46, 79, 26, 59, 38, 71, 34, 5], [1, 48, 57, 20, 77, 40, 65, 28, 69, 100], [93, 21, 76, 49, 56, 29, 68, 41, 64, 8], [7, 81, 24, 53, 44, 73, 32, 61, 36, 94], [95, 52, 45, 80, 25, 60, 37, 72, 33, 6], [9, 15, 85, 17, 83, 87, 97, 3, 99, 10]], "is_equal_sum": true, "shade": "order10_nestedconcentric", "components": [["TL 4×4", 1, 5, 1, 5], ["TR 4×4", 1, 5, 5, 9], ["BL 4×4", 5, 9, 1, 5], ["BR 4×4", 5, 9, 5, 9]]}, {"name": "Nested-Concentric-2", "ord_word": "Eighth", "desc": "Six 10×10 magic squares, all sharing the same magic sum. Uses numbers 1 to 600. Nested with an inner 8×8 magic square composed of eight equal-sum magic rectangles (four 2×4, four 4×2), enclosed by a single-width border. Same internal structure as order 8's Striped-2.", "n": 10, "canon": [[91, 84, 86, 98, 18, 16, 14, 4, 2, 92], [13, 30, 72, 73, 27, 26, 75, 31, 70, 88], [11, 71, 29, 28, 74, 76, 25, 69, 32, 90], [7, 19, 81, 80, 22, 77, 24, 68, 33, 94], [1, 82, 20, 21, 79, 23, 78, 34, 67, 100], [89, 43, 58, 38, 63, 42, 60, 61, 39, 12], [93, 57, 44, 64, 37, 59, 41, 40, 62, 8], [95, 56, 45, 65, 36, 47, 53, 52, 50, 6], [96, 46, 55, 35, 66, 54, 48, 49, 51, 5], [9, 17, 15, 3, 83, 85, 87, 97, 99, 10]], "is_equal_sum": true, "shade": "order10_nestedconcentric2", "components": [["TL-top 2×4", 1, 3, 1, 5], ["TL-bottom 2×4", 3, 5, 1, 5], ["TR-left 4×2", 1, 5, 5, 7], ["TR-right 4×2", 1, 5, 7, 9], ["BL-left 4×2", 5, 9, 1, 3], ["BL-right 4×2", 5, 9, 3, 5], ["BR-top 2×4", 5, 7, 5, 9], ["BR-bottom 2×4", 7, 9, 5, 9]]}, {"name": "Cyclic-Striped", "ord_word": "Ninth", "desc": "Six 10×10 magic squares, each with its own magic sum. Uses numbers 1 to 600. Four equal-sum pinwheel 2×8/8×2 rectangles (each magic in both directions) surround a 6×6 core, which is itself striped into three 4×2 vertical rectangles plus a 2×6 band, each magic in both directions.", "n": 10, "canon": [[22, 30, 84, 4, 89, 93, 80, 2, 1, 100], [79, 71, 17, 97, 12, 8, 21, 99, 73, 28], [98, 3, 42, 59, 39, 62, 35, 66, 74, 27], [16, 85, 65, 36, 58, 43, 67, 34, 20, 81], [75, 26, 38, 63, 68, 33, 60, 41, 25, 76], [7, 94, 57, 44, 37, 64, 40, 61, 95, 6], [29, 72, 52, 51, 47, 55, 45, 53, 92, 9], [87, 14, 49, 50, 54, 46, 56, 48, 24, 77], [82, 19, 18, 86, 13, 32, 96, 11, 78, 70], [10, 91, 83, 15, 88, 69, 5, 90, 23, 31]], "is_equal_sum": false, "shade": "order10_cyclicstriped", "components": [["Top 2×8", 0, 2, 0, 8], ["Right 8×2", 0, 8, 8, 10], ["Bottom 2×8", 8, 10, 2, 10], ["Left 8×2", 2, 10, 0, 2], ["Stripe1 4×2", 2, 6, 2, 4], ["Stripe2 4×2", 2, 6, 4, 6], ["Stripe3 4×2", 2, 6, 6, 8], ["Band 2×6", 6, 8, 2, 8]]}, {"name": "Corner-Striped", "ord_word": "Tenth", "desc": "Six 10×10 magic squares, each with its own magic sum. Uses numbers 1 to 600. A 4×4 core, two 4×2 stripes extending it to the right, two 2×8 bands below, an 8×2 column on the far right, and a 2×10 band at the bottom — each piece magic in both directions.", "n": 10, "canon": [[37, 63, 62, 40, 33, 68, 75, 26, 86, 15], [64, 38, 39, 61, 67, 34, 25, 76, 16, 85], [32, 70, 29, 71, 66, 35, 74, 27, 11, 90], [69, 31, 72, 30, 36, 65, 28, 73, 89, 12], [17, 22, 19, 81, 78, 80, 83, 24, 88, 13], [84, 79, 82, 20, 23, 21, 18, 77, 14, 87], [3, 97, 1, 99, 96, 6, 94, 8, 9, 92], [98, 4, 100, 2, 5, 95, 7, 93, 91, 10], [43, 59, 48, 51, 45, 55, 54, 52, 41, 57], [58, 42, 53, 50, 56, 46, 47, 49, 60, 44]], "is_equal_sum": false, "shade": "order10_2_cornerstriped", "components": [["Core-top 2×4", 0, 2, 0, 4], ["Core-bottom 2×4", 2, 4, 0, 4], ["Stripe1 4×2", 0, 4, 4, 6], ["Stripe2 4×2", 0, 4, 6, 8], ["Band1 2×8", 4, 6, 0, 8], ["Band2 2×8", 6, 8, 0, 8], ["Right column 8×2", 0, 8, 8, 10], ["Bottom band 2×10", 8, 10, 0, 10]]}, {"name": "Sandwich-Striped", "ord_word": "Eleventh", "desc": "Six 10×10 magic squares, each with its own magic sum. Uses numbers 1 to 600. Full-width 2×10 top/bottom bands sandwiching 6×2 left/right rectangles around a 6×6 core, which is itself striped into three 4×2 vertical rectangles plus a 2×6 band, each magic in both directions.", "n": 10, "canon": [[95, 8, 16, 98, 90, 86, 13, 14, 9, 76], [6, 93, 85, 3, 11, 15, 88, 87, 92, 25], [28, 73, 42, 59, 36, 65, 41, 60, 20, 81], [84, 17, 57, 44, 61, 40, 63, 38, 89, 12], [77, 24, 35, 66, 62, 39, 34, 67, 74, 27], [80, 21, 68, 33, 43, 58, 64, 37, 7, 94], [2, 99, 49, 46, 56, 48, 50, 54, 82, 19], [32, 69, 52, 55, 45, 53, 51, 47, 31, 70], [72, 5, 75, 23, 22, 30, 100, 83, 4, 91], [29, 96, 26, 78, 79, 71, 1, 18, 97, 10]], "is_equal_sum": false, "shade": "order10_sandwichstriped", "components": [["Top 2×10", 0, 2, 0, 10], ["Bottom 2×10", 8, 10, 0, 10], ["Left 6×2", 2, 8, 0, 2], ["Right 6×2", 2, 8, 8, 10], ["Stripe1 4×2", 2, 6, 2, 4], ["Stripe2 4×2", 2, 6, 4, 6], ["Stripe3 4×2", 2, 6, 6, 8], ["Band 2×6", 6, 8, 2, 8]]}, {"name": "Direct-Striped", "ord_word": "Twelfth", "desc": "Six 10×10 magic squares, each with its own magic sum. Uses numbers 1 to 600. Split into a left 10×6 block and right 10×4 block, each divided into five horizontal bands (2×6 and 2×4 respectively), all magic in both directions with matching equal sums.", "n": 10, "canon": [[21, 71, 62, 45, 64, 40, 9, 91, 12, 90], [80, 30, 39, 56, 37, 61, 92, 10, 89, 11], [48, 36, 41, 67, 52, 59, 82, 17, 20, 83], [53, 65, 60, 34, 49, 42, 19, 84, 81, 18], [31, 58, 35, 73, 55, 51, 4, 98, 1, 99], [70, 43, 66, 28, 46, 50, 97, 3, 100, 2], [79, 63, 32, 24, 29, 76, 87, 16, 86, 13], [22, 38, 69, 77, 72, 25, 14, 85, 15, 88], [27, 26, 68, 47, 78, 57, 8, 5, 95, 94], [74, 75, 33, 54, 23, 44, 93, 96, 6, 7]], "is_equal_sum": false, "shade": "order10_directstriped", "components": [["Left band0 2×6", 0, 2, 0, 6], ["Left band1 2×6", 2, 4, 0, 6], ["Left band2 2×6", 4, 6, 0, 6], ["Left band3 2×6", 6, 8, 0, 6], ["Left band4 2×6", 8, 10, 0, 6], ["Right band0 2×4", 0, 2, 6, 10], ["Right band1 2×4", 2, 4, 6, 10], ["Right band2 2×4", 4, 6, 6, 10], ["Right band3 2×4", 6, 8, 6, 10], ["Right band4 2×4", 8, 10, 6, 10]]}]}, {"title": "Order 11×11", "types": [{"name": "Pandiagonal", "ord_word": "First", "desc": "Six 11×11 magic squares, each with its own magic sum. Uses numbers 1 to 726. This base square is pandiagonal (Nasik) — every broken diagonal also sums to the magic constant.", "n": 11, "canon": [[1, 21, 30, 39, 48, 57, 77, 86, 95, 104, 113], [101, 121, 9, 18, 27, 36, 45, 65, 74, 83, 92], [80, 89, 109, 118, 6, 15, 24, 44, 53, 62, 71], [59, 68, 88, 97, 106, 115, 3, 12, 32, 41, 50], [38, 47, 56, 76, 85, 94, 103, 112, 11, 20, 29], [17, 26, 35, 55, 64, 73, 82, 91, 100, 120, 8], [117, 5, 14, 23, 43, 52, 61, 70, 79, 99, 108], [96, 105, 114, 2, 22, 31, 40, 49, 58, 67, 87], [75, 84, 93, 102, 111, 10, 19, 28, 37, 46, 66], [54, 63, 72, 81, 90, 110, 119, 7, 16, 25, 34], [33, 42, 51, 60, 69, 78, 98, 107, 116, 4, 13]], "is_equal_sum": false, "shade": "uniform", "components": []}, {"name": "Concentric", "ord_word": "Second", "desc": "Six 11×11 magic squares, each with its own magic sum. Uses numbers 1 to 726. A central 3×3, a 5×5 ring, a 7×7 ring, a 9×9 ring, and the full 11×11 are each independently magic.", "n": 11, "canon": [[12, 20, 18, 16, 14, 113, 114, 116, 118, 120, 10], [121, 28, 100, 98, 96, 95, 32, 34, 36, 30, 1], [119, 21, 78, 74, 76, 41, 40, 38, 80, 101, 3], [117, 23, 37, 70, 73, 53, 55, 54, 85, 99, 5], [115, 25, 39, 50, 60, 65, 58, 72, 83, 97, 7], [11, 93, 79, 51, 59, 61, 63, 71, 43, 29, 111], [13, 91, 77, 66, 64, 57, 62, 56, 45, 31, 109], [15, 89, 75, 68, 49, 69, 67, 52, 47, 33, 107], [17, 87, 42, 48, 46, 81, 82, 84, 44, 35, 105], [19, 92, 22, 24, 26, 27, 90, 88, 86, 94, 103], [112, 102, 104, 106, 108, 9, 8, 6, 4, 2, 110]], "is_equal_sum": false, "shade": "order11_concentric", "components": [["Core 3×3", 4, 7, 4, 7], ["Ring 5×5", 3, 8, 3, 8], ["Ring 7×7", 2, 9, 2, 9], ["Ring 9×9", 1, 10, 1, 10]]}, {"name": "Cornered", "ord_word": "Third", "desc": "Six 11×11 magic squares, each with its own magic sum. Uses numbers 1 to 726. Grows from a 3×3 corner core through 5×5, 7×7, and 9×9 up to the full 11×11, each stage independently magic in rows and columns.", "n": 11, "canon": [[64, 57, 62, 66, 56, 37, 85, 24, 98, 13, 109], [59, 61, 63, 49, 73, 75, 47, 23, 99, 20, 102], [60, 65, 58, 70, 52, 77, 45, 89, 33, 17, 105], [71, 54, 72, 53, 55, 78, 44, 94, 28, 16, 106], [51, 68, 50, 67, 69, 80, 42, 87, 35, 15, 107], [43, 84, 48, 46, 82, 41, 83, 91, 31, 115, 7], [79, 38, 74, 76, 40, 39, 81, 21, 101, 116, 6], [86, 93, 90, 26, 22, 88, 92, 25, 27, 110, 12], [36, 29, 32, 96, 100, 34, 30, 95, 97, 119, 3], [9, 121, 19, 117, 11, 118, 14, 114, 120, 18, 10], [113, 1, 103, 5, 111, 4, 108, 8, 2, 112, 104]], "is_equal_sum": false, "shade": "order11_cornered", "components": [["Core 3×3", 0, 3, 0, 3], ["Rect 3×2", 0, 3, 3, 5], ["Rect 2×5", 3, 5, 0, 5], ["Rect 5×2", 0, 5, 5, 7], ["Rect 2×7", 5, 7, 0, 7], ["Rect 7×2", 0, 7, 7, 9], ["Rect 2×9", 7, 9, 0, 9], ["Rect 9×2", 0, 9, 9, 11], ["Rect 2×11", 9, 11, 0, 11]]}, {"name": "Double-Layer", "ord_word": "Fourth", "desc": "Six 11×11 magic squares, each with its own magic sum. Uses numbers 1 to 726. A central 7×7 magic square plus four full-width/full-height 2-wide arms (top, bottom, left, right), each summing to the full magic constant.", "n": 11, "canon": [[112, 92, 9, 21, 14, 29, 34, 121, 117, 105, 17], [10, 30, 113, 101, 108, 93, 88, 1, 5, 20, 102], [100, 22, 85, 79, 42, 55, 44, 50, 72, 94, 28], [8, 114, 37, 43, 80, 67, 78, 40, 82, 31, 91], [107, 15, 49, 73, 62, 63, 58, 76, 46, 24, 98], [96, 26, 38, 84, 57, 61, 65, 70, 52, 111, 11], [35, 87, 66, 56, 64, 59, 60, 69, 53, 25, 97], [104, 18, 71, 51, 83, 75, 45, 48, 54, 19, 103], [6, 116, 81, 41, 39, 47, 77, 74, 68, 120, 2], [4, 118, 95, 99, 3, 12, 7, 109, 32, 86, 106], [89, 33, 27, 23, 119, 110, 115, 13, 90, 36, 16]], "is_equal_sum": false, "shade": "order11_doublelayer", "components": [["Core 7×7", 2, 9, 2, 9], ["Top 2×11", 0, 2, 0, 11], ["Bottom 2×11", 9, 11, 0, 11], ["Left 11×2", 0, 11, 0, 2], ["Right 11×2", 0, 11, 9, 11], ["Inner Core 3×3", 4, 7, 4, 7], ["Inner Top 2×7", 2, 4, 2, 9], ["Inner Bottom 2×7", 7, 9, 2, 9], ["Inner Left 7×2", 2, 9, 2, 4], ["Inner Right 7×2", 2, 9, 7, 9]]}, {"name": "Nested-9x9 (5a)", "ord_word": "Fifth", "desc": "Six 11×11 magic squares, each with its own magic sum. Uses numbers 1 to 726. A one-cell border encloses a fully pandiagonal 9×9 core, itself tiled into nine 3×3 blocks that are each semi-magic (rows and columns match, diagonals do not).", "n": 11, "canon": [[12, 20, 18, 16, 14, 113, 114, 116, 118, 120, 10], [121, 42, 91, 50, 47, 84, 52, 40, 89, 54, 1], [119, 55, 41, 87, 48, 43, 92, 53, 45, 85, 3], [117, 86, 51, 46, 88, 56, 39, 90, 49, 44, 5], [115, 60, 28, 95, 65, 21, 97, 58, 26, 99, 7], [11, 100, 59, 24, 93, 61, 29, 98, 63, 22, 111], [13, 23, 96, 64, 25, 101, 57, 27, 94, 62, 109], [15, 78, 73, 32, 83, 66, 34, 76, 71, 36, 107], [17, 37, 77, 69, 30, 79, 74, 35, 81, 67, 105], [19, 68, 33, 82, 70, 38, 75, 72, 31, 80, 103], [112, 102, 104, 106, 108, 9, 8, 6, 4, 2, 110]], "is_equal_sum": false, "shade": "order11_nested9", "components": [["Block(0,0) 3×3", 1, 4, 1, 4], ["Block(0,1) 3×3", 1, 4, 4, 7], ["Block(0,2) 3×3", 1, 4, 7, 10], ["Block(1,0) 3×3", 4, 7, 1, 4], ["Block(1,1) 3×3", 4, 7, 4, 7], ["Block(1,2) 3×3", 4, 7, 7, 10], ["Block(2,0) 3×3", 7, 10, 1, 4], ["Block(2,1) 3×3", 7, 10, 4, 7], ["Block(2,2) 3×3", 7, 10, 7, 10]]}, {"name": "Cyclic", "ord_word": "Sixth", "desc": "Six 11×11 magic squares, each with its own magic sum. Uses numbers 1 to 726. A central 3×3 magic square surrounded by a cyclic order-7 magic square (its own pinwheel arms), itself surrounded by a further pinwheel of four 2×9/9×2 rectangles.", "n": 11, "canon": [[9, 110, 92, 22, 120, 112, 33, 17, 34, 23, 99], [113, 12, 30, 100, 2, 10, 89, 105, 88, 29, 93], [7, 115, 53, 82, 45, 55, 70, 50, 72, 101, 21], [27, 95, 69, 40, 77, 67, 52, 81, 41, 19, 103], [119, 3, 42, 80, 64, 57, 62, 49, 73, 28, 94], [31, 91, 76, 46, 59, 61, 63, 74, 48, 20, 102], [97, 25, 68, 54, 60, 65, 58, 51, 71, 106, 16], [4, 118, 75, 47, 38, 43, 83, 85, 56, 107, 15], [36, 86, 44, 78, 84, 79, 39, 37, 66, 116, 6], [117, 5, 32, 87, 104, 1, 96, 14, 98, 109, 8], [111, 11, 90, 35, 18, 121, 26, 108, 24, 13, 114]], "is_equal_sum": false, "shade": "order11_cyclic", "components": [["Inner core 3×3", 4, 7, 4, 7], ["Inner top 2×5", 2, 4, 2, 7], ["Inner right 5×2", 2, 7, 7, 9], ["Inner bottom 2×5", 7, 9, 4, 9], ["Inner left 5×2", 4, 9, 2, 4], ["Outer top 2×9", 0, 2, 0, 9], ["Outer right 9×2", 0, 9, 9, 11], ["Outer bottom 2×9", 9, 11, 2, 11], ["Outer left 9×2", 2, 11, 0, 2]]}, {"name": "Sandwich", "ord_word": "Seventh", "desc": "Six 11×11 magic squares, each with its own magic sum. Uses numbers 1 to 726. A central 3×3 magic square sandwiched by a 7×7 sandwich frame, itself sandwiched by a further full-width top/bottom and core-height left/right frame.", "n": 11, "canon": [[86, 92, 1, 3, 11, 109, 97, 8, 35, 112, 117], [36, 30, 121, 119, 111, 13, 25, 114, 87, 10, 5], [115, 7, 46, 38, 73, 48, 55, 82, 85, 91, 31], [98, 24, 76, 84, 49, 74, 67, 40, 37, 93, 29], [88, 34, 79, 43, 64, 57, 62, 75, 47, 21, 101], [12, 110, 50, 72, 59, 61, 63, 56, 66, 108, 14], [94, 28, 54, 68, 60, 65, 58, 52, 70, 6, 116], [18, 104, 81, 78, 80, 51, 39, 45, 53, 89, 33], [2, 120, 41, 44, 42, 71, 83, 77, 69, 19, 103], [100, 95, 16, 90, 113, 102, 4, 96, 15, 23, 17], [22, 27, 106, 32, 9, 20, 118, 26, 107, 99, 105]], "is_equal_sum": false, "shade": "order11_sandwich", "components": [["Inner core 3×3", 4, 7, 4, 7], ["Inner top 2×7", 2, 4, 2, 9], ["Inner bottom 2×7", 7, 9, 2, 9], ["Inner left 3×2", 4, 7, 2, 4], ["Inner right 3×2", 4, 7, 7, 9], ["Outer top 2×11", 0, 2, 0, 11], ["Outer bottom 2×11", 9, 11, 0, 11], ["Outer left 7×2", 2, 9, 0, 2], ["Outer right 7×2", 2, 9, 9, 11]]}, {"name": "Corner-Striped", "ord_word": "Eighth", "desc": "Six 11×11 magic squares, each with its own magic sum. Uses numbers 1 to 726. Grows from a 3×3 core through five paired stages (3×2/2×5, 5×2/2×7, 7×2/2×9, 9×2/2×11), each rectangle magic in both directions.", "n": 11, "canon": [[2, 119, 62, 102, 20, 38, 84, 52, 70, 58, 64], [60, 3, 120, 41, 81, 91, 31, 103, 19, 34, 88], [121, 61, 1, 40, 82, 67, 55, 18, 104, 5, 117], [112, 12, 66, 99, 16, 15, 107, 7, 115, 42, 80], [10, 110, 56, 23, 106, 94, 28, 59, 63, 111, 11], [90, 86, 114, 53, 24, 43, 17, 93, 29, 100, 22], [32, 36, 8, 69, 98, 79, 105, 95, 27, 37, 85], [35, 96, 45, 92, 109, 21, 14, 48, 89, 46, 76], [87, 26, 77, 30, 13, 101, 108, 74, 33, 116, 6], [71, 73, 50, 97, 47, 39, 68, 65, 44, 113, 4], [51, 49, 72, 25, 75, 83, 54, 57, 78, 9, 118]], "is_equal_sum": false, "shade": "order11_cornerstriped", "components": [["Core 3×3", 0, 3, 0, 3], ["Stage2a 3×2", 0, 3, 3, 5], ["Stage2b 2×5", 3, 5, 0, 5], ["Stage3a 5×2", 0, 5, 5, 7], ["Stage3b 2×7", 5, 7, 0, 7], ["Stage4a 7×2", 0, 7, 7, 9], ["Stage4b 2×9", 7, 9, 0, 9], ["Stage5a 9×2", 0, 9, 9, 11], ["Stage5b 2×11", 9, 11, 0, 11]]}, {"name": "Direct Semi-Striped: Full-width", "ord_word": "Ninth", "desc": "One three-row band and the remaining two-row bands. Every outlined rectangle has equal row sums and equal column sums; the whole square has equal rows, columns and both principal diagonals.", "n": 11, "canon": [[31, 113, 12, 109, 102, 117, 28, 18, 23, 15, 103], [91, 9, 110, 13, 20, 5, 94, 104, 99, 107, 19], [21, 25, 111, 93, 89, 2, 86, 22, 30, 105, 87], [101, 97, 11, 29, 33, 120, 36, 100, 92, 17, 35], [45, 47, 70, 75, 74, 49, 66, 46, 60, 67, 72], [62, 59, 61, 50, 53, 63, 69, 64, 68, 65, 57], [76, 77, 52, 58, 56, 71, 48, 73, 55, 51, 54], [1, 3, 98, 10, 14, 115, 83, 114, 38, 116, 79], [121, 119, 24, 112, 108, 7, 39, 8, 84, 6, 43], [37, 27, 32, 80, 41, 106, 78, 4, 88, 82, 96], [85, 95, 90, 42, 81, 16, 44, 118, 34, 40, 26]], "is_equal_sum": false, "shade": "direct_semi_11_11", "components": [["Band 1 · rectangle 1: 2×11", 0, 2, 0, 11], ["Band 2 · rectangle 1: 2×11", 2, 4, 0, 11], ["Band 3 · rectangle 1: 3×11", 4, 7, 0, 11], ["Band 4 · rectangle 1: 2×11", 7, 9, 0, 11], ["Band 5 · rectangle 1: 2×11", 9, 11, 0, 11]], "regions": [["b0_0", "b0_0", "b0_0", "b0_0", "b0_0", "b0_0", "b0_0", "b0_0", "b0_0", "b0_0", "b0_0"], ["b0_0", "b0_0", "b0_0", "b0_0", "b0_0", "b0_0", "b0_0", "b0_0", "b0_0", "b0_0", "b0_0"], ["b1_0", "b1_0", "b1_0", "b1_0", "b1_0", "b1_0", "b1_0", "b1_0", "b1_0", "b1_0", "b1_0"], ["b1_0", "b1_0", "b1_0", "b1_0", "b1_0", "b1_0", "b1_0", "b1_0", "b1_0", "b1_0", "b1_0"], ["b2_0", "b2_0", "b2_0", "b2_0", "b2_0", "b2_0", "b2_0", "b2_0", "b2_0", "b2_0", "b2_0"], ["b2_0", "b2_0", "b2_0", "b2_0", "b2_0", "b2_0", "b2_0", "b2_0", "b2_0", "b2_0", "b2_0"], ["b2_0", "b2_0", "b2_0", "b2_0", "b2_0", "b2_0", "b2_0", "b2_0", "b2_0", "b2_0", "b2_0"], ["b3_0", "b3_0", "b3_0", "b3_0", "b3_0", "b3_0", "b3_0", "b3_0", "b3_0", "b3_0", "b3_0"], ["b3_0", "b3_0", "b3_0", "b3_0", "b3_0", "b3_0", "b3_0", "b3_0", "b3_0", "b3_0", "b3_0"], ["b4_0", "b4_0", "b4_0", "b4_0", "b4_0", "b4_0", "b4_0", "b4_0", "b4_0", "b4_0", "b4_0"], ["b4_0", "b4_0", "b4_0", "b4_0", "b4_0", "b4_0", "b4_0", "b4_0", "b4_0", "b4_0", "b4_0"]], "tints": {"b0_0": 0.06, "b1_0": 0.32, "b2_0": 0.58, "b3_0": 0.18, "b4_0": 0.45}}, {"name": "Direct Semi-Striped: 4+3+4", "ord_word": "Tenth", "desc": "One three-row band and the remaining two-row bands. Every outlined rectangle has equal row sums and equal column sums; the whole square has equal rows, columns and both principal diagonals. The marked 3×3 core also has equal diagonals.", "n": 11, "canon": [[63, 36, 58, 87, 56, 45, 82, 96, 48, 32, 68], [59, 86, 64, 35, 66, 77, 40, 26, 74, 90, 54], [12, 112, 9, 111, 60, 31, 92, 8, 116, 115, 5], [110, 10, 113, 11, 62, 91, 30, 114, 6, 7, 117], [44, 41, 76, 83, 97, 21, 65, 78, 81, 46, 39], [50, 105, 69, 20, 29, 61, 93, 72, 17, 53, 102], [89, 37, 38, 80, 57, 101, 25, 33, 85, 84, 42], [4, 119, 120, 1, 28, 51, 104, 23, 43, 103, 75], [118, 3, 2, 121, 94, 71, 18, 99, 79, 19, 47], [52, 27, 98, 67, 34, 49, 100, 16, 107, 108, 13], [70, 95, 24, 55, 88, 73, 22, 106, 15, 14, 109]], "is_equal_sum": false, "shade": "direct_semi_11_4_3_4", "components": [["Band 1 · rectangle 1: 2×4", 0, 2, 0, 4], ["Band 1 · rectangle 2: 2×3", 0, 2, 4, 7], ["Band 1 · rectangle 3: 2×4", 0, 2, 7, 11], ["Band 2 · rectangle 1: 2×4", 2, 4, 0, 4], ["Band 2 · rectangle 2: 2×3", 2, 4, 4, 7], ["Band 2 · rectangle 3: 2×4", 2, 4, 7, 11], ["Band 3 · rectangle 1: 3×4", 4, 7, 0, 4], ["Band 3 · rectangle 2: 3×3", 4, 7, 4, 7], ["Band 3 · rectangle 3: 3×4", 4, 7, 7, 11], ["Band 4 · rectangle 1: 2×4", 7, 9, 0, 4], ["Band 4 · rectangle 2: 2×3", 7, 9, 4, 7], ["Band 4 · rectangle 3: 2×4", 7, 9, 7, 11], ["Band 5 · rectangle 1: 2×4", 9, 11, 0, 4], ["Band 5 · rectangle 2: 2×3", 9, 11, 4, 7], ["Band 5 · rectangle 3: 2×4", 9, 11, 7, 11]], "regions": [["b0_0", "b0_0", "b0_0", "b0_0", "b0_1", "b0_1", "b0_1", "b0_2", "b0_2", "b0_2", "b0_2"], ["b0_0", "b0_0", "b0_0", "b0_0", "b0_1", "b0_1", "b0_1", "b0_2", "b0_2", "b0_2", "b0_2"], ["b1_0", "b1_0", "b1_0", "b1_0", "b1_1", "b1_1", "b1_1", "b1_2", "b1_2", "b1_2", "b1_2"], ["b1_0", "b1_0", "b1_0", "b1_0", "b1_1", "b1_1", "b1_1", "b1_2", "b1_2", "b1_2", "b1_2"], ["b2_0", "b2_0", "b2_0", "b2_0", "b2_1", "b2_1", "b2_1", "b2_2", "b2_2", "b2_2", "b2_2"], ["b2_0", "b2_0", "b2_0", "b2_0", "b2_1", "b2_1", "b2_1", "b2_2", "b2_2", "b2_2", "b2_2"], ["b2_0", "b2_0", "b2_0", "b2_0", "b2_1", "b2_1", "b2_1", "b2_2", "b2_2", "b2_2", "b2_2"], ["b3_0", "b3_0", "b3_0", "b3_0", "b3_1", "b3_1", "b3_1", "b3_2", "b3_2", "b3_2", "b3_2"], ["b3_0", "b3_0", "b3_0", "b3_0", "b3_1", "b3_1", "b3_1", "b3_2", "b3_2", "b3_2", "b3_2"], ["b4_0", "b4_0", "b4_0", "b4_0", "b4_1", "b4_1", "b4_1", "b4_2", "b4_2", "b4_2", "b4_2"], ["b4_0", "b4_0", "b4_0", "b4_0", "b4_1", "b4_1", "b4_1", "b4_2", "b4_2", "b4_2", "b4_2"]], "tints": {"b0_0": 0.06, "b0_1": 0.32, "b0_2": 0.58, "b1_0": 0.18, "b1_1": 0.45, "b1_2": 0.7, "b2_0": 0.06, "b2_1": 0.32, "b2_2": 0.58, "b3_0": 0.18, "b3_1": 0.45, "b3_2": 0.7, "b4_0": 0.06, "b4_1": 0.32, "b4_2": 0.58}}]}, {"title": "Order 12×12", "types": [{"name": "Pandiagonal (3x3 blocks)", "ord_word": "First", "desc": "Six 12×12 magic squares, each with its own magic sum. Uses numbers 1 to 864. The full square is pandiagonal (every broken diagonal also sums to the magic constant), and each of the sixteen 3×3 sub-blocks is itself a complete magic square.", "n": 12, "canon": [[98, 1, 51, 72, 22, 119, 78, 28, 125, 140, 43, 93], [3, 50, 97, 118, 71, 24, 124, 77, 30, 45, 92, 139], [49, 99, 2, 23, 120, 70, 29, 126, 76, 91, 141, 44], [131, 34, 84, 87, 37, 134, 57, 7, 104, 113, 16, 66], [36, 83, 130, 133, 86, 39, 103, 56, 9, 18, 65, 112], [82, 132, 35, 38, 135, 85, 8, 105, 55, 64, 114, 17], [67, 117, 20, 5, 102, 52, 47, 144, 94, 73, 123, 26], [21, 68, 115, 100, 53, 6, 142, 95, 48, 27, 74, 121], [116, 19, 69, 54, 4, 101, 96, 46, 143, 122, 25, 75], [88, 138, 41, 32, 129, 79, 14, 111, 61, 58, 108, 11], [42, 89, 136, 127, 80, 33, 109, 62, 15, 12, 59, 106], [137, 40, 90, 81, 31, 128, 63, 13, 110, 107, 10, 60]], "is_equal_sum": true, "shade": "order12_blocks3", "components": []}, {"name": "Pandiagonal (4x4 blocks)", "ord_word": "Second", "desc": "Six 12×12 magic squares, each with its own magic sum. Uses numbers 1 to 864. The full square is pandiagonal, and each of the nine 4×4 sub-blocks is itself fully pandiagonal, all sharing the same block sum.", "n": 12, "canon": [[7, 140, 1, 142, 15, 132, 9, 134, 23, 124, 17, 126], [2, 141, 8, 139, 10, 133, 16, 131, 18, 125, 24, 123], [144, 3, 138, 5, 136, 11, 130, 13, 128, 19, 122, 21], [137, 6, 143, 4, 129, 14, 135, 12, 121, 22, 127, 20], [31, 116, 25, 118, 39, 108, 33, 110, 47, 100, 41, 102], [26, 117, 32, 115, 34, 109, 40, 107, 42, 101, 48, 99], [120, 27, 114, 29, 112, 35, 106, 37, 104, 43, 98, 45], [113, 30, 119, 28, 105, 38, 111, 36, 97, 46, 103, 44], [55, 92, 49, 94, 63, 84, 57, 86, 71, 76, 65, 78], [50, 93, 56, 91, 58, 85, 64, 83, 66, 77, 72, 75], [96, 51, 90, 53, 88, 59, 82, 61, 80, 67, 74, 69], [89, 54, 95, 52, 81, 62, 87, 60, 73, 70, 79, 68]], "is_equal_sum": true, "shade": "order12_blocks4", "components": []}, {"name": "Magic (6x6 blocks)", "ord_word": "Third", "desc": "Six 12×12 magic squares, each with its own magic sum. Uses numbers 1 to 864. The full square is magic (rows, columns, both diagonals), and each of the four 6×6 sub-blocks is itself a complete magic square, all sharing the same block sum.", "n": 12, "canon": [[1, 143, 142, 141, 2, 6, 19, 125, 124, 123, 20, 24], [138, 8, 136, 9, 11, 133, 120, 26, 118, 27, 29, 115], [132, 131, 15, 16, 128, 13, 114, 113, 33, 34, 110, 31], [18, 14, 129, 130, 17, 127, 36, 32, 111, 112, 35, 109], [7, 134, 10, 135, 137, 12, 25, 116, 28, 117, 119, 30], [139, 5, 3, 4, 140, 144, 121, 23, 21, 22, 122, 126], [55, 89, 88, 87, 56, 60, 37, 107, 106, 105, 38, 42], [84, 62, 82, 63, 65, 79, 102, 44, 100, 45, 47, 97], [78, 77, 69, 70, 74, 67, 96, 95, 51, 52, 92, 49], [72, 68, 75, 76, 71, 73, 54, 50, 93, 94, 53, 91], [61, 80, 64, 81, 83, 66, 43, 98, 46, 99, 101, 48], [85, 59, 57, 58, 86, 90, 103, 41, 39, 40, 104, 108]], "is_equal_sum": true, "shade": "order12_blocks6", "components": []}, {"name": "6x6-Concentric", "ord_word": "Fourth", "desc": "Six 12×12 magic squares, each with its own magic sum. Uses numbers 1 to 864. The full square is magic, and it is tiled into four 6×6 quadrant blocks, each itself a two-layer concentric magic square (a magic 4×4 core enclosed by a one-cell border), all sharing the same block sums.", "n": 12, "canon": [[140, 138, 3, 144, 4, 6, 122, 120, 21, 126, 22, 24], [2, 17, 130, 11, 132, 143, 20, 35, 112, 29, 114, 125], [8, 12, 131, 18, 129, 137, 26, 30, 113, 36, 111, 119], [10, 134, 13, 128, 15, 135, 28, 116, 31, 110, 33, 117], [136, 127, 16, 133, 14, 9, 118, 109, 34, 115, 32, 27], [139, 7, 142, 1, 141, 5, 121, 25, 124, 19, 123, 23], [86, 84, 57, 90, 58, 60, 104, 102, 39, 108, 40, 42], [56, 71, 76, 65, 78, 89, 38, 53, 94, 47, 96, 107], [62, 66, 77, 72, 75, 83, 44, 48, 95, 54, 93, 101], [64, 80, 67, 74, 69, 81, 46, 98, 49, 92, 51, 99], [82, 73, 70, 79, 68, 63, 100, 91, 52, 97, 50, 45], [85, 61, 88, 55, 87, 59, 103, 43, 106, 37, 105, 41]], "is_equal_sum": true, "shade": "order12_6x6concentric", "components": []}, {"name": "Concentric", "ord_word": "Fifth", "desc": "Six 12×12 magic squares, each with its own magic sum. Uses numbers 1 to 864. A central 4×4, a 6×6 ring, an 8×8 ring, a 10×10 ring, and the full 12×12 are each independently magic.", "n": 12, "canon": [[134, 143, 3, 141, 5, 1, 22, 124, 20, 126, 18, 133], [16, 113, 108, 38, 106, 40, 36, 26, 120, 24, 114, 129], [15, 35, 48, 42, 102, 104, 91, 53, 93, 47, 110, 130], [131, 111, 45, 86, 84, 57, 90, 58, 60, 100, 34, 14], [132, 33, 46, 56, 71, 76, 65, 78, 89, 99, 112, 13], [139, 118, 51, 62, 66, 77, 72, 75, 83, 94, 27, 6], [128, 23, 101, 64, 80, 67, 74, 69, 81, 44, 122, 17], [10, 115, 96, 82, 73, 70, 79, 68, 63, 49, 30, 135], [9, 29, 95, 85, 61, 88, 55, 87, 59, 50, 116, 136], [137, 117, 98, 103, 43, 41, 54, 92, 52, 97, 28, 8], [7, 31, 37, 107, 39, 105, 109, 119, 25, 121, 32, 138], [12, 2, 142, 4, 140, 144, 123, 21, 125, 19, 127, 11]], "is_equal_sum": true, "shade": "order12_concentric", "components": [["Core 4×4", 4, 8, 4, 8], ["Ring 6×6", 3, 9, 3, 9], ["Ring 8×8", 2, 10, 2, 10], ["Ring 10×10", 1, 11, 1, 11]]}, {"name": "Cornered", "ord_word": "Sixth", "desc": "Six 12×12 magic squares, each with its own magic sum. Uses numbers 1 to 864. Grows from a 4×4 corner core through 6×6, 8×8, and 10×10 up to the full 12×12, each stage independently magic in rows and columns.", "n": 12, "canon": [[80, 66, 67, 77, 87, 58, 94, 51, 105, 40, 8, 137], [69, 75, 74, 72, 64, 81, 48, 97, 27, 118, 22, 123], [73, 71, 70, 76, 84, 61, 50, 95, 117, 28, 144, 1], [68, 78, 79, 65, 83, 62, 93, 52, 119, 26, 129, 16], [90, 59, 56, 82, 60, 88, 101, 44, 31, 114, 135, 10], [55, 86, 89, 63, 57, 85, 54, 91, 111, 34, 131, 14], [43, 53, 98, 100, 96, 103, 41, 46, 23, 122, 130, 15], [102, 92, 47, 45, 49, 42, 99, 104, 38, 107, 17, 128], [106, 110, 113, 120, 37, 36, 116, 30, 33, 24, 19, 126], [39, 35, 32, 25, 108, 109, 29, 115, 121, 112, 3, 142], [4, 21, 132, 134, 143, 125, 139, 133, 9, 7, 5, 18], [141, 124, 13, 11, 2, 20, 6, 12, 136, 138, 127, 140]], "is_equal_sum": false, "shade": "order12_cornered", "components": [["Core 4×4", 0, 4, 0, 4], ["Rect 4×2", 0, 4, 4, 6], ["Rect 2×6", 4, 6, 0, 6], ["Rect 6×2", 0, 6, 6, 8], ["Rect 2×8", 6, 8, 0, 8], ["Rect 8×2", 0, 8, 8, 10], ["Rect 2×10", 8, 10, 0, 10], ["Rect 10×2", 0, 10, 10, 12], ["Rect 2×12", 10, 12, 0, 12]]}, {"name": "Double-Layer", "ord_word": "Seventh", "desc": "Six 12×12 magic squares, each with its own magic sum. Uses numbers 1 to 864. A central 4×4 magic square wrapped by an 8×8 magic square's own full-width/full-height 2-wide arms, itself wrapped by the full 12×12's 2-wide arms.", "n": 12, "canon": [[4, 1, 143, 142, 5, 139, 138, 8, 9, 12, 134, 135], [141, 144, 2, 3, 140, 6, 7, 137, 136, 133, 11, 10], [37, 108, 43, 41, 103, 101, 100, 98, 48, 46, 13, 132], [107, 38, 102, 104, 42, 44, 45, 47, 97, 99, 131, 14], [106, 39, 57, 88, 71, 76, 65, 78, 61, 84, 130, 15], [40, 105, 60, 85, 66, 77, 72, 75, 64, 81, 16, 129], [33, 112, 87, 58, 80, 67, 74, 69, 83, 62, 17, 128], [111, 34, 86, 59, 73, 70, 79, 68, 82, 63, 127, 18], [110, 35, 93, 95, 49, 51, 56, 54, 90, 92, 126, 19], [36, 109, 52, 50, 96, 94, 89, 91, 55, 53, 20, 125], [115, 114, 32, 29, 25, 119, 118, 28, 122, 123, 21, 24], [30, 31, 113, 116, 120, 26, 27, 117, 23, 22, 124, 121]], "is_equal_sum": true, "shade": "order12_doublelayer", "components": [["Inner Core 4×4", 4, 8, 4, 8], ["Inner Top 2×8", 2, 4, 2, 10], ["Inner Bottom 2×8", 8, 10, 2, 10], ["Inner Left 8×2", 2, 10, 2, 4], ["Inner Right 8×2", 2, 10, 8, 10], ["Outer Top 2×12", 0, 2, 0, 12], ["Outer Bottom 2×12", 10, 12, 0, 12], ["Outer Left 12×2", 0, 12, 0, 2], ["Outer Right 12×2", 0, 12, 10, 12]]}, {"name": "Cyclic", "ord_word": "Eighth", "desc": "Six 12×12 magic squares, each with its own magic sum. Uses numbers 1 to 864. A central 4×4 magic square surrounded by a cyclic order-8 magic square (its own pinwheel arms), itself surrounded by a further pinwheel of four 2×10/10×2 rectangles.", "n": 12, "canon": [[29, 37, 121, 105, 130, 113, 132, 12, 26, 20, 35, 110], [116, 108, 24, 40, 15, 32, 13, 133, 119, 125, 28, 117], [118, 27, 42, 100, 55, 95, 61, 82, 60, 85, 22, 123], [127, 18, 103, 45, 90, 50, 84, 63, 58, 87, 136, 9], [30, 115, 56, 89, 80, 66, 67, 77, 99, 46, 111, 34], [138, 7, 53, 92, 69, 75, 74, 72, 41, 104, 109, 36], [39, 106, 51, 94, 73, 71, 70, 76, 86, 59, 141, 4], [112, 33, 81, 64, 68, 78, 79, 65, 91, 54, 1, 144], [134, 11, 96, 49, 62, 48, 93, 88, 101, 43, 2, 143], [14, 131, 98, 47, 83, 97, 52, 57, 44, 102, 140, 5], [3, 142, 120, 38, 17, 126, 124, 139, 114, 23, 16, 8], [10, 135, 25, 107, 128, 19, 21, 6, 31, 122, 129, 137]], "is_equal_sum": true, "shade": "order12_cyclic", "components": [["Inner core 4×4", 4, 8, 4, 8], ["Inner top 2×6", 2, 4, 2, 8], ["Inner right 6×2", 2, 8, 8, 10], ["Inner bottom 2×6", 8, 10, 4, 10], ["Inner left 6×2", 4, 10, 2, 4], ["Outer top 2×10", 0, 2, 0, 10], ["Outer right 10×2", 0, 10, 10, 12], ["Outer bottom 2×10", 10, 12, 2, 12], ["Outer left 10×2", 2, 12, 0, 2]]}, {"name": "Sandwich", "ord_word": "Ninth", "desc": "Six 12×12 magic squares, each sharing the same magic sum. Uses numbers 1 to 864. A central 4×4 magic square sandwiched by an 8×8 sandwich frame, itself sandwiched by a further full-width top/bottom and core-height left/right frame.", "n": 12, "canon": [[25, 28, 142, 131, 134, 24, 26, 17, 127, 108, 107, 1], [120, 117, 3, 14, 11, 121, 119, 128, 18, 37, 38, 144], [118, 27, 84, 83, 63, 42, 53, 58, 96, 101, 133, 12], [4, 141, 61, 62, 82, 103, 92, 87, 49, 44, 109, 36], [35, 110, 91, 54, 80, 66, 67, 77, 59, 86, 122, 23], [136, 9, 85, 60, 69, 75, 74, 72, 94, 51, 19, 126], [105, 40, 64, 81, 73, 71, 70, 76, 89, 56, 8, 137], [39, 106, 50, 95, 68, 78, 79, 65, 48, 97, 124, 21], [130, 15, 93, 88, 45, 55, 102, 104, 46, 47, 33, 112], [13, 132, 52, 57, 100, 90, 43, 41, 99, 98, 32, 113], [29, 135, 114, 139, 115, 123, 34, 138, 20, 16, 5, 2], [116, 10, 31, 6, 30, 22, 111, 7, 125, 129, 140, 143]], "is_equal_sum": true, "shade": "order12_sandwich", "components": [["Inner core 4×4", 4, 8, 4, 8], ["Inner top 2×8", 2, 4, 2, 10], ["Inner bottom 2×8", 8, 10, 2, 10], ["Inner left 4×2", 4, 8, 2, 4], ["Inner right 4×2", 4, 8, 8, 10], ["Outer top 2×12", 0, 2, 0, 12], ["Outer bottom 2×12", 10, 12, 0, 12], ["Outer left 8×2", 2, 10, 0, 2], ["Outer right 8×2", 2, 10, 10, 12]]}, {"name": "Corner-Striped", "ord_word": "Tenth", "desc": "Six 12×12 magic squares, each with its own magic sum. Uses numbers 1 to 864. The upper-left 4×4 magic core consists of two equal-sum 2×4 magic rectangles; each has row sum 290 and column sum 145 in the initial square. Paired stages then extend it through 4×2/2×6, 6×2/2×8, 8×2/2×10, and 10×2/2×12 rectangles.", "n": 12, "canon": [[65, 68, 79, 78, 90, 55, 96, 49, 117, 28, 11, 134], [80, 77, 66, 67, 58, 87, 94, 51, 107, 38, 14, 131], [74, 75, 72, 69, 88, 57, 44, 101, 37, 108, 139, 6], [71, 70, 73, 76, 84, 61, 53, 92, 106, 39, 137, 8], [62, 64, 85, 82, 56, 86, 103, 42, 40, 105, 5, 140], [83, 81, 60, 63, 59, 89, 52, 93, 119, 26, 127, 18], [98, 46, 100, 91, 48, 104, 43, 50, 115, 30, 132, 13], [47, 99, 45, 54, 97, 41, 95, 102, 25, 120, 4, 141], [118, 33, 114, 29, 35, 121, 111, 32, 23, 109, 20, 125], [27, 112, 31, 116, 110, 24, 34, 113, 36, 122, 133, 12], [135, 143, 15, 136, 124, 1, 123, 17, 138, 3, 19, 16], [10, 2, 130, 9, 21, 144, 22, 128, 7, 142, 129, 126]], "is_equal_sum": true, "shade": "order12_cornerstriped", "components": [["Core 4×4", 0, 4, 0, 4], ["Upper core 2×4", 0, 2, 0, 4], ["Lower core 2×4", 2, 4, 0, 4], ["Stage2a 4×2", 0, 4, 4, 6], ["Stage2b 2×6", 4, 6, 0, 6], ["Stage3a 6×2", 0, 6, 6, 8], ["Stage3b 2×8", 6, 8, 0, 8], ["Stage4a 8×2", 0, 8, 8, 10], ["Stage4b 2×10", 8, 10, 0, 10], ["Stage5a 10×2", 0, 10, 10, 12], ["Stage5b 2×12", 10, 12, 0, 12]]}, {"name": "Cyclic-Striped", "ord_word": "Eleventh", "desc": "Six 12×12 magic squares, each with its own magic sum. Uses numbers 1 to 864. A central 4×4 magic square (itself split into two equal-sum 2×4 rectangles) surrounded by a cyclic order-8 magic square, itself surrounded by a further pinwheel of four 2×10/10×2 rectangles.", "n": 12, "canon": [[3, 34, 141, 5, 135, 35, 126, 118, 120, 8, 22, 123], [142, 111, 4, 140, 10, 110, 19, 27, 25, 137, 24, 121], [6, 139, 56, 52, 42, 100, 87, 98, 46, 99, 36, 109], [128, 17, 89, 93, 103, 45, 58, 47, 85, 60, 119, 26], [39, 106, 63, 82, 73, 67, 70, 80, 102, 43, 9, 136], [107, 38, 81, 64, 72, 78, 75, 65, 48, 97, 15, 130], [129, 16, 96, 49, 76, 66, 71, 77, 59, 86, 116, 29], [40, 105, 54, 91, 69, 79, 74, 68, 95, 50, 132, 13], [18, 127, 90, 55, 101, 83, 92, 41, 57, 61, 138, 7], [12, 133, 51, 94, 44, 62, 53, 104, 88, 84, 114, 31], [124, 21, 37, 20, 143, 112, 115, 14, 117, 134, 32, 1], [122, 23, 108, 125, 2, 33, 30, 131, 28, 11, 113, 144]], "is_equal_sum": true, "shade": "order12_cyclicstriped", "components": [["Core top 2×4", 4, 6, 4, 8], ["Core bottom 2×4", 6, 8, 4, 8], ["Inner top 2×6", 2, 4, 2, 8], ["Inner right 6×2", 2, 8, 8, 10], ["Inner bottom 2×6", 8, 10, 4, 10], ["Inner left 6×2", 4, 10, 2, 4], ["Outer top 2×10", 0, 2, 0, 10], ["Outer right 10×2", 0, 10, 10, 12], ["Outer bottom 2×10", 10, 12, 2, 12], ["Outer left 10×2", 2, 12, 0, 2]]}, {"name": "Sandwich-Striped", "ord_word": "Twelfth", "desc": "Six 12×12 magic squares, each with its own magic sum. Uses numbers 1 to 864. A central 4×4 magic square (itself split into two equal-sum 2×4 rectangles) sandwiched by an 8×8 sandwich frame, itself sandwiched by a further full-width top/bottom and core-height left/right frame.", "n": 12, "canon": [[25, 28, 142, 131, 134, 24, 26, 17, 127, 108, 107, 1], [120, 117, 3, 14, 11, 121, 119, 128, 18, 37, 38, 144], [118, 27, 84, 83, 63, 42, 53, 58, 96, 101, 133, 12], [4, 141, 61, 62, 82, 103, 92, 87, 49, 44, 109, 36], [35, 110, 91, 54, 76, 72, 65, 77, 59, 86, 122, 23], [136, 9, 85, 60, 69, 73, 80, 68, 94, 51, 19, 126], [105, 40, 64, 81, 78, 66, 71, 75, 89, 56, 8, 137], [39, 106, 50, 95, 67, 79, 74, 70, 48, 97, 124, 21], [130, 15, 93, 88, 45, 55, 102, 104, 46, 47, 33, 112], [13, 132, 52, 57, 100, 90, 43, 41, 99, 98, 32, 113], [29, 135, 114, 139, 115, 123, 34, 138, 20, 16, 5, 2], [116, 10, 31, 6, 30, 22, 111, 7, 125, 129, 140, 143]], "is_equal_sum": true, "shade": "order12_sandwichstriped", "components": [["Core top 2×4", 4, 6, 4, 8], ["Core bottom 2×4", 6, 8, 4, 8], ["Inner top 2×8", 2, 4, 2, 10], ["Inner bottom 2×8", 8, 10, 2, 10], ["Inner left 4×2", 4, 8, 2, 4], ["Inner right 4×2", 4, 8, 8, 10], ["Outer top 2×12", 0, 2, 0, 12], ["Outer bottom 2×12", 10, 12, 0, 12], ["Outer left 8×2", 2, 10, 0, 2], ["Outer right 8×2", 2, 10, 10, 12]]}, {"name": "Striped-18-Rects", "ord_word": "Thirteenth", "desc": "Six 12×12 magic squares, each sharing the same magic sum. Uses numbers 1 to 864. The full square is composed of eighteen 2×4 magic rectangles (6 row-bands × 3 column-groups), every single one independently magic in both directions with identical sums (row 290, column 145).", "n": 12, "canon": [[28, 118, 119, 25, 5, 139, 138, 8, 24, 123, 122, 21], [117, 27, 26, 120, 140, 6, 7, 137, 121, 22, 23, 124], [13, 131, 130, 16, 9, 135, 134, 12, 20, 126, 127, 17], [132, 14, 15, 129, 136, 10, 11, 133, 125, 19, 18, 128], [1, 143, 142, 4, 29, 115, 114, 32, 33, 111, 110, 36], [144, 2, 3, 141, 116, 30, 31, 113, 112, 34, 35, 109], [49, 95, 94, 52, 41, 103, 102, 44, 45, 99, 98, 48], [96, 50, 51, 93, 104, 42, 43, 101, 100, 46, 47, 97], [69, 74, 75, 72, 37, 107, 106, 40, 57, 87, 86, 60], [76, 71, 70, 73, 108, 38, 39, 105, 88, 58, 59, 85], [64, 82, 83, 61, 65, 79, 78, 68, 53, 91, 90, 56], [81, 63, 62, 84, 80, 66, 67, 77, 92, 54, 55, 89]], "is_equal_sum": true, "shade": "order12_striped18rects", "components": [["Rect(row-band0,col0) 2×4", 0, 2, 0, 4], ["Rect(row-band0,col1) 2×4", 0, 2, 4, 8], ["Rect(row-band0,col2) 2×4", 0, 2, 8, 12], ["Rect(row-band1,col0) 2×4", 2, 4, 0, 4], ["Rect(row-band1,col1) 2×4", 2, 4, 4, 8], ["Rect(row-band1,col2) 2×4", 2, 4, 8, 12], ["Rect(row-band2,col0) 2×4", 4, 6, 0, 4], ["Rect(row-band2,col1) 2×4", 4, 6, 4, 8], ["Rect(row-band2,col2) 2×4", 4, 6, 8, 12], ["Rect(row-band3,col0) 2×4", 6, 8, 0, 4], ["Rect(row-band3,col1) 2×4", 6, 8, 4, 8], ["Rect(row-band3,col2) 2×4", 6, 8, 8, 12], ["Rect(row-band4,col0) 2×4", 8, 10, 0, 4], ["Rect(row-band4,col1) 2×4", 8, 10, 4, 8], ["Rect(row-band4,col2) 2×4", 8, 10, 8, 12], ["Rect(row-band5,col0) 2×4", 10, 12, 0, 4], ["Rect(row-band5,col1) 2×4", 10, 12, 4, 8], ["Rect(row-band5,col2) 2×4", 10, 12, 8, 12]]}, {"name": "Bordered-4x6-Nested-2x4", "ord_word": "Fourteenth", "desc": "Six 12×12 magic squares sharing the same magic sum. Uses numbers 1 to 864. Composed of twelve equal-sum border-magic rectangles: six 4×6 blocks (each magic in both directions, row 435, column 290), each with its own nested 2×4 magic rectangle at its core (row 290, column 145).", "n": 12, "canon": [[116, 30, 117, 32, 26, 114, 43, 103, 107, 101, 40, 41], [118, 110, 36, 111, 33, 27, 106, 99, 98, 48, 45, 39], [25, 35, 109, 34, 112, 120, 37, 46, 47, 97, 100, 108], [31, 115, 28, 113, 119, 29, 104, 42, 38, 44, 105, 102], [138, 6, 141, 2, 8, 140, 128, 18, 129, 20, 14, 126], [144, 12, 9, 135, 134, 1, 130, 24, 21, 123, 122, 15], [3, 133, 136, 10, 11, 142, 13, 121, 124, 22, 23, 132], [5, 139, 4, 143, 137, 7, 19, 127, 16, 125, 131, 17], [90, 56, 93, 54, 50, 92, 80, 66, 62, 81, 68, 78], [51, 87, 57, 86, 60, 94, 82, 72, 69, 75, 74, 63], [96, 58, 88, 59, 85, 49, 61, 73, 76, 70, 71, 84], [53, 89, 52, 91, 95, 55, 67, 79, 83, 64, 77, 65]], "is_equal_sum": true, "shade": "order12_bordered4x6", "components": [["Block(0,0) border 4×6", 0, 4, 0, 6], ["Block(0,0) core 2×4", 1, 3, 1, 5], ["Block(0,1) border 4×6", 0, 4, 6, 12], ["Block(0,1) core 2×4", 1, 3, 7, 11], ["Block(1,0) border 4×6", 4, 8, 0, 6], ["Block(1,0) core 2×4", 5, 7, 1, 5], ["Block(1,1) border 4×6", 4, 8, 6, 12], ["Block(1,1) core 2×4", 5, 7, 7, 11], ["Block(2,0) border 4×6", 8, 12, 0, 6], ["Block(2,0) core 2×4", 9, 11, 1, 5], ["Block(2,1) border 4×6", 8, 12, 6, 12], ["Block(2,1) core 2×4", 9, 11, 7, 11]], "face_mask": [[0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0], [1, 1, 0, 1, 0, 0, 1, 1, 0, 1, 0, 0], [0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 1, 1], [1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1], [0, 0, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0], [1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1], [1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1], [0, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0], [0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1], [1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0], [1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1], [0, 1, 1, 0, 0, 1, 1, 1, 0, 1, 0, 0]]}, {"name": "Two-Concentric", "ord_word": "Fifteenth", "desc": "Six 12×12 magic squares sharing the same magic sum. Uses numbers 1 to 864. Composed of two equal-sum concentric magic rectangles of order 12×6 (left and right halves), each independently nested three layers deep, with every layer sharing identical sums between the two halves.", "n": 12, "canon": [[9, 12, 132, 11, 141, 130, 45, 48, 96, 47, 105, 94], [140, 119, 27, 21, 123, 5, 39, 83, 63, 57, 87, 106], [1, 122, 31, 114, 23, 144, 37, 86, 67, 78, 59, 108], [143, 19, 36, 109, 126, 2, 107, 55, 66, 79, 90, 38], [138, 125, 110, 35, 20, 7, 50, 92, 69, 76, 53, 95], [14, 128, 113, 32, 17, 131, 101, 89, 77, 68, 56, 44], [3, 24, 116, 29, 121, 142, 93, 60, 80, 65, 85, 52], [6, 120, 111, 34, 25, 139, 42, 54, 74, 71, 91, 103], [135, 18, 30, 115, 127, 10, 99, 84, 72, 73, 61, 46], [137, 28, 33, 112, 117, 8, 102, 64, 75, 70, 81, 43], [129, 22, 118, 124, 26, 16, 104, 58, 82, 88, 62, 41], [15, 133, 13, 134, 4, 136, 51, 97, 49, 98, 40, 100]], "is_equal_sum": true, "shade": "order12_twoconcentric", "components": [["Left full 12×6", 0, 12, 0, 6], ["Left ring 10×4", 1, 11, 1, 5], ["Left core 8×2", 2, 10, 2, 4], ["Right full 12×6", 0, 12, 6, 12], ["Right ring 10×4", 1, 11, 7, 11], ["Right core 8×2", 2, 10, 8, 10]], "face_mask": [[0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0], [0, 0, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1], [0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1], [1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1], [1, 0, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1], [0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0], [0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0], [1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1], [1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1], [1, 1, 1, 0, 0, 0, 1, 1, 0, 1, 0, 0], [1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 0, 0], [0, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0]]}, {"name": "Mixed-Four-Concentric", "ord_word": "Sixteenth", "desc": "Six 12×12 magic squares sharing the same magic sum. Uses numbers 1 to 864. Composed of two concentric 6×8 rectangles (top-left, bottom-right), each nested down to a 2×4 core, and two concentric 6×4 rectangles (top-right, bottom-left), each nested with a 4×2 core — every layer sharing identical sums across matching pieces.", "n": 12, "canon": [[12, 141, 2, 139, 1, 135, 142, 8, 55, 91, 50, 94], [138, 128, 18, 129, 20, 14, 126, 7, 89, 59, 86, 56], [5, 130, 24, 21, 123, 122, 15, 140, 52, 88, 57, 93], [134, 13, 121, 124, 22, 23, 132, 11, 96, 85, 60, 49], [9, 19, 127, 16, 125, 131, 17, 136, 92, 58, 87, 53], [137, 4, 143, 6, 144, 10, 3, 133, 51, 54, 95, 90], [78, 66, 83, 63, 109, 27, 119, 30, 120, 28, 34, 113], [81, 71, 74, 64, 35, 104, 42, 105, 44, 38, 102, 110], [61, 73, 72, 84, 116, 106, 48, 45, 99, 98, 39, 29], [68, 76, 69, 77, 31, 37, 97, 100, 46, 47, 108, 114], [65, 70, 75, 80, 112, 43, 103, 40, 101, 107, 41, 33], [82, 79, 62, 67, 32, 118, 26, 115, 25, 117, 111, 36]], "is_equal_sum": true, "shade": "order12_mixedfour", "components": [["Top-left full 6×8", 0, 6, 0, 8], ["Top-left ring 4×6", 1, 5, 1, 7], ["Top-left core 2×4", 2, 4, 2, 6], ["Top-right full 6×4", 0, 6, 8, 12], ["Top-right core 4×2", 1, 5, 9, 11], ["Bottom-left full 6×4", 6, 12, 0, 4], ["Bottom-left core 4×2", 7, 11, 1, 3], ["Bottom-right full 6×8", 6, 12, 4, 12], ["Bottom-right ring 4×6", 7, 11, 5, 11], ["Bottom-right core 2×4", 8, 10, 6, 10]], "face_mask": [[0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0], [1, 0, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1], [0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0], [0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1], [1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0], [1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1], [0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1], [1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 0], [0, 0, 1, 1, 0, 1, 1, 0, 1, 0, 0, 1], [1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1], [1, 1, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0], [0, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0]]}, {"name": "Rectangular-Blocks-3x4", "ord_word": "Seventeenth", "desc": "Six 12×12 magic squares, each with its own magic sum. Uses numbers 1 to 864. The full square is pandiagonal (every broken diagonal also sums to the magic constant), and it contains these independently magic components: three 12×4 rectangles, fifteen 4×4 squares (row and column sums verified in the details table).", "n": 12, "canon": [[1, 8, 141, 140, 9, 16, 133, 132, 17, 24, 125, 124], [142, 139, 2, 7, 134, 131, 10, 15, 126, 123, 18, 23], [4, 5, 144, 137, 12, 13, 136, 129, 20, 21, 128, 121], [143, 138, 3, 6, 135, 130, 11, 14, 127, 122, 19, 22], [25, 32, 117, 116, 33, 40, 109, 108, 41, 48, 101, 100], [118, 115, 26, 31, 110, 107, 34, 39, 102, 99, 42, 47], [28, 29, 120, 113, 36, 37, 112, 105, 44, 45, 104, 97], [119, 114, 27, 30, 111, 106, 35, 38, 103, 98, 43, 46], [49, 56, 93, 92, 57, 64, 85, 84, 65, 72, 77, 76], [94, 91, 50, 55, 86, 83, 58, 63, 78, 75, 66, 71], [52, 53, 96, 89, 60, 61, 88, 81, 68, 69, 80, 73], [95, 90, 51, 54, 87, 82, 59, 62, 79, 74, 67, 70]], "is_equal_sum": true, "components": [["Rect(0,0) 12×4", 0, 12, 0, 4], ["Rect(0,4) 12×4", 0, 12, 4, 8], ["Rect(0,8) 12×4", 0, 12, 8, 12], ["Block(0,0) 4×4", 0, 4, 0, 4], ["Block(0,4) 4×4", 0, 4, 4, 8], ["Block(0,8) 4×4", 0, 4, 8, 12], ["Block(2,0) 4×4", 2, 6, 0, 4], ["Block(2,4) 4×4", 2, 6, 4, 8], ["Block(2,8) 4×4", 2, 6, 8, 12], ["Block(4,0) 4×4", 4, 8, 0, 4], ["Block(4,4) 4×4", 4, 8, 4, 8], ["Block(4,8) 4×4", 4, 8, 8, 12], ["Block(6,0) 4×4", 6, 10, 0, 4], ["Block(6,4) 4×4", 6, 10, 4, 8], ["Block(6,8) 4×4", 6, 10, 8, 12], ["Block(8,0) 4×4", 8, 12, 0, 4], ["Block(8,4) 4×4", 8, 12, 4, 8], ["Block(8,8) 4×4", 8, 12, 8, 12]], "shade": "data_o12_16", "regions": [[0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2], [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2], [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2], [3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5], [3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5], [3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5], [6, 6, 6, 6, 7, 7, 7, 7, 8, 8, 8, 8], [6, 6, 6, 6, 7, 7, 7, 7, 8, 8, 8, 8], [6, 6, 6, 6, 7, 7, 7, 7, 8, 8, 8, 8], [9, 9, 9, 9, 10, 10, 10, 10, 11, 11, 11, 11], [9, 9, 9, 9, 10, 10, 10, 10, 11, 11, 11, 11], [9, 9, 9, 9, 10, 10, 10, 10, 11, 11, 11, 11]], "tints": {"0": 0.0, "1": 0.267, "2": 0.533, "3": 0.267, "4": 0.533, "5": 0.8, "6": 0.533, "7": 0.8, "8": 0.0, "9": 0.8, "10": 0.0, "11": 0.267}}, {"name": "Double-layer-nested-corner", "ord_word": "Eighteenth", "desc": "Six 12×12 magic squares, each with its own magic sum. Uses numbers 1 to 864. The full square is magic in rows, columns and both diagonals, and it contains these independently magic components: two 8×2 rectangles, one 8×8 square, one 6×6 square, one 4×4 square, two 2×12 rectangles (row and column sums verified in the details table).", "n": 12, "canon": [[4, 1, 143, 142, 5, 139, 138, 8, 9, 12, 134, 135], [141, 144, 2, 3, 140, 6, 7, 137, 136, 133, 11, 10], [37, 108, 66, 67, 77, 80, 86, 59, 54, 91, 13, 132], [107, 38, 79, 76, 70, 65, 64, 81, 41, 104, 131, 14], [106, 39, 74, 69, 75, 72, 58, 87, 97, 48, 130, 15], [40, 105, 71, 78, 68, 73, 83, 62, 44, 101, 16, 129], [33, 112, 55, 82, 61, 60, 88, 89, 98, 47, 17, 128], [111, 34, 90, 63, 84, 85, 56, 57, 100, 45, 127, 18], [110, 35, 103, 92, 99, 43, 49, 93, 51, 50, 126, 19], [36, 109, 42, 53, 46, 102, 96, 52, 95, 94, 20, 125], [115, 114, 32, 29, 25, 119, 118, 28, 122, 123, 21, 24], [30, 31, 113, 116, 120, 26, 27, 117, 23, 22, 124, 121]], "is_equal_sum": false, "components": [["Rect(0,0) 2×12", 0, 2, 0, 12], ["Block(2,2) 4×4", 2, 6, 2, 6], ["Block(2,2) 6×6", 2, 8, 2, 8], ["Rect(2,0) 8×2", 2, 10, 0, 2], ["Block(2,2) 8×8", 2, 10, 2, 10], ["Rect(2,10) 8×2", 2, 10, 10, 12], ["Rect(10,0) 2×12", 10, 12, 0, 12]], "shade": "data_o12_17", "regions": [[0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2], [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2], [3, 3, 4, 4, 4, 4, 5, 5, 6, 6, 7, 7], [3, 3, 4, 4, 4, 4, 5, 5, 6, 6, 7, 7], [3, 3, 4, 4, 4, 4, 5, 5, 6, 6, 7, 7], [3, 3, 4, 4, 4, 4, 5, 5, 6, 6, 7, 7], [3, 3, 8, 8, 8, 8, 9, 9, 6, 6, 7, 7], [3, 3, 8, 8, 8, 8, 9, 9, 6, 6, 7, 7], [3, 3, 10, 10, 10, 10, 10, 10, 11, 11, 7, 7], [3, 3, 10, 10, 10, 10, 10, 10, 11, 11, 7, 7], [12, 12, 13, 13, 13, 13, 13, 13, 13, 13, 14, 14], [12, 12, 13, 13, 13, 13, 13, 13, 13, 13, 14, 14]], "tints": {"0": 0.8, "1": 0.0, "2": 0.8, "3": 0.0, "4": 0.133, "5": 0.4, "6": 0.267, "7": 0.0, "8": 0.4, "9": 0.533, "10": 0.267, "11": 0.667, "12": 0.8, "13": 0.0, "14": 0.8}}, {"name": "2x3-strips", "ord_word": "Nineteenth", "desc": "Six 12×12 magic squares, each with its own magic sum. Uses numbers 1 to 864. The full square is magic in rows, columns and both diagonals, and it contains these independently magic components: six 2×12 rectangles (row and column sums verified in the details table).", "n": 12, "canon": [[144, 141, 3, 2, 137, 7, 6, 140, 11, 10, 133, 136], [1, 4, 142, 143, 8, 138, 139, 5, 134, 135, 12, 9], [15, 14, 129, 132, 125, 19, 18, 128, 124, 121, 23, 22], [130, 131, 16, 13, 20, 126, 127, 17, 21, 24, 122, 123], [117, 27, 26, 120, 116, 113, 31, 30, 109, 35, 34, 112], [28, 118, 119, 25, 29, 32, 114, 115, 36, 110, 111, 33], [105, 39, 38, 108, 42, 43, 101, 104, 97, 47, 46, 100], [40, 106, 107, 37, 103, 102, 44, 41, 48, 98, 99, 45], [51, 50, 93, 96, 89, 55, 54, 92, 88, 85, 59, 58], [94, 95, 52, 49, 56, 90, 91, 53, 57, 60, 86, 87], [84, 81, 63, 62, 77, 67, 66, 80, 71, 70, 73, 76], [61, 64, 82, 83, 68, 78, 79, 65, 74, 75, 72, 69]], "is_equal_sum": true, "components": [["Rect(0,0) 2×12", 0, 2, 0, 12], ["Rect(2,0) 2×12", 2, 4, 0, 12], ["Rect(4,0) 2×12", 4, 6, 0, 12], ["Rect(6,0) 2×12", 6, 8, 0, 12], ["Rect(8,0) 2×12", 8, 10, 0, 12], ["Rect(10,0) 2×12", 10, 12, 0, 12]], "shade": "data_o12_18", "regions": [[0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3], [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3], [4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7], [4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7], [8, 8, 8, 9, 9, 9, 10, 10, 10, 11, 11, 11], [8, 8, 8, 9, 9, 9, 10, 10, 10, 11, 11, 11], [12, 12, 12, 13, 13, 13, 14, 14, 14, 15, 15, 15], [12, 12, 12, 13, 13, 13, 14, 14, 14, 15, 15, 15], [16, 16, 16, 17, 17, 17, 18, 18, 18, 19, 19, 19], [16, 16, 16, 17, 17, 17, 18, 18, 18, 19, 19, 19], [20, 20, 20, 21, 21, 21, 22, 22, 22, 23, 23, 23], [20, 20, 20, 21, 21, 21, 22, 22, 22, 23, 23, 23]], "tints": {"0": 0.533, "1": 0.8, "2": 0.0, "3": 0.267, "4": 0.8, "5": 0.0, "6": 0.267, "7": 0.533, "8": 0.0, "9": 0.267, "10": 0.533, "11": 0.8, "12": 0.267, "13": 0.533, "14": 0.8, "15": 0.0, "16": 0.533, "17": 0.8, "18": 0.0, "19": 0.267, "20": 0.8, "21": 0.0, "22": 0.267, "23": 0.533}}, {"name": "4x6-strips", "ord_word": "Twentieth", "desc": "Six 12×12 magic squares, each with its own magic sum. Uses numbers 1 to 864. The full square is magic in rows, columns and both diagonals, and it contains these independently magic components: six 4×6 rectangles (row and column sums verified in the details table).", "n": 12, "canon": [[1, 140, 3, 4, 143, 144, 48, 38, 39, 106, 107, 97], [139, 2, 141, 142, 5, 6, 102, 101, 100, 45, 44, 43], [138, 137, 136, 9, 8, 7, 103, 104, 105, 40, 41, 42], [12, 11, 10, 135, 134, 133, 37, 47, 46, 99, 98, 108], [25, 26, 27, 118, 119, 120, 13, 14, 15, 130, 131, 132], [115, 116, 117, 28, 29, 30, 127, 128, 129, 16, 17, 18], [114, 113, 112, 33, 32, 31, 126, 125, 124, 21, 20, 19], [36, 35, 34, 111, 110, 109, 24, 23, 22, 123, 122, 121], [49, 50, 51, 94, 95, 96, 61, 62, 81, 64, 83, 84], [91, 92, 88, 57, 53, 54, 79, 80, 63, 82, 65, 66], [60, 89, 93, 52, 56, 85, 72, 77, 76, 69, 68, 73], [90, 59, 58, 87, 86, 55, 78, 71, 70, 75, 74, 67]], "is_equal_sum": false, "components": [["Rect(0,0) 4×6", 0, 4, 0, 6], ["Rect(0,6) 4×6", 0, 4, 6, 12], ["Rect(4,0) 4×6", 4, 8, 0, 6], ["Rect(4,6) 4×6", 4, 8, 6, 12], ["Rect(8,0) 4×6", 8, 12, 0, 6], ["Rect(8,6) 4×6", 8, 12, 6, 12]], "shade": "data_o12_19", "regions": [[0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1], [0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1], [0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1], [0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1], [2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3], [2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3], [2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3], [2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3], [4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5], [4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5], [4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5], [4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5]], "tints": {"0": 0.4, "1": 0.8, "2": 0.8, "3": 0.4, "4": 0.0, "5": 0.8}}, {"name": "Cyclic-nested-concentric", "ord_word": "Twenty-first", "desc": "Six 12×12 magic squares, each with its own magic sum. Uses numbers 1 to 864. The full square is magic in rows, columns and both diagonals, and it contains these independently magic components: two 10×2 rectangles, one 8×8 square, one 6×6 square, one 4×4 square, two 2×10 rectangles (row and column sums verified in the details table).", "n": 12, "canon": [[112, 19, 39, 16, 117, 29, 37, 109, 105, 142, 21, 124], [33, 126, 106, 129, 28, 116, 108, 36, 40, 3, 25, 120], [130, 15, 48, 42, 102, 104, 91, 53, 93, 47, 127, 18], [20, 125, 45, 86, 84, 57, 90, 58, 60, 100, 138, 7], [4, 141, 46, 56, 71, 76, 65, 78, 89, 99, 113, 32], [24, 121, 51, 62, 66, 77, 72, 75, 83, 94, 11, 134], [35, 110, 101, 64, 80, 67, 74, 69, 81, 44, 114, 31], [2, 143, 96, 82, 73, 70, 79, 68, 63, 49, 14, 131], [119, 26, 95, 85, 61, 88, 55, 87, 59, 50, 27, 118], [107, 38, 98, 103, 43, 41, 54, 92, 52, 97, 135, 10], [144, 1, 17, 13, 12, 111, 136, 139, 23, 137, 22, 115], [140, 5, 128, 132, 133, 34, 9, 6, 122, 8, 123, 30]], "is_equal_sum": true, "components": [["Rect(0,0) 2×10", 0, 2, 0, 10], ["Rect(0,10) 10×2", 0, 10, 10, 12], ["Block(2,2) 8×8", 2, 10, 2, 10], ["Rect(2,0) 10×2", 2, 12, 0, 2], ["Block(3,3) 6×6", 3, 9, 3, 9], ["Block(4,4) 4×4", 4, 8, 4, 8], ["Rect(10,2) 2×10", 10, 12, 2, 12]], "shade": "data_o12_20", "regions": [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1], [2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 1, 1], [2, 2, 3, 4, 4, 4, 4, 4, 4, 3, 1, 1], [2, 2, 3, 4, 5, 5, 5, 5, 4, 3, 1, 1], [2, 2, 3, 4, 5, 5, 5, 5, 4, 3, 1, 1], [2, 2, 3, 4, 5, 5, 5, 5, 4, 3, 1, 1], [2, 2, 3, 4, 5, 5, 5, 5, 4, 3, 1, 1], [2, 2, 3, 4, 4, 4, 4, 4, 4, 3, 1, 1], [2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 1, 1], [2, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6], [2, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6]], "tints": {"0": 0.533, "1": 0.663, "2": 0.663, "3": 0.0, "4": 0.267, "5": 0.8, "6": 0.533}}]}];
+let currentOrder = 0;
+let currentType = 0;
+let currentResult = null;
+
+/* ---------- shading (ported from Python shading.py) ---------- */
+function inTop(r,c,n){return r<=1 && c<=n-3;}
+function inBottom(r,c,n){return r>=n-2 && c>=2;}
+function inRight(r,c,n){return c>=n-2 && r<=n-3;}
+function inLeft(r,c,n){return c<=1 && r>=2;}
+
+const SHADE_FN = {
+  uniform: (r,c,n)=>"base",
+};
+
+const TIER_BLEND = {base:0,dark:0,medium:.40,medium1:.60,medium2:.40,medium3:.20,horiz:.45,vert:.12,light:.92};
+const LIGHT_PINK = [255,214,224];
+
+function hexToRgb(hex){ hex=hex.replace('#',''); return [parseInt(hex.slice(0,2),16),parseInt(hex.slice(2,4),16),parseInt(hex.slice(4,6),16)]; }
+function rgbToHex(r,g,b){ return '#'+[r,g,b].map(x=>Math.round(Math.max(0,Math.min(255,x))).toString(16).padStart(2,'0')).join(''); }
+function blendToward(hex, target, frac){
+  const [r,g,b]=hexToRgb(hex);
+  const nr=r+(target[0]-r)*frac, ng=g+(target[1]-g)*frac, nb=b+(target[2]-b)*frac;
+  return rgbToHex(nr,ng,nb);
+}
+function blendWhite(hex, frac){ return blendToward(hex, [255,255,255], frac); }
+function blendBlack(hex, frac){ return blendToward(hex, [0,0,0], frac); }
+function avgColor(hexA, hexB){
+  const [r1,g1,b1]=hexToRgb(hexA), [r2,g2,b2]=hexToRgb(hexB);
+  return rgbToHex((r1+r2)/2, (g1+g2)/2, (b1+b2)/2);
+}
+
+/* ---------- custom region+border types ---------- */
+const CUSTOM_REGION_FN = {
+  order4_striped: (r,c,n) => c>=2 ? "right" : "left",
+  order5_concentric: (r,c,n) => (r>=1&&r<=3&&c>=1&&c<=3) ? "core" : "border",
+  order5_cornered: (r,c,n) => {
+    if (r<3&&c<3) return "core";
+    if (r>=3&&c>=3) return "corner";
+    return "band";
+  },
+  order5_cyclic_border: (r,c,n) => {
+    const cc = Math.floor(n/2);
+    if (r===cc && c===cc) return "center";
+    if (inTop(r,c,n) || inBottom(r,c,n)) return "horiz";
+    if (inLeft(r,c,n) || inRight(r,c,n)) return "vert";
+    return "vert";
+  },
+  order5_semi_striped: (r,c,n) => {
+    if (r<3&&c<3) return "core";
+    if (r<3&&c>=3) return "rectMed";
+    return "band";
+  },
+  order6_concentric: (r,c,n) => (r>=1&&r<=4&&c>=1&&c<=4) ? "core" : "border",
+  order6_concentric_nested: (r,c,n) => {
+    if (r===0 || r===n-1 || c===0 || c===n-1) return "border";
+    return "core";
+  },
+  order6_cornered: (r,c,n) => {
+    if (r<4&&c<4) return "core";
+    if (r>=4&&c>=4) return "corner";
+    return "band";
+  },
+  order6_striped: (r,c,n) => {
+    if (r>=4) return "band";
+    if (c<=1) return "leftSide";
+    if (c>=4) return "rightSide";
+    return "core";
+  },
+  order6_striped2: (r,c,n) => {
+    if (r>=4) return "bottom";
+    if (c>=4) return "right";
+    if (r<2) return "core1";
+    return "core2";
+  },
+  order6_striped3: (r,c,n) => r<2 ? "top" : (r<4 ? "middle" : "bottom"),
+  order6_border_nested: (r,c,n) => {
+    if (r===0 || r===n-1) return "border";
+    if (r>=2 && r<=n-3 && c>=1 && c<=n-2) return "nested";
+    return "middle";
+  },
+  order7_concentric: (r,c,n) => {
+    if (r>=2&&r<=4&&c>=2&&c<=4) return "core";
+    if (r>=1&&r<=5&&c>=1&&c<=5) return "midRing";
+    return "outerRing";
+  },
+  order7_cornered: (r,c,n) => {
+    if (r<3&&c<3) return "core";
+    if (r>=3&&r<5&&c>=3&&c<5) return "corner1";
+    if (r<5&&c<5) return "band1";
+    if (r>=5&&c>=5) return "corner2";
+    return "band2";
+  },
+  order7_double_layer: (r,c,n) => {
+    if (r>=2&&r<=4&&c>=2&&c<=4) return "core";
+    if ((r<2||r>4)&&(c<2||c>4)) return "corners";
+    return "arms";
+  },
+  order7_cyclic: (r,c,n) => {
+    if (r===3&&c===3) return "center";
+    if (r>=2&&r<=4&&c>=2&&c<=4) return "center";
+    if (inTop(r,c,n)||inBottom(r,c,n)) return "horiz";
+    if (inLeft(r,c,n)||inRight(r,c,n)) return "vert";
+    return "vert";
+  },
+  order7_cornerstriped: (r,c,n) => {
+    if (r<3&&c<3) return "core";
+    if (r<3&&c>=3&&c<5) return "stage2a";
+    if (r>=3&&r<5&&c<5) return "stage2b";
+    if (r<5&&c>=5) return "stage3a";
+    return "stage3b";
+  },
+  order7_dss1: (r,c,n) => (r>=2&&r<=4) ? "middle" : "band",
+  order7_dss2: (r,c,n) => {
+    const mid = (r>=2&&r<=4);
+    if (c<4) return mid ? "middleL" : "bandL";
+    return mid ? "middleR" : "bandR";
+  },
+  order7_sandwich: (r,c,n) => {
+    if (r>=2&&r<=4&&c>=2&&c<=4) return "core";
+    if (r<=1||r>=5) return "tb";
+    return "lr";
+  },
+  order8_normal: (r,c,n) => {
+    return (r<4?"T":"B") + (c<4?"L":"R");
+  },
+  order8_concentric: (r,c,n) => {
+    if (r>=2&&r<=5&&c>=2&&c<=5) return "light";
+    if (r>=1&&r<=6&&c>=1&&c<=6) return "medium";
+    return "dark";
+  },
+  order8_cornered: (r,c,n) => {
+    if (r<4&&c<4) return "core";
+    if (r>=4&&r<6&&c>=4&&c<6) return "corner1";
+    if (r<6&&c<6) return "band1";
+    if (r>=6&&c>=6) return "corner2";
+    return "band2";
+  },
+  order8_doublelayer: (r,c,n) => {
+    if (r>=2&&r<=5&&c>=2&&c<=5) return "core";
+    if ((r<2||r>5)&&(c<2||c>5)) return "corners";
+    return "arms";
+  },
+  order8_cyclic: (r,c,n) => {
+    if (r>=2&&r<=5&&c>=2&&c<=5) return "center";
+    if (inTop(r,c,n)||inBottom(r,c,n)) return "horiz";
+    return "vert";
+  },
+  order8_cyclic2: (r,c,n) => {
+    if (r>=2&&r<=3&&c>=2&&c<=5) return "centerTop";
+    if (r>=4&&r<=5&&c>=2&&c<=5) return "centerBottom";
+    if (inTop(r,c,n)||inBottom(r,c,n)) return "horiz";
+    return "vert";
+  },
+  order8_corneredstriped: (r,c,n) => {
+    if (r<2&&c<4) return "tlTop";
+    if (r<4&&c<4) return "tlBottom";
+    if (r<4&&c<6) return "tm";
+    if (r<4) return "tr";
+    if (r<6) return "bottomUpper";
+    return "bottomLower";
+  },
+  order8_pinwheelnested: (r,c,n) => {
+    if (r<4&&c>=6) return "sideA";
+    if (r>=1&&r<=2&&c>=1&&c<=4) return "nestedA";
+    if (r<4) return "mainA";
+    if (r>=4&&c<2) return "sideB";
+    if (r>=5&&r<=6&&c>=3&&c<=6) return "nestedB";
+    return "mainB";
+  },
+  order8_striped1: (r,c,n) => {
+    const rectRow = Math.floor(r/2), rectCol = Math.floor(c/4);
+    return (rectRow+rectCol)%2===0 ? "light" : "medium";
+  },
+  order8_mixedrect: (r,c,n) => {
+    if (c<2||c>5) return "dark";
+    if (r<2||r>5) return "medium";
+    return "light";
+  },
+  order8_sandwich: (r,c,n) => {
+    if (r<2||r>5) return "dark";
+    if (c<2||c>5) return "medium";
+    return "light";
+  },
+  order8_sandwich_striped: (r,c,n) => {
+    if (r<2||r>5) return "dark";
+    if (c<2||c>5) return "medium";
+    return (r<4) ? "lightLeft" : "lightRight";
+  },
+  order8_hybrid: (r,c,n) => {
+    const quad = r<4 ? (c<4?"TL":"TR") : (c<4?"BL":"BR");
+    if (quad==="TL") return (r<2)?"outer":"inner";
+    if (quad==="BR") return (r<6)?"inner":"outer";
+    if (quad==="TR") return (c===4||c===5)?"inner":"outer";
+    return (c===0||c===1)?"outer":"inner";
+  },
+  order9_normal: (r,c,n) => {
+    const br = Math.floor(r/3), bc = Math.floor(c/3);
+    return "b" + br + bc;
+  },
+  order9_concentric: (r,c,n) => {
+    if (r>=3&&r<=5&&c>=3&&c<=5) return "core";
+    if (r>=2&&r<=6&&c>=2&&c<=6) return "ring5";
+    if (r>=1&&r<=7&&c>=1&&c<=7) return "ring7";
+    return "border";
+  },
+  order9_cornered: (r,c,n) => {
+    if (r<3&&c<3) return "core";
+    if (r>=3&&r<5&&c>=3&&c<5) return "corner1";
+    if (r<5&&c<5) return "band1";
+    if (r>=5&&r<7&&c>=5&&c<7) return "corner2";
+    if (r<7&&c<7) return "band2";
+    if (r>=7&&c>=7) return "corner3";
+    return "band3";
+  },
+  order9_doublelayer: (r,c,n) => {
+    if (r>=2&&r<=6&&c>=2&&c<=6) return "core";
+    if ((r<2||r>6)&&(c<2||c>6)) return "corners";
+    return "arms";
+  },
+  order9_cyclic: (r,c,n) => {
+    const cr=r-2, cc=c-2;
+    const inCore = cr>=0&&cr<=4&&cc>=0&&cc<=4;
+    if (!inCore) {
+      const inTopO=r<=1&&c<=n-3, inBotO=r>=n-2&&c>=2;
+      return (inTopO||inBotO) ? "horiz" : "vert";
+    }
+    if (cr===2&&cc===2) return "center";
+    const inTopI = cr<=1 && cc<=2;
+    const inBotI = cr>=3 && cc>=2;
+    return (inTopI||inBotI) ? "innerHoriz" : "innerVert";
+  },
+  order9_sandwich: (r,c,n) => {
+    if (r>=2&&r<=6&&c>=2&&c<=6) return "core";
+    if (r<2) return "top";
+    if (r>6) return "bottom";
+    return (c<2) ? "left" : "right";
+  },
+  order9_sandwichcyclic: (r,c,n) => {
+    if (r<2) return "top";
+    if (r>6) return "bottom";
+    if (c<2) return "left";
+    if (c>6) return "right";
+    const cr=r-2, cc=c-2;
+    if (cr===2&&cc===2) return "center";
+    const inTopI = cr<=1 && cc<=2;
+    const inBotI = cr>=3 && cc>=2;
+    return (inTopI||inBotI) ? "innerHoriz" : "innerVert";
+  },
+  order9_cornerstriped: (r,c,n) => {
+    if (r<3&&c<3) return "core";
+    if (r<3&&c>=3&&c<5) return "stage2a";
+    if (r>=3&&r<5&&c<5) return "stage2b";
+    if (r<5&&c>=5&&c<7) return "stage3a";
+    if (r>=5&&r<7&&c<7) return "stage3b";
+    if (r<7&&c>=7) return "stage4a";
+    return "stage4b";
+  },
+  order10_concentric: (r,c,n) => {
+    if (r>=3&&r<=6&&c>=3&&c<=6) return "core";
+    if (r>=2&&r<=7&&c>=2&&c<=7) return "ring6";
+    if (r>=1&&r<=8&&c>=1&&c<=8) return "ring8";
+    return "border";
+  },
+  order11_concentric: (r,c,n) => {
+    if (r>=4&&r<=6&&c>=4&&c<=6) return "core";
+    if (r>=3&&r<=7&&c>=3&&c<=7) return "ring5";
+    if (r>=2&&r<=8&&c>=2&&c<=8) return "ring7";
+    if (r>=1&&r<=9&&c>=1&&c<=9) return "ring9";
+    return "border";
+  },
+  order10_cornered: (r,c,n) => {
+    if (r<4&&c<4) return "core";
+    if (r>=4&&r<6&&c>=4&&c<6) return "corner1";
+    if (r<6&&c<6) return "band1";
+    if (r>=6&&r<8&&c>=6&&c<8) return "corner2";
+    if (r<8&&c<8) return "band2";
+    if (r>=8&&c>=8) return "corner3";
+    return "band3";
+  },
+  order11_cornered: (r,c,n) => {
+    if (r<3&&c<3) return "core";
+    if (r>=3&&r<5&&c>=3&&c<5) return "corner1";
+    if (r<5&&c<5) return "band1";
+    if (r>=5&&r<7&&c>=5&&c<7) return "corner2";
+    if (r<7&&c<7) return "band2";
+    if (r>=7&&r<9&&c>=7&&c<9) return "corner3";
+    if (r<9&&c<9) return "band3";
+    if (r>=9&&c>=9) return "corner4";
+    return "band4";
+  },
+  order10_doublelayer: (r,c,n) => {
+    if (r>=2&&r<=7&&c>=2&&c<=7) return "core";
+    if ((r<2||r>7)&&(c<2||c>7)) return "corners";
+    return "arms";
+  },
+  order11_doublelayer: (r,c,n) => {
+    // outer ring (order 11): rows/cols 0-1 and 9-10
+    const inOuterTop = r<2, inOuterBottom = r>8;
+    const inOuterLeft = c<2, inOuterRight = c>8;
+    if (inOuterTop||inOuterBottom||inOuterLeft||inOuterRight) {
+      const rowArm = inOuterTop||inOuterBottom, colArm = inOuterLeft||inOuterRight;
+      if (rowArm&&colArm) return "corner1";
+      return rowArm ? "arm1" : "side1";
+    }
+    // inner ring (order 7, local rows/cols 2-8): rows/cols 2-3 and 7-8
+    const inInnerTop = r<4, inInnerBottom = r>6;
+    const inInnerLeft = c<4, inInnerRight = c>6;
+    if (inInnerTop||inInnerBottom||inInnerLeft||inInnerRight) {
+      const rowArm2 = inInnerTop||inInnerBottom, colArm2 = inInnerLeft||inInnerRight;
+      if (rowArm2&&colArm2) return "corner2";
+      return rowArm2 ? "arm2" : "side2";
+    }
+    return "core3";
+  },
+  order11_nested9: (r,c,n) => {
+    if (r===0||r===n-1||c===0||c===n-1) return "border";
+    const br = Math.floor((r-1)/3), bc = Math.floor((c-1)/3);
+    return "block" + ((br+bc)%2===0 ? "A" : "B");
+  },
+  order11_cyclic: (r,c,n) => {
+    // outer pinwheel ring (global coords)
+    const inOuterTop = r<2 && c<=8;
+    const inOuterRight = c>=9 && r<=8;
+    const inOuterBottom = r>=9 && c>=2;
+    const inOuterLeft = c<2 && r>=2;
+    if (inOuterTop) return "outerTop";
+    if (inOuterRight) return "outerRight";
+    if (inOuterBottom) return "outerBottom";
+    if (inOuterLeft) return "outerLeft";
+    // inner 7x7 (global rows/cols 2-8), its own pinwheel
+    if (r>=4&&r<=6&&c>=4&&c<=6) return "center";
+    const inInnerTop = r<=3 && c<=6;
+    const inInnerRight = c>=7 && r<=6;
+    const inInnerBottom = r>=7 && c>=4;
+    const inInnerLeft = c<=3 && r>=4;
+    if (inInnerTop) return "innerTop";
+    if (inInnerRight) return "innerRight";
+    if (inInnerBottom) return "innerBottom";
+    return "innerLeft";
+  },
+  order11_sandwich: (r,c,n) => {
+    // outer sandwich frame: top/bottom full-width, left/right core-height (rows2-8)
+    if (r<2) return "outerTop";
+    if (r>8) return "outerBottom";
+    if (c<2) return "outerLeft";
+    if (c>8) return "outerRight";
+    // inner 7x7 (rows/cols 2-8), its own sandwich frame
+    if (r>=4&&r<=6&&c>=4&&c<=6) return "core";
+    if (r<4) return "innerTop";
+    if (r>6) return "innerBottom";
+    if (c<4) return "innerLeft";
+    return "innerRight";
+  },
+  order11_cornerstriped: (r,c,n) => {
+    if (r<3&&c<3) return "core";
+    if (r<3&&c>=3&&c<5) return "stage2a";
+    if (r>=3&&r<5&&c<5) return "stage2b";
+    if (r<5&&c>=5&&c<7) return "stage3a";
+    if (r>=5&&r<7&&c<7) return "stage3b";
+    if (r<7&&c>=7&&c<9) return "stage4a";
+    if (r>=7&&r<9&&c<9) return "stage4b";
+    if (r<9&&c>=9) return "stage5a";
+    return "stage5b";
+  },
+  order12_blocks3: (r,c,n) => {
+    const br = Math.floor(r/3), bc = Math.floor(c/3);
+    return "block" + ((br+bc)%2===0 ? "A" : "B");
+  },
+  order12_blocks4: (r,c,n) => {
+    const br = Math.floor(r/4), bc = Math.floor(c/4);
+    return "block" + ((br+bc)%2===0 ? "A" : "B");
+  },
+  order12_blocks6: (r,c,n) => {
+    const br = Math.floor(r/6), bc = Math.floor(c/6);
+    return "block" + ((br+bc)%2===0 ? "A" : "B");
+  },
+  order12_6x6concentric: (r,c,n) => {
+    const qr = r % 6, qc = c % 6;
+    const isCore = qr>=1 && qr<=4 && qc>=1 && qc<=4;
+    const br = Math.floor(r/6), bc = Math.floor(c/6);
+    const quadParity = (br+bc)%2===0 ? "A" : "B";
+    return (isCore ? "core" : "border") + quadParity;
+  },
+  order12_concentric: (r,c,n) => {
+    if (r>=4&&r<=7&&c>=4&&c<=7) return "core";
+    if (r>=3&&r<=8&&c>=3&&c<=8) return "ring6";
+    if (r>=2&&r<=9&&c>=2&&c<=9) return "ring8";
+    if (r>=1&&r<=10&&c>=1&&c<=10) return "ring10";
+    return "border";
+  },
+  order12_cornered: (r,c,n) => {
+    if (r<4&&c<4) return "core";
+    if (r>=4&&r<6&&c>=4&&c<6) return "corner1";
+    if (r<6&&c<6) return "band1";
+    if (r>=6&&r<8&&c>=6&&c<8) return "corner2";
+    if (r<8&&c<8) return "band2";
+    if (r>=8&&r<10&&c>=8&&c<10) return "corner3";
+    if (r<10&&c<10) return "band3";
+    if (r>=10&&c>=10) return "corner4";
+    return "band4";
+  },
+  order12_doublelayer: (r,c,n) => {
+    // outer ring (order 12): rows/cols 0-1 and 10-11
+    const inOuterTop = r<2, inOuterBottom = r>9;
+    const inOuterLeft = c<2, inOuterRight = c>9;
+    if (inOuterTop||inOuterBottom||inOuterLeft||inOuterRight) {
+      const rowArm = inOuterTop||inOuterBottom, colArm = inOuterLeft||inOuterRight;
+      if (rowArm&&colArm) return "corner1";
+      return rowArm ? "arm1" : "side1";
+    }
+    // inner ring (order 8, local rows/cols 2-9): rows/cols 2-3 and 8-9
+    const inInnerTop = r<4, inInnerBottom = r>7;
+    const inInnerLeft = c<4, inInnerRight = c>7;
+    if (inInnerTop||inInnerBottom||inInnerLeft||inInnerRight) {
+      const rowArm2 = inInnerTop||inInnerBottom, colArm2 = inInnerLeft||inInnerRight;
+      if (rowArm2&&colArm2) return "corner2";
+      return rowArm2 ? "arm2" : "side2";
+    }
+    return "core3";
+  },
+  order12_cyclic: (r,c,n) => {
+    // outer pinwheel ring (global coords)
+    const inOuterTop = r<2 && c<=9;
+    const inOuterRight = c>=10 && r<=9;
+    const inOuterBottom = r>=10 && c>=2;
+    const inOuterLeft = c<2 && r>=2;
+    if (inOuterTop) return "outerTop";
+    if (inOuterRight) return "outerRight";
+    if (inOuterBottom) return "outerBottom";
+    if (inOuterLeft) return "outerLeft";
+    // inner 8x8 (global rows/cols 2-9), its own pinwheel
+    if (r>=4&&r<=7&&c>=4&&c<=7) return "center";
+    const inInnerTop = r<=3 && c<=7;
+    const inInnerRight = c>=8 && r<=7;
+    const inInnerBottom = r>=8 && c>=4;
+    const inInnerLeft = c<=3 && r>=4;
+    if (inInnerTop) return "innerTop";
+    if (inInnerRight) return "innerRight";
+    if (inInnerBottom) return "innerBottom";
+    return "innerLeft";
+  },
+  order12_sandwich: (r,c,n) => {
+    // outer sandwich frame: top/bottom full-width, left/right core-height (rows2-9)
+    if (r<2) return "outerTop";
+    if (r>9) return "outerBottom";
+    if (c<2) return "outerLeft";
+    if (c>9) return "outerRight";
+    // inner 8x8 (rows/cols 2-9), its own sandwich frame
+    if (r>=4&&r<=7&&c>=4&&c<=7) return "core";
+    if (r<4) return "innerTop";
+    if (r>7) return "innerBottom";
+    if (c<4) return "innerLeft";
+    return "innerRight";
+  },
+  order12_cornerstriped: (r,c,n) => {
+    if (r<4&&c<4) return r<2 ? "coretop" : "corebottom";
+    if (r<4&&c>=4&&c<6) return "stage2a";
+    if (r>=4&&r<6&&c<6) return "stage2b";
+    if (r<6&&c>=6&&c<8) return "stage3a";
+    if (r>=6&&r<8&&c<8) return "stage3b";
+    if (r<8&&c>=8&&c<10) return "stage4a";
+    if (r>=8&&r<10&&c<10) return "stage4b";
+    if (r<10&&c>=10) return "stage5a";
+    return "stage5b";
+  },
+  order12_striped18rects: (r,c,n) => {
+    const rb = Math.floor(r/2), cb = Math.floor(c/4);
+    return "block" + ((rb+cb)%2===0 ? "A" : "B");
+  },
+  order12_striped4x6blocks: (r,c,n) => {
+    const rb = Math.floor(r/4), cb = Math.floor(c/6);
+    return "block" + rb + "_" + cb;
+  },
+  order12_bordered4x6: (r,c,n) => {
+    const rb = Math.floor(r/4), cb = Math.floor(c/6);
+    const lr = r % 4, lc = c % 6;
+    const isCore = lr>=1 && lr<=2 && lc>=1 && lc<=4;
+    return (isCore ? "core" : "border") + rb + "_" + cb;
+  },
+  order12_twoconcentric: (r,c,n) => {
+    const half = c < 6 ? "L" : "R";
+    const lc = c % 6;
+    if (r>=2 && r<=9 && lc>=2 && lc<=3) return "core" + half;
+    if (r>=1 && r<=10 && lc>=1 && lc<=4) return "ring" + half;
+    return "full" + half;
+  },
+  order12_mixedfour: (r,c,n) => {
+    if (r<6 && c<8) {
+      if (r>=2 && r<=3 && c>=2 && c<=5) return "coreTL";
+      if (r>=1 && r<=4 && c>=1 && c<=6) return "ringTL";
+      return "fullTL";
+    }
+    if (r<6 && c>=8) {
+      if (r>=1 && r<=4 && c>=9 && c<=10) return "coreTR";
+      return "fullTR";
+    }
+    if (r>=6 && c<4) {
+      if (r>=7 && r<=10 && c>=1 && c<=2) return "coreBL";
+      return "fullBL";
+    }
+    if (r>=8 && r<=9 && c>=6 && c<=9) return "coreBR";
+    if (r>=7 && r<=10 && c>=5 && c<=10) return "ringBR";
+    return "fullBR";
+  },
+  order12_cyclicstriped: (r,c,n) => {
+    // outer pinwheel ring (global coords)
+    const inOuterTop = r<2 && c<=9;
+    const inOuterRight = c>=10 && r<=9;
+    const inOuterBottom = r>=10 && c>=2;
+    const inOuterLeft = c<2 && r>=2;
+    if (inOuterTop) return "outerTop";
+    if (inOuterRight) return "outerRight";
+    if (inOuterBottom) return "outerBottom";
+    if (inOuterLeft) return "outerLeft";
+    // inner 8x8 (global rows/cols 2-9), its own pinwheel
+    if (r>=4&&r<=7&&c>=4&&c<=7) {
+      return r<6 ? "coreTop" : "coreBottom";
+    }
+    const inInnerTop = r<=3 && c<=7;
+    const inInnerRight = c>=8 && r<=7;
+    const inInnerBottom = r>=8 && c>=4;
+    const inInnerLeft = c<=3 && r>=4;
+    if (inInnerTop) return "innerTop";
+    if (inInnerRight) return "innerRight";
+    if (inInnerBottom) return "innerBottom";
+    return "innerLeft";
+  },
+  order12_sandwichstriped: (r,c,n) => {
+    // outer sandwich frame: top/bottom full-width, left/right core-height (rows2-9)
+    if (r<2) return "outerTop";
+    if (r>9) return "outerBottom";
+    if (c<2) return "outerLeft";
+    if (c>9) return "outerRight";
+    // inner 8x8 (rows/cols 2-9), its own sandwich frame
+    if (r>=4&&r<=7&&c>=4&&c<=7) {
+      return r<6 ? "coreTop" : "coreBottom";
+    }
+    if (r<4) return "innerTop";
+    if (r>7) return "innerBottom";
+    if (c<4) return "innerLeft";
+    return "innerRight";
+  },
+  order10_cyclic: (r,c,n) => {
+    if (r>=2&&r<=7&&c>=2&&c<=7) return "center";
+    if (inTop(r,c,n)||inBottom(r,c,n)) return "horiz";
+    return "vert";
+  },
+  order10_nestedconcentric: (r,c,n) => {
+    if (r<1||r>8||c<1||c>8) return "border";
+    const br = r<5 ? 0 : 1, bc = c<5 ? 0 : 1;
+    return "b"+br+bc;
+  },
+  order10_nestedconcentric2: (r,c,n) => {
+    if (r<1||r>8||c<1||c>8) return "border";
+    const quad = r<5 ? (c<5?"TL":"TR") : (c<5?"BL":"BR");
+    if (quad==="TL") return (r<3)?"light":"medium";
+    if (quad==="BR") return (r<7)?"medium":"light";
+    if (quad==="TR") return (c===5||c===6)?"medium":"light";
+    return (c===1||c===2)?"light":"medium";
+  },
+  order10_sandwich: (r,c,n) => {
+    if (r>=2&&r<=7&&c>=2&&c<=7) return "core";
+    if (r<2) return "top";
+    if (r>7) return "bottom";
+    return (c<2) ? "left" : "right";
+  },
+  order10_cyclicstriped: (r,c,n) => {
+    const inTopO=r<=1&&c<=n-3, inBotO=r>=n-2&&c>=2;
+    if (r<2||r>7||c<2||c>7) {
+      return (inTopO||inBotO) ? "horiz" : "vert";
+    }
+    if (r<6) {
+      if (c<4) return "stripe1";
+      if (c<6) return "stripe2";
+      return "stripe3";
+    }
+    return "band";
+  },
+  order10_sandwichstriped: (r,c,n) => {
+    if (r<2) return "top";
+    if (r>7) return "bottom";
+    if (c<2) return "left";
+    if (c>7) return "right";
+    if (r<6) {
+      if (c<4) return "stripe1";
+      if (c<6) return "stripe2";
+      return "stripe3";
+    }
+    return "band";
+  },
+  order10_directstriped: (r,c,n) => {
+    const band = Math.floor(r/2);
+    return (c<6) ? "left"+band : "right"+band;
+  },
+  order10_2_cornerstriped: (r,c,n) => {
+    if (r<4&&c<4) return (r<2) ? "coretop" : "corebottom";
+    if (r<4&&c<6) return "stripe1";
+    if (r<4&&c<8) return "stripe2";
+    if (r<6&&c<8) return "band1";
+    if (r<8&&c<8) return "band2";
+    if (r<8) return "rightcol";
+    return "bottomband";
+  },
+};
+
+function customRegionColors(shadeKey, faceColor){
+  if (typeof DATA_TINTS !== 'undefined' && DATA_TINTS[shadeKey]) {
+    const out = {};
+    for (const k in DATA_TINTS[shadeKey]) out[k] = blendWhite(faceColor, DATA_TINTS[shadeKey][k]);
+    return out;
+  }
+  if (shadeKey === "order4_striped") {
+    return { left: faceColor, right: blendWhite(faceColor, 0.55) };
+  }
+  if (shadeKey === "order5_concentric" || shadeKey === "order6_concentric") {
+    return { border: faceColor, core: blendWhite(faceColor, 0.65) };
+  }
+  if (shadeKey === "order6_concentric_nested") {
+    const border = faceColor;
+    const core = blendWhite(faceColor, 0.55);
+    return { border, core };
+  }
+  if (shadeKey === "order5_cornered") {
+    const band = blendWhite(faceColor, 0.35);
+    const corner = blendWhite(band, 0.35);
+    const core = blendWhite(band, 0.55);
+    return { band, corner, core };
+  }
+  if (shadeKey === "order6_cornered") {
+    const band = blendWhite(faceColor, 0.35);
+    const corner = blendWhite(band, 0.35);
+    const core = blendWhite(band, 0.55);
+    return { band, corner, core };
+  }
+  if (shadeKey === "order5_cyclic_border") {
+    const horiz = blendWhite(faceColor, 0.28);
+    const vert = blendWhite(faceColor, 0.10);
+    const center = blendWhite(faceColor, 0.72);
+    return { horiz, vert, center };
+  }
+  if (shadeKey === "order5_semi_striped") {
+    const rectMed = blendWhite(faceColor, 0.30);
+    const band = faceColor;
+    const core = blendWhite(rectMed, 0.45);
+    return { rectMed, band, core };
+  }
+  if (shadeKey === "order6_striped") {
+    const leftSide = blendWhite(faceColor, 0.20);
+    const rightSide = blendWhite(faceColor, 0.38);
+    const band = faceColor;
+    const core = blendWhite(avgColor(leftSide, rightSide), 0.35);
+    return { leftSide, rightSide, band, core };
+  }
+  if (shadeKey === "order6_striped2") {
+    const core1 = blendWhite(faceColor, 0.55);
+    const core2 = blendWhite(faceColor, 0.40);
+    const right = blendWhite(faceColor, 0.20);
+    const bottom = faceColor;
+    return { core1, core2, right, bottom };
+  }
+  if (shadeKey === "order6_striped3") {
+    return { top:faceColor, middle:blendWhite(faceColor,0.48), bottom:blendWhite(faceColor,0.20) };
+  }
+  if (shadeKey === "order6_border_nested") {
+    const border = blendBlack(faceColor, 0.15);
+    const middle = faceColor;
+    const nested = blendWhite(faceColor, 0.55);
+    return { border, middle, nested };
+  }
+  if (shadeKey === "order7_concentric") {
+    const outerRing = faceColor;
+    const midRing = blendWhite(faceColor, 0.35);
+    const core = blendWhite(midRing, 0.45);
+    return { outerRing, midRing, core };
+  }
+  if (shadeKey === "order7_cornered") {
+    const band1 = blendWhite(faceColor, 0.45);
+    const corner1 = blendWhite(band1, 0.35);
+    const band2 = blendWhite(faceColor, 0.20);
+    const corner2 = blendWhite(band2, 0.35);
+    const core = blendWhite(band1, 0.55);
+    return { band1, corner1, band2, corner2, core };
+  }
+  if (shadeKey === "order7_double_layer") {
+    const corners = blendBlack(faceColor, 0.15);
+    const arms = blendWhite(faceColor, 0.35);
+    const core = blendWhite(arms, 0.45);
+    return { corners, arms, core };
+  }
+  if (shadeKey === "order7_cyclic") {
+    const horiz = blendWhite(faceColor, 0.28);
+    const vert = blendWhite(faceColor, 0.10);
+    const center = blendWhite(faceColor, 0.72);
+    return { horiz, vert, center };
+  }
+  if (shadeKey === "order7_cornerstriped") {
+    const core = blendWhite(faceColor, 0.70);
+    const stage2a = blendWhite(faceColor, 0.52);
+    const stage2b = blendWhite(faceColor, 0.36);
+    const stage3a = blendWhite(faceColor, 0.18);
+    const stage3b = faceColor;
+    return { core, stage2a, stage2b, stage3a, stage3b };
+  }
+  if (shadeKey === "order7_dss1") {
+    return { band: faceColor, middle: blendWhite(faceColor, 0.55) };
+  }
+  if (shadeKey === "order7_dss2") {
+    return { bandL: faceColor, bandR: blendWhite(faceColor, 0.30), middleL: blendWhite(faceColor, 0.45), middleR: blendWhite(faceColor, 0.68) };
+  }
+  if (shadeKey === "order7_sandwich") {
+    const tb = faceColor;
+    const lr = blendWhite(faceColor, 0.40);
+    const core = blendWhite(avgColor(tb, lr), 0.55);
+    return { tb, lr, core };
+  }
+  if (shadeKey === "order8_normal") {
+    const c1 = faceColor;
+    const c2 = blendWhite(faceColor, 0.25);
+    const c3 = blendWhite(faceColor, 0.45);
+    const c4 = blendWhite(faceColor, 0.65);
+    return { TL: c1, TR: c2, BL: c3, BR: c4 };
+  }
+  if (shadeKey === "order8_concentric") {
+    const dark = faceColor;
+    const medium = blendWhite(faceColor, 0.35);
+    const light = blendWhite(faceColor, 0.65);
+    return { dark, medium, light };
+  }
+  if (shadeKey === "order8_cornered") {
+    const core = blendWhite(faceColor, 0.65);
+    const band1 = blendWhite(faceColor, 0.35);
+    const corner1 = blendWhite(band1, 0.35);
+    const band2 = faceColor;
+    const corner2 = blendWhite(band2, 0.35);
+    return { core, band1, corner1, band2, corner2 };
+  }
+  if (shadeKey === "order8_doublelayer") {
+    const core = blendWhite(faceColor, 0.55);
+    const arms = blendWhite(faceColor, 0.25);
+    const corners = faceColor;
+    return { core, arms, corners };
+  }
+  if (shadeKey === "order8_cyclic") {
+    const center = blendWhite(faceColor, 0.55);
+    const horiz = blendWhite(faceColor, 0.20);
+    const vert = faceColor;
+    return { center, horiz, vert };
+  }
+  if (shadeKey === "order8_cyclic2") {
+    const centerTop = blendWhite(faceColor, 0.65);
+    const centerBottom = blendWhite(faceColor, 0.45);
+    const horiz = blendWhite(faceColor, 0.20);
+    const vert = faceColor;
+    return { centerTop, centerBottom, horiz, vert };
+  }
+  if (shadeKey === "order8_corneredstriped") {
+    const tlTop = blendWhite(faceColor, 0.65);
+    const tlBottom = blendWhite(faceColor, 0.50);
+    const tm = blendWhite(faceColor, 0.30);
+    const tr = blendWhite(faceColor, 0.15);
+    const bottomUpper = blendWhite(faceColor, 0.08);
+    const bottomLower = faceColor;
+    return { tlTop, tlBottom, tm, tr, bottomUpper, bottomLower };
+  }
+  if (shadeKey === "order8_pinwheelnested") {
+    const mainA = blendWhite(faceColor, 0.45);
+    const nestedA = blendWhite(faceColor, 0.65);
+    const sideA = blendWhite(faceColor, 0.20);
+    const mainB = blendWhite(faceColor, 0.45);
+    const nestedB = blendWhite(faceColor, 0.65);
+    const sideB = faceColor;
+    return { mainA, nestedA, sideA, mainB, nestedB, sideB };
+  }
+  if (shadeKey === "order8_striped1") {
+    const medium = faceColor;
+    const light = blendWhite(faceColor, 0.55);
+    return { medium, light };
+  }
+  if (shadeKey === "order8_mixedrect" || shadeKey === "order8_sandwich") {
+    const dark = faceColor;
+    const medium = blendWhite(faceColor, 0.35);
+    const light = blendWhite(faceColor, 0.60);
+    return { dark, medium, light };
+  }
+  if (shadeKey === "order8_sandwich_striped") {
+    return { dark: faceColor, medium: blendWhite(faceColor, 0.35), lightLeft: blendWhite(faceColor, 0.60), lightRight: blendWhite(faceColor, 0.60) };
+  }
+  if (shadeKey === "order8_hybrid") {
+    const inner = faceColor;
+    const outer = blendWhite(faceColor, 0.50);
+    return { inner, outer };
+  }
+  if (shadeKey === "order9_normal") {
+    const dark = faceColor;
+    const light = blendWhite(faceColor, 0.45);
+    const out = {};
+    for (let br=0; br<3; br++) {
+      for (let bc=0; bc<3; bc++) {
+        out["b"+br+bc] = ((br+bc)%2===0) ? light : dark;
+      }
+    }
+    return out;
+  }
+  if (shadeKey === "order9_concentric") {
+    const border = faceColor;
+    const ring7 = blendWhite(faceColor, 0.30);
+    const ring5 = blendWhite(faceColor, 0.55);
+    const core = blendWhite(faceColor, 0.75);
+    return { border, ring7, ring5, core };
+  }
+  if (shadeKey === "order9_cornered") {
+    const core = blendWhite(faceColor, 0.75);
+    const band1 = blendWhite(faceColor, 0.55);
+    const corner1 = blendWhite(band1, 0.35);
+    const band2 = blendWhite(faceColor, 0.30);
+    const corner2 = blendWhite(band2, 0.35);
+    const band3 = faceColor;
+    const corner3 = blendWhite(band3, 0.35);
+    return { core, band1, corner1, band2, corner2, band3, corner3 };
+  }
+  if (shadeKey === "order9_doublelayer") {
+    const core = blendWhite(faceColor, 0.55);
+    const arms = blendWhite(faceColor, 0.25);
+    const corners = faceColor;
+    return { core, arms, corners };
+  }
+  if (shadeKey === "order9_cyclic") {
+    const center = blendWhite(faceColor, 0.85);
+    const innerHoriz = blendWhite(faceColor, 0.65);
+    const innerVert = blendWhite(faceColor, 0.50);
+    const horiz = blendWhite(faceColor, 0.20);
+    const vert = faceColor;
+    return { center, innerHoriz, innerVert, horiz, vert };
+  }
+  if (shadeKey === "order9_sandwich") {
+    const core = blendWhite(faceColor, 0.60);
+    const top = faceColor;
+    const bottom = faceColor;
+    const left = blendWhite(faceColor, 0.30);
+    const right = blendWhite(faceColor, 0.30);
+    return { core, top, bottom, left, right };
+  }
+  if (shadeKey === "order9_sandwichcyclic") {
+    const top = faceColor;
+    const bottom = faceColor;
+    const left = blendWhite(faceColor, 0.30);
+    const right = blendWhite(faceColor, 0.30);
+    const center = blendWhite(faceColor, 0.85);
+    const innerHoriz = blendWhite(faceColor, 0.65);
+    const innerVert = blendWhite(faceColor, 0.50);
+    return { top, bottom, left, right, center, innerHoriz, innerVert };
+  }
+  if (shadeKey === "order9_cornerstriped") {
+    const core = blendWhite(faceColor, 0.75);
+    const stage2a = blendWhite(faceColor, 0.60);
+    const stage2b = blendWhite(faceColor, 0.48);
+    const stage3a = blendWhite(faceColor, 0.36);
+    const stage3b = blendWhite(faceColor, 0.24);
+    const stage4a = blendWhite(faceColor, 0.12);
+    const stage4b = faceColor;
+    return { core, stage2a, stage2b, stage3a, stage3b, stage4a, stage4b };
+  }
+  if (shadeKey === "order10_concentric") {
+    const core = blendWhite(faceColor, 0.75);
+    const ring6 = blendWhite(faceColor, 0.55);
+    const ring8 = blendWhite(faceColor, 0.30);
+    const border = faceColor;
+    return { core, ring6, ring8, border };
+  }
+  if (shadeKey === "order11_concentric") {
+    const core = blendWhite(faceColor, 0.80);
+    const ring5 = blendWhite(faceColor, 0.62);
+    const ring7 = blendWhite(faceColor, 0.44);
+    const ring9 = blendWhite(faceColor, 0.22);
+    const border = faceColor;
+    return { core, ring5, ring7, ring9, border };
+  }
+  if (shadeKey === "order10_cornered") {
+    const core = blendWhite(faceColor, 0.75);
+    const band1 = blendWhite(faceColor, 0.55);
+    const corner1 = blendWhite(band1, 0.35);
+    const band2 = blendWhite(faceColor, 0.30);
+    const corner2 = blendWhite(band2, 0.35);
+    const band3 = faceColor;
+    const corner3 = blendWhite(band3, 0.35);
+    return { core, band1, corner1, band2, corner2, band3, corner3 };
+  }
+  if (shadeKey === "order11_cornered") {
+    const core = blendWhite(faceColor, 0.80);
+    const band1 = blendWhite(faceColor, 0.62);
+    const corner1 = blendWhite(band1, 0.35);
+    const band2 = blendWhite(faceColor, 0.44);
+    const corner2 = blendWhite(band2, 0.35);
+    const band3 = blendWhite(faceColor, 0.22);
+    const corner3 = blendWhite(band3, 0.35);
+    const band4 = faceColor;
+    const corner4 = blendWhite(band4, 0.35);
+    return { core, band1, corner1, band2, corner2, band3, corner3, band4, corner4 };
+  }
+  if (shadeKey === "order10_doublelayer") {
+    const core = blendWhite(faceColor, 0.55);
+    const arms = blendWhite(faceColor, 0.25);
+    const corners = faceColor;
+    return { core, arms, corners };
+  }
+  if (shadeKey === "order11_doublelayer") {
+    const arm1 = blendWhite(faceColor, 0.10);
+    const side1 = blendWhite(faceColor, 0.22);
+    const corner1 = faceColor;
+    const arm2 = blendWhite(faceColor, 0.45);
+    const side2 = blendWhite(faceColor, 0.58);
+    const corner2 = blendWhite(faceColor, 0.34);
+    const core3 = blendWhite(faceColor, 0.78);
+    return { arm1, side1, corner1, arm2, side2, corner2, core3 };
+  }
+  if (shadeKey === "order11_nested9") {
+    const border = faceColor;
+    const blockA = blendWhite(faceColor, 0.55);
+    const blockB = blendWhite(faceColor, 0.68);
+    return { border, blockA, blockB };
+  }
+  if (shadeKey === "order11_cyclic") {
+    const outerTop = blendWhite(faceColor, 0.10);
+    const outerRight = blendWhite(faceColor, 0.10);
+    const outerBottom = blendWhite(faceColor, 0.0);
+    const outerLeft = blendWhite(faceColor, 0.0);
+    const innerTop = blendWhite(faceColor, 0.45);
+    const innerRight = blendWhite(faceColor, 0.45);
+    const innerBottom = blendWhite(faceColor, 0.34);
+    const innerLeft = blendWhite(faceColor, 0.34);
+    const center = blendWhite(faceColor, 0.80);
+    return { outerTop, outerRight, outerBottom, outerLeft, innerTop, innerRight, innerBottom, innerLeft, center };
+  }
+  if (shadeKey === "order11_sandwich") {
+    const outerTop = faceColor;
+    const outerBottom = faceColor;
+    const outerLeft = blendWhite(faceColor, 0.28);
+    const outerRight = blendWhite(faceColor, 0.28);
+    const innerTop = blendWhite(faceColor, 0.50);
+    const innerBottom = blendWhite(faceColor, 0.50);
+    const innerLeft = blendWhite(faceColor, 0.64);
+    const innerRight = blendWhite(faceColor, 0.64);
+    const core = blendWhite(faceColor, 0.80);
+    return { outerTop, outerBottom, outerLeft, outerRight, innerTop, innerBottom, innerLeft, innerRight, core };
+  }
+  if (shadeKey === "order11_cornerstriped") {
+    const core = blendWhite(faceColor, 0.82);
+    const stage2a = blendWhite(faceColor, 0.70);
+    const stage2b = blendWhite(faceColor, 0.60);
+    const stage3a = blendWhite(faceColor, 0.48);
+    const stage3b = blendWhite(faceColor, 0.38);
+    const stage4a = blendWhite(faceColor, 0.26);
+    const stage4b = blendWhite(faceColor, 0.16);
+    const stage5a = blendWhite(faceColor, 0.06);
+    const stage5b = faceColor;
+    return { core, stage2a, stage2b, stage3a, stage3b, stage4a, stage4b, stage5a, stage5b };
+  }
+  if (shadeKey === "order12_blocks3" || shadeKey === "order12_blocks4" || shadeKey === "order12_blocks6") {
+    const blockA = blendWhite(faceColor, 0.55);
+    const blockB = blendWhite(faceColor, 0.20);
+    return { blockA, blockB };
+  }
+  if (shadeKey === "order12_6x6concentric") {
+    const borderA = blendWhite(faceColor, 0.15);
+    const coreA = blendWhite(faceColor, 0.55);
+    const borderB = blendWhite(faceColor, 0.30);
+    const coreB = blendWhite(faceColor, 0.70);
+    return { borderA, coreA, borderB, coreB };
+  }
+  if (shadeKey === "order12_concentric") {
+    const core = blendWhite(faceColor, 0.82);
+    const ring6 = blendWhite(faceColor, 0.64);
+    const ring8 = blendWhite(faceColor, 0.44);
+    const ring10 = blendWhite(faceColor, 0.22);
+    const border = faceColor;
+    return { core, ring6, ring8, ring10, border };
+  }
+  if (shadeKey === "order12_cornered") {
+    const core = blendWhite(faceColor, 0.82);
+    const band1 = blendWhite(faceColor, 0.66);
+    const corner1 = blendWhite(band1, 0.35);
+    const band2 = blendWhite(faceColor, 0.48);
+    const corner2 = blendWhite(band2, 0.35);
+    const band3 = blendWhite(faceColor, 0.28);
+    const corner3 = blendWhite(band3, 0.35);
+    const band4 = faceColor;
+    const corner4 = blendWhite(band4, 0.35);
+    return { core, band1, corner1, band2, corner2, band3, corner3, band4, corner4 };
+  }
+  if (shadeKey === "order12_doublelayer") {
+    const arm1 = blendWhite(faceColor, 0.10);
+    const side1 = blendWhite(faceColor, 0.22);
+    const corner1 = faceColor;
+    const arm2 = blendWhite(faceColor, 0.45);
+    const side2 = blendWhite(faceColor, 0.58);
+    const corner2 = blendWhite(faceColor, 0.34);
+    const core3 = blendWhite(faceColor, 0.78);
+    return { arm1, side1, corner1, arm2, side2, corner2, core3 };
+  }
+  if (shadeKey === "order12_cyclic") {
+    const outerTop = blendWhite(faceColor, 0.10);
+    const outerRight = blendWhite(faceColor, 0.10);
+    const outerBottom = blendWhite(faceColor, 0.0);
+    const outerLeft = blendWhite(faceColor, 0.0);
+    const innerTop = blendWhite(faceColor, 0.45);
+    const innerRight = blendWhite(faceColor, 0.45);
+    const innerBottom = blendWhite(faceColor, 0.34);
+    const innerLeft = blendWhite(faceColor, 0.34);
+    const center = blendWhite(faceColor, 0.80);
+    return { outerTop, outerRight, outerBottom, outerLeft, innerTop, innerRight, innerBottom, innerLeft, center };
+  }
+  if (shadeKey === "order12_sandwich") {
+    const outerTop = faceColor;
+    const outerBottom = faceColor;
+    const outerLeft = blendWhite(faceColor, 0.28);
+    const outerRight = blendWhite(faceColor, 0.28);
+    const innerTop = blendWhite(faceColor, 0.50);
+    const innerBottom = blendWhite(faceColor, 0.50);
+    const innerLeft = blendWhite(faceColor, 0.64);
+    const innerRight = blendWhite(faceColor, 0.64);
+    const core = blendWhite(faceColor, 0.80);
+    return { outerTop, outerBottom, outerLeft, outerRight, innerTop, innerBottom, innerLeft, innerRight, core };
+  }
+  if (shadeKey === "order12_cornerstriped") {
+    const coretop = blendWhite(faceColor, 0.84);
+    const corebottom = blendWhite(faceColor, 0.77);
+    const stage2a = blendWhite(faceColor, 0.73);
+    const stage2b = blendWhite(faceColor, 0.64);
+    const stage3a = blendWhite(faceColor, 0.53);
+    const stage3b = blendWhite(faceColor, 0.44);
+    const stage4a = blendWhite(faceColor, 0.32);
+    const stage4b = blendWhite(faceColor, 0.22);
+    const stage5a = blendWhite(faceColor, 0.10);
+    const stage5b = faceColor;
+    return { coretop, corebottom, stage2a, stage2b, stage3a, stage3b, stage4a, stage4b, stage5a, stage5b };
+  }
+  if (shadeKey === "order12_striped18rects") {
+    const blockA = blendWhite(faceColor, 0.55);
+    const blockB = blendWhite(faceColor, 0.15);
+    return { blockA, blockB };
+  }
+  if (shadeKey === "order12_striped4x6blocks") {
+    const block0_0 = blendWhite(faceColor, 0.10);
+    const block0_1 = blendWhite(faceColor, 0.55);
+    const block1_0 = blendWhite(faceColor, 0.32);
+    const block1_1 = blendWhite(faceColor, 0.75);
+    const block2_0 = blendWhite(faceColor, 0.20);
+    const block2_1 = blendWhite(faceColor, 0.65);
+    return { block0_0, block0_1, block1_0, block1_1, block2_0, block2_1 };
+  }
+  if (shadeKey === "order12_bordered4x6") {
+    const out = {};
+    const borderBlends = { "0_0": 0.06, "0_1": 0.38, "1_0": 0.20, "1_1": 0.50, "2_0": 0.13, "2_1": 0.44 };
+    for (const key in borderBlends) {
+      out["border" + key] = blendWhite(faceColor, borderBlends[key]);
+      out["core" + key] = blendWhite(faceColor, borderBlends[key] + 0.36);
+    }
+    return out;
+  }
+  if (shadeKey === "order12_twoconcentric") {
+    const fullL = blendWhite(faceColor, 0.0);
+    const ringL = blendWhite(faceColor, 0.28);
+    const coreL = blendWhite(faceColor, 0.56);
+    const fullR = blendWhite(faceColor, 0.14);
+    const ringR = blendWhite(faceColor, 0.42);
+    const coreR = blendWhite(faceColor, 0.70);
+    return { fullL, ringL, coreL, fullR, ringR, coreR };
+  }
+  if (shadeKey === "order12_mixedfour") {
+    const fullTL = blendWhite(faceColor, 0.0);
+    const ringTL = blendWhite(faceColor, 0.30);
+    const coreTL = blendWhite(faceColor, 0.60);
+    const fullTR = blendWhite(faceColor, 0.16);
+    const coreTR = blendWhite(faceColor, 0.46);
+    const fullBL = blendWhite(faceColor, 0.22);
+    const coreBL = blendWhite(faceColor, 0.52);
+    const fullBR = blendWhite(faceColor, 0.08);
+    const ringBR = blendWhite(faceColor, 0.38);
+    const coreBR = blendWhite(faceColor, 0.68);
+    return { fullTL, ringTL, coreTL, fullTR, coreTR, fullBL, coreBL, fullBR, ringBR, coreBR };
+  }
+  if (shadeKey === "order12_cyclicstriped") {
+    const outerTop = blendWhite(faceColor, 0.10);
+    const outerRight = blendWhite(faceColor, 0.10);
+    const outerBottom = blendWhite(faceColor, 0.0);
+    const outerLeft = blendWhite(faceColor, 0.0);
+    const innerTop = blendWhite(faceColor, 0.42);
+    const innerRight = blendWhite(faceColor, 0.42);
+    const innerBottom = blendWhite(faceColor, 0.32);
+    const innerLeft = blendWhite(faceColor, 0.32);
+    const coreTop = blendWhite(faceColor, 0.78);
+    const coreBottom = blendWhite(faceColor, 0.78);
+    return { outerTop, outerRight, outerBottom, outerLeft, innerTop, innerRight, innerBottom, innerLeft, coreTop, coreBottom };
+  }
+  if (shadeKey === "order12_sandwichstriped") {
+    const outerTop = faceColor;
+    const outerBottom = faceColor;
+    const outerLeft = blendWhite(faceColor, 0.28);
+    const outerRight = blendWhite(faceColor, 0.28);
+    const innerTop = blendWhite(faceColor, 0.48);
+    const innerBottom = blendWhite(faceColor, 0.48);
+    const innerLeft = blendWhite(faceColor, 0.60);
+    const innerRight = blendWhite(faceColor, 0.60);
+    const coreTop = blendWhite(faceColor, 0.80);
+    const coreBottom = blendWhite(faceColor, 0.80);
+    return { outerTop, outerBottom, outerLeft, outerRight, innerTop, innerBottom, innerLeft, innerRight, coreTop, coreBottom };
+  }
+  if (shadeKey === "order10_cyclic") {
+    const center = blendWhite(faceColor, 0.55);
+    const horiz = blendWhite(faceColor, 0.20);
+    const vert = faceColor;
+    return { center, horiz, vert };
+  }
+  if (shadeKey === "order10_nestedconcentric") {
+    const border = faceColor;
+    const light = blendWhite(faceColor, 0.55);
+    const dark = blendWhite(faceColor, 0.35);
+    return { border, b00: light, b01: dark, b10: dark, b11: light };
+  }
+  if (shadeKey === "order10_nestedconcentric2") {
+    const border = faceColor;
+    const light = blendWhite(faceColor, 0.60);
+    const medium = blendWhite(faceColor, 0.30);
+    return { border, light, medium };
+  }
+  if (shadeKey === "order10_sandwich") {
+    const core = blendWhite(faceColor, 0.60);
+    const top = faceColor;
+    const bottom = faceColor;
+    const left = blendWhite(faceColor, 0.30);
+    const right = blendWhite(faceColor, 0.30);
+    return { core, top, bottom, left, right };
+  }
+  if (shadeKey === "order10_cyclicstriped") {
+    const horiz = blendWhite(faceColor, 0.20);
+    const vert = faceColor;
+    const stripe1 = blendWhite(faceColor, 0.10);
+    const stripe2 = blendWhite(faceColor, 0.55);
+    const stripe3 = blendWhite(faceColor, 0.10);
+    const band = blendWhite(faceColor, 0.15);
+    return { horiz, vert, stripe1, stripe2, stripe3, band };
+  }
+  if (shadeKey === "order10_sandwichstriped") {
+    const top = faceColor;
+    const bottom = faceColor;
+    const left = blendWhite(faceColor, 0.10);
+    const right = blendWhite(faceColor, 0.10);
+    const stripe1 = blendWhite(faceColor, 0.40);
+    const stripe2 = blendWhite(faceColor, 0.55);
+    const stripe3 = blendWhite(faceColor, 0.40);
+    const band = blendWhite(faceColor, 0.15);
+    return { top, bottom, left, right, stripe1, stripe2, stripe3, band };
+  }
+  if (shadeKey === "order10_directstriped") {
+    const fracs = [0.65, 0.50, 0.35, 0.20, 0.05];
+    const out = {};
+    for (let b=0; b<5; b++) {
+      out["left"+b] = blendWhite(faceColor, fracs[b]);
+      out["right"+b] = blendWhite(faceColor, fracs[b]);
+    }
+    return out;
+  }
+  if (shadeKey === "order10_2_cornerstriped") {
+    const coretop = blendWhite(faceColor, 0.75);
+    const corebottom = blendWhite(faceColor, 0.62);
+    const stripe1 = blendWhite(faceColor, 0.48);
+    const stripe2 = blendWhite(faceColor, 0.36);
+    const band1 = blendWhite(faceColor, 0.24);
+    const band2 = blendWhite(faceColor, 0.12);
+    const rightcol = blendWhite(faceColor, 0.05);
+    const bottomband = faceColor;
+    return { coretop, corebottom, stripe1, stripe2, band1, band2, rightcol, bottomband };
+  }
+  return null;
+}
+
+
+/* ---------- data-driven shading (orders 13+): per-cell regions + tints stored with each type ---------- */
+const DATA_TINTS = {};
+DATA.forEach(o => o.types.forEach(t => {
+  if (t.regions) {
+    DATA_TINTS[t.shade] = t.tints;
+    CUSTOM_REGION_FN[t.shade] = (r,c,n) => t.regions[r][c];
+  }
+}));
+
+function originalCellColor(faceColor, shadeKey, r, c, n){
+  if (CUSTOM_REGION_FN[shadeKey]) {
+    const tag = CUSTOM_REGION_FN[shadeKey](r,c,n);
+    const colors = customRegionColors(shadeKey, faceColor);
+    return colors[tag];
+  }
+  const tier = SHADE_FN[shadeKey](r,c,n);
+  const frac = TIER_BLEND[tier] ?? 0;
+  if (tier === "light") return blendToward(faceColor, LIGHT_PINK, frac);
+  return blendToward(faceColor, [255,255,255], frac);
+}
+
+let sequentialColourSystem='original';
+function cellColor(faceColor,shadeKey,r,c,n){
+ const colour=originalCellColor(faceColor,shadeKey,r,c,n);if(sequentialColourSystem==='original')return colour;
+ const [rr,gg,bb]=hexToRgb(colour),light=(Math.max(rr,gg,bb)+Math.min(rr,gg,bb))/510;
+ const x=(rr*3+gg*5+bb*7)%40;
+ const hue=sequentialColourSystem==='ocean'?195+x:sequentialColourSystem==='peach'?12+x*7:80+x*2;
+ return hslToHex(hue,54,Math.min(88,64+light*23));
+}
+/* ---------- face color palette for any N ---------- */
+const BASE_FACE_COLORS = ['#c9962a','#3aa25a','#c65a54','#5aa8db','#8b5fb3','#d17a35'];
+function hslToHex(h, s, l) {
+  s /= 100; l /= 100;
+  const c = (1 - Math.abs(2*l - 1)) * s;
+  const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+  const m = l - c/2;
+  let r=0,g=0,b=0;
+  if (h < 60) { r=c; g=x; b=0; }
+  else if (h < 120) { r=x; g=c; b=0; }
+  else if (h < 180) { r=0; g=c; b=x; }
+  else if (h < 240) { r=0; g=x; b=c; }
+  else if (h < 300) { r=x; g=0; b=c; }
+  else { r=c; g=0; b=x; }
+  return rgbToHex((r+m)*255, (g+m)*255, (b+m)*255);
+}
+function faceColorFor(i, N){
+  if (N <= 6) return BASE_FACE_COLORS[i];
+  const hue = Math.round((360 * i / N));
+  return hslToHex(hue, 55, 50);
+}
+
+/* ---------- general N-face construction ---------- */
+function buildNFaces(canon, isEqualSum, N, faceMask){
+  const n = canon.length;
+  const m = (n*n)/2;
+  const faces = [];
+  for (let k=0;k<N;k++){
+    const face = canon.map((row,ri) => row.map((c,ci) => {
+      if (faceMask) {
+        // Each position receives all N values of its own block across N faces.
+        // Balanced masks keep every full row, column, diagonal and magic
+        // rectangle row/column sum constant across all generated faces.
+        return N*(c-1)+1+(faceMask[ri][ci] ? k : N-1-k);
+      }
+      if (isEqualSum) {
+        if (c <= m) return m*k + c;
+        const r = c - m;
+        return m*(2*N - k - 1) + r;
+      } else {
+        return N*(c-1) + 1 + k;
+      }
+    }));
+    faces.push(face);
+  }
+  return faces;
+}
+
+function magicSum(face){ return face[0].reduce((a,b)=>a+b,0); }
+
+/* ---------- rendering ---------- */
+function cellPx(n){ return n<=5 ? 40 : (n==6 ? 34 : 28); }
+function fontPx(n){ return n<=5 ? 15 : (n==6 ? 13 : 11); }
+
+const BORDER_GROUP_FN = {
+  order6_border_nested: (r,c,n) => {
+    if (r===0 || r===n-1) return "border";
+    if (r>=2 && r<=n-3 && c>=1 && c<=n-2) return "nested";
+    return "middle";
+  },
+  order8_hybrid: (r,c,n) => {
+    const quad = r<4 ? (c<4?"TL":"TR") : (c<4?"BL":"BR");
+    if (quad==="TL") return (r<2)?"TL-top":"TL-bottom";
+    if (quad==="BR") return (r<6)?"BR-top":"BR-bottom";
+    if (quad==="TR") return (c===4||c===5)?"TR-left":"TR-right";
+    return (c===0||c===1)?"BL-left":"BL-right";
+  },
+  order10_nestedconcentric2: (r,c,n) => {
+    if (r<1||r>8||c<1||c>8) return "border";
+    const quad = r<5 ? (c<5?"TL":"TR") : (c<5?"BL":"BR");
+    if (quad==="TL") return (r<3)?"TL-top":"TL-bottom";
+    if (quad==="BR") return (r<7)?"BR-top":"BR-bottom";
+    if (quad==="TR") return (c===5||c===6)?"TR-left":"TR-right";
+    return (c===1||c===2)?"BL-left":"BL-right";
+  },
+};
+
+/* ---------- square rendering: cell colours + structural lines (shared by screen and PNG) ---------- */
+function gridInfo(face, n, shadeKey, faceColor){
+  const regionFn = CUSTOM_REGION_FN[shadeKey];
+  const borderFn = BORDER_GROUP_FN[shadeKey] || regionFn;
+  const cells = [];
+  for (let r=0;r<n;r++){ const row=[]; for (let c=0;c<n;c++){
+    const color = cellColor(faceColor, shadeKey, r, c, n);
+    const b = {t:false,l:false,bt:false,rt:false};
+    if (borderFn) {
+      const me = borderFn(r,c,n);
+      b.t = r>0 && borderFn(r-1,c,n)!==me; b.l = c>0 && borderFn(r,c-1,n)!==me;
+      b.b = r<n-1 && borderFn(r+1,c,n)!==me; b.r = c<n-1 && borderFn(r,c+1,n)!==me;
+    }
+    row.push({v:face[r][c], color, b});
+  } cells.push(row); }
+  return cells;
+}
+function hexRgb(h){ h=h.replace('#',''); return [0,2,4].map(i=>parseInt(h.slice(i,i+2),16)); }
+function textOn(color){ const [r,g,b]=hexRgb(color); return (0.2126*r+0.7152*g+0.0722*b) < 120 ? '#ffffff' : '#20344a'; }
+const SQ_REG = [];
+function squareMarginSums(face){
+ const n=face.length,rows=face.map(row=>row.reduce((a,b)=>a+b,0)),cols=face[0].map((_,c)=>face.reduce((a,row)=>a+row[c],0));
+ const down=face[0].map((_,c)=>face.reduce((a,row,r)=>a+row[(c+r)%n],0));
+ const left=face.map((_,r)=>face.reduce((a,row,k)=>a+face[(r+k)%n][(n-k)%n],0));
+ return {rows,cols,down,left,pan:down.concat(left).every(v=>v===rows[0]),d1:face.reduce((a,row,r)=>a+row[r],0),d2:face.reduce((a,row,r)=>a+row[n-1-r],0)};
+}
+function renderGrid(face, n, shadeKey, faceColor, label){
+  const px = cellPx(n), fs = fontPx(n), cells = gridInfo(face, n, shadeKey, faceColor);
+  const sums=squareMarginSums(face),blank='<th class="sum-blank"></th>',badge=(v,label,green=false)=>`<th class="sum-badge ${green?'sum-green':''}"><span title="${label}" aria-label="${label}: ${v}">${v}</span></th>`;
+  const k = SQ_REG.length; SQ_REG.push({face, n, shadeKey, faceColor, label: label || ''});
+  let html = `<div class="sq-wrap"><table class="square" style="--gap:${n<=6?4:3}px">`;
+  html+='<tr>'+(sums.pan?blank:'')+sums.down.map((v,c)=>sums.pan&&c>0?badge(v,`Broken diagonal from top column ${c+1}`,true):blank).join('')+badge(sums.d2,'Other principal diagonal')+'</tr>';
+  for (let r=0;r<n;r++){
+    html += '<tr>'+(sums.pan?(r===n-1?blank:badge(sums.left[r],`Broken diagonal from left row ${r+1}`,true)):'');
+    for (let c=0;c<n;c++){
+      const {v, color, b} = cells[r][c];
+      const hi = blendWhite(color, 0.32), sh = blendToward(color, [0,0,0], 0.10);
+      // classic look keeps the original flat-gradient cell with its structural borders
+      let classic = '';
+      const bw = '1.5px', bc = '#20344a';
+      if (r===0||b.t) classic += `border-top:${bw} solid ${bc};`; if (c===0||b.l) classic += `border-left:${bw} solid ${bc};`;
+      if (r===n-1||b.b) classic += `border-bottom:${bw} solid ${bc};`; if (c===n-1||b.r) classic += `border-right:${bw} solid ${bc};`;
+      const cls = [b.t?'bt':'', b.b?'bb':'', b.l?'bl':'', b.r?'br':''].join(' ').trim();
+      html += `<td class="${cls}" style="width:${px}px;height:${px}px;font-size:${fs}px;--c:${color};--hi:${blendWhite(color,0.55)};--sh:${blendToward(color,[0,0,0],0.14)};--tc:${textOn(color)};background:linear-gradient(145deg,${hi} 0%,${color} 58%,${sh} 100%);${classic}"><span class="tl"></span><span class="nv">${v}</span></td>`;
+    }
+    html += badge(sums.rows[r],`Row ${r+1}`)+'</tr>';
+  }
+  html+='<tr>'+(sums.pan?`<th class="sum-order">${n}×${n}</th>`:'')+sums.cols.map((v,c)=>badge(v,`Column ${c+1}`)).join('')+badge(sums.d1,'Main diagonal')+'</tr>';
+  html += `</table><div><button type="button" class="png-btn" data-k="${k}">⬇ PNG</button></div></div>`;
+  return html;
+}
+/* ---------- PNG of one square (draws the tiles exactly like the screen) ---------- */
+function squarePNG(k){
+  const S = SQ_REG[k]; if (!S) return;
+  const glass = document.body.classList.contains('tiles-glass');
+  const n = S.n, cells = gridInfo(S.face, n, S.shadeKey, S.faceColor);
+  const cs = n<=5 ? 78 : n<=8 ? 64 : 54, gap = glass ? 7 : 0, pad = cs+30, head = S.label ? 100 : 60;
+  const full = n*cs + (n-1)*gap, W = full + 2*pad, H = full + 2*pad + head + 48;
+  const cv = document.createElement('canvas'); cv.width = W*2; cv.height = H*2;
+  const g = cv.getContext('2d'); g.scale(2,2);
+  g.fillStyle = '#ffffff'; g.fillRect(0,0,W,H);
+  if (S.label){ g.fillStyle='#1a4971'; g.font='bold 20px Segoe UI, Arial, sans-serif'; g.textAlign='center'; g.fillText(S.label, W/2, 36);g.font='bold 16px Gill Sans, Calibri, sans-serif';g.fillText('Created by Inder J. Taneja',W/2,64); }
+  const x0 = pad, y0 = head+cs;
+  const RR = (x,y,w,h,r)=>{ g.beginPath(); g.moveTo(x+r,y); g.arcTo(x+w,y,x+w,y+h,r); g.arcTo(x+w,y+h,x,y+h,r); g.arcTo(x,y+h,x,y,r); g.arcTo(x,y,x+w,y,r); g.closePath(); };
+  const fsz = Math.round(cs * (String(n*n*6).length>3 ? .30 : .36));
+  for (let r=0;r<n;r++) for (let c=0;c<n;c++){
+    const {v,color} = cells[r][c], x = x0 + c*(cs+gap), y = y0 + r*(cs+gap);
+    if (glass){
+      g.save(); g.shadowColor='rgba(40,30,10,.35)'; g.shadowBlur=5; g.shadowOffsetY=2;
+      const gr = g.createLinearGradient(x,y,x+cs,y+cs); gr.addColorStop(0,blendWhite(color,0.55)); gr.addColorStop(.52,color); gr.addColorStop(1,blendToward(color,[0,0,0],0.14));
+      RR(x,y,cs,cs,cs*.1); g.fillStyle=gr; g.fill(); g.restore();
+      const hl = g.createLinearGradient(0,y,0,y+cs*.5); hl.addColorStop(0,'rgba(255,255,255,.62)'); hl.addColorStop(1,'rgba(255,255,255,0)');
+      RR(x+cs*.07,y+cs*.06,cs*.86,cs*.42,cs*.18); g.fillStyle=hl; g.fill();
+      RR(x,y,cs,cs,cs*.1); g.strokeStyle='rgba(255,255,255,.8)'; g.lineWidth=1.2; g.stroke();
+    } else {
+      const gr = g.createLinearGradient(x,y,x+cs,y+cs); gr.addColorStop(0,blendWhite(color,0.32)); gr.addColorStop(.58,color); gr.addColorStop(1,blendToward(color,[0,0,0],0.10));
+      g.fillStyle=gr; g.fillRect(x,y,cs,cs); g.strokeStyle='rgba(30,60,100,.25)'; g.lineWidth=1; g.strokeRect(x+.5,y+.5,cs-1,cs-1);
+    }
+    g.fillStyle = glass ? textOn(color) : '#20344a'; g.font = `bold ${fsz}px Georgia, serif`; g.textAlign='center'; g.textBaseline='middle';
+    g.fillText(String(v), x+cs/2, y+cs/2+1);
+  }
+  // structural lines + outer frame
+  g.strokeStyle='#20344a'; g.lineWidth=2.5; g.lineCap='square'; const h = gap/2;
+  for (let r=0;r<n;r++) for (let c=0;c<n;c++){
+    const {b} = cells[r][c], x = x0 + c*(cs+gap), y = y0 + r*(cs+gap);
+    g.beginPath();
+    if (b.t){ g.moveTo(x-h,y-h); g.lineTo(x+cs+h,y-h); }
+    if (b.l){ g.moveTo(x-h,y-h); g.lineTo(x-h,y+cs+h); }
+    g.stroke();
+  }
+  g.lineWidth=3; g.strokeRect(x0-h-1, y0-h-1, full+gap+2, full+gap+2);
+  const sums=squareMarginSums(S.face),step=cs+gap;
+  const badge=(value,x,y,green=false)=>{RR(x-cs*.46,y-18,cs*.92,36,15);g.fillStyle=green?'#e4f3e6':'#fff2d2';g.fill();g.fillStyle=green?'#16764d':'#8b6008';g.textAlign='center';g.textBaseline='middle';g.font=`bold ${Math.min(21,cs*.8/(String(value).length*.64))}px Georgia,serif`;g.fillText(String(value),x,y);};
+  for(let i=0;i<n;i++){
+   badge(sums.rows[i],x0+full+cs*.65,y0+i*step+cs/2);
+   badge(sums.cols[i],x0+i*step+cs/2,y0+full+cs*.65);
+   if(sums.pan&&i>0)badge(sums.down[i],x0+i*step+cs/2,y0-cs*.65,true);
+   if(sums.pan&&i<n-1)badge(sums.left[i],x0-cs*.65,y0+i*step+cs/2,true);
+  }
+  badge(sums.d2,x0+full+cs*.65,y0-cs*.65);
+  badge(sums.d1,x0+full+cs*.65,y0+full+cs*.65);
+  const sum = S.face[0].reduce((a,b)=>a+b,0);
+  g.fillStyle='#5c6b7a'; g.font='italic 13px Segoe UI, Arial, sans-serif'; g.textAlign='center'; g.textBaseline='alphabetic';
+  g.fillText(`Order ${n}×${n} · magic sum ${sum} · Inder J. Taneja`, W/2, H-12);
+  const a = document.createElement('a'); a.href = cv.toDataURL('image/png');
+  a.download = `magic-square-${(S.label||'design').replace(/[^a-z0-9]+/gi,'-')}-order-${n}x${n}-sum-${sum}.png`; document.body.appendChild(a); a.click(); a.remove();
+}
+document.addEventListener('click', e => { const bt = e.target.closest('.png-btn'); if (bt) squarePNG(Number(bt.dataset.k)); });
+/* ---------- tile style + page background (background only) ---------- */
+(function(){
+  const get = (k,d)=>{ try { return localStorage.getItem(k) || d; } catch(e){ return d; } };
+  const put = (k,v)=>{ try { localStorage.setItem(k,v); } catch(e){} };
+  function apply(){
+    const t = get('mm-tiles','glass'), bg = get('mm-bg','blue');
+    document.body.classList.toggle('tiles-glass', t==='glass');
+    document.body.classList.remove('bg-blue','bg-yellow','bg-mint','bg-peach'); document.body.classList.add('bg-'+bg);
+    document.querySelectorAll('#styleBar [data-tiles]').forEach(b=>b.classList.toggle('on', b.dataset.tiles===t));
+    document.querySelectorAll('#styleBar [data-bg]').forEach(b=>b.classList.toggle('on', b.dataset.bg===bg));
+  }
+  document.addEventListener('click', e => {
+    const b = e.target.closest('#styleBar button'); if (!b) return;
+    if (b.dataset.tiles) put('mm-tiles', b.dataset.tiles); if (b.dataset.bg) put('mm-bg', b.dataset.bg); apply();
+  });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', apply); else apply();
+})();
+
+function generate(){
+  const order = DATA[currentOrder];
+  const type = order.types[currentType];
+  const n = type.n;
+  const rp = document.getElementById('resultsPanel'); if (rp) rp.className = 'panel results-panel ord-' + n;
+
+  let N = parseInt(document.getElementById('nInput').value, 10);
+  if (!N || N < 0) N = 0;
+  if (N > 60) N = 60;
+  document.getElementById('nInput').value = N;
+
+  document.getElementById('descArea').textContent = type.desc;
+  document.getElementById('infoBar').innerHTML =
+    `<span><b>Order</b> ${n}×${n}</span>` +
+    `<span><b>Base numbers</b> 1–${n*n}</span>` +
+    (N ? `<span><b>Squares requested</b> ${N}</span><span><b>Numbers needed</b> 1–${n*n*N}</span>` : `<span><b>Magic sum</b> ${n*(n*n+1)/2}</span>`);
+
+  const canonSum = n*(n*n+1)/2;
+  document.getElementById('baseLabel').textContent =
+    `Base Magic Square — Numbers 1 to ${n*n} · Σ ${canonSum}`;
+  document.getElementById('baseArea').innerHTML = renderGrid(type.canon, n, type.shade, BASE_FACE_COLORS[0], `${type.name} — base square`);
+
+  const faces = buildNFaces(type.canon, type.is_equal_sum, N, type.face_mask);
+  currentResult = {n, type, faces};
+  const facesTitleEl = document.getElementById('facesTitle');
+  facesTitleEl.textContent = N ? `Generated ${N} Square${N>1?'s':''} — ${type.ord_word}-Type: ${type.name} (Order ${n}×${n}) — 1 to ${n*n*N}` : '';
+  facesTitleEl.style.display = N ? '' : 'none';
+  document.getElementById('nHint').textContent = N ? `Showing ${N} square${N>1?'s':''} — numbers 1–${n*n*N}. Set 0 to hide them.` : '0 = base square only. Type a number and press Generate.';
+
+  const facesEl = document.getElementById('facesArea');
+  facesEl.style.gridTemplateColumns = n >= 11 ? 'repeat(2,max-content)' : 'repeat(3,max-content)';
+
+  let html = '';
+  faces.forEach((f,i) => {
+    const color = faceColorFor(i, N);
+    html += `<div class="face-col"><div class="face-label">Square ${i+1} · Σ ${magicSum(f)}</div>${renderGrid(f, n, type.shade, color, `${type.name} — Square ${i+1}`)}</div>`;
+  });
+  facesEl.innerHTML = html;
+
+  renderDetails(type.canon, faces, type.components);
+}
+
+function componentSums(face, r0, r1, c0, c1){
+  const rowsums = [];
+  for (let r=r0; r<r1; r++){
+    let s=0; for (let c=c0;c<c1;c++) s+=face[r][c];
+    rowsums.push(s);
+  }
+  const colsums = [];
+  for (let c=c0; c<c1; c++){
+    let s=0; for (let r=r0;r<r1;r++) s+=face[r][c];
+    colsums.push(s);
+  }
+  let diag1 = null, diag2 = null;
+  if ((r1-r0) === (c1-c0)){
+    const sz = r1-r0;
+    diag1 = 0; diag2 = 0;
+    for (let i=0;i<sz;i++){
+      diag1 += face[r0+i][c0+i];
+      diag2 += face[r0+i][c1-1-i];
+    }
+  }
+  return { rowsums, colsums, diag1, diag2 };
+}
+
+function allEqual(arr){ return arr.every(x => x === arr[0]); }
+
+function renderOneTable(face, components, label){
+  const n = face.length;
+  const fullComponents = [["Complete " + n + "×" + n, 0, n, 0, n], ...(components || [])];
+  let html = `<div class="details-face-title">${label}</div>`;
+  html += `<table class="details"><tr><th>Component</th><th>Shape</th><th>Row sums</th><th>Column sums</th><th>Diagonals</th><th>Verified</th></tr>`;
+  fullComponents.forEach(([name, r0, r1, c0, c1]) => {
+    const { rowsums, colsums, diag1, diag2 } = componentSums(face, r0, r1, c0, c1);
+    const rowOk = allEqual(rowsums);
+    const colOk = allEqual(colsums);
+    const isSquare = diag1 !== null;
+    const diagOk = isSquare && diag1 === diag2 && diag1 === rowsums[0];
+    const shape = `${r1-r0}×${c1-c0}`;
+    const diagText = isSquare ? `${diag1} / ${diag2}` : '—';
+    let verifiedParts = [];
+    if (rowOk) verifiedParts.push('rows');
+    if (colOk) verifiedParts.push('cols');
+    if (diagOk) verifiedParts.push('diagonals');
+    let verified = verifiedParts.length
+      ? `<td class="check">✓ ${verifiedParts.join(', ')}</td>`
+      : '<td class="cross">—</td>';
+    html += `<tr><td>${name}</td><td>${shape}</td><td>${rowsums.join(', ')}</td><td>${colsums.join(', ')}</td><td>${diagText}</td>${verified}</tr>`;
+  });
+  html += '</table>';
+  return html;
+}
+
+function renderDetails(canon, faces, components){
+  const panel = document.getElementById('detailsPanel');
+  panel.style.display = '';
+  let html = renderOneTable(canon, components, 'Base Magic Square (1 to n²)');
+  faces.forEach((face, fi) => {
+    html += renderOneTable(face, components, `Face ${fi+1}`);
+  });
+  document.getElementById('detailsArea').innerHTML = html;
+}
+
+function buildTypeStrip(){
+ const strip=document.getElementById('typeStrip');strip.innerHTML='';
+ const types=DATA[currentOrder].types,n=types[0].n;
+ const titles=n>=8?['Type 1','Type 2: Striped']:['Types'];
+ for(const title of titles){
+  const group=document.createElement('section');group.className='construction-group';group.setAttribute('aria-label',title);
+  const heading=document.createElement('h3');heading.textContent=title;group.appendChild(heading);
+  const row=document.createElement('div');row.className='controls';group.appendChild(row);strip.appendChild(group);
+  types.forEach((t,i)=>{
+   if(n>=8&&(/strip/i.test(t.name)?'Type 2: Striped':'Type 1')!==title)return;
+   const btn=document.createElement('button');btn.className='gold';btn.textContent=t.name;btn.dataset.i=i;
+   btn.style.setProperty('--button-high',['#e8f4ff','#fff3d9','#e4f6e9','#f2e9ff','#ffe9e0','#ddf5f2','#ffe8f2','#f0f2d8'][i%8]);
+   btn.style.setProperty('--button-low',['#a8cce8','#e8c47e','#a8d2b3','#c7afe0','#e7b09a','#9fcfc8','#dfacc5','#c9d095'][i%8]);
+   btn.setAttribute('aria-pressed',i===currentType?'true':'false');btn.onclick=()=>{currentType=i;refreshActive();generate();};row.appendChild(btn);
+  });
+ }
+}
+
+function refreshActive(){
+  document.querySelectorAll('#orderStrip button').forEach(b => b.classList.toggle('active', Number(b.dataset.i)===currentOrder));
+  document.querySelectorAll('#typeStrip button').forEach(b => (b.classList.toggle('active', Number(b.dataset.i)===currentType),b.setAttribute('aria-pressed',Number(b.dataset.i)===currentType?'true':'false')));
+}
+
+function selectOrder(i){
+  currentOrder = i; currentType = 0;
+  buildTypeStrip(); refreshActive(); generate();
+}
+
+const orderStrip = document.getElementById('orderStrip');
+DATA.forEach((order,i) => {
+  const btn = document.createElement('button');
+  btn.textContent = order.title;
+  btn.dataset.i = i;
+  btn.onclick = () => selectOrder(i);
+  orderStrip.appendChild(btn);
+});
+
+function saveDownload(bytes, mime, filename){
+  const url = URL.createObjectURL(new Blob([bytes], {type:mime}));
+  const link = document.createElement('a');
+  link.href = url; link.download = filename;
+  document.body.appendChild(link); link.click(); link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
+function exportSets(){
+  if (!currentResult) return null;
+  const {n, type, faces} = currentResult;
+  const all = document.querySelector('input[name="downloadScope"]:checked').value === 'all';
+  const sets = all
+    ? DATA[currentOrder].types.map(t => ({type:t, faces:buildNFaces(t.canon, t.is_equal_sum, faces.length, t.face_mask)}))
+    : [{type, faces}];
+  return {n, all, sets, count:faces.length};
+}
+
+function downloadTxt(){
+  const result = exportSets();
+  if (!result) return;
+  const {n, all, sets, count} = result;
+  const width = String(n*n*count).length;
+  const lines = [
+    `Multi-Magic Square Generator — Sequential Entries`,
+    `Created by: Inder J. Taneja`,
+    `Order: ${n}×${n}  Types: ${all ? 'All' : sets[0].type.name}  Squares per type: ${count}`,
+    ''
+  ];
+  sets.forEach(({type, faces}) => {
+    lines.push(`===== ${type.name} =====`, `Base Magic Square — Σ ${magicSum(type.canon)}`);
+    for (const row of type.canon) lines.push(row.map(v => String(v).padStart(width)).join('  '));
+    lines.push('');
+    faces.forEach((face, i) => {
+      lines.push(`Square ${i+1} — Σ ${magicSum(face)}`);
+      for (const row of face) lines.push(row.map(v => String(v).padStart(width)).join('  '));
+      lines.push('');
+    });
+  });
+  const suffix = all ? 'all_types' : sets[0].type.name.replace(/[^a-z0-9]+/gi,'_');
+  saveDownload('\uFEFF' + lines.join('\n'), 'text/plain;charset=utf-8', `magic_squares_order_${n}_${count}_${suffix}.txt`);
+}
+
+// ExcelJS writes the workbook package and styles in Excel's native XLSX format.
+async function downloadExcel(){
+  const result = exportSets();
+  if (!result) return;
+  const status = document.getElementById('downloadStatus');
+  const button = document.getElementById('downloadExcelBtn');
+  if (!window.ExcelJS){
+    status.textContent = 'Excel export is unavailable because the spreadsheet library did not load. Please reconnect and reload this page.';
+    return;
+  }
+  const {n, all, sets, count} = result;
+  button.disabled = true;
+  status.textContent = 'Preparing Excel file…';
+  try {
+    const workbook = new window.ExcelJS.Workbook();
+    workbook.creator = 'Inder J. Taneja';
+    workbook.title = `Magic Squares — Order ${n}`;
+    function addGrid(sheet, grid, type, faceNumber, startRow){
+      const label = `${type.name} — ${faceNumber ? `Square ${faceNumber}` : 'Base Magic Square'} — Σ ${magicSum(grid)}`;
+      sheet.mergeCells(startRow,1,startRow,n);
+      const title = sheet.getCell(startRow,1);
+      title.value = label;
+      title.font = {bold:true, color:{argb:'FF174D65'}, size:12};
+      sheet.getRow(startRow).height = 22;
+      const faceColor = faceNumber ? faceColorFor(faceNumber-1,count) : BASE_FACE_COLORS[0];
+      for (let r=0;r<n;r++){
+        const row = sheet.getRow(startRow+2+r);
+        row.height = 20;
+        for (let c=0;c<n;c++){
+          const cell = row.getCell(c+1);
+          cell.value = grid[r][c];
+          cell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF'+cellColor(faceColor,type.shade,r,c,n).slice(1).toUpperCase()}};
+          cell.font = {color:{argb:'FF20344A'}, size:10, bold:true};
+          cell.alignment = {horizontal:'center', vertical:'middle'};
+          const edge = {style:'thin',color:{argb:'FF8193A4'}};
+          cell.border = {top:edge,bottom:edge,left:edge,right:edge};
+        }
+      }
+    }
+    function makeSheet(name){
+      const sheet = workbook.addWorksheet(name);
+      for (let c=1;c<=n;c++) sheet.getColumn(c).width = 12;
+      return sheet;
+    }
+    function addMathematicalDetails(sheet, type, faces, startRow){
+      sheet.mergeCells(startRow,1,startRow,Math.max(n,6));
+      const heading = sheet.getCell(startRow,1);
+      heading.value = 'Mathematical Details — Magic Rectangles Per Square';
+      heading.font = {bold:true,size:12,color:{argb:'FF174D65'}};
+      sheet.getRow(startRow).height = 23;
+      let nextRow = startRow+2;
+      [type.canon,...faces].forEach((grid,gridIndex) => {
+        sheet.mergeCells(nextRow,1,nextRow,Math.max(n,6));
+        const title = sheet.getCell(nextRow,1);
+        title.value = `${gridIndex ? `Square ${gridIndex}` : 'Base Magic Square'} — Σ ${magicSum(grid)}`;
+        title.font = {bold:true,color:{argb:'FF246378'}};
+        nextRow++;
+        const headers = ['Component','Shape','Row sums','Column sums','Diagonals','Verified'];
+        headers.forEach((value,i) => {
+          const cell = sheet.getCell(nextRow,i+1);
+          cell.value = value;
+          cell.font = {bold:true,color:{argb:'FFFFFFFF'}};
+          cell.fill = {type:'pattern',pattern:'solid',fgColor:{argb:'FF246378'}};
+          cell.alignment = {wrapText:true,vertical:'middle'};
+        });
+        sheet.getRow(nextRow).height = 29;
+        nextRow++;
+        const components = [[`Complete ${n}×${n}`,0,n,0,n],...(type.components || [])];
+        components.forEach(([name,r0,r1,c0,c1]) => {
+          const {rowsums,colsums,diag1,diag2} = componentSums(grid,r0,r1,c0,c1);
+          const diagOk = diag1 !== null && diag1 === diag2 && diag1 === rowsums[0];
+          const verified = [allEqual(rowsums) ? 'rows' : '',allEqual(colsums) ? 'cols' : '',diagOk ? 'diagonals' : ''].filter(Boolean).join(', ') || '—';
+          const values = [name,`${r1-r0}×${c1-c0}`,rowsums.join(', '),colsums.join(', '),diag1 === null ? '—' : `${diag1} / ${diag2}`,verified];
+          values.forEach((value,i) => {
+            const cell = sheet.getCell(nextRow,i+1);
+            cell.value = value;
+            cell.alignment = {wrapText:true,vertical:'middle'};
+            cell.border = {bottom:{style:'hair',color:{argb:'FFD7E4EA'}}};
+          });
+          sheet.getRow(nextRow).height = Math.min(120,Math.max(29,Math.ceil(Math.max(...values.map(v=>String(v).length))/15)*13));
+          nextRow++;
+        });
+        nextRow += 2;
+      });
+    }
+    sets.forEach(({type,faces},i) => {
+      const name = `${i+1} ${type.name}`.replace(/[\\/*?:\[\]]/g,'-').slice(0,31);
+      const sheet = makeSheet(name);
+      addGrid(sheet,type.canon,type,0,1);
+      faces.forEach((grid,j) => addGrid(sheet,grid,type,j+1,1+(j+1)*(n+5)));
+      addMathematicalDetails(sheet,type,faces,1+(faces.length+1)*(n+5));
+    });
+    const buffer = await workbook.xlsx.writeBuffer();
+    const suffix = all ? 'all_types' : sets[0].type.name.replace(/[^a-z0-9]+/gi,'_');
+    saveDownload(buffer, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', `magic_squares_order_${n}_${count}_${suffix}.xlsx`);
+    status.textContent = '';
+  } catch (error){
+    console.error('Excel export failed:', error);
+    status.textContent = 'Excel export failed. Please try again.';
+  } finally {
+    button.disabled = false;
+  }
+}
+
+document.getElementById('downloadTxtBtn').onclick = downloadTxt;
+document.getElementById('downloadExcelBtn').onclick = downloadExcel;
+document.getElementById('genBtn').onclick = generate;
+
+/* ---------- Rearrangements: other arrangements of the same numbers 1..n^2 ---------- */
+function rearrVerifier(type){
+  const base = type.canon, n = base.length;
+  const sums = (G,r0,r1,c0,c1) => componentSums(G,r0,r1,c0,c1);
+  const comps = [["Complete",0,n,0,n], ...(type.components||[])];
+  const eq = a => a.every(x => x === a[0]);
+  const info = comps.map(([nm,r0,r1,c0,c1]) => {
+    const s = sums(base,r0,r1,c0,c1);
+    return {r0,r1,c0,c1, rowsEq: eq(s.rowsums), colsEq: eq(s.colsums), diag: s.diag1 !== null && s.diag1 === s.diag2 && s.diag1 === s.rowsums[0]};
+  });
+  const isPan = (G) => {
+    const T = G[0].reduce((a,b)=>a+b,0);
+    for (let k=0;k<n;k++){ let a=0,b=0; for (let i=0;i<n;i++){ a+=G[(i+k)%n][i]; b+=G[(i+k)%n][n-1-i]; } if (a!==T||b!==T) return false; }
+    return true;
+  };
+  const pan = isPan(base);
+  const ok = (G) => {
+    for (const q of info){
+      const s = sums(G,q.r0,q.r1,q.c0,q.c1);
+      if ((q.rowsEq && !eq(s.rowsums)) || (q.colsEq && !eq(s.colsums))) return false;
+      if (q.diag && !(s.diag1 === s.diag2 && s.diag1 === s.rowsums[0])) return false;
+    }
+    return !pan || isPan(G);
+  };
+  return {ok, base, n, pan};
+}
+function rng(seed){ let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function rearrMoves(n, pan){
+  const mv = [];
+  const copy = G => G.map(r => r.slice());
+  for (let i=0;i<n;i++) for (let j=i+1;j<n;j++){
+    mv.push(G => { const H = copy(G); [H[i],H[j]] = [H[j],H[i]]; return H; });
+    mv.push(G => { const H = copy(G); H.forEach(r => { const t=r[i]; r[i]=r[j]; r[j]=t; }); return H; });
+    mv.push(G => { const H = copy(G); [H[i],H[j]] = [H[j],H[i]]; H.forEach(r => { const t=r[i]; r[i]=r[j]; r[j]=t; }); return H; });
+  }
+  for (let h=2; h<=n/2; h++){
+    if (n % h) continue;
+    const nb = n/h;
+    for (let a=0;a<nb;a++) for (let b=a+1;b<nb;b++){
+      const sw = (G, rows, cols) => {
+        const P = Array.from({length:n},(_,i)=>i);
+        for (let t=0;t<h;t++){ P[a*h+t] = b*h+t; P[b*h+t] = a*h+t; }
+        return G.map((_,r) => G[rows ? P[r] : r].map((_,c) => G[rows ? P[r] : r][cols ? P[c] : c]));
+      };
+      mv.push(G => sw(G,true,false)); mv.push(G => sw(G,false,true)); mv.push(G => sw(G,true,true));
+    }
+  }
+  mv.push(G => G.slice().reverse().map(r => r.slice()));
+  mv.push(G => G.map(r => r.slice().reverse()));
+  mv.push(G => G[0].map((_,c) => G.map(r => r[c])));
+  mv.push(G => G[0].map((_,c) => G.map(r => r[c]).reverse()));
+  mv.push(G => G.map(r => r.map(v => n*n+1-v)));
+  if (pan) for (let s=1;s<n;s++){
+    mv.push(G => G.map((_,r) => G[(r+s)%n].slice()));
+    mv.push(G => G.map(r => r.map((_,c) => r[(c+s)%n])));
+  }
+  return mv;
+}
+function rearrangements(type, K, seed){
+  const V = rearrVerifier(type);
+  if (!V.ok(V.base)) return {list:[], note:'base failed verification'};
+  const moves = rearrMoves(V.n, V.pan), rand = rng(seed);
+  const key = G => G.map(r => r.join(',')).join(';');
+  const seen = new Set([key(V.base)]), list = [];
+  let cur = V.base, attempts = 0;
+  const maxAttempts = 6000 + 1500*K;
+  const trade = (G) => {
+    const n = G.length, tr = rand() < 0.5;
+    const A = tr ? G[0].map((_,c) => G.map(r => r[c])) : G.map(r => r.slice());
+    const j = Math.floor(rand()*n); let k = Math.floor(rand()*n); if (k === j) return null;
+    const byD = new Map();
+    for (let i=0;i<n;i++){ const d = A[i][j]-A[i][k]; if (!byD.has(-d)) byD.set(-d, []); byD.get(-d).push(i); }
+    const opts = [];
+    for (let i=0;i<n;i++){ const d = A[i][j]-A[i][k]; const L = byD.get(d); if (L) L.forEach(l => { if (l > i) opts.push([i,l]); }); }
+    if (!opts.length) return null;
+    const [i,l] = opts[Math.floor(rand()*opts.length)];
+    [A[i][j],A[i][k]] = [A[i][k],A[i][j]]; [A[l][j],A[l][k]] = [A[l][k],A[l][j]];
+    return tr ? A[0].map((_,c) => A.map(r => r[c])) : A;
+  };
+  while (list.length < K && attempts < maxAttempts){
+    attempts++;
+    let cand = rand() < 0.4 ? trade(cur) : moves[Math.floor(rand()*moves.length)](cur);
+    if (!cand) continue;
+    if (rand() < 0.35) cand = moves[Math.floor(rand()*moves.length)](cand);
+    const k = key(cand);
+    if (!V.ok(cand)) continue;
+    cur = cand;
+    if (!seen.has(k)){ seen.add(k); list.push(cand); }
+    if (attempts % 400 === 0) cur = V.base;
+  }
+  return {list};
+}
+let rearrSeed = 12345;
+function showRearrangements(newSet){
+  const type = DATA[currentOrder].types[currentType], n = type.n;
+  let K = parseInt(document.getElementById('rInput').value, 10);
+  if (!K || K < 1) K = 1;
+  if (K > 24) K = 24;
+  document.getElementById('rInput').value = K;
+  if (newSet) rearrSeed = (Date.now() ^ (rearrSeed * 2654435761)) >>> 0;
+  const {list} = rearrangements(type, K, rearrSeed);
+  const area = document.getElementById('rearrArea');
+  const T = n*(n*n+1)/2;
+  let html = '';
+  list.forEach((G,i) => {
+    html += `<div class="face-col"><div class="face-label">Alternative ${i+1} · Σ ${T}</div>${renderGrid(G, n, type.shade, faceColorFor(i, Math.max(list.length,1)), `${type.name} — Alternative ${i+1}`)}<div class="rearr-ok">✓ same numbers 1–${n*n}, all properties verified</div></div>`;
+  });
+  area.innerHTML = html;
+  area.style.gridTemplateColumns = n >= 11 ? 'repeat(2,max-content)' : 'repeat(3,max-content)';
+  document.getElementById('rHint').textContent = list.length < K
+    ? `Only ${list.length} different arrangement${list.length===1?'':'s'} found for this type.`
+    : `${list.length} different arrangement${list.length===1?'':'s'} of 1–${n*n}.`;
+}
+document.getElementById('rearrToggle').onclick = () => {
+  const row = document.getElementById('rearrRow'), btn = document.getElementById('rearrToggle');
+  const open = row.style.display === 'none';
+  row.style.display = open ? '' : 'none';
+  btn.setAttribute('aria-expanded', open);
+  btn.textContent = open ? '− Hide' : '+ Show rearrangements';
+  if (open) showRearrangements(false);
+};
+document.getElementById('rearrBtn').onclick = () => showRearrangements(false);
+document.getElementById('rearrAgain').onclick = () => showRearrangements(true);
+document.getElementById('rInput').addEventListener('keydown', e => { if (e.key === 'Enter') showRearrangements(false); });
+
+(function(){
+  const _gen = generate;
+  generate = function(){ _gen(); if (document.getElementById('rearrRow') && document.getElementById('rearrRow').style.display !== 'none') showRearrangements(false); };
+})();
+
+document.getElementById('moreToggle').onclick = () => {
+  const row = document.getElementById('moreRow'), btn = document.getElementById('moreToggle');
+  const open = row.style.display === 'none';
+  row.style.display = open ? '' : 'none';
+  btn.setAttribute('aria-expanded', open);
+  btn.textContent = open ? '− Hide' : '+ Generate more squares';
+  if (open) document.getElementById('nInput').focus();
+};
+document.getElementById('nInput').addEventListener('keydown', e => { if (e.key === 'Enter') generate(); });
+
+try{const saved=localStorage.getItem('sequential-colour-system');if(['original','ocean','peach','mint'].includes(saved)){sequentialColourSystem=saved;document.getElementById('colourSystem').value=saved;}}catch(e){}
+document.getElementById('colourSystem').onchange=e=>{sequentialColourSystem=e.target.value;try{localStorage.setItem('sequential-colour-system',sequentialColourSystem);}catch(e){}generate();if(document.getElementById('rearrRow').style.display!=='none')showRearrangements(false);};
+buildTypeStrip();
+refreshActive();
+generate();
+</script>
+</body>
+</html>

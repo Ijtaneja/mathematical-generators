@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Magic Star Generator — Inder J. Taneja</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eaf3e4; --card:#f6f2ff; --border:#d6cdf0; --border-strong:#b7a8e0;
+    --text:#2b2a33; --text-muted:#6c6a72; --accent:#3d3384; --accent-dark:#2a2260;
+    --gold:#b8860b; --gold-light:#f7ecd2;
+    --outer-fill:#eeecfb; --outer-stroke:#4a3f9e; --outer-text:#2a2260;
+    --inner-fill:#fdf2da; --inner-stroke:#a06c07; --inner-text:#6e4c05;
+    --line-a:#7f6fd6; --line-b:#c99a2e;
+    --ok:#0f6e56; --warn:#993c1d;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; padding:0 16px 64px; background:var(--bg); color:var(--text);
+    font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  }
+  .hero{
+    max-width:920px; margin:0 auto 24px; padding:38px 34px 30px;
+    background:linear-gradient(135deg, var(--accent-dark) 0%, var(--accent) 62%, #6a5bc4 100%);
+    border-radius:0 0 18px 18px; color:#fff; position:relative; overflow:hidden;
+  }
+  .hero .star-glyph{position:absolute; right:26px; top:50%; transform:translateY(-50%); opacity:.16;}
+  .hero h1{
+    font-family:"Playfair Display",Georgia,serif; font-weight:700; font-size:32px;
+    margin:0 0 8px; letter-spacing:.2px;
+  }
+  .hero .eyebrow{
+    font-size:11.5px; letter-spacing:2px; text-transform:uppercase; color:var(--gold-light);
+    font-weight:600; margin:0 0 10px;
+  }
+  .subtitle{color:#e7e3f6; font-size:14.5px; margin:0; max-width:600px; line-height:1.55;}
+  .wrap{max-width:920px; margin:0 auto;}
+  footer{
+    max-width:920px; margin:8px auto 0; text-align:center; padding:18px 10px 0;
+    color:var(--text-muted); font-size:12.5px; border-top:1px solid var(--border);
+  }
+  footer .credit{font-weight:600; color:var(--text);}
+  footer a{color:var(--accent); text-decoration:none;}
+  footer a:hover{text-decoration:underline;}
+  .card{
+    background:var(--card); border:1px solid var(--border); border-radius:12px;
+    padding:20px 22px 20px 20px; margin-bottom:20px;
+    border-left:5px solid var(--accent);
+    box-shadow:0 1px 3px rgba(61,51,132,.08);
+  }
+  .card:nth-of-type(2){border-left-color:var(--gold);}
+  .card h2{font-size:15px; font-weight:600; margin:0 0 14px; color:var(--text);}
+  .row{display:flex; flex-wrap:wrap; gap:16px 24px; align-items:flex-end;}
+  .field{display:flex; flex-direction:column; gap:5px;}
+  .field label{font-size:12.5px; color:var(--text-muted); font-weight:600;}
+  .field input[type=number]{
+    width:88px; padding:7px 9px; border:1px solid var(--border-strong); border-radius:7px;
+    font-size:14px; background:#fbf9ff; color:var(--text);
+  }
+  .field.checkbox{flex-direction:row; align-items:center; gap:7px; padding-bottom:7px;}
+  .field.checkbox label{font-weight:400; font-size:13.5px; color:var(--text);}
+  button{
+    border:none; border-radius:7px; padding:9px 18px; font-size:14px; font-weight:600;
+    cursor:pointer; transition:opacity .15s;
+  }
+  button.primary{background:var(--accent); color:#fff;}
+  button.primary:hover{opacity:.9;}
+  button.secondary{background:#efece2; color:var(--text);}
+  button.secondary:hover{opacity:.85;}
+  button:disabled{opacity:.45; cursor:not-allowed;}
+  .status{
+    display:flex; flex-wrap:wrap; gap:18px 30px; font-size:13.5px; color:var(--text-muted);
+    margin-top:16px; padding-top:14px; border-top:1px solid var(--border);
+  }
+  .status b{color:var(--text); font-weight:600;}
+  .status .ok{color:var(--ok); font-weight:600;}
+  .status .warn{color:var(--warn); font-weight:600;}
+  .nav{display:flex; align-items:center; gap:14px; margin-bottom:14px;}
+  .nav span{font-size:13.5px; color:var(--text-muted); min-width:120px; text-align:center;}
+  svg{display:block; margin:0 auto; max-width:100%; height:auto;}
+  .empty{
+    text-align:center; color:var(--text-muted); font-size:14px; padding:60px 20px;
+  }
+  .note{font-size:12.5px; color:var(--text-muted); margin-top:10px; line-height:1.5;}
+  .tabs{display:flex; gap:22px; margin-bottom:18px; border-bottom:1px solid var(--border);}
+  .tab-btn{
+    background:none; border:none; padding:8px 2px 10px; font-size:14px; font-weight:600;
+    color:var(--text-muted); cursor:pointer; border-bottom:2px solid transparent; border-radius:0;
+  }
+  .tab-btn.active{color:var(--accent); border-bottom-color:var(--accent);}
+  .sol-table-wrap{max-height:360px; overflow-y:auto; margin-top:12px; border:1px solid var(--border); border-radius:8px;}
+  table.sol-table{width:100%; border-collapse:collapse; font-size:12.5px;}
+  table.sol-table th, table.sol-table td{padding:7px 10px; border-bottom:1px solid var(--border); text-align:left;}
+  table.sol-table th{color:var(--outer-text); font-weight:600; background:var(--gold-light); position:sticky; top:0;}
+  table.sol-table tr:nth-child(even) td{background:#faf8ff;}
+  table.sol-table tr:last-child td{border-bottom:none;}
+  table.lines-table{width:100%; border-collapse:collapse; font-size:13px; margin-top:6px;}
+  table.lines-table th, table.lines-table td{padding:7px 9px; border-bottom:1px solid var(--border); text-align:left;}
+  table.lines-table th{color:var(--outer-text); font-weight:600; background:var(--gold-light);}
+  table.lines-table tr:nth-child(even) td{background:#faf8ff;}
+  table.lines-table tr:last-child td{border-bottom:none;}
+  table.lines-table td.sum{font-weight:700; color:var(--accent-dark);}
+  .numlist{font-size:13px; color:var(--text); line-height:1.9; margin-top:14px; padding-top:12px; border-top:1px solid var(--border);}
+  .numlist b{color:var(--accent-dark); font-weight:600;}
+  button.link-btn{background:none; border:none; color:var(--accent); font-weight:600; font-size:12.5px; cursor:pointer; padding:2px 6px;}
+  button.link-btn:hover{text-decoration:underline;}
+  #diagramArea{background:linear-gradient(180deg, #fbf9ff 0%, #f3eeff 100%); border-radius:10px; padding:12px 6px 6px;}
+</style>
+</head>
+<body>
+<div class="hero">
+  <svg class="star-glyph" width="160" height="160" viewBox="0 0 100 100"><path fill="#fff" d="M50 4 L61 37 L96 37 L67 58 L78 92 L50 71 L22 92 L33 58 L4 37 L39 37 Z"/></svg>
+  <p class="eyebrow">Recreational mathematics</p>
+  <h1>Magic Star Generator</h1>
+  <p class="subtitle">n-pointed star polygon {n/2}: numbers 1..2n placed on n outer points and n inner crossings so every line of 4 sums to the magic constant 4n+2.</p>
+</div>
+<div class="wrap">
+  <div class="card">
+    <h2>Generate a figure</h2>
+    <div class="row">
+      <div class="field">
+        <label for="orderInput">Order n (points)</label>
+        <input type="number" id="orderInput" value="6" min="5" max="40" step="1">
+      </div>
+      <div class="field">
+        <label for="quickTimeInput">Time budget (seconds)</label>
+        <input type="number" id="quickTimeInput" value="15" min="1" step="1">
+      </div>
+      <div class="field checkbox">
+        <input type="checkbox" id="quickNoLimitBox">
+        <label for="quickNoLimitBox">No time limit</label>
+      </div>
+      <div class="field">
+        <button class="primary" id="quickBtn">Generate figure</button>
+      </div>
+      <div class="field">
+        <button class="secondary" id="quickStopBtn" disabled>Stop</button>
+      </div>
+    </div>
+    <div class="status" id="quickStatus">
+      <span>Magic constant: <b id="quickMagicConstant">26</b></span>
+      <span>Nodes explored: <b id="quickNodesExplored">0</b></span>
+      <span>Elapsed: <b id="quickElapsed">0.0s</b></span>
+      <span id="quickState"></span>
+    </div>
+    <p class="note">Finds just one valid solution, which is enough to draw the figure quickly. To see every possible solution, use the "All solutions" tab below.</p>
+  </div>
+
+  <div class="card">
+    <div class="tabs">
+      <button class="tab-btn active" id="tabDiagramBtn">Diagram</button>
+      <button class="tab-btn" id="tabAllBtn">All solutions</button>
+    </div>
+
+    <div id="tabDiagram" class="tab-panel">
+      <div class="nav">
+        <button class="secondary" id="prevBtn" disabled>&larr; Prev</button>
+        <span id="navLabel">No solutions yet</span>
+        <button class="secondary" id="nextBtn" disabled>Next &rarr;</button>
+      </div>
+      <div id="diagramArea"><div class="empty">Generate a figure above, or search all solutions in the other tab.</div></div>
+      <div id="solutionNumbersArea"></div>
+      <div id="linesTableArea"></div>
+    </div>
+
+    <div id="tabAll" class="tab-panel" style="display:none;">
+      <div class="row">
+        <div class="field">
+          <label for="timeInput">Time budget (seconds)</label>
+          <input type="number" id="timeInput" value="10" min="1" step="1">
+        </div>
+        <div class="field checkbox">
+          <input type="checkbox" id="noLimitBox">
+          <label for="noLimitBox">No time limit</label>
+        </div>
+        <div class="field">
+          <label for="capInput">Max solutions to keep</label>
+          <input type="number" id="capInput" value="300" min="1" step="1">
+        </div>
+        <div class="field">
+          <button class="primary" id="solveBtn">Find all solutions</button>
+        </div>
+        <div class="field">
+          <button class="secondary" id="stopBtn" disabled>Stop</button>
+        </div>
+        <div class="field">
+          <button class="secondary" id="downloadBtn" disabled>Download all (.txt)</button>
+        </div>
+        <div class="field">
+          <button class="secondary" id="downloadXlsxBtn" disabled>Download all (.xlsx)</button>
+        </div>
+      </div>
+      <div class="status" id="status">
+        <span>Magic constant: <b id="magicConstant">26</b></span>
+        <span>Nodes explored: <b id="nodesExplored">0</b></span>
+        <span>Elapsed: <b id="elapsed">0.0s</b></span>
+        <span>Solutions found: <b id="solutionCount">0</b></span>
+        <span id="searchState"></span>
+      </div>
+      <p class="note">This searches exhaustively (or until the time budget or cap is reached), which can take much longer than generating a single figure — especially for larger orders.</p>
+      <div id="solutionsTableWrap"><div class="empty">No solutions found yet.</div></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Created by: <span class="credit">Inder J. Taneja</span><br>
+  <a href="https://numbers-magic.com" target="_blank" rel="noopener">numbers-magic.com</a> &middot;
+  <a href="https://inderjtaneja.wordpress.com/" target="_blank" rel="noopener">inderjtaneja.wordpress.com</a> &middot;
+  <a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/" target="_blank" rel="noopener">taneja-mathematical-generators.ijtaneja.chatgpt.site</a>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script>
+let stopFlag = false;
+let running = false;
+let solutions = [];
+let currentIdx = -1;
+let currentN = 6;
+let currentGeom = null;
+let activeM = 26;
+let activeNote = '';
+
+function lineSegIntersect(p1,p2,p3,p4){
+  const d1x=p2.x-p1.x, d1y=p2.y-p1.y, d2x=p4.x-p3.x, d2y=p4.y-p3.y;
+  const denom = d1x*d2y - d1y*d2x;
+  if (Math.abs(denom) < 1e-9) return null;
+  const t = ((p3.x-p1.x)*d2y - (p3.y-p1.y)*d2x) / denom;
+  const u = ((p3.x-p1.x)*d1y - (p3.y-p1.y)*d1x) / denom;
+  if (t > 1e-6 && t < 1-1e-6 && u > 1e-6 && u < 1-1e-6){
+    return {x: p1.x + t*d1x, y: p1.y + t*d1y};
+  }
+  return null;
+}
+
+function computeStarGeometry(n, R){
+  const outer = [];
+  for (let i=0;i<n;i++){
+    const ang = (90 - i*360/n) * Math.PI/180;
+    outer.push({x:R*Math.cos(ang), y:R*Math.sin(ang)});
+  }
+  const chords = [];
+  for (let i=0;i<n;i++) chords.push([i, (i+2)%n]);
+  const inner = new Array(n).fill(null);
+  for (let k=0;k<n;k++){
+    const a = chords[k], b = chords[(k+1)%n];
+    const ip = lineSegIntersect(outer[a[0]], outer[a[1]], outer[b[0]], outer[b[1]]);
+    inner[k] = ip;
+  }
+  const lines = [];
+  for (let k=0;k<n;k++){
+    lines.push([k, (k+2)%n, n+((k-1+n)%n), n+k]);
+  }
+  return {outer, inner, lines};
+}
+
+function solveGenerator(n, deadline, cap){
+  const N = 2*n;
+  const M = 4*n+2;
+  const geom = computeStarGeometry(n, 1);
+  const lines = geom.lines;
+  const assignment = new Array(N).fill(null);
+  const used = new Array(N+1).fill(false);
+  const found = [];
+  let nodes = 0;
+
+  function* rec(){
+    if (found.length >= cap) return;
+    if (stopFlag) return;
+    let allAssigned = true;
+    let forcedLine = null, forcedPos = -1, forcedSum = 0;
+    let bestCount = 99, bestMissing = null;
+    for (const L of lines){
+      let unassignedCount = 0, sum = 0, missing = [];
+      for (const p of L){
+        if (assignment[p] === null){ unassignedCount++; missing.push(p); }
+        else sum += assignment[p];
+      }
+      if (unassignedCount > 0) allAssigned = false;
+      if (unassignedCount === 1 && forcedLine === null){ forcedLine = L; forcedPos = missing[0]; forcedSum = sum; }
+      else if (unassignedCount > 1 && unassignedCount < bestCount){ bestCount = unassignedCount; bestMissing = missing; }
+    }
+    if (allAssigned){ found.push(assignment.slice()); return; }
+    if (forcedLine){
+      const needed = M - forcedSum;
+      nodes++;
+      if (nodes % 4000 === 0) yield 'tick';
+      if (needed >= 1 && needed <= N && !used[needed]){
+        assignment[forcedPos] = needed; used[needed] = true;
+        yield* rec();
+        assignment[forcedPos] = null; used[needed] = false;
+      }
+      return;
+    }
+    const p = bestMissing[0];
+    for (let v = 1; v <= N; v++){
+      if (used[v]) continue;
+      assignment[p] = v; used[v] = true; nodes++;
+      yield* rec();
+      assignment[p] = null; used[v] = false;
+      if (nodes % 4000 === 0) yield 'tick';
+      if (found.length >= cap) return;
+      if (stopFlag) return;
+      if (deadline && Date.now() > deadline) return;
+    }
+  }
+
+  return {gen: rec(), found, geom, getNodes: () => nodes};
+}
+
+// Generic solver over an arbitrary set of 2n distinct numbers (used for
+// non-normal / "impure" stars, where the domain isn't 1..2n).
+function solveWithNumberSet(n, numberSet, cap){
+  const N = 2*n;
+  const total = numberSet.reduce((a,b)=>a+b, 0);
+  const M = 2*total/n;
+  if (!Number.isInteger(M)) return {found: [], M, valid: false};
+  const geom = computeStarGeometry(n, 1);
+  const lines = geom.lines;
+  const assignment = new Array(N).fill(null);
+  const availSet = new Set(numberSet);
+  const used = new Set();
+  const found = [];
+  function rec(){
+    if (found.length >= cap) return;
+    let allAssigned = true, forcedLine = null, forcedPos = -1, forcedSum = 0, bestCount = 99, bestMissing = null;
+    for (const L of lines){
+      let uc = 0, sum = 0, missing = [];
+      for (const p of L){ if (assignment[p] === null){ uc++; missing.push(p); } else sum += assignment[p]; }
+      if (uc > 0) allAssigned = false;
+      if (uc === 1 && forcedLine === null){ forcedLine = L; forcedPos = missing[0]; forcedSum = sum; }
+      else if (uc > 1 && uc < bestCount){ bestCount = uc; bestMissing = missing; }
+    }
+    if (allAssigned){ found.push(assignment.slice()); return; }
+    if (forcedLine){
+      const needed = M - forcedSum;
+      if (availSet.has(needed) && !used.has(needed)){
+        assignment[forcedPos] = needed; used.add(needed);
+        rec();
+        assignment[forcedPos] = null; used.delete(needed);
+      }
+      return;
+    }
+    const p = bestMissing[0];
+    for (const v of numberSet){
+      if (used.has(v)) continue;
+      assignment[p] = v; used.add(v);
+      rec();
+      assignment[p] = null; used.delete(v);
+      if (found.length >= cap) return;
+    }
+  }
+  rec();
+  return {found, M, valid: true};
+}
+
+// For an order with no normal solution, search numbers 1..(2n+2) with every
+// possible pair omitted, and return the pairs that actually admit a solution
+// (verified against Harvey Heinz's published order-5 results: omitting
+// {7,11} gives M=24, omitting {2,6} gives M=28 — both reproduced exactly by
+// this search).
+function findImpureOmissionPairs(n, cap){
+  const full = [];
+  for (let v = 1; v <= 2*n+2; v++) full.push(v);
+  const results = [];
+  for (let i = 0; i < full.length; i++){
+    for (let j = i+1; j < full.length; j++){
+      const omit = [full[i], full[j]];
+      const numberSet = full.filter(x => !omit.includes(x));
+      const r = solveWithNumberSet(n, numberSet, cap);
+      if (r.valid && r.found.length > 0){
+        results.push({omit, M: r.M, numberSet, solutions: r.found});
+      }
+    }
+  }
+  results.sort((a,b) => a.M - b.M);
+  return results;
+}
+
+const UI = {
+  quick: {btn:'quickBtn', stop:'quickStopBtn', nodes:'quickNodesExplored', elapsed:'quickElapsed', state:'quickState', magic:'quickMagicConstant'},
+  all:   {btn:'solveBtn', stop:'stopBtn', nodes:'nodesExplored', elapsed:'elapsed', state:'searchState', magic:'magicConstant', count:'solutionCount'}
+};
+function el(id){ return document.getElementById(id); }
+
+function switchTab(name){
+  const isDiagram = name === 'diagram';
+  el('tabDiagram').style.display = isDiagram ? 'block' : 'none';
+  el('tabAll').style.display = isDiagram ? 'none' : 'block';
+  el('tabDiagramBtn').classList.toggle('active', isDiagram);
+  el('tabAllBtn').classList.toggle('active', !isDiagram);
+}
+el('tabDiagramBtn').onclick = () => switchTab('diagram');
+el('tabAllBtn').onclick = () => switchTab('all');
+
+async function runSearch(mode){
+  const n = parseInt(el('orderInput').value, 10);
+  if (!n || n < 5){ alert('Order n must be 5 or greater.'); return; }
+  const ui = UI[mode];
+  let timeSec, noLimit, cap;
+  if (mode === 'quick'){
+    timeSec = parseFloat(el('quickTimeInput').value);
+    noLimit = el('quickNoLimitBox').checked;
+    cap = 1;
+  } else {
+    timeSec = parseFloat(el('timeInput').value);
+    noLimit = el('noLimitBox').checked;
+    cap = parseInt(el('capInput').value, 10);
+  }
+
+  currentN = n;
+  stopFlag = false;
+  running = true;
+  solutions = [];
+  currentIdx = -1;
+  activeM = 4*n+2;
+  activeNote = '';
+  el(ui.btn).disabled = true;
+  el(ui.stop).disabled = false;
+  const otherBtn = mode === 'quick' ? el('solveBtn') : el('quickBtn');
+  otherBtn.disabled = true;
+  el(ui.magic).textContent = 4*n+2;
+  el(ui.nodes).textContent = '0';
+  el(ui.elapsed).textContent = '0.0s';
+  if (ui.count) el(ui.count).textContent = '0';
+  el(ui.state).innerHTML = '<span class="warn">searching...</span>';
+  if (mode === 'all'){
+    el('downloadBtn').disabled = true;
+    el('downloadXlsxBtn').disabled = true;
+    renderTable([]);
+  }
+  updateNav();
+  renderEmpty('Searching...');
+  if (mode === 'quick') switchTab('diagram');
+
+  const startTime = Date.now();
+  const deadline = noLimit ? null : (startTime + timeSec*1000);
+  const search = solveGenerator(n, deadline, cap);
+  let exhausted = false;
+
+  function stepBatch(){
+    let steps = 0;
+    let res;
+    while (steps < 20000){
+      res = search.gen.next();
+      if (res.done){ exhausted = true; break; }
+      steps++;
+      if (res.value === 'tick') break;
+    }
+    el(ui.nodes).textContent = search.getNodes();
+    el(ui.elapsed).textContent = ((Date.now()-startTime)/1000).toFixed(1)+'s';
+    if (ui.count) el(ui.count).textContent = search.found.length;
+    if (search.found.length && solutions.length !== search.found.length){
+      solutions = search.found;
+      if (currentIdx === -1){ currentIdx = 0; drawSolution(); }
+      updateNav();
+      if (mode === 'all') renderTable(solutions);
+    }
+    const timeUp = deadline && Date.now() > deadline;
+    if (exhausted || stopFlag || timeUp || search.found.length >= cap){
+      finishSearch(mode, exhausted, stopFlag, timeUp, cap);
+    } else {
+      setTimeout(stepBatch, 0);
+    }
+  }
+  stepBatch();
+}
+
+function finishSearch(mode, exhausted, stopped, timeUp, cap){
+  running = false;
+  const ui = UI[mode];
+  el(ui.btn).disabled = false;
+  el(ui.stop).disabled = true;
+  const otherBtn = mode === 'quick' ? el('solveBtn') : el('quickBtn');
+  otherBtn.disabled = false;
+  if (mode === 'all'){
+    el('downloadBtn').disabled = solutions.length === 0;
+    el('downloadXlsxBtn').disabled = solutions.length === 0;
+  }
+
+  if (exhausted && !stopped && solutions.length === 0){
+    const tried = attemptImpureFallback(mode, cap);
+    if (tried){
+      el(ui.magic).textContent = activeM + ' (impure)';
+      const pretty = '<span class="ok">no normal solution — showing a non-normal (impure) star instead</span><br><span class="note" style="margin:4px 0 0;">'+activeNote+'</span>';
+      el(ui.state).innerHTML = pretty;
+      if (mode === 'all'){
+        el('downloadBtn').disabled = solutions.length === 0;
+        el('downloadXlsxBtn').disabled = solutions.length === 0;
+      }
+      return;
+    }
+  }
+
+  let msg;
+  if (stopped) msg = '<span class="warn">stopped by user</span>';
+  else if (mode === 'quick'){
+    if (solutions.length) msg = '<span class="ok">figure ready</span>';
+    else if (exhausted) msg = '<span class="warn">no normal magic star exists for order '+currentN+'</span>';
+    else if (timeUp) msg = '<span class="warn">time budget reached — try a longer budget</span>';
+    else msg = '';
+  } else {
+    if (exhausted){
+      msg = solutions.length === 0
+        ? '<span class="warn">search exhausted — no normal magic star exists for order '+currentN+'</span>'
+        : '<span class="ok">search complete (exhaustive)</span>';
+    } else if (solutions.length >= cap) msg = '<span class="ok">solution cap reached</span>';
+    else if (timeUp) msg = '<span class="warn">time budget reached (not exhaustive)</span>';
+    else msg = '';
+  }
+  el(ui.state).innerHTML = msg;
+  if (solutions.length === 0 && exhausted){
+    renderEmpty('No solution exists for order '+currentN+' with numbers 1..'+(2*currentN)+'.');
+  }
+}
+
+// Called only when the normal search (numbers 1..2n) is exhausted with zero
+// solutions. Automatically searches non-normal (impure) constructions using
+// numbers 1..(2n+2) with two numbers omitted, and — if any work — shows the
+// first (lowest magic constant) family, clearly labeled as non-normal.
+function attemptImpureFallback(mode, cap){
+  const n = currentN;
+  const pairs = findImpureOmissionPairs(n, mode === 'quick' ? 1 : cap);
+  if (!pairs.length) return false;
+  const chosen = pairs[0];
+  activeM = chosen.M;
+  activeNote = 'Non-normal (impure): numbers 1\u2013'+(2*n+2)+', omitting '+chosen.omit.join(' and ')+
+    (pairs.length > 1 ? ' &nbsp;(another family exists: omit '+pairs[1].omit.join(' and ')+', M='+pairs[1].M+')' : '');
+  solutions = chosen.solutions;
+  currentIdx = solutions.length ? 0 : -1;
+  drawSolution();
+  updateNav();
+  if (mode === 'all') renderTable(solutions);
+  return true;
+}
+
+el('quickBtn').onclick = () => runSearch('quick');
+el('quickStopBtn').onclick = () => { stopFlag = true; };
+el('solveBtn').onclick = () => runSearch('all');
+el('stopBtn').onclick = () => { stopFlag = true; };
+
+function renderTable(sols){
+  const wrap = el('solutionsTableWrap');
+  if (!sols.length){ wrap.innerHTML = '<div class="empty">No solutions found yet.</div>'; return; }
+  const n = currentN;
+  let html = '<div class="sol-table-wrap"><table class="sol-table"><thead><tr><th>#</th><th>Outer points</th><th>Inner crossings</th><th></th></tr></thead><tbody>';
+  sols.forEach((sol, idx) => {
+    html += '<tr><td>'+(idx+1)+'</td><td>'+sol.slice(0,n).join(', ')+'</td><td>'+sol.slice(n).join(', ')+'</td><td><button class="link-btn" onclick="viewSolution('+idx+')">View</button></td></tr>';
+  });
+  html += '</tbody></table></div>';
+  wrap.innerHTML = html;
+}
+
+function viewSolution(idx){
+  currentIdx = idx;
+  drawSolution();
+  updateNav();
+  switchTab('diagram');
+}
+
+function updateNav(){
+  const total = solutions.length;
+  document.getElementById('prevBtn').disabled = total === 0 || currentIdx <= 0;
+  document.getElementById('nextBtn').disabled = total === 0 || currentIdx >= total-1;
+  document.getElementById('navLabel').textContent = total === 0 ? 'No solutions yet' : ('Solution '+(currentIdx+1)+' of '+total);
+}
+document.getElementById('prevBtn').onclick = () => { if (currentIdx>0){ currentIdx--; drawSolution(); updateNav(); } };
+document.getElementById('nextBtn').onclick = () => { if (currentIdx<solutions.length-1){ currentIdx++; drawSolution(); updateNav(); } };
+
+function renderEmpty(msg){
+  document.getElementById('diagramArea').innerHTML = '<div class="empty">'+msg+'</div>';
+  document.getElementById('solutionNumbersArea').innerHTML = '';
+  document.getElementById('linesTableArea').innerHTML = '';
+}
+
+function frameDecoration(size){
+  const m = 20, m2 = 32, r1 = 20, r2 = 14, cornerInset = 24;
+  let z='';
+  z+='<rect x="'+m+'" y="'+m+'" width="'+(size-2*m)+'" height="'+(size-2*m)+'" rx="'+r1+'" fill="none" stroke="var(--gold)" stroke-width="2.5"/>';
+  z+='<rect x="'+m2+'" y="'+m2+'" width="'+(size-2*m2)+'" height="'+(size-2*m2)+'" rx="'+r2+'" fill="none" stroke="var(--gold)" stroke-width="1.3"/>';
+  const c0 = m+cornerInset, c1 = size-m-cornerInset;
+  [[c0,c0],[c1,c0],[c0,c1],[c1,c1]].forEach(([cx,cy])=>{
+    z+='<polygon points="'+cx+','+(cy-11)+' '+(cx+6)+','+cy+' '+cx+','+(cy+11)+' '+(cx-6)+','+cy+'" fill="none" stroke="var(--gold)" stroke-width="1.5"/>';
+    z+='<circle cx="'+cx+'" cy="'+cy+'" r="2" fill="var(--gold)"/>';
+  });
+  return z;
+}
+
+function drawSolution(){
+  const n = currentN;
+  const sol = solutions[currentIdx];
+  if (!sol) return;
+  const size = 620;
+  const cx = size/2, cy = size/2;
+  const Rout = 220;
+  const geom = computeStarGeometry(n, Rout);
+  const circR = Math.max(13, 27 - Math.max(0,n-6)*1.4);
+  const fontSize = circR >= 18 ? 14 : 11.5;
+  const M = activeM;
+  const isImpure = !!activeNote;
+
+  let svg = '<svg width="100%" viewBox="0 0 '+size+' '+(size+(isImpure?58:40))+'" role="img"><title>Magic '+n+'-pointed star</title><desc>Order '+n+' magic star, each line summing to '+M+'.</desc>';
+  svg += frameDecoration(size);
+
+  for (let k=0;k<n;k++){
+    const a = geom.outer[k], b = geom.outer[(k+2)%n];
+    const color = (k%2===0) ? getComputedStyle(document.documentElement).getPropertyValue('--line-a') : getComputedStyle(document.documentElement).getPropertyValue('--line-b');
+    svg += '<line x1="'+(cx+a.x)+'" y1="'+(cy-a.y)+'" x2="'+(cx+b.x)+'" y2="'+(cy-b.y)+'" stroke="'+color.trim()+'" stroke-width="2" />';
+  }
+
+  for (let i=0;i<n;i++){
+    const p = geom.outer[i];
+    const x = cx+p.x, y = cy-p.y;
+    const val = sol[i];
+    svg += '<circle cx="'+x+'" cy="'+y+'" r="'+circR+'" fill="var(--outer-fill)" stroke="var(--outer-stroke)" stroke-width="1.2"/>';
+    svg += '<text x="'+x+'" y="'+y+'" text-anchor="middle" dominant-baseline="central" font-size="'+fontSize+'" font-weight="600" fill="var(--outer-text)">'+val+'</text>';
+  }
+  for (let i=0;i<n;i++){
+    const p = geom.inner[i];
+    if (!p) continue;
+    const x = cx+p.x, y = cy-p.y;
+    const val = sol[n+i];
+    svg += '<circle cx="'+x+'" cy="'+y+'" r="'+(circR-3)+'" fill="var(--inner-fill)" stroke="var(--inner-stroke)" stroke-width="1.2"/>';
+    svg += '<text x="'+x+'" y="'+y+'" text-anchor="middle" dominant-baseline="central" font-size="'+(fontSize-1)+'" font-weight="600" fill="var(--inner-text)">'+val+'</text>';
+  }
+
+  svg += '<text x="'+cx+'" y="'+(size+18)+'" text-anchor="middle" font-size="13.5" fill="var(--text-muted)">Order '+n+' magic star &mdash; every line sums to '+M+'</text>';
+  if (isImpure){
+    const plain = activeNote.replace(/<[^>]*>/g, '').replace(/&ndash;/g,'\u2013').replace(/&nbsp;/g,' ');
+    svg += '<text x="'+cx+'" y="'+(size+38)+'" text-anchor="middle" font-size="12" font-weight="600" fill="var(--gold)">'+plain+'</text>';
+  }
+  svg += '</svg>';
+  document.getElementById('diagramArea').innerHTML = svg;
+
+  // Written summary below the figure: the exact numbers, and every line spelled out.
+  const noteLine = isImpure ? ('<div style="margin-top:6px; color:var(--gold); font-weight:600;">'+activeNote.replace(/<[^>]*>/g,'').replace(/&ndash;/g,'\u2013').replace(/&nbsp;/g,' ')+'</div>') : '';
+  document.getElementById('solutionNumbersArea').innerHTML =
+    '<div class="numlist">' +
+    '<div><b>Outer:</b> '+sol.slice(0,n).join(', ')+'</div>' +
+    '<div><b>Inner:</b> '+sol.slice(n).join(', ')+'</div>' +
+    noteLine +
+    '</div>';
+
+  const geomFlat = computeStarGeometry(n, 1);
+  let linesTable = '<table class="lines-table"><thead><tr><th>Line</th><th>Numbers</th><th>Sum</th></tr></thead><tbody>';
+  geomFlat.lines.forEach((L, i) => {
+    const vals = L.map(p => sol[p]);
+    linesTable += '<tr><td>'+(i+1)+'</td><td>'+vals.join(' + ')+'</td><td class="sum">'+M+'</td></tr>';
+  });
+  linesTable += '</tbody></table>';
+  document.getElementById('linesTableArea').innerHTML = linesTable;
+}
+
+function solutionToLines(n, sol){
+  const geom = computeStarGeometry(n, 1);
+  const M = activeM;
+  return geom.lines.map(L => L.map(p=>sol[p]).join(' + ') + ' = ' + M);
+}
+
+document.getElementById('downloadBtn').onclick = () => {
+  if (!solutions.length) return;
+  const n = currentN;
+  const noteLine = activeNote ? ('Non-normal (impure) construction: '+activeNote.replace(/<[^>]*>/g,'').replace(/&ndash;/g,'-').replace(/&nbsp;/g,' ')+'\n') : '';
+  let txt = 'Magic star, order '+n+' (points), magic constant = '+activeM+'\n';
+  txt += noteLine;
+  txt += 'Numbers 1..'+(2*n)+' — outer points then inner crossings\n';
+  txt += 'Total solutions in this file: '+solutions.length+'\n\n';
+  solutions.forEach((sol, idx) => {
+    txt += 'Solution '+(idx+1)+'\n';
+    txt += 'Outer: '+sol.slice(0,n).join(', ')+'\n';
+    txt += 'Inner: '+sol.slice(n).join(', ')+'\n';
+    txt += solutionToLines(n, sol).join('\n') + '\n\n';
+  });
+  const blob = new Blob([txt], {type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'magic_star_order_'+n+'_solutions.txt';
+  a.click();
+};
+
+document.getElementById('downloadXlsxBtn').onclick = () => {
+  if (!solutions.length || typeof XLSX === 'undefined') return;
+  const n = currentN;
+  const M = activeM;
+  const geom = computeStarGeometry(n, 1);
+
+  const titleFill = {fill:{fgColor:{rgb:'3D3384'}}, font:{color:{rgb:'FFFFFF'}, bold:true, sz:12}, alignment:{horizontal:'center'}};
+  const headerFill = {fill:{fgColor:{rgb:'EEECFB'}}, font:{color:{rgb:'2A2260'}, bold:true, sz:11}, alignment:{horizontal:'center'}};
+  const thin = {top:{style:'thin',color:{rgb:'C9C0AA'}}, bottom:{style:'thin',color:{rgb:'C9C0AA'}}, left:{style:'thin',color:{rgb:'C9C0AA'}}, right:{style:'thin',color:{rgb:'C9C0AA'}}};
+
+  const outerHeaders = [];
+  for (let i=0;i<n;i++) outerHeaders.push('Outer '+(i+1));
+  const innerHeaders = [];
+  for (let i=0;i<n;i++) innerHeaders.push('Inner '+(i+1));
+  const lineHeaders = [];
+  for (let i=0;i<n;i++) lineHeaders.push('Line '+(i+1));
+
+  const headerRow = ['Solution #'].concat(outerHeaders, innerHeaders, lineHeaders);
+  const rows = [headerRow];
+  solutions.forEach((sol, idx) => {
+    const lineSums = geom.lines.map(L => L.reduce((s,p)=>s+sol[p],0));
+    rows.push([idx+1].concat(sol.slice(0,n), sol.slice(n), lineSums));
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  for (let c=range.s.c; c<=range.e.c; c++){
+    const addr = XLSX.utils.encode_cell({r:0, c:c});
+    if (ws[addr]) ws[addr].s = headerFill;
+  }
+  for (let r=1; r<=range.e.r; r++){
+    for (let c=range.s.c; c<=range.e.c; c++){
+      const addr = XLSX.utils.encode_cell({r:r, c:c});
+      if (ws[addr]) ws[addr].s = {border:thin, alignment:{horizontal:'center'}};
+    }
+  }
+  ws['!cols'] = headerRow.map((h,i) => ({wch: i===0 ? 10 : 9}));
+
+  const infoRows = [
+    ['Magic Star Generator'],
+    ['Created by: Inder J. Taneja'],
+    [],
+    ['Order (n)', n],
+    ['Magic constant (4n+2)', M],
+    ['Numbers used', activeNote ? ('1 to '+(2*n+2)+' (impure, two omitted)') : ('1 to '+(2*n))],
+    ['Total solutions in file', solutions.length],
+  ];
+  const wsInfo = XLSX.utils.aoa_to_sheet(infoRows);
+  wsInfo['A1'].s = titleFill;
+  wsInfo['!merges'] = [{s:{r:0,c:0}, e:{r:0,c:1}}];
+  wsInfo['!cols'] = [{wch:24},{wch:16}];
+  for (let r=3; r<=6; r++){
+    const addr = 'A'+(r+1);
+    if (wsInfo[addr]) wsInfo[addr].s = {font:{bold:true}};
+  }
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, wsInfo, 'Info');
+  XLSX.utils.book_append_sheet(wb, ws, 'Solutions');
+  XLSX.writeFile(wb, 'magic_star_order_'+n+'_solutions.xlsx');
+};
+</script>
+</body>
+</html>

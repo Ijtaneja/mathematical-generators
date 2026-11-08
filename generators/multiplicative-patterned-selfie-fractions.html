@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Multiplicative Patterned Selfie-Fractions Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+  :root{--ink:#0f0e0c;--paper:#f5f0e8;--paper2:#ede8dc;--rule:#c8bfa8;--accent:#8b3a00;--accent2:#1a4a6b;--gold:#b8860b;--faint:#d4cbb8;--mono:'JetBrains Mono',monospace;--serif:'Crimson Pro',Georgia,serif;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--paper);color:var(--ink);font-family:var(--serif);min-height:100vh;background-image:repeating-linear-gradient(0deg,transparent,transparent 27px,rgba(200,191,168,0.45) 27px,rgba(200,191,168,0.45) 28px);background-size:100% 28px;}
+  .page{max-width:980px;margin:0 auto;padding:2rem 2rem 4rem;}
+  header{border-bottom:2px solid var(--ink);padding-bottom:1rem;margin-bottom:1.5rem;}
+  header::after{content:'';display:block;height:1px;background:var(--ink);margin-top:3px;}
+  .hrow{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;}
+  h1{font-family:var(--serif);font-size:2.5rem;font-weight:300;letter-spacing:-0.02em;line-height:1.1;}
+  h1 em{font-style:italic;color:var(--accent);}
+  .sub{font-size:0.93rem;font-weight:300;color:#5a5040;margin-top:0.3rem;font-style:italic;}
+  .stamp{font-family:var(--mono);font-size:0.6rem;color:var(--rule);text-transform:uppercase;letter-spacing:0.1em;text-align:right;line-height:2;}
+  .tabs{display:flex;border-bottom:2px solid var(--ink);flex-wrap:wrap;}
+  .tab{font-family:var(--mono);font-size:0.68rem;text-transform:uppercase;letter-spacing:0.08em;padding:0.42rem 1rem;cursor:pointer;border:1px solid var(--rule);border-bottom:none;background:transparent;color:#7a6a50;transition:all 0.15s;margin-bottom:-2px;}
+  .tab.on{background:var(--paper);color:var(--ink);border-color:var(--ink);border-bottom-color:var(--paper);font-weight:500;}
+  .tab:hover:not(.on){background:var(--paper2);}
+  .panel{display:none;padding-top:1.2rem;}
+  .panel.on{display:block;}
+  .infobox{background:var(--paper2);border-left:3px solid var(--accent2);padding:0.7rem 1rem;font-size:0.87rem;color:#4a3a20;margin-bottom:1.2rem;line-height:1.65;}
+  .infobox code{font-family:var(--mono);font-size:0.78rem;background:var(--paper);padding:0.04rem 0.28rem;border:1px solid var(--faint);}
+  .ctrls{background:var(--paper2);border:1px solid var(--rule);border-left:4px solid var(--accent);padding:0.9rem 1.2rem;margin-bottom:1.2rem;display:flex;flex-wrap:wrap;gap:0.65rem 1.4rem;align-items:flex-end;}
+  .ctrl{display:flex;flex-direction:column;gap:0.22rem;min-width:120px;}
+  label{font-family:var(--mono);font-size:0.6rem;text-transform:uppercase;letter-spacing:0.12em;color:#6a5a40;}
+  input[type=number],select{font-family:var(--mono);font-size:0.86rem;background:var(--paper);border:1px solid var(--rule);border-bottom:2px solid var(--ink);padding:0.32rem 0.45rem;color:var(--ink);outline:none;width:100%;}
+  input:focus,select:focus{border-bottom-color:var(--accent);}
+  .btn{font-family:var(--mono);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;background:var(--ink);color:var(--paper);border:none;padding:0.5rem 1.4rem;cursor:pointer;transition:background 0.15s,transform 0.1s;white-space:nowrap;}
+  .btn:hover{background:var(--accent);}
+  .btn:active{transform:scale(0.98);}
+  .btn:disabled{background:#999;cursor:not-allowed;}
+  .sbar{font-family:var(--mono);font-size:0.68rem;color:#7a6a50;padding:0.3rem 0;margin-bottom:0.7rem;border-bottom:1px solid var(--faint);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.4rem;min-height:1.5rem;}
+  .sc{color:var(--accent);font-weight:500;}
+  .pw{height:2px;background:var(--faint);margin-bottom:0.9rem;overflow:hidden;}
+  .pf{height:100%;background:var(--accent);width:0%;transition:width 0.08s;}
+  .scroll{max-height:600px;overflow-y:auto;padding-right:3px;}
+  .scroll::-webkit-scrollbar{width:3px;}
+  .scroll::-webkit-scrollbar-thumb{background:var(--rule);}
+  .shdg{font-family:var(--mono);font-size:0.6rem;text-transform:uppercase;letter-spacing:0.14em;color:#7a6a50;margin-bottom:0.55rem;display:flex;align-items:center;gap:0.6rem;}
+  .shdg::after{content:'';flex:1;height:1px;background:var(--faint);}
+  .rc{background:var(--paper);border:0.5px solid var(--rule);border-left:3px solid var(--accent2);padding:0.65rem 0.85rem;margin-bottom:0.4rem;}
+  .rc.sum2{border-left-color:var(--accent);}
+  .rc.pow{border-left-color:var(--accent2);}
+  .rc.sum3{border-left-color:var(--gold);}
+  .rcm{display:flex;align-items:baseline;gap:0.7rem;flex-wrap:wrap;margin-bottom:0.18rem;}
+  .fr{font-family:var(--mono);font-size:0.96rem;font-weight:500;color:var(--ink);white-space:nowrap;}
+  .eq{font-family:var(--serif);font-size:1rem;color:var(--rule);}
+  .rh{font-family:var(--mono);font-size:0.88rem;color:var(--accent2);white-space:nowrap;}
+  .rcx{display:flex;gap:0.7rem;flex-wrap:wrap;align-items:center;}
+  .tag{font-family:var(--mono);font-size:0.57rem;text-transform:uppercase;letter-spacing:0.1em;padding:0.1rem 0.4rem;border:1px solid currentColor;}
+  .t-s2{color:var(--accent);}.t-pw{color:var(--accent2);}.t-s3{color:var(--gold);}
+  .dv{font-family:var(--mono);font-size:0.66rem;color:#9a8a70;}
+  .fg{margin-bottom:1.1rem;border:0.5px solid var(--rule);}
+  .fh{background:var(--paper2);padding:0.45rem 0.85rem;border-bottom:0.5px solid var(--rule);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.35rem;}
+  .fn{font-family:var(--mono);font-size:0.7rem;font-weight:500;color:var(--ink);text-transform:uppercase;letter-spacing:0.08em;}
+  .fi{font-family:var(--mono);font-size:0.6rem;color:#7a6a50;}
+  .fb{padding:0.55rem 0.85rem;}
+  .fm{font-family:var(--mono);font-size:0.76rem;padding:0.26rem 0;border-bottom:1px dashed var(--faint);display:flex;gap:0.65rem;flex-wrap:wrap;align-items:baseline;}
+  .fm:last-child{border-bottom:none;}
+  .fl{color:var(--ink);min-width:90px;}
+  .fe{color:var(--rule);}
+  .fr2{color:var(--accent2);}
+  .fv{color:#9a8a70;font-size:0.66rem;}
+  .fins{color:var(--accent);font-weight:500;}
+  .empty{text-align:center;padding:2.2rem;color:#9a8a70;font-style:italic;font-size:0.97rem;border:1px dashed var(--faint);}
+  .spinner{display:inline-block;width:8px;height:8px;border:1.5px solid var(--faint);border-top-color:var(--accent);border-radius:50%;animation:spin 0.6s linear infinite;vertical-align:middle;margin-right:4px;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .foot{margin-top:2.5rem;padding-top:0.7rem;border-top:1px solid var(--faint);font-size:0.76rem;color:#9a8a70;font-style:italic;text-align:center;}
+  /* Download tab */
+  .dl-block{margin-bottom:1.8rem;}
+  .dl-meta{font-family:var(--mono);font-size:0.68rem;color:#5a5040;margin-bottom:0.6rem;}
+  .dl-preview{background:var(--paper2);border:0.5px solid var(--rule);padding:0.6rem 0.85rem;max-height:200px;overflow-y:auto;margin-bottom:0.6rem;}
+  .dl-preview pre{font-family:var(--mono);font-size:0.71rem;color:var(--ink);white-space:pre;line-height:1.75;}
+  .dl-preview::-webkit-scrollbar{width:3px;}
+  .dl-preview::-webkit-scrollbar-thumb{background:var(--rule);}
+  .dl-row{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;}
+  .dl-note{font-family:var(--mono);font-size:0.65rem;color:#9a8a70;}
+</style>
+</head>
+<body>
+<div class="page">
+
+<header>
+  <div class="hrow">
+    <div>
+      <h1><em>Multiplicative Patterned</em> Selfie-Fractions Explorer</h1>
+      <p class="sub">Fractions that recognise themselves through digit-splits and operations</p>
+    </div>
+    <div class="stamp">Created by Inder J. Taneja<br>Multiplicative Edition · v1.0</div>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab" onclick="sw('search',this)">① Search Selfies</button>
+  <button class="tab on" onclick="sw('families',this);runZeroFamily()">② Multiplicative Pattern Families</button>
+  <button class="tab" onclick="sw('verify',this)">③ Verify a Fraction</button>
+  <button class="tab" onclick="sw('download',this)">④ Download .txt</button>
+  <button class="tab" onclick="sw('excel',this);refreshExcel()">⑤ Download Excel</button>
+</div>
+
+<!-- ─── SEARCH ──────────────────────────────────────────────────────────────── -->
+<div id="p-search" class="panel">
+  <div class="infobox">
+    A <strong>selfie fraction</strong> N/D rewrites itself by splitting digits of N and D and applying an operation to each part, yielding the same reduced value.<br>
+    <strong>Numerator ops (2-part):</strong> A+B &nbsp;·&nbsp; A×B &nbsp;·&nbsp; A^B &nbsp;&nbsp;
+    <strong>Numerator ops (3-part):</strong> A+B+C &nbsp;·&nbsp; A×B×C &nbsp;·&nbsp; A×(B+C) &nbsp;·&nbsp; (A+B)×C &nbsp;·&nbsp; A×B+C &nbsp;·&nbsp; A+B×C &nbsp;·&nbsp; A^B+C &nbsp;·&nbsp; A+B^C &nbsp;·&nbsp; A^B×C &nbsp;·&nbsp; A×B^C<br>
+    <strong>Multiplicative denominator ops:</strong> A×B · A×B×C · A×(B+C) · (A+B)×C · A×B+C · A+B×C.<br>
+    Example: <code>143/1386 = (1+4×3)/((13+8)×6) = 13/126</code>.
+  </div>
+  <div class="ctrls">
+    <div class="ctrl"><label>Numerator min</label><input type="number" id="s-nmin" value="11" min="1" max="99999"></div>
+    <div class="ctrl"><label>Numerator max</label><input type="number" id="s-nmax" value="999" min="2" max="99999"></div>
+    <div class="ctrl"><label>Denom max</label><input type="number" id="s-dmax" value="99999" min="10" max="9999999"></div>
+    <div class="ctrl"><label>Num operation</label>
+      <select id="s-nop">
+        <option value="multiplicative" selected>All multiplication-containing operations</option>
+        <optgroup label="── 2-part ──">
+          <option value="sum2">A+B</option>
+          <option value="mul2">A×B</option>
+          <option value="pow2">A^B</option>
+        </optgroup>
+        <optgroup label="── 3-part ──">
+          <option value="sum3">A+B+C</option>
+          <option value="mul3">A×B×C</option>
+          <option value="aXbc">A×(B+C)</option>
+          <option value="abXc">(A+B)×C</option>
+          <option value="aMbc">A×B+C</option>
+          <option value="aPbc">A+B×C</option>
+          <option value="aPow">A^B+C</option>
+          <option value="cPow">A+B^C</option>
+          <option value="powM">A^B×C</option>
+          <option value="mPow">A×B^C</option>
+        </optgroup>
+      </select>
+    </div>
+    <div class="ctrl"><label>Denom operation</label>
+      <select id="s-dop">
+        <option value="multiplicative" selected>All multiplication-containing operations</option>
+        <option value="mul2">A×B</option><option value="mul3">A×B×C</option><option value="aXbc">A×(B+C)</option><option value="abXc">(A+B)×C</option><option value="aMbc">A×B+C</option><option value="aPbc">A+B×C</option>
+      </select>
+    </div>
+    <div class="ctrl"><label>Group by value</label>
+      <select id="s-grp"><option value="yes">Yes</option><option value="no">No — list all</option></select>
+    </div>
+    <div class="ctrl"><label>Max results</label><input type="number" id="s-lim" value="500" min="10" max="5000"></div>
+    <div class="ctrl" style="min-width:auto"><button class="btn" id="s-btn" onclick="runSearch()">Search →</button></div>
+  </div>
+  <div class="sbar" id="s-sb">Ready — click Search to begin.</div>
+  <div class="pw"><div class="pf" id="s-pf"></div></div>
+  <div id="s-out"></div>
+</div>
+
+<!-- ─── FAMILIES ────────────────────────────────────────────────────────────── -->
+<div id="p-families" class="panel on">
+  <div class="infobox"><strong>Multiplicative zero-extension family:</strong> keep the numerator fixed and append zeros to the denominator. Every displayed member is independently verified with multiplication-containing digit-splits. Obvious overlapping extensions and unchanged common-factor cancellations are excluded. Structured forms such as <code>(1×1)/((23+8)×7)</code> and <code>(2×1)/((3+67)×5)</code> remain included.</div>
+  <div class="shdg">Discover multiplicative ×10 families</div>
+  <div class="ctrls">
+    <div class="ctrl"><label>Numerator min</label><input type="number" id="m-nmin" value="11" min="1"></div>
+    <div class="ctrl"><label>Numerator max</label><input type="number" id="m-nmax" value="199" min="1"></div>
+    <div class="ctrl"><label>Base denominator max</label><input type="number" id="m-dmax" value="9999" min="2"></div>
+    <div class="ctrl"><label>Minimum family size</label><input type="number" id="m-minsize" value="4" min="2" max="8"></div>
+    <div class="ctrl"><label>Members to test</label><input type="number" id="m-members" value="4" min="2" max="8"></div>
+    <div class="ctrl"><label>Maximum families</label><input type="number" id="m-limit" value="100" min="1" max="1000"></div>
+    <div class="ctrl" style="min-width:auto"><button class="btn" id="m-btn" onclick="runMultiplicativeFamilies()">Search All Families →</button></div>
+  </div>
+  <div class="sbar" id="m-sb">Ready to discover families over the selected ranges.</div>
+  <div class="pw"><div class="pf" id="m-pf"></div></div>
+  <div id="m-out" style="margin-bottom:24px"></div>
+  <div class="shdg">Verify one supplied ×10 family</div>
+  <div class="ctrls">
+    <div class="ctrl"><label>Base numerator</label><input type="number" id="z-n" value="143" min="1"></div>
+    <div class="ctrl"><label>Base denominator</label><input type="number" id="z-d" value="1386" min="2"></div>
+    <div class="ctrl"><label>Members</label><input type="number" id="z-count" value="4" min="1" max="12"></div>
+    <div class="ctrl" style="min-width:auto"><button class="btn" onclick="runZeroFamily()">Generate ×10 Family →</button></div>
+  </div>
+  <div id="z-out" style="margin-bottom:22px"><div class="empty">Enter a base fraction and press “Generate ×10 Family”.</div></div>
+  <div style="display:none"><div class="shdg">Legacy insertion-family search</div>
+  <div class="infobox">
+    <strong>Insertion families</strong> start from a base selfie fraction and extend it by inserting a repeated block at a fixed position inside the denominator, producing a chain where every member is also a selfie fraction.<br>
+    <strong>2-part denom:</strong> <code>18/17<b>82</b> → 18/17<b>9</b>82 → 18/17<b>99</b>82 → …</code> (left part fixed, right part fixed)<br>
+    <strong>3-part middle:</strong> <code>130/1<b>36</b>5 → 130/1<b>4</b>365 → 130/1<b>44</b>365 → …</code> (left &amp; right parts fixed, middle grows)
+  </div>
+  <div class="ctrls">
+    <div class="ctrl"><label>Numerator min</label><input type="number" id="f-nmin" value="2" min="2" max="9999"></div>
+    <div class="ctrl"><label>Numerator max</label><input type="number" id="f-nmax" value="99" min="2" max="9999"></div>
+    <div class="ctrl"><label>Base denom max</label><input type="number" id="f-dmax" value="9999" min="10" max="999999"></div>
+    <div class="ctrl"><label>Min family size</label><input type="number" id="f-ml" value="3" min="2" max="8"></div>
+    <div class="ctrl"><label>Members to show</label><input type="number" id="f-sh" value="5" min="2" max="10"></div>
+    <div class="ctrl"><label>Insertion mode</label>
+      <select id="f-mode">
+        <option value="single">Single-digit (0–9)</option>
+        <option value="double">Double-digit, distinct (01,09,54…)</option>
+        <option value="both">Both</option>
+      </select>
+    </div>
+    <div class="ctrl" style="min-width:auto"><button class="btn" id="f-btn" onclick="runFamilies()">Search →</button></div>
+  </div>
+  <div class="sbar" id="f-sb">Ready.</div>
+  <div class="pw"><div class="pf" id="f-pf"></div></div>
+  <div id="f-out"></div>
+</div>
+</div>
+
+<!-- ─── VERIFY ──────────────────────────────────────────────────────────────── -->
+<div id="p-verify" class="panel">
+  <div class="infobox">
+    Enter any fraction N/D to discover every selfie representation — all valid digit-splits and operations that reduce to the same value.
+  </div>
+  <div class="ctrls">
+    <div class="ctrl"><label>Numerator N</label><input type="number" id="v-n" value="18" min="1"></div>
+    <div class="ctrl"><label>Denominator D</label><input type="number" id="v-d" value="1782" min="2"></div>
+    <div class="ctrl" style="min-width:auto"><button class="btn" onclick="runVerify()">Verify →</button></div>
+  </div>
+  <div id="v-out"></div>
+</div>
+
+<!-- ─── DOWNLOAD ─────────────────────────────────────────────────────────────── -->
+<div id="p-download" class="panel">
+  <div class="infobox">
+    Run any search in tabs ①, ② or ③ first, then return here to download results as a <code>.txt</code> file. Each line is formatted as:<br>
+    <code>k N/D  =  (num_op)/(denom_op);</code>
+  </div>
+
+  <div id="dl-empty" class="empty" style="margin-bottom:1.2rem;">
+    No results yet — run a search in tabs ① or ② first, then return here.
+  </div>
+
+  <div id="dl-search-block" class="dl-block" style="display:none;">
+    <div class="shdg">Search results — tab ①</div>
+    <div class="dl-meta" id="dl-search-meta"></div>
+    <div class="dl-preview"><pre id="dl-search-pre"></pre></div>
+    <div class="dl-row">
+      <button class="btn" onclick="doDownload('search')">Download selfie_search.txt ↓</button>
+      <span class="dl-note">saves as plain text file</span>
+    </div>
+  </div>
+
+  <div id="dl-families-block" class="dl-block" style="display:none;">
+    <div class="shdg">Insertion families — tab ②</div>
+    <div class="dl-meta" id="dl-families-meta"></div>
+    <div class="dl-preview"><pre id="dl-families-pre"></pre></div>
+    <div class="dl-row">
+      <button class="btn" onclick="doDownload('families')">Download selfie_families.txt ↓</button>
+      <span class="dl-note">saves as plain text file</span>
+    </div>
+  </div>
+
+  <div id="dl-verify-block" class="dl-block" style="display:none;">
+    <div class="shdg">Verify result — tab ③</div>
+    <div class="dl-meta" id="dl-verify-meta"></div>
+    <div class="dl-preview"><pre id="dl-verify-pre"></pre></div>
+    <div class="dl-row">
+      <button class="btn" onclick="doDownload('verify')">Download selfie_verify.txt ↓</button>
+      <span class="dl-note">saves as plain text file</span>
+    </div>
+  </div>
+
+  <div id="dl-all-block" style="display:none;margin-top:0.5rem;">
+    <div class="shdg">Combined</div>
+    <div class="dl-row">
+      <button class="btn" onclick="doDownload('all')">Download selfie_all.txt ↓</button>
+      <span class="dl-note">all results in one file</span>
+    </div>
+  </div>
+</div>
+
+<!-- ─── EXCEL DOWNLOAD ─────────────────────────────────────────────────────── -->
+<div id="p-excel" class="panel">
+  <div class="infobox">
+    Run a search in tabs ①, ② or ③, then download the results as a modern <code>.xlsx</code> workbook. Separate columns are provided for the numerator, denominator, both digit-split expressions, and the complete pattern. A blank row separates consecutive pattern families.
+  </div>
+  <div id="xl-empty" class="empty" style="margin-bottom:1.2rem;">
+    No results yet — run a search or generate a family first.
+  </div>
+  <div id="xl-ready" class="dl-block" style="display:none;">
+    <div class="shdg">Excel workbook</div>
+    <div class="dl-meta" id="xl-meta"></div>
+    <div class="dl-row" style="margin-bottom:0.7rem;">
+      <button class="btn" id="xl-search-btn" style="display:none" onclick="downloadExcel('search')">Download Search.xlsx ↓</button>
+      <button class="btn" id="xl-families-btn" style="display:none" onclick="downloadExcel('families')">Download Families.xlsx ↓</button>
+      <button class="btn" id="xl-verify-btn" style="display:none" onclick="downloadExcel('verify')">Download Verify.xlsx ↓</button>
+    </div>
+    <div class="dl-row">
+      <button class="btn" onclick="downloadExcel('all')">Download All Results.xlsx ↓</button>
+      <span class="dl-note">each available result type is placed on its own worksheet</span>
+    </div>
+  </div>
+</div>
+
+<div class="foot">
+  A selfie fraction N/D can be rewritten as f(digits of N)/g(digits of D) giving the same reduced value.<br>
+  Named by analogy: the same subject, captured from a different angle.
+</div>
+</div>
+
+<script>
+// ── Global result stores ───────────────────────────────────────────────────────
+const STORE = { search: null, families: null, verify: null };
+
+function fmt(n, d, ntLab, dtLab){
+  return `k${n}/${d}:=(${ntLab})/(${dtLab});`;
+}
+
+function storeSearch(found, nmin, nmax, dmax){
+  const txt = found.map(f => fmt(f.N, f.D, f.nt.lab, f.dt.lab)).join('\n');
+  STORE.search = { txt, info: `${found.length} selfie fractions · N∈[${nmin},${nmax}] · D≤${dmax}` };
+  refreshDL();
+}
+
+function storeFamilies(unique, nmin, nmax, dmax, minL){
+  const lines = [];
+  unique.forEach((fam, fi) => {
+    if(fi > 0) lines.push('');
+    fam.members.forEach(m => lines.push(fmt(m.N, m.D, m.nt.lab, m.dt.lab)));
+  });
+  STORE.families = { txt: lines.join('\n'), info: `${unique.length} families · N∈[${nmin},${nmax}] · D≤${dmax} · min size ${minL}` };
+  refreshDL();
+}
+
+function storeVerify(N, D, rN, rD, sl){
+  const txt = sl.length
+    ? sl.map(s => fmt(N, D, s.nt.lab, s.dt.lab)).join('\n')
+    : `No selfie representation found for ${N}/${D}.`;
+  STORE.verify = { txt, info: `${N}/${D} = ${rN}/${rD} · ${sl.length} selfie form${sl.length !== 1 ? 's' : ''}` };
+  refreshDL();
+}
+
+function refreshDL(){
+  const any = STORE.search || STORE.families || STORE.verify;
+  document.getElementById('dl-empty').style.display      = any ? 'none' : 'block';
+  document.getElementById('dl-all-block').style.display  = any ? 'block' : 'none';
+
+  ['search','families','verify'].forEach(k => {
+    const s = STORE[k];
+    if(s){
+      document.getElementById(`dl-${k}-block`).style.display = 'block';
+      document.getElementById(`dl-${k}-meta`).textContent    = s.info;
+      // preview: first 30 lines
+      const lines = s.txt.split('\n');
+      const preview = lines.slice(0,30).join('\n') + (lines.length > 30 ? '\n…' : '');
+      document.getElementById(`dl-${k}-pre`).textContent = preview;
+    }
+  });
+  refreshExcel();
+}
+
+function refreshExcel(){
+  const keys=['search','families','verify'];
+  const available=keys.filter(k=>STORE[k]);
+  const empty=document.getElementById('xl-empty');
+  const ready=document.getElementById('xl-ready');
+  if(!empty||!ready) return;
+  empty.style.display=available.length?'none':'block';
+  ready.style.display=available.length?'block':'none';
+  keys.forEach(k=>{
+    const btn=document.getElementById(`xl-${k}-btn`);
+    if(btn) btn.style.display=STORE[k]?'inline-block':'none';
+  });
+  const meta=document.getElementById('xl-meta');
+  if(meta) meta.textContent=available.length
+    ? `${available.length} result section${available.length===1?'':'s'} ready for Excel download.`
+    : '';
+}
+
+function excelRows(txt){
+  const rows=[];
+  for(const raw of txt.split('\n')){
+    const line=raw.trim();
+    if(!line){rows.push([]);continue;}
+    const m=line.match(/^k(\d+)\/(\d+):=\((.*)\)\/\((.*)\);$/);
+    if(m){
+      const N=m[1],D=m[2],numExpr=m[3],denExpr=m[4];
+      rows.push([N,D,numExpr,denExpr,`${N}/${D} := (${numExpr})/(${denExpr})`]);
+    }else{
+      rows.push(['','','','',line]);
+    }
+  }
+  while(rows.length&&rows[rows.length-1].length===0) rows.pop();
+  return rows;
+}
+
+function addExcelSheet(wb,key){
+  const names={search:'Search Results',families:'Pattern Families',verify:'Verification'};
+  const data=[['Numerator','Denominator','Numerator expression','Denominator expression','Complete pattern'],...excelRows(STORE[key].txt)];
+  const ws=XLSX.utils.aoa_to_sheet(data);
+  ws['!cols']=[{wch:14},{wch:16},{wch:25},{wch:32},{wch:70}];
+  ws['!autofilter']={ref:`A1:E${Math.max(1,data.length)}`};
+  XLSX.utils.book_append_sheet(wb,ws,names[key]);
+}
+
+function downloadExcel(which){
+  if(typeof XLSX==='undefined'){
+    alert('The Excel component could not load. Please check the internet connection and reopen this page.');
+    return;
+  }
+  const wb=XLSX.utils.book_new();
+  const keys=which==='all'?['search','families','verify'].filter(k=>STORE[k]):[which];
+  if(!keys.length||!STORE[keys[0]]) return;
+  keys.forEach(k=>addExcelSheet(wb,k));
+  const filename=which==='all'?'multiplicative_selfie_all_results.xlsx':`multiplicative_selfie_${which}.xlsx`;
+  XLSX.writeFile(wb,filename,{compression:true});
+}
+
+function doDownload(which){
+  let txt = '', filename = 'selfie.txt';
+  if(which === 'all'){
+    const parts = [];
+    if(STORE.search)   parts.push(STORE.search.txt);
+    if(STORE.families) parts.push(STORE.families.txt);
+    if(STORE.verify)   parts.push(STORE.verify.txt);
+    txt = parts.join('\n\n');
+    filename = 'selfie_all.txt';
+  } else {
+    if(!STORE[which]) return;
+    txt = STORE[which].txt;
+    filename = `selfie_${which}.txt`;
+  }
+  const blob = new Blob([txt], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+}
+
+// ── Core math ──────────────────────────────────────────────────────────────────
+function gcd(a,b){a=Math.abs(Math.round(a));b=Math.abs(Math.round(b));return b===0?a:gcd(b,a%b);}
+
+function sp2(n){
+  const s=String(n),r=[];
+  for(let p=1;p<s.length;p++) r.push({a:parseInt(s.slice(0,p)),b:parseInt(s.slice(p)),aLen:p});
+  return r;
+}
+
+function sp3(n){
+  const s=String(n),r=[];
+  for(let p1=1;p1<s.length-1;p1++)
+    for(let p2=p1+1;p2<s.length;p2++)
+      r.push({a:parseInt(s.slice(0,p1)),b:parseInt(s.slice(p1,p2)),c:parseInt(s.slice(p2)),aLen:p1});
+  return r;
+}
+
+// Like sp3 but also exposes p1,p2 for position-aware middle insertion
+function sp3full(n){
+  const s=String(n),r=[];
+  for(let p1=1;p1<s.length-1;p1++)
+    for(let p2=p1+1;p2<s.length;p2++)
+      r.push({a:parseInt(s.slice(0,p1)),b:parseInt(s.slice(p1,p2)),c:parseInt(s.slice(p2)),p1,p2,aLen:p1});
+  return r;
+}
+
+function nTrans(N,opFilter){
+  const r=[];
+  const safe=v=>Number.isFinite(v)&&v>0&&v<1e12&&Math.round(v)===v;
+
+  // ── 2-part splits ──────────────────────────────────────────────────────────
+  if(opFilter==='all'||opFilter==='sum2'){
+    for(const {a,b} of sp2(N)) if(a>0&&b>=0) r.push({val:a+b,lab:`${a}+${b}`,op:'sum2'});
+  }
+  if(opFilter==='all'||opFilter==='multiplicative'||opFilter==='mul2'){
+    for(const {a,b} of sp2(N)) if(a>0&&b>0) r.push({val:a*b,lab:`${a}×${b}`,op:'mul2'});
+  }
+  if(opFilter==='all'||opFilter==='pow2'){
+    for(const {a,b} of sp2(N)) if(a>=1&&b>=0&&b<=20){
+      const v=Math.round(Math.pow(a,b));
+      if(safe(v)) r.push({val:v,lab:`${a}^${b}`,op:'pow2'});
+    }
+  }
+
+  // ── 3-part splits ──────────────────────────────────────────────────────────
+  for(const {a,b,c} of sp3(N)){
+    if(a<0||b<0||c<0) continue;
+
+    if(opFilter==='all'||opFilter==='sum3')
+      r.push({val:a+b+c,         lab:`${a}+${b}+${c}`,        op:'sum3'});
+
+    if(opFilter==='all'||opFilter==='multiplicative'||opFilter==='mul3')
+      r.push({val:a*b*c,         lab:`${a}×${b}×${c}`,        op:'mul3'});
+
+    if(opFilter==='all'||opFilter==='multiplicative'||opFilter==='aXbc')
+      r.push({val:a*(b+c),       lab:`${a}×(${b}+${c})`,      op:'aXbc'});
+
+    if(opFilter==='all'||opFilter==='multiplicative'||opFilter==='abXc')
+      r.push({val:(a+b)*c,       lab:`(${a}+${b})×${c}`,      op:'abXc'});
+
+    if(opFilter==='all'||opFilter==='multiplicative'||opFilter==='aMbc'){
+      const v=a*b+c; if(safe(v)) r.push({val:v,lab:`${a}×${b}+${c}`,op:'aMbc'});
+    }
+    if(opFilter==='all'||opFilter==='multiplicative'||opFilter==='aPbc'){
+      const v=a+b*c; if(safe(v)) r.push({val:v,lab:`${a}+${b}×${c}`,op:'aPbc'});
+    }
+
+    // power combos
+    if(opFilter==='all'||opFilter==='aPow'){
+      const v=Math.round(Math.pow(a,b)); if(b<=20&&safe(v)) r.push({val:v+c,lab:`${a}^${b}+${c}`,op:'aPow'});
+    }
+    if(opFilter==='all'||opFilter==='cPow'){
+      const v=Math.round(Math.pow(b,c)); if(c<=20&&safe(v)) r.push({val:a+v,lab:`${a}+${b}^${c}`,op:'cPow'});
+    }
+    if(opFilter==='all'||opFilter==='powM'){
+      const v=Math.round(Math.pow(a,b)); if(b<=20&&safe(v)) r.push({val:v*c,lab:`${a}^${b}×${c}`,op:'powM'});
+    }
+    if(opFilter==='all'||opFilter==='mPow'){
+      const v=Math.round(Math.pow(b,c)); if(c<=20&&safe(v)) r.push({val:a*v,lab:`${a}×${b}^${c}`,op:'mPow'});
+    }
+  }
+  return r;
+}
+
+function dTrans2(D){
+  const r=[];
+  for(const {a,b,aLen} of sp2(D)) if(a>0&&b>0) r.push({val:a+b,lab:`${a}+${b}`,op:'sum2',aLen});
+  return r;
+}
+
+function dTrans3(D){
+  const r=[];
+  for(const {a,b,c,aLen} of sp3(D)) if(a>0&&b>0&&c>0) r.push({val:a+b+c,lab:`${a}+${b}+${c}`,op:'sum3',aLen});
+  return r;
+}
+
+function dTransAll(D,opFilter){
+  const r=[];
+  if(opFilter==='all'||opFilter==='sum2') r.push(...dTrans2(D));
+  if(opFilter==='all'||opFilter==='sum3') r.push(...dTrans3(D));
+  if(opFilter==='all'||opFilter==='multiplicative'||opFilter==='mul2')
+    for(const {a,b,aLen} of sp2(D)) if(a>0&&b>0) r.push({val:a*b,lab:`${a}×${b}`,op:'mul2',aLen});
+  for(const {a,b,c} of sp3(D)){
+    if(a<=0||b<=0||c<=0) continue;
+    if(opFilter==='all'||opFilter==='multiplicative'||opFilter==='mul3') r.push({val:a*b*c,lab:`${a}×${b}×${c}`,op:'mul3'});
+    if(opFilter==='all'||opFilter==='multiplicative'||opFilter==='aXbc') r.push({val:a*(b+c),lab:`${a}×(${b}+${c})`,op:'aXbc'});
+    if(opFilter==='all'||opFilter==='multiplicative'||opFilter==='abXc') r.push({val:(a+b)*c,lab:`(${a}+${b})×${c}`,op:'abXc'});
+    if(opFilter==='all'||opFilter==='multiplicative'||opFilter==='aMbc') r.push({val:a*b+c,lab:`${a}×${b}+${c}`,op:'aMbc'});
+    if(opFilter==='all'||opFilter==='multiplicative'||opFilter==='aPbc') r.push({val:a+b*c,lab:`${a}+${b}×${c}`,op:'aPbc'});
+  }
+  return r;
+}
+
+function canonicalIdentityLabel(label){
+  // For duplicate detection, 1^1 and 1×1 represent the same operation value.
+  return label.replace(/1\^1/g,'1×1');
+}
+
+function findSelfies(N,D,nopFilter,dopFilter){
+  const g=gcd(N,D),rN=N/g,rD=D/g;
+  const res=[],seen=new Set();
+  for(const nt of nTrans(N,nopFilter)){
+    if(nt.val===N) continue;
+    for(const dt of dTransAll(D,dopFilter)){
+      if(dt.val===D) continue;
+      const g2=gcd(nt.val,dt.val);
+      if(nt.val/g2===rN&&dt.val/g2===rD){
+        const k=canonicalIdentityLabel(nt.lab)+'|'+canonicalIdentityLabel(dt.lab);
+        if(!seen.has(k)){seen.add(k);res.push({nt,dt,rN,rD});}
+      }
+    }
+  }
+  return res;
+}
+
+function isTrivialFamily(form){
+  if(form.nt.op!=='mul2') return false;
+  const nFactors=form.nt.lab.split('×');
+  // A factor 1 is acceptable when it participates in a genuinely structured
+  // three-part denominator, e.g. 11/2387 and 21/3675.  Keep excluding the
+  // old neutral two-part extensions that generated obvious families.
+  if(nFactors.includes('1')&&form.dt.op!=='abXc') return true;
+  if(form.dt.op!=='mul2') return false;
+  const dFactors=form.dt.lab.split('×');
+  return nFactors.some(factor=>dFactors.includes(factor));
+}
+
+function runZeroFamily(){
+  const N=+document.getElementById('z-n').value,D0=+document.getElementById('z-d').value,count=+document.getElementById('z-count').value;
+  const out=document.getElementById('z-out'),members=[];
+  let D=D0;
+  for(let i=0;i<count;i++){
+    const forms=findSelfies(N,D,'multiplicative','multiplicative')
+      .filter(form=>!isTrivialFamily(form));
+    if(forms.length){
+      const preferred=forms.find(x=>x.nt.op==='aPbc'&&x.dt.op==='abXc')||forms[0];
+      members.push({N,D,...preferred});
+    }
+    D*=10;
+    if(!Number.isSafeInteger(D)) break;
+  }
+  if(!members.length){out.innerHTML='<div class="empty">No nontrivial multiplicative zero-extension members were verified.</div>';return;}
+  out.innerHTML='<div class="scroll">'+members.map(f=>`<div class="rc"><div class="rcm"><span class="fr">${f.N}/${f.D}</span><span class="eq">:=</span><span class="rh">(${f.nt.lab})/(${f.dt.lab})</span></div><div class="rcx">${tagHtml(f.nt.op)}${tagHtml(f.dt.op)} <span class="dv">verified</span></div></div>`).join('')+'</div>';
+  STORE.families={txt:members.map(m=>fmt(m.N,m.D,m.nt.lab,m.dt.lab)).join('\n'),info:`1 verified multiplicative ×10 family · ${members.length} members · base ${N}/${D0}`};
+  refreshDL();
+}
+
+let multiplicativeFamilyStop=false;
+async function runMultiplicativeFamilies(){
+  const btn=document.getElementById('m-btn');
+  if(btn.dataset.running==='yes'){
+    multiplicativeFamilyStop=true;
+    document.getElementById('m-sb').textContent='Stopping safely after the current base fraction…';
+    return;
+  }
+  const nmin=+document.getElementById('m-nmin').value,nmax=+document.getElementById('m-nmax').value;
+  const dmax=+document.getElementById('m-dmax').value,minSize=+document.getElementById('m-minsize').value;
+  const membersToTest=+document.getElementById('m-members').value,limit=+document.getElementById('m-limit').value;
+  const out=document.getElementById('m-out'),sb=document.getElementById('m-sb'),pf=document.getElementById('m-pf');
+  if(nmax<nmin||dmax<2||membersToTest<minSize){sb.textContent='Please check the ranges and ensure Members to test ≥ Minimum family size.';return;}
+  multiplicativeFamilyStop=false;btn.dataset.running='yes';btn.textContent='Stop Search';out.innerHTML='';
+  const families=[],seen=new Set(),coveredMembers=new Set(),total=Math.max(1,nmax-nmin+1);
+  outer:for(let N=nmin;N<=nmax;N++){
+    if((N-nmin)%2===0){
+      sb.innerHTML=`<span class="spinner"></span> Searching N=${N} · found <span class="sc">${families.length}</span> families`;
+      pf.style.width=Math.round((N-nmin)/total*100)+'%';await sleep(0);
+      if(multiplicativeFamilyStop) break;
+    }
+    for(let D=N+1;D<=dmax;D++){
+      if(gcd(N,D)===1) continue;
+      const bases=findSelfies(N,D,'multiplicative','multiplicative');
+      if(!bases.length) continue;
+      for(const base of bases){
+        // Exclude neutral numerator factors and direct common-factor
+        // cancellations such as (19×9)/(19×90).
+        if(isTrivialFamily(base)) continue;
+        // Do not restart a new family from a member already represented in an
+        // earlier (and therefore more fundamental) zero-extension family.
+        if(coveredMembers.has(`${N}/${D}`)) continue;
+        const key=`${N}/${D}|${base.nt.lab}|${base.dt.op}`;
+        if(seen.has(key)) continue;
+        const members=[{N,D,...base}];let nextD=D;
+        for(let k=1;k<membersToTest;k++){
+          nextD*=10;if(!Number.isSafeInteger(nextD)) break;
+          const forms=findSelfies(N,nextD,'multiplicative','multiplicative');
+          const match=forms.find(x=>x.nt.lab===base.nt.lab&&x.nt.op===base.nt.op&&x.dt.op===base.dt.op);
+          if(!match) break;
+          members.push({N,D:nextD,...match});
+        }
+        if(members.length>=minSize){
+          seen.add(key);families.push({N,D,nt:base.nt,members});
+          members.forEach(m=>coveredMembers.add(`${m.N}/${m.D}`));
+          if(families.length>=limit) break outer;
+        }
+      }
+    }
+  }
+  btn.dataset.running='no';btn.textContent='Search All Families →';pf.style.width='100%';
+  if(!families.length){out.innerHTML='<div class="empty">No multiplicative ×10 families found in this range. Try increasing the ranges or reducing the minimum family size.</div>';sb.textContent=multiplicativeFamilyStop?'Search stopped; no families found so far.':'Search complete; no families found.';return;}
+  out.innerHTML='<div class="scroll">'+families.map((fam,i)=>`<div class="fg"><div class="fh"><span class="fn">Family ${i+1}: numerator ${fam.N}</span><span class="fi">${fam.members.length} verified members · numerator form ${fam.nt.lab}</span></div><div class="fb">${fam.members.map(m=>`<div class="fm"><span class="fl">${m.N}/${m.D}</span><span class="fe">:=</span><span class="fr2">(${m.nt.lab})/(${m.dt.lab})</span>${tagHtml(m.nt.op)}${tagHtml(m.dt.op)}</div>`).join('')}</div></div>`).join('')+'</div>';
+  const lines=[];families.forEach(fam=>{fam.members.forEach(m=>lines.push(fmt(m.N,m.D,m.nt.lab,m.dt.lab)));lines.push('');});
+  STORE.families={txt:lines.join('\n'),info:`${families.length} multiplicative ×10 families · N∈[${nmin},${nmax}] · base D≤${dmax}`};refreshDL();
+  sb.textContent=`${multiplicativeFamilyStop?'Search stopped.':'Search complete.'} Found ${families.length} multiplicative ×10 families.`;
+}
+
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+function sf(id,p){document.getElementById(id+'-pf').style.width=p+'%';}
+function ss(id,h){document.getElementById(id+'-sb').innerHTML=h;}
+
+function sw(id,btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.getElementById('p-'+id).classList.add('on');
+  btn.classList.add('on');
+}
+
+function tagHtml(op){
+  const map={
+    sum2:'A+B', mul2:'A×B', pow2:'A^B',
+    sum3:'A+B+C', mul3:'A×B×C',
+    aXbc:'A×(B+C)', abXc:'(A+B)×C',
+    aMbc:'A×B+C', aPbc:'A+B×C',
+    aPow:'A^B+C', cPow:'A+B^C',
+    powM:'A^B×C', mPow:'A×B^C'
+  };
+  const isPow=op==='pow2'||op==='aPow'||op==='cPow'||op==='powM'||op==='mPow';
+  const isMul=op==='mul2'||op==='mul3'||op==='aXbc'||op==='abXc'||op==='aMbc'||op==='aPbc';
+  const cls=isPow?'t-pw':isMul?'t-s3':'t-s2';
+  return `<span class="tag ${cls}">${map[op]||op}</span>`;
+}
+
+// ── SEARCH ─────────────────────────────────────────────────────────────────────
+async function runSearch(){
+  const nmin=+document.getElementById('s-nmin').value;
+  const nmax=+document.getElementById('s-nmax').value;
+  const dmax=+document.getElementById('s-dmax').value;
+  const nop=document.getElementById('s-nop').value;
+  const dop=document.getElementById('s-dop').value;
+  const doGrp=document.getElementById('s-grp').value==='yes';
+  const lim=+document.getElementById('s-lim').value;
+  const btn=document.getElementById('s-btn');
+  const out=document.getElementById('s-out');
+  btn.disabled=true; out.innerHTML=''; sf('s',0);
+
+  const found=[],seen=new Set();
+  const total=nmax-nmin+1;
+
+  for(let N=nmin;N<=nmax;N++){
+    if((N-nmin)%10===0){
+      ss('s',`<span class="spinner"></span> N=${N} &nbsp; found <span class="sc">${found.length}</span>`);
+      sf('s',Math.round((N-nmin)/total*100));
+      await sleep(0);
+    }
+    for(let D=N+1;D<=dmax;D++){
+      if(gcd(N,D)===1) continue;
+      const sl=findSelfies(N,D,nop,dop);
+      for(const s of sl){
+        const k=`${N}/${D}|${s.nt.lab}|${s.dt.lab}`;
+        if(!seen.has(k)){seen.add(k);found.push({N,D,...s});}
+        if(found.length>=lim) break;
+      }
+      if(found.length>=lim) break;
+    }
+    if(found.length>=lim) break;
+  }
+
+  sf('s',100); btn.disabled=false;
+  ss('s',`Found <span class="sc">${found.length}</span> selfie fractions (N∈[${nmin},${nmax}], D≤${dmax}).`);
+  storeSearch(found,nmin,nmax,dmax);
+  renderSearch(found,doGrp,out);
+}
+
+function renderSearch(found,doGrp,out){
+  if(!found.length){
+    out.innerHTML='<div class="empty">No selfie fractions found.<br>Try widening the denominator range or enabling more operations.</div>';
+    return;
+  }
+  if(!doGrp){
+    out.innerHTML='<div class="scroll">'+found.map(f=>`
+      <div class="rc ${f.nt.op}">
+        <div class="rcm">
+          <span class="fr">${f.N}/${f.D}</span><span class="eq">=</span>
+          <span class="rh">(${f.nt.lab})/(${f.dt.lab})</span><span class="eq">=</span>
+          <span class="fr">${f.nt.val}/${f.dt.val}</span><span class="eq">=</span>
+          <span class="rh">${f.rN}/${f.rD}</span>
+        </div>
+        <div class="rcx">${tagHtml(f.nt.op)}${tagHtml(f.dt.op)}<span class="dv">≈${(f.N/f.D).toPrecision(5)}</span></div>
+      </div>`).join('')+'</div>';
+    return;
+  }
+  const grps={};
+  found.forEach(f=>{
+    const k=`${f.rN}/${f.rD}`;
+    if(!grps[k]) grps[k]={rN:f.rN,rD:f.rD,val:f.N/f.D,m:[]};
+    grps[k].m.push(f);
+  });
+  const sorted=Object.values(grps).sort((a,b)=>b.m.length-a.m.length);
+  let html=`<div class="shdg">${sorted.length} distinct reduced fractions</div><div class="scroll">`;
+  sorted.forEach(g=>{
+    html+=`<div class="fg">
+      <div class="fh">
+        <span class="fn">= ${g.rN}/${g.rD}</span>
+        <span class="fi">${g.m.length} selfie form${g.m.length>1?'s':''} · ≈${g.val.toPrecision(5)}</span>
+      </div>
+      <div class="fb">${g.m.map(f=>`
+        <div class="fm">
+          <span class="fl">${f.N}/${f.D}</span><span class="fe">=</span>
+          <span class="fr2">(${f.nt.lab})/(${f.dt.lab})</span><span class="fe">=</span>
+          <span class="fr2">${f.nt.val}/${f.dt.val}</span>
+          ${tagHtml(f.nt.op)}
+        </div>`).join('')}
+      </div>
+    </div>`;
+  });
+  out.innerHTML=html+'</div>';
+}
+
+// ── FAMILIES ───────────────────────────────────────────────────────────────────
+async function runFamilies(){
+  const nmin=+document.getElementById('f-nmin').value;
+  const nmax=+document.getElementById('f-nmax').value;
+  const dmax=+document.getElementById('f-dmax').value;
+  const minL=+document.getElementById('f-ml').value;
+  const showN=+document.getElementById('f-sh').value;
+  const mode=document.getElementById('f-mode').value;
+  const btn=document.getElementById('f-btn');
+  const out=document.getElementById('f-out');
+  btn.disabled=true; out.innerHTML=''; sf('f',0);
+
+  ss('f','<span class="spinner"></span> Finding base selfie fractions…');
+
+  // bases2: 2-part denom split bases  {N,D,dStr,pos,nt,dt,rN,rD}
+  // bases3: 3-part denom split bases  {N,D,dStr,p1,cStr,nt,dt,rN,rD}
+  const bases2=[], bases3=[];
+  const total=nmax-nmin+1;
+
+  for(let N=nmin;N<=nmax;N++){
+    if((N-nmin)%10===0){sf('f',Math.round((N-nmin)/total*35));await sleep(0);}
+    const ntList=nTrans(N,'all');
+    for(let D=N+1;D<=dmax;D++){
+      const g=gcd(N,D);if(g===1) continue;
+      const rN=N/g,rD=D/g;
+      const dStr=String(D);
+
+      // ── 2-part denom bases ──
+      for(const dt of dTrans2(D)){
+        if(dt.val===D) continue;
+        for(const nt of ntList){
+          if(nt.val===N) continue;
+          const g3=gcd(nt.val,dt.val);
+          if(nt.val/g3===rN&&dt.val/g3===rD)
+            bases2.push({N,D,dStr,pos:dt.aLen,nt,dt,rN,rD});
+        }
+      }
+
+      // ── 3-part denom bases (middle-insertion) ──
+      for(const {a,b,c,p1,p2} of sp3full(D)){
+        if(a<=0||b<=0||c<=0) continue;
+        const dtVal=a+b+c;
+        if(dtVal===D) continue;
+        const dt={val:dtVal,lab:`${a}+${b}+${c}`,op:'sum3',aLen:p1};
+        for(const nt of ntList){
+          if(nt.val===N) continue;
+          const g3=gcd(nt.val,dtVal);
+          if(nt.val/g3===rN&&dtVal/g3===rD)
+            bases3.push({N,D,dStr,p1,cStr:dStr.slice(p2),nt,dt,rN,rD});
+        }
+      }
+    }
+  }
+
+  ss('f',`<span class="spinner"></span> ${bases2.length+bases3.length} bases — building families…`);
+  sf('f',40); await sleep(0);
+
+  const families=[],seenF=new Set();
+  const allBases=bases2.length+bases3.length;
+
+  // ── Process 2-part bases ────────────────────────────────────────────────────
+  for(let i=0;i<bases2.length;i++){
+    if(i%30===0){sf('f',40+Math.round(i/allBases*55));await sleep(0);}
+    const base=bases2[i];
+    const {N,pos,nt}=base;
+
+    // Single-digit insertion
+    if(mode==='single'||mode==='both'){
+      for(let d=0;d<=9;d++){
+        const block=String(d);
+        const members=[base];let cur=base;
+        for(let ext=1;ext<showN;ext++){
+          const newDStr=cur.dStr.slice(0,pos)+block+cur.dStr.slice(pos);
+          const newD=parseInt(newDStr);
+          const g2=gcd(N,newD);if(g2===1) break;
+          const rN2=N/g2,rD2=newD/g2;
+          let matched=false;
+          for(const dt2 of dTrans2(newD)){
+            if(dt2.val===newD) continue;
+            if(dt2.aLen!==pos) continue;
+            const g3=gcd(nt.val,dt2.val);
+            if(nt.val/g3===rN2&&dt2.val/g3===rD2){
+              members.push({N,D:newD,dStr:newDStr,pos,nt,dt:dt2,rN:rN2,rD:rD2});
+              cur=members[members.length-1];matched=true;break;
+            }
+          }
+          if(!matched) break;
+        }
+        if(members.length>=minL){
+          const k=`S2|${N}/${base.D}|${block}|${pos}|${nt.lab}`;
+          if(!seenF.has(k)){seenF.add(k);families.push({mode:'single',block,blockLen:1,pos,members,N,nt,baseLen:base.dStr.length});}
+        }
+      }
+    }
+
+    // Double-digit insertion
+    if(mode==='double'||mode==='both'){
+      for(let dd=0;dd<=99;dd++){
+        const block=String(dd).padStart(2,'0');
+        if(block[0]===block[1]) continue;
+        const members=[base];let cur=base;
+        for(let ext=1;ext<showN;ext++){
+          const newDStr=cur.dStr.slice(0,pos)+block+cur.dStr.slice(pos);
+          const newD=parseInt(newDStr);
+          if(isNaN(newD)||newD<=0) break;
+          const g2=gcd(N,newD);if(g2===1) break;
+          const rN2=N/g2,rD2=newD/g2;
+          let matched=false;
+          for(const dt2 of dTransAll(newD,'all')){
+            if(dt2.val===newD) continue;
+            if(dt2.aLen!==pos) continue;
+            const g3=gcd(nt.val,dt2.val);
+            if(nt.val/g3===rN2&&dt2.val/g3===rD2){
+              members.push({N,D:newD,dStr:newDStr,pos,nt,dt:dt2,rN:rN2,rD:rD2});
+              cur=members[members.length-1];matched=true;break;
+            }
+          }
+          if(!matched) break;
+        }
+        if(members.length>=minL){
+          const k=`D2|${N}/${base.D}|${block}|${pos}|${nt.lab}`;
+          if(!seenF.has(k)){seenF.add(k);families.push({mode:'double',block,blockLen:2,pos,members,N,nt,baseLen:base.dStr.length});}
+        }
+      }
+    }
+  }
+
+  // ── Process 3-part bases (middle-insertion) ─────────────────────────────────
+  for(let i=0;i<bases3.length;i++){
+    if(i%30===0){sf('f',40+Math.round((bases2.length+i)/allBases*55));await sleep(0);}
+    const base=bases3[i];
+    const {N,p1,cStr,nt}=base;
+    const pos=p1; // insert at start of middle segment
+
+    // Single-digit middle-insertion
+    if(mode==='single'||mode==='both'){
+      for(let d=0;d<=9;d++){
+        const block=String(d);
+        const members=[base];let cur=base;
+        for(let ext=1;ext<showN;ext++){
+          const newDStr=cur.dStr.slice(0,pos)+block+cur.dStr.slice(pos);
+          const newD=parseInt(newDStr);
+          const g2=gcd(N,newD);if(g2===1) break;
+          const rN2=N/g2,rD2=newD/g2;
+          let matched=false;
+          // find 3-part split with same left (aLen=p1) and same right (ends with cStr)
+          for(const {a,b,c,p1:ap1,p2} of sp3full(newD)){
+            if(ap1!==p1) continue;
+            if(String(newD).slice(p2)!==cStr) continue;
+            if(a<=0||b<=0||c<=0) continue;
+            const dtVal=a+b+c;
+            if(dtVal===newD) continue;
+            const g3=gcd(nt.val,dtVal);
+            if(nt.val/g3===rN2&&dtVal/g3===rD2){
+              const dt2={val:dtVal,lab:`${a}+${b}+${c}`,op:'sum3',aLen:ap1};
+              members.push({N,D:newD,dStr:newDStr,pos,nt,dt:dt2,rN:rN2,rD:rD2});
+              cur=members[members.length-1];matched=true;break;
+            }
+          }
+          if(!matched) break;
+        }
+        if(members.length>=minL){
+          const k=`S3|${N}/${base.D}|${block}|${p1}|${cStr}|${nt.lab}`;
+          if(!seenF.has(k)){seenF.add(k);families.push({mode:'single3',block,blockLen:1,pos,cStr,members,N,nt,baseLen:base.dStr.length});}
+        }
+      }
+    }
+
+    // Double-digit middle-insertion
+    if(mode==='double'||mode==='both'){
+      for(let dd=0;dd<=99;dd++){
+        const block=String(dd).padStart(2,'0');
+        if(block[0]===block[1]) continue;
+        const members=[base];let cur=base;
+        for(let ext=1;ext<showN;ext++){
+          const newDStr=cur.dStr.slice(0,pos)+block+cur.dStr.slice(pos);
+          const newD=parseInt(newDStr);
+          if(isNaN(newD)||newD<=0) break;
+          const g2=gcd(N,newD);if(g2===1) break;
+          const rN2=N/g2,rD2=newD/g2;
+          let matched=false;
+          for(const {a,b,c,p1:ap1,p2} of sp3full(newD)){
+            if(ap1!==p1) continue;
+            if(String(newD).slice(p2)!==cStr) continue;
+            if(a<=0||b<=0||c<=0) continue;
+            const dtVal=a+b+c;
+            if(dtVal===newD) continue;
+            const g3=gcd(nt.val,dtVal);
+            if(nt.val/g3===rN2&&dtVal/g3===rD2){
+              const dt2={val:dtVal,lab:`${a}+${b}+${c}`,op:'sum3',aLen:ap1};
+              members.push({N,D:newD,dStr:newDStr,pos,nt,dt:dt2,rN:rN2,rD:rD2});
+              cur=members[members.length-1];matched=true;break;
+            }
+          }
+          if(!matched) break;
+        }
+        if(members.length>=minL){
+          const k=`D3|${N}/${base.D}|${block}|${p1}|${cStr}|${nt.lab}`;
+          if(!seenF.has(k)){seenF.add(k);families.push({mode:'double3',block,blockLen:2,pos,cStr,members,N,nt,baseLen:base.dStr.length});}
+        }
+      }
+    }
+  }
+
+  sf('f',100); btn.disabled=false;
+  ss('f',`Found <span class="sc">${families.length}</span> insertion families (≥${minL} members).`);
+
+  const bestKey={};
+  families.forEach(f=>{
+    const k=`${f.mode}|${f.N}|${f.block}|${f.pos}|${f.cStr||''}|${f.nt.lab}`;
+    if(!bestKey[k]||f.members.length>bestKey[k].members.length) bestKey[k]=f;
+  });
+  const unique=Object.values(bestKey).sort((a,b)=>b.members.length-a.members.length||a.N-b.N);
+  storeFamilies(unique,nmin,nmax,dmax,minL);
+  renderFamilies(unique,out);
+}
+
+function renderFamilies(unique,out){
+  if(!unique.length){
+    out.innerHTML='<div class="empty">No insertion families found.<br>Try reducing the minimum family size, or increasing the numerator/denominator range.</div>';
+    return;
+  }
+  function modeLabel(f){
+    if(f.mode==='single') return '1-digit, 2-part denom';
+    if(f.mode==='double') return '2-digit, 2-part denom';
+    if(f.mode==='single3') return '1-digit, 3-part middle';
+    if(f.mode==='double3') return '2-digit, 3-part middle';
+    return f.mode;
+  }
+  let html=`<div class="shdg">${unique.length} families — inserted block in <span style="color:var(--accent);font-weight:600">orange</span></div><div class="scroll">`;
+  unique.forEach(fam=>{
+    const bl=fam.baseLen;
+    const bLen=fam.blockLen;
+    html+=`<div class="fg">
+      <div class="fh">
+        <span class="fn">N=${fam.N} &nbsp;·&nbsp; insert <span style="color:var(--accent);font-weight:700">"${fam.block}"</span> [${modeLabel(fam)}] at pos ${fam.pos}${fam.cStr?` (right fixed: "${fam.cStr}")`:''} &nbsp;·&nbsp; num: ${fam.nt.lab}</span>
+        <span class="fi">${fam.members.length} members</span>
+      </div>
+      <div class="fb">${fam.members.map(m=>{
+        const ic=m.dStr.length-bl;
+        const reps=ic/bLen;
+        const dDisp=ic===0
+          ? m.dStr
+          : m.dStr.slice(0,fam.pos)+`<span class="fins">${fam.block.repeat(reps)}</span>`+m.dStr.slice(fam.pos+ic);
+        return `<div class="fm">
+          <span class="fl">${m.N}/${m.D}</span>
+          <span class="fe">=</span>
+          <span class="fr2">(${m.nt.lab})/(${m.dt.lab})</span>
+          <span class="fe">=</span>
+          <span class="fr2">${m.nt.val}/${m.dt.val}</span>
+          <span class="fe">=</span>
+          <span class="fv">${m.rN}/${m.rD}</span>
+        </div>`;
+      }).join('')}</div>
+    </div>`;
+  });
+  out.innerHTML=html+'</div>';
+}
+
+// ── VERIFY ─────────────────────────────────────────────────────────────────────
+function runVerify(){
+  const N=+document.getElementById('v-n').value;
+  const D=+document.getElementById('v-d').value;
+  const out=document.getElementById('v-out');
+  if(!N||!D||D<=N){
+    out.innerHTML='<div class="empty">Enter valid N and D with D &gt; N &gt; 0.</div>';
+    return;
+  }
+  const g=gcd(N,D),rN=N/g,rD=D/g;
+  const sl=findSelfies(N,D,'multiplicative','multiplicative');
+  storeVerify(N,D,rN,rD,sl);
+  let html=`<div style="margin-bottom:0.7rem"><div class="shdg">${N}/${D} = ${rN}/${rD} (reduced) ≈ ${(N/D).toPrecision(7)}</div></div>`;
+  if(!sl.length){
+    html+='<div class="empty">No selfie representation found for this fraction.<br>Try a fraction where GCD(N,D) &gt; 1 and each part has ≥2 digits.</div>';
+  } else {
+    html+='<div class="scroll">'+sl.map(s=>`
+      <div class="rc ${s.nt.op}">
+        <div class="rcm">
+          <span class="fr">${N}/${D}</span><span class="eq">=</span>
+          <span class="rh">(${s.nt.lab})/(${s.dt.lab})</span><span class="eq">=</span>
+          <span class="fr">${s.nt.val}/${s.dt.val}</span><span class="eq">=</span>
+          <span class="rh">${rN}/${rD}</span>
+        </div>
+        <div class="rcx">${tagHtml(s.nt.op)} num &nbsp; ${tagHtml(s.dt.op)} denom</div>
+      </div>`).join('')+'</div>';
+  }
+  out.innerHTML=html;
+}
+</script>
+</body>
+</html>

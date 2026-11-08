@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Consecutive Multiplication Pattern Generator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Mono:ital,wght@0,400;0,600;1,400&family=Playfair+Display:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f5f3fb;--bg2:#ece8f8;--bg3:#e1dbf2;--ink:#1c1a34;--ink2:#4c4770;--ink3:#83809f;--accent:#a8791f;--accent2:#8a5a20;--accent3:#5b4fa0;--border:rgba(28,26,52,0.10);--border2:rgba(28,26,52,0.20);--col-a:#5b4fa0;--col-b:#a8791f;--col-prev:#a8791f;--col-wrap:#8a5a20;--radius:8px;--radius-lg:14px;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--ink);font-family:'Instrument Mono',monospace;min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='4' height='4' fill='%23f5f3fb'/%3E%3Ccircle cx='1' cy='1' r='0.4' fill='%23d6cfeb'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:0.6;}
+.page{position:relative;z-index:1;max-width:960px;margin:0 auto;padding:0 24px 80px;}
+header{padding:40px 0 24px;border-bottom:2px solid var(--ink);margin-bottom:26px;display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+h1{font-family:'Playfair Display',serif;font-size:clamp(22px,5vw,38px);font-weight:900;letter-spacing:-1px;line-height:1;}
+h1 span{color:var(--accent);}
+.subtitle{font-size:11px;color:var(--ink3);letter-spacing:2px;text-transform:uppercase;margin-top:6px;}
+.legend{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+.leg{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--ink2);}
+.leg-dot{width:9px;height:9px;border-radius:2px;}
+.controls{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:14px 18px;margin-bottom:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;align-items:end;}
+.field label{display:block;font-size:9px;color:var(--ink3);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;}
+.field input,.field select{width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);color:var(--ink);font-family:'Instrument Mono',monospace;font-size:13px;padding:7px 9px;outline:none;-webkit-appearance:none;appearance:none;}
+.field input:focus,.field select:focus{border-color:var(--accent);}
+.btn{width:100%;padding:8px;background:var(--ink);border:none;border-radius:var(--radius);color:var(--bg);font-family:'Instrument Mono',monospace;font-size:11px;font-weight:600;cursor:pointer;letter-spacing:1px;text-transform:uppercase;transition:all 0.15s;}
+.btn:hover{background:var(--accent);}
+.btn:active{transform:scale(0.98);}
+.btn-dl{background:var(--bg);color:var(--ink);border:1px solid var(--border2);}
+.btn-dl:hover{background:var(--bg3);border-color:var(--ink);}
+.btn-green{background:var(--accent);color:#f5f3fb;}
+.btn-green:hover{background:#8a5a20;}
+.scan-panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 18px;margin-bottom:20px;}
+.scan-title{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--ink3);margin-bottom:9px;}
+.scan-controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:9px;align-items:end;}
+.scan-results{margin-top:9px;font-size:12px;color:var(--ink2);line-height:2;max-height:160px;overflow-y:auto;}
+.scan-hit{display:inline-block;background:rgba(168,121,31,0.1);border:1px solid rgba(168,121,31,0.2);color:var(--accent);border-radius:4px;padding:1px 6px;margin:2px;cursor:pointer;font-size:11px;}
+.scan-hit:hover{background:rgba(168,121,31,0.2);}
+.results-wrap{display:flex;flex-direction:column;gap:11px;}
+.chain-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;animation:rise 0.22s ease both;}
+@keyframes rise{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+.chain-head{display:flex;align-items:center;justify-content:space-between;padding:8px 13px;border-bottom:1px solid var(--border);background:var(--bg3);flex-wrap:wrap;gap:5px;}
+.chain-seed{font-size:11px;font-weight:600;color:var(--ink);}
+.badge{font-size:9px;padding:2px 7px;border-radius:20px;letter-spacing:1px;text-transform:uppercase;}
+.badge-sub{background:rgba(168,121,31,0.12);color:var(--accent);border:1px solid rgba(168,121,31,0.25);}
+.badge-ins{background:rgba(91,79,160,0.12);color:var(--accent3);border:1px solid rgba(91,79,160,0.25);}
+.badge-none{background:rgba(131,128,159,0.12);color:var(--ink3);border:1px solid rgba(131,128,159,0.25);}
+.chain-body{padding:8px 13px;overflow-x:auto;}
+.chain-row{display:flex;align-items:baseline;gap:4px;padding:3px 0;border-bottom:0.5px solid var(--border);font-size:12px;white-space:nowrap;}
+.chain-row:last-child{border-bottom:none;}
+.cr-factors{color:var(--ink2);flex-shrink:0;min-width:185px;}
+.cr-eq{color:var(--ink3);padding:0 4px;flex-shrink:0;}
+.cr-result{flex:1;}
+.da{display:inline-block;padding:0 1px;color:var(--col-a);}
+.db{display:inline-block;padding:0 1px;color:var(--col-b);}
+.d-ins{display:inline-block;padding:0 2px;border-radius:2px;background:rgba(168,121,31,0.13);color:var(--col-prev);border-bottom:1.5px solid var(--col-prev);}
+.d-sub-prev{display:inline-block;padding:0 2px;border-radius:2px;background:rgba(168,121,31,0.13);color:var(--col-prev);border-bottom:1.5px solid var(--col-prev);}
+.d-sub-wrap{display:inline-block;padding:0 2px;color:var(--col-wrap);font-style:italic;}
+.d-plain{display:inline-block;}
+.tag-s,.tag-l{display:inline-block;font-size:9px;padding:1px 5px;border-radius:10px;margin-left:4px;vertical-align:middle;}
+.tag-s{background:rgba(131,128,159,0.12);color:var(--ink3);border:1px solid rgba(131,128,159,0.2);}
+.tag-l{background:rgba(168,121,31,0.1);color:var(--accent);border:1px solid rgba(168,121,31,0.2);}
+.embed-note{font-size:10px;color:var(--ink3);margin-top:5px;padding-top:5px;border-top:0.5px solid var(--border);}
+.sec-hdr{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--ink3);padding:4px 0 6px;border-bottom:1px solid var(--border2);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;}
+.sec-count{font-size:11px;background:var(--bg3);padding:2px 9px;border-radius:20px;color:var(--ink2);border:1px solid var(--border);}
+.no-sol{text-align:center;padding:20px;color:var(--ink3);font-size:12px;background:var(--bg2);border-radius:var(--radius-lg);border:1px dashed var(--border2);}
+.summary{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:7px 13px;margin-bottom:11px;display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--ink2);align-items:center;}
+.summary strong{color:var(--ink);}
+</style>
+</head>
+<body>
+<div class="page">
+<header>
+  <div>
+    <h1>Consecutive Multiplication<br><span>Pattern</span> Generator</h1>
+    <p class="subtitle">product pairs · substring + insertion patterns · all growth modes</p>
+    <p class="subtitle" style="margin-top:2px;letter-spacing:1px;">Created by Inder J. Taneja</p>
+  </div>
+  <div class="legend">
+    <div class="leg"><div class="leg-dot" style="background:var(--col-a)"></div>factor A</div>
+    <div class="leg"><div class="leg-dot" style="background:var(--col-b)"></div>factor B</div>
+    <div class="leg"><div class="leg-dot" style="background:rgba(168,121,31,0.4)"></div>pattern digits (new each step)</div>
+    <div class="leg"><div class="leg-dot" style="background:var(--col-wrap)"></div>wrap (substring mode)</div>
+  </div>
+</header>
+
+<!-- Explorer -->
+<div class="controls">
+  <div class="field"><label>Seed A</label><input type="number" id="startA" value="66" min="1"></div>
+  <div class="field"><label>Seed B</label><input type="number" id="startB" value="67" min="1"></div>
+  <div class="field"><label>Steps</label><input type="number" id="steps" value="7" min="3" max="12"></div>
+  <div class="field"><label>Max digit</label>
+    <select id="maxDigit">
+      <option value="3">1–3 (fast)</option>
+      <option value="6">1–6</option>
+      <option value="9" selected>1–9 (full)</option>
+    </select>
+  </div>
+  <div class="field"><label>&nbsp;</label><button class="btn" onclick="generate()">Find all solutions ↗</button></div>
+  <div class="field"><label>&nbsp;</label><button class="btn btn-dl" onclick="downloadSingle()">Download .txt ↓</button></div>
+  <div class="field"><label>&nbsp;</label><button class="btn btn-dl" onclick="downloadSingleExcel()">Download .xlsx ↓</button></div>
+</div>
+
+<!-- Interval -->
+<div class="scan-panel">
+  <div class="scan-title">Interval — scan A×(A+gap) for a range of seeds</div>
+  <div class="scan-controls">
+    <div class="field"><label>A from</label><input type="number" id="scanFrom" value="10" min="1"></div>
+    <div class="field"><label>A to</label><input type="number" id="scanTo" value="100" min="2"></div>
+    <div class="field"><label>Gap (B=A+gap)</label><input type="number" id="scanGap" value="1" min="1" max="999"></div>
+    <div class="field"><label>Multiple ranges</label><input type="text" id="multiRange" placeholder="e.g. 10-20, 60-70"></div>
+    <div class="field"><label>Min steps</label><input type="number" id="minChain" value="4" min="2" max="10"></div>
+    <div class="field"><label>Steps/pair</label><input type="number" id="dlSteps" value="7" min="3" max="10"></div>
+    <div class="field"><label>Max digit</label>
+      <select id="dlMaxDigit">
+        <option value="3">1–3 (fast)</option>
+        <option value="6" selected>1–6</option>
+        <option value="9">1–9 (slow)</option>
+      </select>
+    </div>
+    <div class="field"><label>Filter</label>
+      <select id="dlOnlyEmbed">
+        <option value="yes">Embedding only</option>
+        <option value="no">All</option>
+      </select>
+    </div>
+  </div>
+  <div style="display:flex;gap:9px;margin-top:11px;flex-wrap:wrap;align-items:center">
+    <button class="btn" style="flex:1;min-width:120px" onclick="scanRange()">Preview pairs</button>
+    <button class="btn btn-green" style="flex:2;min-width:170px" onclick="downloadInterval()">Download interval .txt ↓</button>
+    <button class="btn btn-green" style="flex:2;min-width:170px" onclick="downloadIntervalExcel()">Download interval .xlsx ↓</button>
+    <span id="dl-progress" style="font-size:11px;color:var(--ink3);"></span>
+  </div>
+  <div class="scan-results" id="scan-results">
+    <span style="color:var(--ink3)">Two pattern types detected: <strong>substring</strong> (result contains previous result) and <strong>insertion</strong> (same digits inserted at regular positions each step). Range 10–100 finds 91 pairs.</span>
+  </div>
+</div>
+
+<div id="summary" class="summary" style="display:none"></div>
+<div class="results-wrap" id="results"></div>
+<footer style="margin-top:30px;padding-top:16px;border-top:1px solid var(--border2);text-align:center;font-size:11px;color:var(--ink3);">
+  <div style="margin-bottom:6px;">Inder J. Taneja</div>
+  <div>
+    <a href="https://numbers-magic.com/" target="_blank" style="color:var(--ink3);text-decoration:underline;">numbers-magic.com</a>
+    &nbsp;·&nbsp;
+    <a href="https://inderjtaneja.wordpress.com/" target="_blank" style="color:var(--ink3);text-decoration:underline;">inderjtaneja.wordpress.com</a>
+    &nbsp;·&nbsp;
+    <a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/" target="_blank" style="color:var(--ink3);text-decoration:underline;">taneja-mathematical-generators.ijtaneja.chatgpt.site</a>
+  </div>
+</footer>
+</div>
+
+<script>
+// ── Growth ───────────────────────────────────────────────────────
+function grow(s, pos, d, step) {
+  if (step===0) return s;
+  const r=d.repeat(step);
+  if (pos==='pre') return r+s;
+  if (pos==='post') return s+r;
+  return s.length<2 ? r+s : s.slice(0,-1)+r+s.slice(-1);
+}
+
+function buildChain(aStr,bStr,gA,gB,dA,dB,steps) {
+  const results=[],pairs=[];
+  for (let s=0;s<steps;s++) {
+    const A=grow(aStr,gA,dA,s), B=grow(bStr,gB,dB,s);
+    results.push((BigInt(A)*BigInt(B)).toString());
+    pairs.push({A,B});
+  }
+  return {results,pairs};
+}
+
+// ── Detector 1: substring containment ────────────────────────────
+function detectSubstring(results) {
+  if (results.length<2) return false;
+  for (let i=1;i<results.length;i++)
+    if (!results[i].includes(results[i-1])) return false;
+  return true;
+}
+
+// ── Detector 2: regular insertion ────────────────────────────────
+// Each step inserts the same set of digits at positions that advance by a fixed stride.
+function getInsertions(prev, curr) {
+  if (curr.length<=prev.length) return null;
+  const ins=[]; let pi=0,ci=0;
+  while (ci<curr.length) {
+    if (pi<prev.length && curr[ci]===prev[pi]) { pi++; ci++; }
+    else { ins.push({absPos:ci, digit:curr[ci]}); ci++; }
+  }
+  if (pi!==prev.length) return null;
+  return ins;
+}
+
+function detectRegularInsert(results) {
+  if (results.length<3) return false;
+  let baseDigits=null, strides=null;
+  const allIns=[];
+  for (let i=1;i<results.length;i++) {
+    const ins=getInsertions(results[i-1],results[i]);
+    if (!ins||ins.length===0) return false;
+    const digits=ins.map(x=>x.digit);
+    if (baseDigits===null) baseDigits=digits;
+    else { if (digits.join('')!==baseDigits.join('')) return false; }
+    allIns.push(ins);
+  }
+  // Check strides per insertion slot
+  for (let k=0;k<baseDigits.length;k++) {
+    let prevPos=null,stride=null;
+    for (let i=0;i<allIns.length;i++) {
+      const pos=allIns[i][k].absPos;
+      if (prevPos!==null) {
+        const s=pos-prevPos;
+        if (stride===null) stride=s;
+        else if (s!==stride) return false;
+      }
+      prevPos=pos;
+    }
+    if (stride===null||stride<=0) return false;
+  }
+  return true;
+}
+
+// ── Describe insertion pattern ────────────────────────────────────
+function describeInsert(results) {
+  if (results.length<2) return '';
+  const ins=getInsertions(results[0],results[1]);
+  if (!ins) return '';
+  return 'inserts: '+ins.map(x=>`"${x.digit}"`).join(' + ');
+}
+
+// ── All solutions for one pair ────────────────────────────────────
+function allSolutions(aStr,bStr,steps,maxD,onlyEmbed) {
+  const POS=['pre','mid','post'];
+  const DIGITS=Array.from({length:maxD},(_,i)=>String(i+1));
+  const seen=new Set(),combos=[];
+  for (const gA of POS) for (const gB of POS) for (const dA of DIGITS) for (const dB of DIGITS) {
+    const {results,pairs}=buildChain(aStr,bStr,gA,gB,dA,dB,steps);
+    const isSub=detectSubstring(results);
+    const isIns=!isSub && detectRegularInsert(results);
+    if (onlyEmbed && !isSub && !isIns) continue;
+    const key=results.join('|');
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const type=isSub?'substring':isIns?'insertion':'none';
+    const desc=isIns?describeInsert(results):'';
+    combos.push({gA,gB,dA,dB,results,pairs,type,desc,isEmbed:isSub||isIns});
+  }
+  return combos;
+}
+
+// ── Colorize result for display ───────────────────────────────────
+function colorF(s,cls){return [...s].map(c=>`<span class="${cls}">${c}</span>`).join('');}
+
+function colorResultSubstring(curr,prev) {
+  if (!prev) return `<span class="d-plain">${curr}</span>`;
+  const idx=curr.indexOf(prev);
+  if (idx===-1) return `<span class="d-plain">${curr}</span>`;
+  return (idx>0?`<span class="d-sub-wrap">${curr.slice(0,idx)}</span>`:'')+
+    `<span class="d-sub-prev">${curr.slice(idx,idx+prev.length)}</span>`+
+    (idx+prev.length<curr.length?`<span class="d-sub-wrap">${curr.slice(idx+prev.length)}</span>`:'');
+}
+
+function colorResultInsertion(curr,prev) {
+  if (!prev) return `<span class="d-plain">${curr}</span>`;
+  const ins=getInsertions(prev,curr);
+  if (!ins) return `<span class="d-plain">${curr}</span>`;
+  const insSet=new Set(ins.map(x=>x.absPos));
+  return [...curr].map((c,i)=>insSet.has(i)?`<span class="d-ins">${c}</span>`:`<span class="d-plain">${c}</span>`).join('');
+}
+
+// ── Render card ───────────────────────────────────────────────────
+function renderCard(c,aStr,bStr,steps,delay) {
+  let rows='';
+  for (let i=0;i<steps;i++) {
+    const prev=i>0?c.results[i-1]:null;
+    let resHtml='', tag='';
+    if (i===0) {
+      resHtml=`<span class="d-plain">${c.results[i]}</span>`;
+      tag='<span class="tag-s">seed</span>';
+    } else if (c.type==='substring') {
+      resHtml=colorResultSubstring(c.results[i],prev);
+      tag='';
+    } else if (c.type==='insertion') {
+      resHtml=colorResultInsertion(c.results[i],prev);
+      tag='';
+    } else {
+      resHtml=`<span class="d-plain">${c.results[i]}</span>`;
+    }
+    rows+=`<div class="chain-row">
+      <span class="cr-factors">${colorF(c.pairs[i].A,'da')} × ${colorF(c.pairs[i].B,'db')}</span>
+      <span class="cr-eq">=</span>
+      <span class="cr-result">${resHtml}${tag}</span>
+    </div>`;
+  }
+  const badgeClass=c.type==='substring'?'badge-sub':c.type==='insertion'?'badge-ins':'badge-none';
+  const noteStr=c.type==='insertion'?`insertion pattern · ${c.desc}`:c.type==='substring'?'substring containment':'no pattern';
+  return `<div class="chain-card" style="animation-delay:${delay}ms">
+    <div class="chain-head">
+      <span class="chain-seed">${aStr}×${bStr} · A:${c.gA}(${c.dA}) B:${c.gB}(${c.dB})</span>
+      <span class="badge ${badgeClass}">${c.type}</span>
+    </div>
+    <div class="chain-body">
+      ${rows}
+      <div class="embed-note">${noteStr}</div>
+    </div>
+  </div>`;
+}
+
+// ── Generate ──────────────────────────────────────────────────────
+function generate() {
+  const aStr=document.getElementById('startA').value.trim();
+  const bStr=document.getElementById('startB').value.trim();
+  const steps=Math.max(3,Math.min(12,parseInt(document.getElementById('steps').value)||7));
+  const maxD=parseInt(document.getElementById('maxDigit').value)||9;
+  if (!aStr||!bStr) return;
+  const combos=allSolutions(aStr,bStr,steps,maxD,false);
+  const embedding=combos.filter(c=>c.isEmbed);
+  const noEmbed=combos.filter(c=>!c.isEmbed);
+  let html='';
+  if (embedding.length>0) {
+    html+=`<div class="sec-hdr">Embedding solutions<span class="sec-count">${embedding.length} found</span></div>`;
+    embedding.forEach((c,i)=>{html+=renderCard(c,aStr,bStr,steps,i*35);});
+  }
+  if (noEmbed.length>0) {
+    html+=`<div class="sec-hdr" style="margin-top:16px">Non-embedding (${noEmbed.length})<span class="sec-count" style="cursor:pointer;color:var(--accent)" onclick="toggleSec(this)">show</span></div><div id="ne-sec" style="display:none">`;
+    noEmbed.forEach((c,i)=>{html+=renderCard(c,aStr,bStr,steps,i*12);});
+    html+='</div>';
+  }
+  if (!embedding.length) html=`<div class="no-sol">No embedding solutions for ${aStr}×${bStr} with digits 1–${maxD}.<br>Try increasing max digit or changing seeds.</div>`+html;
+  document.getElementById('results').innerHTML=html;
+  const el=document.getElementById('summary');
+  el.style.display='flex';
+  el.innerHTML=`<strong>${embedding.length}</strong> embedding (${combos.filter(c=>c.type==='substring').length} substring, ${combos.filter(c=>c.type==='insertion').length} insertion) &nbsp;·&nbsp; <strong>${noEmbed.length}</strong> non-embedding &nbsp;·&nbsp; <strong>${combos.length}</strong> total tried`;
+  window._last={aStr,bStr,steps,maxD,combos,embedding};
+}
+
+function toggleSec(btn){
+  const s=document.getElementById('ne-sec');if(!s)return;
+  const h=s.style.display==='none';s.style.display=h?'':'none';btn.textContent=h?'hide':'show';
+}
+
+function loadPair(a,b){
+  document.getElementById('startA').value=a;
+  document.getElementById('startB').value=b;
+  generate();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ── Range parser ──────────────────────────────────────────────────
+function parseRanges(){
+  const multi=document.getElementById('multiRange').value.trim();
+  const gap=parseInt(document.getElementById('scanGap').value)||1;
+  const pairs=[];
+  if (multi) {
+    const nums=new Set();
+    multi.split(',').map(s=>s.trim()).forEach(part=>{
+      const m=part.match(/^(\d+)\s*-\s*(\d+)$/);
+      if (m){const lo=parseInt(m[1]),hi=Math.min(parseInt(m[2]),lo+499);for(let i=lo;i<=hi;i++)nums.add(i);}
+      else{const n=parseInt(part);if(!isNaN(n)&&n>=1)nums.add(n);}
+    });
+    [...nums].sort((a,b)=>a-b).forEach(a=>pairs.push([a,a+gap]));
+  } else {
+    const from=parseInt(document.getElementById('scanFrom').value);
+    const to=Math.min(parseInt(document.getElementById('scanTo').value),from+500);
+    for(let a=from;a<=to;a++)pairs.push([a,a+gap]);
+  }
+  return pairs;
+}
+
+// ── Scan ──────────────────────────────────────────────────────────
+function scanRange(){
+  const pairs=parseRanges();
+  const minChain=parseInt(document.getElementById('minChain').value)||4;
+  const steps=Math.max(4,Math.min(10,parseInt(document.getElementById('dlSteps').value)||7));
+  const maxD=parseInt(document.getElementById('dlMaxDigit').value)||6;
+  const el=document.getElementById('scan-results');
+  el.innerHTML=`<span style="color:var(--ink3)">Scanning ${pairs.length} pairs…</span>`;
+  setTimeout(()=>{
+    const hits=[];
+    for(const[a,b]of pairs){
+      const combos=allSolutions(String(a),String(b),steps,maxD,true);
+      if(combos.length>=1)hits.push({a,b,count:combos.length});
+    }
+    if(!hits.length){el.innerHTML=`<span style="color:var(--ink3)">No embedding pairs found. Try wider range or higher max digit.</span>`;return;}
+    el.innerHTML=hits.map(h=>`<span class="scan-hit" onclick="loadPair(${h.a},${h.b})">${h.a}×${h.b}<sup style="font-size:8px">${h.count}</sup></span>`).join('')
+      +`<br><span style="color:var(--ink3);font-size:10px">${hits.length} pairs · superscript=solutions · click to explore above</span>`;
+    document.getElementById('dl-progress').textContent=`${hits.length} pairs found`;
+  },10);
+}
+
+// ── Interval download ─────────────────────────────────────────────
+function downloadInterval(){
+  const pairs=parseRanges();
+  const minChain=parseInt(document.getElementById('minChain').value)||4;
+  const steps=Math.max(4,Math.min(10,parseInt(document.getElementById('dlSteps').value)||7));
+  const maxD=parseInt(document.getElementById('dlMaxDigit').value)||6;
+  const onlyEmbed=document.getElementById('dlOnlyEmbed').value==='yes';
+  const prog=document.getElementById('dl-progress');
+  if(pairs.length>80&&!confirm(`Process ${pairs.length} pairs?`))return;
+  prog.textContent='Building…';
+  setTimeout(()=>{
+    const SEP='='.repeat(72),SEP2='-'.repeat(72),SEP3='·'.repeat(72);
+    let out=[],totalPairs=0,totalSolutions=0;
+    out.push(SEP);out.push('  CONSECUTIVE MULTIPLICATION PATTERN GENERATOR -- INTERVAL RESULTS');out.push(SEP);
+    out.push(`  Range     : A=${pairs[0][0]}–${pairs[pairs.length-1][0]}, B=A+${document.getElementById('scanGap').value||1}`);
+    out.push(`  Pairs     : ${pairs.length} (e.g. ${pairs[0][0]}x${pairs[0][1]}${pairs.length>1?', '+pairs[1][0]+'x'+pairs[1][1]:''}...)`);
+    out.push(`  Max digit : ${maxD}  |  Steps: ${steps}  |  Min embed steps: ${minChain}`);
+    out.push(`  Pattern   : substring (result contains prev) + insertion (same digits inserted regularly)`);
+    out.push(`  Filter    : ${onlyEmbed?'embedding only':'all combinations'}`);
+    out.push(`  Generated : ${new Date().toLocaleString()}`);
+    out.push('');
+    for(const[a,b]of pairs){
+      const aStr=String(a),bStr=String(b);
+      const combos=allSolutions(aStr,bStr,steps,maxD,onlyEmbed);
+      const good=onlyEmbed?combos.filter(c=>c.isEmbed):combos;
+      if(!good.length)continue;
+      totalPairs++;
+      out.push(SEP);out.push(`  PAIR: ${aStr} x ${bStr}   (${good.length} solution${good.length>1?'s':''})`);out.push(SEP);
+      const maxR=Math.max(...good.flatMap(c=>c.results.map(r=>r.length)));
+      for(const c of good){
+        totalSolutions++;
+        out.push('');out.push(SEP2);
+        out.push(`  A:${c.gA}(${c.dA})  B:${c.gB}(${c.dB})  |  type: ${c.type.toUpperCase()}${c.desc?' | '+c.desc:''}`);
+        out.push(SEP2);
+        const maxA=Math.max(...c.pairs.map(p=>p.A.length));
+        const maxB=Math.max(...c.pairs.map(p=>p.B.length));
+        for(let i=0;i<steps;i++){
+          const lhs=c.pairs[i].A.padStart(maxA)+' x '+c.pairs[i].B.padStart(maxB);
+          const rhs=c.results[i].padStart(maxR);
+          out.push(`  ${lhs}  =  ${rhs}`);
+        }
+        out.push('');
+      }
+      out.push(SEP3);
+    }
+    out.push('');out.push(SEP);out.push('  SUMMARY');out.push(SEP);
+    out.push(`  Seeds with solutions : ${totalPairs} of ${pairs.length}`);
+    out.push(`  Total solutions      : ${totalSolutions}`);
+    out.push(`  Avg per seed         : ${totalPairs?(totalSolutions/totalPairs).toFixed(1):0}`);
+    out.push('');out.push(SEP);
+    const rangeLabel=`${pairs[0][0]}-${pairs[pairs.length-1][0]}_gap${document.getElementById('scanGap').value||1}`;
+    const blob=new Blob([out.join('\n')],{type:'text/plain'});
+    const url=URL.createObjectURL(blob);
+    const anchor=document.createElement('a');
+    anchor.href=url;anchor.download=`embed-interval-${rangeLabel}.txt`;anchor.click();
+    URL.revokeObjectURL(url);
+    prog.textContent=`Done — ${totalPairs} pairs, ${totalSolutions} solutions`;
+  },30);
+}
+
+// ── Single download (Excel) ─────────────────────────────────────
+function downloadSingleExcel(){
+  if(!window._last){generate();return;}
+  const{aStr,bStr,steps,combos}=window._last;
+  const rows=[['Pair','Type','Pattern','A growth','B growth','Step','A','B','Result']];
+  combos.forEach(c=>{
+    for(let i=0;i<steps;i++){
+      rows.push([`${aStr}x${bStr}`,c.type,c.desc||'',`${c.gA}(${c.dA})`,`${c.gB}(${c.dB})`,i+1,c.pairs[i].A,c.pairs[i].B,c.results[i]]);
+    }
+  });
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:10},{wch:11},{wch:24},{wch:12},{wch:12},{wch:6},{wch:16},{wch:16},{wch:20}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Solutions');
+  XLSX.writeFile(wb,`consecutive-mult-${aStr}x${bStr}.xlsx`);
+}
+
+// ── Interval download (Excel) ───────────────────────────────────
+function downloadIntervalExcel(){
+  const pairs=parseRanges();
+  const steps=Math.max(4,Math.min(10,parseInt(document.getElementById('dlSteps').value)||7));
+  const maxD=parseInt(document.getElementById('dlMaxDigit').value)||6;
+  const onlyEmbed=document.getElementById('dlOnlyEmbed').value==='yes';
+  const prog=document.getElementById('dl-progress');
+  if(pairs.length>80&&!confirm(`Process ${pairs.length} pairs?`))return;
+  prog.textContent='Building Excel…';
+  setTimeout(()=>{
+    const rows=[['Pair','Type','Pattern','A growth','B growth','Step','A','B','Result']];
+    let totalPairs=0,totalSolutions=0;
+    for(const[a,b]of pairs){
+      const aStr=String(a),bStr=String(b);
+      const combos=allSolutions(aStr,bStr,steps,maxD,onlyEmbed);
+      const good=onlyEmbed?combos.filter(c=>c.isEmbed):combos;
+      if(!good.length)continue;
+      totalPairs++;
+      good.forEach(c=>{
+        totalSolutions++;
+        for(let i=0;i<steps;i++){
+          rows.push([`${aStr}x${bStr}`,c.type,c.desc||'',`${c.gA}(${c.dA})`,`${c.gB}(${c.dB})`,i+1,c.pairs[i].A,c.pairs[i].B,c.results[i]]);
+        }
+      });
+    }
+    if(rows.length===1){prog.textContent='No solutions to export.';return;}
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols']=[{wch:10},{wch:11},{wch:24},{wch:12},{wch:12},{wch:6},{wch:16},{wch:16},{wch:20}];
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'Interval Solutions');
+    const rangeLabel=`${pairs[0][0]}-${pairs[pairs.length-1][0]}_gap${document.getElementById('scanGap').value||1}`;
+    XLSX.writeFile(wb,`consecutive-mult-interval-${rangeLabel}.xlsx`);
+    prog.textContent=`Excel done — ${totalPairs} pairs, ${totalSolutions} solutions`;
+  },30);
+}
+
+// ── Single download ───────────────────────────────────────────────
+function downloadSingle(){
+  if(!window._last){generate();return;}
+  const{aStr,bStr,steps,combos}=window._last;
+  const SEP='='.repeat(72),SEP2='-'.repeat(72);
+  let out=[];
+  out.push(SEP);out.push('  CONSECUTIVE MULTIPLICATION PATTERN GENERATOR -- SINGLE PAIR');out.push(SEP);
+  out.push(`  Pair: ${aStr} x ${bStr}  |  Steps: ${steps}  |  Embedding: ${combos.filter(c=>c.isEmbed).length}  |  Generated: ${new Date().toLocaleString()}`);
+  out.push('');
+  const maxR=Math.max(...combos.flatMap(c=>c.results.map(r=>r.length)));
+  for(const c of combos){
+    out.push(SEP2);
+    out.push(`  A:${c.gA}(${c.dA})  B:${c.gB}(${c.dB})  |  ${c.type.toUpperCase()}${c.desc?' | '+c.desc:''}`);
+    out.push(SEP2);
+    const maxA=Math.max(...c.pairs.map(p=>p.A.length));
+    const maxB=Math.max(...c.pairs.map(p=>p.B.length));
+    for(let i=0;i<steps;i++){
+      const lhs=c.pairs[i].A.padStart(maxA)+' x '+c.pairs[i].B.padStart(maxB);
+      const rhs=c.results[i].padStart(maxR);
+      out.push(`  ${lhs}  =  ${rhs}`);
+    }
+    out.push('');
+  }
+  out.push(SEP);
+  const blob=new Blob([out.join('\n')],{type:'text/plain'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=`embed-${aStr}x${bStr}.txt`;a.click();
+  URL.revokeObjectURL(url);
+}
+
+generate();
+</script>
+</body>
+</html>

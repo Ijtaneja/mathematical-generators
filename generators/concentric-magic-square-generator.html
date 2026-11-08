@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Concentric Magic Square Generator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<style>
+  :root{
+    --bg1:#eef4fb; --bg2:#dcebf7;
+    --panel:#ffffff; --border-ring:#f7d774; --core-ring:#ffffff;
+    --accent:#2b6cb0; --accent-dark:#1a4971;
+    --text:#1e2a38; --muted:#5c6b7a;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background:linear-gradient(160deg,var(--bg1),var(--bg2));
+    color:var(--text); min-height:100vh; padding:28px 16px 60px;
+  }
+  .wrap{max-width:920px;margin:0 auto;}
+  h1{
+    text-align:center; font-size:2rem; margin-bottom:4px;
+    background:linear-gradient(90deg,#1a4971,#2b6cb0,#4a90c2);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    font-weight:800; letter-spacing:.5px;
+  }
+  .subtitle{text-align:center;color:var(--muted);margin-bottom:26px;font-size:.95rem;}
+  .created-by{text-align:center;color:var(--muted);font-size:.86rem;font-weight:700;margin:-16px 0 24px;}
+  .panel{
+    background:var(--panel); border-radius:16px; padding:22px 24px;
+    box-shadow:0 6px 24px rgba(30,60,100,.10); margin-bottom:22px;
+  }
+  .controls{display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end; justify-content:center;}
+  .field{display:flex; flex-direction:column; gap:6px;}
+  .field label{font-size:.82rem; color:var(--muted); font-weight:600;}
+  input[type=number]{
+    padding:9px 12px; border:2px solid #cfe0f0; border-radius:9px; font-size:1rem; width:120px;
+    outline:none; transition:border .15s;
+  }
+  input[type=number]:focus{border-color:var(--accent);}
+  button{
+    padding:10px 22px; border:none; border-radius:9px; background:var(--accent);
+    color:#fff; font-size:.95rem; font-weight:700; cursor:pointer; transition:background .15s, transform .1s;
+  }
+  button:hover{background:var(--accent-dark);}
+  button:active{transform:scale(.97);}
+  button.secondary{background:#7a8ea3;}
+  button.secondary:hover{background:#5f7286;}
+  .msg{text-align:center; margin-top:14px; font-size:.9rem; min-height:1.2em;}
+  .msg.err{color:#b33a3a; font-weight:600;}
+  .msg.ok{color:#2f7a4d; font-weight:600;}
+  .info-bar{
+    display:flex; justify-content:center; gap:28px; flex-wrap:wrap;
+    margin:16px 0 6px; font-size:.88rem; color:var(--muted);
+  }
+  .info-bar b{color:var(--text);}
+  #gridHolder{display:flex; justify-content:center; overflow-x:auto; padding:6px;}
+  table.square{border-collapse:collapse; margin:0 auto;}
+  table.square td{
+    width:38px; height:38px; text-align:center; vertical-align:middle;
+    font-size:.72rem; font-weight:700; border:1px solid #ffffffaa;
+    color:#20344a;
+  }
+  .cell-border{background:linear-gradient(145deg,#ffe9a8,#f7d774);}
+  .cell-core{background:linear-gradient(145deg,#eaf3fb,#d3e6f6);}
+  .cell-single{background:linear-gradient(145deg,#c9e6d3,#a9d8bb);}
+  .legend{display:flex; justify-content:center; gap:22px; margin-top:14px; font-size:.82rem; color:var(--muted);}
+  .swatch{display:inline-block; width:14px; height:14px; border-radius:3px; margin-right:6px; vertical-align:-2px;}
+  footer{text-align:center; margin-top:30px; color:var(--muted); font-size:.82rem;line-height:1.8;}footer a{color:var(--accent);text-decoration:none}footer a:hover{text-decoration:underline}
+  .impossible{color:#b33a3a;}
+  .tabs{display:flex;gap:8px;margin-bottom:16px}.tab-btn{background:#cfe0f0;color:var(--text)}.tab-btn.active{background:var(--accent);color:#fff}
+  .batch-gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:22px;margin-top:20px;align-items:start}
+  .batch-design{text-align:center;min-width:0}.batch-title{font-weight:700;margin-bottom:9px}.batch-grid-wrap{display:flex;justify-content:center;overflow:auto;padding:4px}
+  .order-sums{display:flex;justify-content:center;gap:9px 18px;flex-wrap:wrap;margin:16px auto 2px;color:var(--muted);font-size:.84rem}.order-sums b{color:var(--text)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Concentric Magic Square Generator</h1>
+  <div class="subtitle">Single-layer bordered magic squares using sequential numbers 1 to n²</div>
+  <div class="created-by">Created by Inder J. Taneja</div>
+
+  <div class="tabs"><button id="tabSingle" class="tab-btn active">Single Solution</button><button id="tabBatch" class="tab-btn">Multiple Solutions</button></div>
+  <section id="singleView">
+  <div class="panel">
+    <div class="controls">
+      <div class="field">
+        <label for="orderInput">Order (n)</label>
+        <input type="number" id="orderInput" min="3" value="7">
+      </div>
+      <button id="genBtn">Generate</button>
+      <button id="downloadBtn" class="secondary" style="display:none;">Download .txt</button>
+      <button id="downloadExcelBtn" class="secondary" style="display:none;">Download Excel</button>
+    </div>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="panel" id="resultPanel" style="display:none;">
+    <div class="info-bar" id="infoBar"></div>
+    <div id="gridHolder"></div>
+    <div class="legend" id="legend"></div>
+    <div class="order-sums" id="orderSums"></div>
+  </div>
+  </section>
+
+  <section id="batchView" style="display:none;">
+    <div class="panel">
+      <div class="controls">
+        <div class="field"><label for="batchOrderInput">Order (n)</label><input type="number" id="batchOrderInput" min="3" value="7"></div>
+        <div class="field"><label for="batchCountInput">Solutions</label><input type="number" id="batchCountInput" min="1" max="20" value="5"></div>
+        <button id="batchGenBtn">Generate Batch</button>
+        <button id="batchDownloadBtn" class="secondary" style="display:none;">Download All (.txt)</button>
+        <button id="batchDownloadExcelBtn" class="secondary" style="display:none;">Download All (Excel)</button>
+      </div>
+      <div class="msg" id="batchMsg"></div>
+    </div>
+    <div class="panel" id="batchResultPanel" style="display:none;"><div class="info-bar" id="batchInfo"></div><div class="order-sums" id="batchOrderSums"></div><div id="batchGallery" class="batch-gallery"></div></div>
+  </section>
+
+  <footer>
+    <b>Inder J. Taneja</b><br>
+    <a href="https://numbers-magic.com/" target="_blank" rel="noopener">https://numbers-magic.com/</a><br>
+    <a href="https://inderjtaneja.wordpress.com/" target="_blank" rel="noopener">https://inderjtaneja.wordpress.com/</a><br>
+    <a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/" target="_blank" rel="noopener">https://taneja-mathematical-generators.ijtaneja.chatgpt.site/</a>
+  </footer>
+</div>
+
+<script>
+function siamese(m){
+  const g = Array.from({length:m},()=>Array(m).fill(0));
+  let i=0, j=Math.floor(m/2);
+  for(let num=1; num<=m*m; num++){
+    g[i][j]=num;
+    let ni=(i-1+m)%m, nj=(j+1)%m;
+    if(g[ni][nj]!==0){ ni=(i+1)%m; nj=j; }
+    i=ni; j=nj;
+  }
+  return g;
+}
+function doublyEven(m){
+  const g = Array.from({length:m},(_,i)=>Array.from({length:m},(_,j)=>i*m+j+1));
+  for(let i=0;i<m;i++) for(let j=0;j<m;j++){
+    if((i%4===j%4) || ((i%4)+(j%4)===3)) g[i][j] = m*m+1-g[i][j];
+  }
+  return g;
+}
+function singlyEven(m){
+  const h=Math.floor(m/2), k=Math.floor((h-1)/2), mid=Math.floor((h-1)/2);
+  const S=siamese(h);
+  const A=S.map(r=>r.map(v=>v));
+  const B=S.map(r=>r.map(v=>v+2*h*h));
+  const C=S.map(r=>r.map(v=>v+3*h*h));
+  const D=S.map(r=>r.map(v=>v+h*h));
+  const g=Array.from({length:m},()=>Array(m).fill(0));
+  for(let i=0;i<h;i++) for(let j=0;j<h;j++){
+    g[i][j]=A[i][j]; g[i][j+h]=B[i][j]; g[i+h][j]=C[i][j]; g[i+h][j+h]=D[i][j];
+  }
+  const acNonmid=[...Array(k).keys()];
+  const acMid=[...Array(k).keys()].map(x=>x+1);
+  const bdNonmid=[...Array(Math.max(k-1,0)).keys()];
+  const bdMid=[...Array(Math.max(k-1,0)).keys()].map(x=>x+1);
+  for(let i=0;i<h;i++){
+    const cols = (i===mid)?acMid:acNonmid;
+    for(const j of cols){ const t=g[i][j]; g[i][j]=g[i+h][j]; g[i+h][j]=t; }
+  }
+  for(let i=0;i<h;i++){
+    const cols = (i===mid)?bdMid:bdNonmid;
+    for(const j of cols){ const jj=j+h; const t=g[i][jj]; g[i][jj]=g[i+h][jj]; g[i+h][jj]=t; }
+  }
+  return g;
+}
+function coreSquare(m){
+  if(m===1) return [[1]];
+  if(m===2) return null;
+  if(m%2===1) return siamese(m);
+  if(m%4===0) return doublyEven(m);
+  return singlyEven(m);
+}
+function subsetSumChoice(deltas, target){
+  const n=deltas.length;
+  const total=deltas.reduce((a,b)=>a+b,0);
+  if(target<0 || target>total) return null;
+  let dp = new Uint8Array(total+1); dp[0]=1;
+  const layers=[dp.slice()];
+  for(const d of deltas){
+    const ndp = dp.slice();
+    for(let s=total-d;s>=0;s--){ if(dp[s]) ndp[s+d]=1; }
+    dp=ndp; layers.push(dp.slice());
+  }
+  if(target>=dp.length || !dp[target]) return null;
+  const flips=new Array(n).fill(false);
+  let s=target;
+  for(let idx=n; idx>=1; idx--){
+    const prev=layers[idx-1]; const d=deltas[idx-1];
+    if(s<prev.length && prev[s]){ flips[idx-1]=false; }
+    else { flips[idx-1]=true; s-=d; }
+  }
+  return flips;
+}
+function tryOrientation(n, M, rowPairs, colPairs, mainPair, antiPair){
+  for(const u of [0,1]) for(const v of [0,1]){
+    const [p,q]=mainPair;
+    const topFromMain = u===0?p:q, bottomFromMain = u===0?q:p;
+    const leftFromMain=topFromMain, rightFromMain=bottomFromMain;
+    const [r,s]=antiPair;
+    const topFromAnti = v===0?r:s, bottomFromAnti = v===0?s:r;
+    const rightFromAnti=topFromAnti, leftFromAnti=bottomFromAnti;
+
+    const baseTop = colPairs.reduce((a,[c,d])=>a+c,0);
+    const deltasTop = colPairs.map(([c,d])=>d-c);
+    const targetTop = M - topFromMain - topFromAnti - baseTop;
+    const flipsTop = subsetSumChoice(deltasTop, targetTop);
+    if(!flipsTop) continue;
+
+    const baseLeft = rowPairs.reduce((a,[x,y])=>a+x,0);
+    const deltasLeft = rowPairs.map(([x,y])=>y-x);
+    const targetLeft = M - leftFromMain - leftFromAnti - baseLeft;
+    const flipsLeft = subsetSumChoice(deltasLeft, targetLeft);
+    if(!flipsLeft) continue;
+
+    const colFill = colPairs.map(([c,d],idx)=>{
+      const col0=idx+1;
+      return flipsTop[idx] ? [col0,d,c] : [col0,c,d];
+    });
+    const rowFill = rowPairs.map(([a,b],idx)=>{
+      const row0=idx+1;
+      return flipsLeft[idx] ? [row0,b,a] : [row0,a,b];
+    });
+    return {topFromMain,bottomFromMain,topFromAnti,bottomFromAnti,colFill,rowFill};
+  }
+  return null;
+}
+function shuffle(arr, rng){
+  for(let i=arr.length-1;i>0;i--){
+    const j=Math.floor(rng()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+}
+function mulberry32(a){
+  return function(){
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  }
+}
+function buildConcentric(n, maxAttempts=400, seed=Math.floor(Math.random()*0xFFFFFFFF)){
+  if(n===4) return {error:"Order 4 is impossible: it would need a magic core of order 2, which does not exist."};
+  if(n<3) return {error:"Order must be 3 or greater."};
+  const m=n-2;
+  const core = coreSquare(m);
+  const add = 2*(n-1);
+  const M = n*(n*n+1)/2;
+  const grid = Array.from({length:n},()=>Array(n).fill(0));
+  if(m===1){ grid[1][1]=1+add; }
+  else if(m>=3){
+    for(let i=0;i<m;i++) for(let j=0;j<m;j++) grid[i+1][j+1]=core[i][j]+add;
+  }
+  const npairs=2*(n-1);
+  const allPairs=[];
+  for(let k=1;k<=npairs;k++) allPairs.push([k, n*n+1-k]);
+  const nrow=n-2, ncol=n-2;
+  const rng = mulberry32(seed);
+  for(let attempt=0; attempt<maxAttempts; attempt++){
+    const pairs = allPairs.slice();
+    shuffle(pairs, rng);
+    const rowPairs=pairs.slice(0,nrow);
+    const colPairs=pairs.slice(nrow,nrow+ncol);
+    const diagPairs=pairs.slice(nrow+ncol,nrow+ncol+2);
+    const result = tryOrientation(n, M, rowPairs, colPairs, diagPairs[0], diagPairs[1]);
+    if(result){
+      const {topFromMain,bottomFromMain,topFromAnti,bottomFromAnti,colFill,rowFill}=result;
+      grid[0][0]=topFromMain; grid[n-1][n-1]=bottomFromMain;
+      grid[0][n-1]=topFromAnti; grid[n-1][0]=bottomFromAnti;
+      for(const [col0,va,vb] of colFill){ grid[0][col0]=va; grid[n-1][col0]=vb; }
+      for(const [row0,va,vb] of rowFill){ grid[row0][0]=va; grid[row0][n-1]=vb; }
+      return {grid, M, attempts:attempt+1, m};
+    }
+  }
+  return {error:`Could not find a valid border arrangement after ${maxAttempts} attempts. Try again or pick a different order.`};
+}
+function verifyGrid(grid){
+  const n=grid.length, M=n*(n*n+1)/2;
+  const vals=[].concat(...grid).slice().sort((a,b)=>a-b);
+  for(let i=0;i<n*n;i++) if(vals[i]!==i+1) return false;
+  for(let i=0;i<n;i++){ if(grid[i].reduce((a,b)=>a+b,0)!==M) return false; }
+  for(let j=0;j<n;j++){ let s=0; for(let i=0;i<n;i++) s+=grid[i][j]; if(s!==M) return false; }
+  let d1=0,d2=0;
+  for(let i=0;i<n;i++){ d1+=grid[i][i]; d2+=grid[i][n-1-i]; }
+  if(d1!==M || d2!==M) return false;
+  return true;
+}
+
+function ringGradient(r, maxRing){
+  if(r===0) return ['#ffe9a8','#f7d774'];
+  const hue = (150 + (r-1)*137.508) % 360;
+  const l1 = 88, l2 = 76;
+  return [`hsl(${hue.toFixed(1)},55%,${l1}%)`, `hsl(${hue.toFixed(1)},55%,${l2}%)`];
+}
+
+let lastGrid=null, lastN=null;
+let lastBatch=[];
+
+function makeSquareTable(grid, compact=false){
+  const n=grid.length, table=document.createElement('table'); table.className='square';
+  const maxRing=Math.floor((n-1)/2), centerIsSingle=n%2===1,baseOrder=n%2===1?3:4,baseRing=(n-baseOrder)/2;
+  const size=Math.max(16,Math.min(compact?29:38,Math.floor((compact?300:780)/n)));
+  const font=Math.max(7,Math.min(12,Math.floor(size*.4)));
+  for(let i=0;i<n;i++){
+    const tr=table.insertRow();
+    for(let j=0;j<n;j++){
+      const td=tr.insertCell(); td.textContent=grid[i][j];td.style.width=td.style.height=size+'px';td.style.fontSize=font+'px';
+      const ring=Math.min(i,j,n-1-i,n-1-j),visualRing=Math.min(ring,baseRing);
+      const [c1,c2]=ring>=baseRing?['#eaf3fb','#d3e6f6']:ringGradient(ring,maxRing);td.style.background=`linear-gradient(145deg,${c1},${c2})`;
+      const up=i>0?Math.min(Math.min(i-1,j,n-i,n-1-j),baseRing):-1,left=j>0?Math.min(Math.min(i,j-1,n-1-i,n-j),baseRing):-1;
+      const down=i<n-1?Math.min(Math.min(i+1,j,n-2-i,n-1-j),baseRing):-1,right=j<n-1?Math.min(Math.min(i,j+1,n-1-i,n-2-j),baseRing):-1;
+      if(i===0||up!==visualRing)td.style.borderTop='1px solid #36546f';if(j===0||left!==visualRing)td.style.borderLeft='1px solid #36546f';
+      if(i===n-1||down!==visualRing)td.style.borderBottom='1px solid #36546f';if(j===n-1||right!==visualRing)td.style.borderRight='1px solid #36546f';
+    }
+  }
+  return table;
+}
+
+function magicSumsHTML(n){const first=n%2===1?3:4,mean=(n*n+1)/2,parts=[];for(let k=first;k<=n;k+=2)parts.push(`<span>Order ${k}: <b>${k*mean}</b></span>`);return parts.join('')}
+
+function render(){
+  const msgEl=document.getElementById('msg');
+  const resultPanel=document.getElementById('resultPanel');
+  const n = parseInt(document.getElementById('orderInput').value,10);
+  msgEl.textContent=''; msgEl.className='msg';
+  resultPanel.style.display='none';
+  document.getElementById('downloadBtn').style.display='none';
+  document.getElementById('downloadExcelBtn').style.display='none';
+
+  if(!Number.isInteger(n) || n<3){
+    msgEl.textContent='Please enter an integer order n \u2265 3 (n=4 is not possible).';
+    msgEl.classList.add('err');
+    return;
+  }
+  const t0=performance.now();
+  const res = buildConcentric(n);
+  const t1=performance.now();
+  if(res.error){
+    msgEl.textContent=res.error;
+    msgEl.classList.add('err');
+    return;
+  }
+  const ok = verifyGrid(res.grid);
+  if(!ok){
+    msgEl.textContent='Internal verification failed \u2014 please try again.';
+    msgEl.classList.add('err');
+    return;
+  }
+  lastGrid=res.grid; lastN=n;
+  msgEl.textContent=`Valid concentric magic square found (${res.attempts} attempt${res.attempts>1?'s':''}, ${(t1-t0).toFixed(0)} ms).`;
+  msgEl.classList.add('ok');
+
+  document.getElementById('infoBar').innerHTML =
+    `<span>Order: <b>${n}\u00d7${n}</b></span>` +
+    `<span>Magic sum: <b>${res.M}</b></span>` +
+    `<span>Core order: <b>${res.m}</b></span>` +
+    `<span>Numbers: <b>1 \u2013 ${n*n}</b></span>`;
+
+  const m=res.m;
+  const maxRing = Math.floor((n-1)/2);
+  const centerIsSingle = (n%2===1);
+  const holder=document.getElementById('gridHolder');
+  holder.innerHTML=''; holder.appendChild(makeSquareTable(res.grid));
+
+  const baseOrder=n%2===1?3:4,baseRing=(n-baseOrder)/2;
+  let legendHtml = n>baseOrder?`<span><span class="swatch" style="background:linear-gradient(145deg,#ffe9a8,#f7d774);"></span>outer border ring</span>`:'';
+  for(let r=1;r<baseRing;r++){const [c1,c2]=ringGradient(r,maxRing);legendHtml+=`<span><span class="swatch" style="background:linear-gradient(145deg,${c1},${c2});"></span>ring ${r+1}</span>`}
+  legendHtml+=`<span><span class="swatch" style="background:linear-gradient(145deg,#eaf3fb,#d3e6f6);"></span>uniform ${baseOrder}×${baseOrder} core</span>`;
+  document.getElementById('legend').innerHTML = legendHtml;
+  document.getElementById('orderSums').innerHTML = magicSumsHTML(n);
+
+  resultPanel.style.display='block';
+  document.getElementById('downloadBtn').style.display='inline-block';
+  document.getElementById('downloadExcelBtn').style.display='inline-block';
+}
+
+function download(){
+  if(!lastGrid) return;
+  const n=lastN;
+  const M = n*(n*n+1)/2;
+  let out = `Concentric Magic Square, order ${n} (single border, core order ${n-2})\n`;
+  out += `Magic sum = ${M}\nCreated by: Inder J. Taneja\n\n`;
+  const width = String(n*n).length;
+  for(const row of lastGrid){
+    out += row.map(v=>String(v).padStart(width,' ')).join('  ') + '\n';
+  }
+  const blob = new Blob([out], {type:'text/plain'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download=`concentric_magic_square_n${n}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function batchGenerate(){
+  const n=parseInt(document.getElementById('batchOrderInput').value,10),count=parseInt(document.getElementById('batchCountInput').value,10),msg=document.getElementById('batchMsg'),panel=document.getElementById('batchResultPanel'),gallery=document.getElementById('batchGallery');
+  msg.textContent='';msg.className='msg';panel.style.display='none';document.getElementById('batchDownloadBtn').style.display='none';document.getElementById('batchDownloadExcelBtn').style.display='none';
+  if(!Number.isInteger(n)||n<3||n===4){msg.textContent='Enter an order n ≥ 3; order 4 is not possible.';msg.classList.add('err');return}
+  if(!Number.isInteger(count)||count<1||count>20){msg.textContent='Enter between 1 and 20 solutions.';msg.classList.add('err');return}
+  const t0=performance.now(),solutions=[];
+  for(let k=0;k<count;k++){let found=null;for(let attempt=0;attempt<12&&!found;attempt++){const seed=(Date.now()+k*2654435761+attempt*1013904223)>>>0,res=buildConcentric(n,400,seed);if(!res.error&&verifyGrid(res.grid)&&!solutions.some(x=>JSON.stringify(x.grid)===JSON.stringify(res.grid)))found=res}if(found)solutions.push(found)}
+  if(!solutions.length){msg.textContent='No valid solutions found. Please try again.';msg.classList.add('err');return}
+  lastBatch=solutions;msg.textContent=`Generated ${solutions.length} distinct solution${solutions.length===1?'':'s'} in ${(performance.now()-t0).toFixed(0)} ms.`;msg.classList.add('ok');
+  document.getElementById('batchInfo').innerHTML=`<span>Order: <b>${n}×${n}</b></span><span>Magic sum: <b>${n*(n*n+1)/2}</b></span><span>Solutions: <b>${solutions.length}</b></span>`;
+  document.getElementById('batchOrderSums').innerHTML=magicSumsHTML(n);
+  gallery.innerHTML='';solutions.forEach((res,idx)=>{const item=document.createElement('div');item.className='batch-design';const title=document.createElement('div');title.className='batch-title';title.textContent=`Solution ${idx+1}`;const wrap=document.createElement('div');wrap.className='batch-grid-wrap';wrap.appendChild(makeSquareTable(res.grid,true));item.append(title,wrap);gallery.appendChild(item)});
+  panel.style.display='block';document.getElementById('batchDownloadBtn').style.display='inline-block';document.getElementById('batchDownloadExcelBtn').style.display='inline-block';
+}
+
+function downloadBatch(){
+  if(!lastBatch.length)return;const n=lastBatch[0].grid.length,M=n*(n*n+1)/2,width=String(n*n).length;
+  let out=`Concentric Magic Squares, order ${n}\nMagic sum = ${M}\nCreated by: Inder J. Taneja\n`;
+  lastBatch.forEach((res,idx)=>{out+=`\nSolution ${idx+1}\n`+res.grid.map(row=>row.map(v=>String(v).padStart(width,' ')).join('  ')).join('\n')+'\n'});
+  const blob=new Blob([out],{type:'text/plain'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`concentric_magic_squares_n${n}.txt`;a.click();URL.revokeObjectURL(url);
+}
+
+function hslToHex(color){
+  if(color.startsWith('#'))return color.slice(1).toUpperCase();const m=color.match(/hsl\(([\d.]+),\s*([\d.]+)%,\s*([\d.]+)%\)/);if(!m)return'D3E6F6';let h=+m[1],s=+m[2]/100,l=+m[3]/100,a=s*Math.min(l,1-l),f=x=>l-a*Math.max(-1,Math.min((x+h/30)%12-3,Math.min(9-(x+h/30)%12,1)));return[0,8,4].map(x=>Math.round(255*f(x)).toString(16).padStart(2,'0')).join('').toUpperCase();
+}
+function excelCellColor(i,j,n){const baseOrder=n%2?3:4,baseRing=(n-baseOrder)/2,ring=Math.min(i,j,n-1-i,n-1-j);return hslToHex(ring>=baseRing?'#d3e6f6':ringGradient(ring,Math.floor((n-1)/2))[1])}
+async function makeExcel(solutions,filename){
+  if(typeof ExcelJS==='undefined'){alert('Excel support could not be loaded. Please use the text download.');return}const wb=new ExcelJS.Workbook();
+  solutions.forEach((res,idx)=>{const n=res.grid.length,ws=wb.addWorksheet(solutions.length===1?'Magic Square':`Solution ${idx+1}`);ws.addRow([`Concentric Magic Square, order ${n}`]);ws.addRow([`Magic sum: ${n*(n*n+1)/2}`]);for(let i=0;i<n;i++){const row=ws.addRow(res.grid[i]);for(let j=0;j<n;j++){const cell=row.getCell(j+1);cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF'+excelCellColor(i,j,n)}};cell.font={bold:true,color:{argb:'FF20344A'}};cell.alignment={horizontal:'center',vertical:'middle'};cell.border={top:{style:'thin',color:{argb:'FFB7C4CF'}},left:{style:'thin',color:{argb:'FFB7C4CF'}},bottom:{style:'thin',color:{argb:'FFB7C4CF'}},right:{style:'thin',color:{argb:'FFB7C4CF'}}}}}for(let c=1;c<=n;c++)ws.getColumn(c).width=6});
+  const blob=new Blob([await wb.xlsx.writeBuffer()],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;a.click();URL.revokeObjectURL(url);
+}
+
+function showTab(single){document.getElementById('singleView').style.display=single?'block':'none';document.getElementById('batchView').style.display=single?'none':'block';document.getElementById('tabSingle').classList.toggle('active',single);document.getElementById('tabBatch').classList.toggle('active',!single)}
+
+document.getElementById('genBtn').addEventListener('click', render);
+document.getElementById('downloadBtn').addEventListener('click', download);
+document.getElementById('downloadExcelBtn').addEventListener('click',()=>makeExcel([{grid:lastGrid}],`concentric_magic_square_n${lastN}.xlsx`));
+document.getElementById('batchGenBtn').addEventListener('click', batchGenerate);
+document.getElementById('batchDownloadBtn').addEventListener('click', downloadBatch);
+document.getElementById('batchDownloadExcelBtn').addEventListener('click',()=>makeExcel(lastBatch,`concentric_magic_squares_n${lastBatch[0].grid.length}.xlsx`));
+document.getElementById('tabSingle').addEventListener('click',()=>showTab(true));
+document.getElementById('tabBatch').addEventListener('click',()=>showTab(false));
+document.getElementById('orderInput').addEventListener('keydown', e=>{ if(e.key==='Enter') render(); });
+render();
+</script>
+</body>
+</html>

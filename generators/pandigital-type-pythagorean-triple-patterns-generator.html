@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pandigital-Type Pythagorean Triple Patterns Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="/generators/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#faf8f4;--bg2:#f2efe8;--bg3:#e8e4da;--card:#ffffff;
+  --border:#d4cebc;--border2:#bfb8a4;
+  --text:#26352f;--text2:#56645d;--text3:#7d8983;
+  --blue:#185FA5;--blue2:#2d6db5;--blue-lt:#e6f1fb;
+  --red:#b52d2d;--red-lt:#faece7;
+  --purple:#6b35c2;
+  --green:#1a5c2a;--green2:#2d8c42;
+  --amber:#7a4a00;
+  --spine-col:#185FA5;
+  --suf-a:#C0392B;
+  --suf-c:#7b2fbe;
+  --b-col:#1a5c1a;
+  --radius:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'EB Garamond',Georgia,serif;background:linear-gradient(135deg,#f8f7ef,#edf5f1);color:var(--text);min-height:100vh}
+header{background:linear-gradient(120deg,#dceee7,#e8eff8 55%,#fff0cf);color:var(--text);padding:22px 30px 18px;border-bottom:3px solid #bb8730;display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap}
+.headcopy{display:flex;flex-direction:column;gap:4px}.eyebrow{font:500 10px 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#32685d}
+header h1{font-size:27px;font-weight:500;letter-spacing:.01em}
+header p{font-size:11.5px;color:#5d6e67;font-family:'JetBrains Mono',monospace}.credit{font-size:15px;color:#3f5149}.credit strong{color:#174f44}
+.layout{display:grid;grid-template-columns:310px 1fr;min-height:calc(100vh - 76px)}
+.sidebar{background:var(--bg2);border-right:1px solid var(--border);padding:14px 14px;overflow-y:auto}
+.sec{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin:14px 0 6px}
+.sec:first-child{margin-top:0}
+.type-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:2px}
+.ttab{padding:6px 5px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--card);cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text2);text-align:center;line-height:1.3;transition:all .13s}
+.ttab:hover{background:var(--bg3)}
+.ttab.active{background:var(--text);color:#f0ebe0;border-color:var(--text)}
+.ttab small{display:block;font-size:9px;opacity:.65;margin-top:1px}
+.k-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:4px}
+.kbtn{padding:5px 3px;border:1px solid var(--border);border-radius:6px;background:var(--card);cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text2);text-align:center;transition:all .13s}
+.kbtn:hover{background:var(--bg3);border-color:var(--border2)}
+.kbtn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.kbtn small{display:block;font-size:8px;opacity:.75;margin-top:1px}
+.k-actions{display:flex;gap:7px;flex-wrap:wrap;margin:7px 0}
+.k-action{padding:6px 11px;border:1px solid #9bb9d3;border-radius:20px;background:var(--blue-lt);color:var(--blue);cursor:pointer;font:500 10px 'JetBrains Mono',monospace}
+.k-action:hover{background:#d5e9fa}.k-action.clear{background:var(--card);color:var(--text2);border-color:var(--border2)}
+label{display:block;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text2);margin-bottom:3px}
+.rv{font-weight:500;color:var(--blue)}
+input[type=range]{width:100%;accent-color:var(--blue);margin:1px 0 3px}
+input[type=number]{width:100%;padding:5px 8px;border:1px solid var(--border2);border-radius:6px;background:var(--card);font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text);margin-bottom:7px}
+input[type=number]:focus{outline:none;border-color:var(--blue)}
+select{width:100%;padding:5px 26px 5px 8px;border:1px solid var(--border2);border-radius:6px;background:var(--card);font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text);appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' viewBox='0 0 10 7'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235a5348' fill='none' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;cursor:pointer;margin-bottom:7px}
+.infobox{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--blue2);border-radius:var(--radius);padding:8px 10px;font-size:13px;line-height:1.5;color:var(--text2);margin-bottom:7px}
+.infobox strong{color:var(--text);font-weight:500}
+.mono{font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--bg2);padding:2px 5px;border-radius:3px;display:inline-block;margin-top:3px}
+.badge{display:inline-block;background:var(--blue-lt);color:var(--blue);font-family:'JetBrains Mono',monospace;font-size:11px;padding:2px 8px;border-radius:20px;border:1px solid #b5d4f4;margin-top:4px}
+.badge.none{background:var(--red-lt);color:var(--red);border-color:#f5c4b3}
+.panel{display:none}.panel.show{display:block}
+.divider{height:1px;background:var(--border);margin:10px 0}
+.action-btns{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.btn{padding:8px 12px;border-radius:var(--radius);border:1.5px solid var(--border2);background:var(--card);cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:500;color:var(--text);display:flex;align-items:center;justify-content:center;gap:7px;transition:all .13s}
+.btn:hover{background:var(--bg3);border-color:var(--text2)}
+.btn-primary{background:var(--text);color:#f0ebe0;border-color:var(--text)}.btn-primary:hover{background:#2d2820}
+.btn-dl{background:var(--green);color:#e0f0e4;border-color:var(--green)}.btn-dl:hover{background:var(--green2)}
+.btn-html{background:var(--purple);color:#f5f0ff;border-color:var(--purple)}.btn-html:hover{background:#5a28aa}
+.btn-xlsx{background:#0b6b57;color:#effff9;border-color:#0b6b57}.btn-xlsx:hover{background:#13866d}
+.main{padding:20px 26px;overflow-y:auto;background:var(--bg)}
+.view-tabs{display:flex;gap:6px;margin-bottom:14px}
+.vtab{padding:4px 12px;border:1px solid var(--border2);border-radius:20px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text2);background:var(--card);transition:all .13s}
+.vtab:hover{background:var(--bg3)}
+.vtab.active{background:var(--text);color:#f0ebe0;border-color:var(--text)}
+.out-header{display:flex;align-items:baseline;gap:12px;margin-bottom:14px;padding-bottom:9px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.out-title{font-size:19px;font-weight:400}
+.out-meta{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3)}
+.fig-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(350px,1fr));gap:16px}
+.figbox{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 22px 13px;box-shadow:0 1px 3px rgba(0,0,0,.07),0 4px 10px rgba(0,0,0,.03)}
+.figcap{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--text3);margin-bottom:4px;letter-spacing:.03em}
+.figsub{font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--blue);margin-bottom:10px}
+.eqtbl{border-collapse:collapse;width:100%}
+.eqtbl td{padding:2px 3px;white-space:nowrap;font-size:15px;line-height:1.65}
+.lhs{text-align:right}.rhs{text-align:left;padding-left:5px}
+.sp{color:var(--spine-col)}.sa{color:var(--suf-a)}.sc{color:var(--suf-c)}.bd{color:var(--b-col)}.eq{color:var(--text2)}.pl{color:var(--text3)}
+sup{font-size:10px;vertical-align:super;line-height:0}
+.legend{display:flex;gap:13px;flex-wrap:wrap;margin-top:11px;padding-top:8px;border-top:1px solid var(--border);font-size:13px}
+.legit{display:flex;align-items:center;gap:5px}
+.legdot{width:9px;height:9px;border-radius:2px}
+.empty{text-align:center;padding:60px 20px;color:var(--text3);font-size:15px}
+.empty .big{font-size:38px;margin-bottom:10px}
+.site-footer{grid-column:1/-1;background:#e4eee8;border-top:1px solid var(--border);padding:18px 24px;text-align:center;color:var(--text2);font-size:15px}.site-footer strong{color:var(--text)}.site-footer a{color:#185f72;text-decoration:none;margin:0 6px}.site-footer a:hover{text-decoration:underline}
+/* Top control deck: results use the full page width below */
+.layout,header,.site-footer{width:min(1120px,calc(100% - 36px));margin-left:auto;margin-right:auto}
+header{margin-top:18px;border-radius:16px 16px 0 0;box-shadow:0 14px 38px rgba(38,53,47,.10)}
+.layout{display:block;min-height:calc(100vh - 76px)}
+.sidebar{width:100%;border-right:0;border-bottom:1px solid var(--border);padding:16px 26px 18px;overflow:visible;box-shadow:0 7px 22px rgba(38,53,47,.06)}
+.sidebar>.sec:first-child{margin:0 0 7px}
+.sidebar>.type-tabs{grid-template-columns:repeat(4,minmax(0,1fr));max-width:920px}
+.sidebar>.panel.show{margin-top:12px;max-width:1180px}
+.sidebar .k-grid{grid-template-columns:repeat(9,minmax(68px,1fr))}
+.action-btns{display:grid;grid-template-columns:repeat(4,minmax(155px,1fr));gap:8px;margin-top:14px;max-width:920px}
+.main{padding:24px 30px 36px;overflow:visible;min-height:520px}
+.fig-grid{grid-template-columns:repeat(auto-fit,minmax(390px,1fr))}
+.site-footer{margin-bottom:18px;border-radius:0 0 16px 16px;box-shadow:0 14px 38px rgba(38,53,47,.08)}
+@media(max-width:900px){.sidebar .k-grid{grid-template-columns:repeat(5,1fr)}.action-btns{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:780px){.layout,header,.site-footer{width:min(100% - 20px,1120px)}header{padding:18px;margin-top:10px}.site-footer{margin-bottom:10px}.sidebar{padding:14px}.sidebar>.type-tabs{grid-template-columns:repeat(2,1fr)}.sidebar .k-grid{grid-template-columns:repeat(3,1fr)}.fig-grid{grid-template-columns:1fr}.main{padding:14px}.action-btns{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.action-btns{grid-template-columns:1fr}.sidebar>.type-tabs{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="headcopy"><div class="eyebrow">Recreational Mathematics</div><h1>Pandigital-Type Pythagorean Triple Patterns Generator</h1><p>a² + b² = c² &nbsp;·&nbsp; Spine · Repunit · Near-consecutive · Interval search</p></div>
+  <div class="credit">Created by <strong>Inder J. Taneja</strong></div>
+</header>
+
+<div class="layout">
+
+<!-- ═══════ SIDEBAR ═══════ -->
+<aside class="sidebar">
+
+  <div class="sec">Family Type</div>
+  <div class="type-tabs">
+    <div class="ttab active" data-t="spine"   onclick="setType('spine')">Spine<small>12·1232·123432…</small></div>
+    <div class="ttab"        data-t="repunit" onclick="setType('repunit')">Repunit<small>3·33·333…</small></div>
+    <div class="ttab"        data-t="near"    onclick="setType('near')">Near-cons.<small>seed c = b+1</small></div>
+    <div class="ttab"        data-t="all"     onclick="setType('all')">All Three<small>together</small></div>
+  </div>
+
+  <!-- ── SPINE ── -->
+  <div id="panel-spine" class="panel show">
+
+    <div class="sec">k-Family (suffix pair)</div>
+    <div class="k-grid" id="k-grid"></div>
+    <div class="k-actions"><button type="button" class="k-action" onclick="selectAllK()">Select all k = 1–9</button><button type="button" class="k-action clear" onclick="clearAllK()">Clear all</button></div>
+    <div class="infobox" style="font-size:12px"><strong>What is k?</strong> Each value of k selects one suffix pair for a and c. It also sets <span class="mono">b = 20k · R(n+1)</span>, where R is a string of repeated 1s. Choose one, several, or all nine families.</div>
+
+    <div class="divider"></div>
+    <div class="sec">Interval Mode</div>
+    <div class="type-tabs">
+      <div class="ttab active" id="imode-std"   onclick="setIMode('std')">Standard<small>rows 0–8</small></div>
+      <div class="ttab"        id="imode-range" onclick="setIMode('range')">By Value<small>choose a-range</small></div>
+    </div>
+
+    <!-- Standard mode controls -->
+    <div id="std-mode">
+      <div class="sec">Pattern Scope</div>
+      <div class="type-tabs scope-tabs">
+        <div class="ttab active" id="scope-pandigital" onclick="setScope('pandigital')">Pandigital<small>n = 0–8</small></div>
+        <div class="ttab" id="scope-extended" onclick="setScope('extended')">Extended<small>n = 9–30</small></div>
+        <div class="ttab" id="scope-all" onclick="setScope('all')">Both<small>n = 0–30</small></div>
+      </div>
+      <div class="sec">Row Interval</div>
+      <label>Start row &nbsp;<span class="rv" id="sv">n = 0</span></label>
+      <input type="range" id="start-row" min="0" max="8" value="0" oninput="onStdRange()">
+      <label>End row &nbsp;<span class="rv" id="ev">n = 8</span></label>
+      <input type="range" id="end-row"   min="0" max="8" value="8" oninput="onStdRange()">
+      <div class="infobox" id="scope-info" style="font-size:12px;margin-top:7px"><strong>Pandigital spine:</strong> rows before the carry transition, n = 0–8.</div>
+    </div>
+
+    <!-- Range mode controls -->
+    <div id="range-mode" style="display:none">
+      <div class="sec">First Triple — value range for <em>a</em></div>
+      <label>Minimum a</label>
+      <input type="number" id="a-min" value="1"      min="1" oninput="onRangeChange()">
+      <label>Maximum a</label>
+      <input type="number" id="a-max" value="999999" min="2" oninput="onRangeChange()">
+      <div class="sec">Rows per sequence</div>
+      <label>Rows &nbsp;<span class="rv" id="rows-val">6</span></label>
+      <input type="range" id="n-rows" min="1" max="12" value="6" oninput="onRangeChange()">
+      <div id="found-info" class="infobox" style="margin-top:4px;font-size:12px"></div>
+    </div>
+
+    <div class="infobox" id="spine-info" style="margin-top:6px;font-size:12px"></div>
+  </div>
+
+  <!-- ── REPUNIT ── -->
+  <div id="panel-repunit" class="panel">
+    <div class="sec">Seed Triple</div>
+    <select id="ru-seed" onchange="onRuChange()">
+      <option value="3,4,5">3 · 4 · 5</option>
+      <option value="5,12,13">5 · 12 · 13</option>
+      <option value="7,24,25">7 · 24 · 25</option>
+      <option value="8,15,17">8 · 15 · 17</option>
+      <option value="9,40,41">9 · 40 · 41</option>
+      <option value="11,60,61">11 · 60 · 61</option>
+      <option value="12,35,37">12 · 35 · 37</option>
+      <option value="13,84,85">13 · 84 · 85</option>
+      <option value="20,21,29">20 · 21 · 29</option>
+      <option value="28,45,53">28 · 45 · 53</option>
+      <option value="33,56,65">33 · 56 · 65</option>
+      <option value="36,77,85">36 · 77 · 85</option>
+      <option value="48,55,73">48 · 55 · 73</option>
+    </select>
+    <div class="sec">Row Interval (n = digit repetitions)</div>
+    <label>Start &nbsp;<span class="rv" id="ru-sv">n = 1</span></label>
+    <input type="range" id="ru-start" min="1" max="30" value="1" oninput="onRuChange()">
+    <label>End &nbsp;<span class="rv" id="ru-ev">n = 9</span></label>
+    <input type="range" id="ru-end"   min="1" max="30" value="9" oninput="onRuChange()">
+    <div class="infobox" id="ru-info" style="font-size:12px"></div>
+  </div>
+
+  <!-- ── NEAR-CONS ── -->
+  <div id="panel-near" class="panel">
+    <div class="sec">Seed Triple (c = b + 1)</div>
+    <select id="nc-seed" onchange="onNcChange()">
+      <option value="3,4,5">3² + 4² = 5²</option>
+      <option value="5,12,13">5² + 12² = 13²</option>
+      <option value="7,24,25">7² + 24² = 25²</option>
+      <option value="9,40,41">9² + 40² = 41²</option>
+      <option value="11,60,61">11² + 60² = 61²</option>
+      <option value="13,84,85">13² + 84² = 85²</option>
+      <option value="15,112,113">15² + 112² = 113²</option>
+      <option value="17,144,145">17² + 144² = 145²</option>
+      <option value="19,180,181">19² + 180² = 181²</option>
+      <option value="21,220,221">21² + 220² = 221²</option>
+      <option value="23,264,265">23² + 264² = 265²</option>
+      <option value="25,312,313">25² + 312² = 313²</option>
+      <option value="27,364,365">27² + 364² = 365²</option>
+      <option value="29,420,421">29² + 420² = 421²</option>
+    </select>
+    <div class="sec">Rows (n = digit repetitions)</div>
+    <label>Start &nbsp;<span class="rv" id="nc-sv">n = 1</span></label>
+    <input type="range" id="nc-start" min="1" max="30" value="1" oninput="onNcChange()">
+    <label>End &nbsp;<span class="rv" id="nc-ev">n = 9</span></label>
+    <input type="range" id="nc-end"   min="1" max="30" value="9" oninput="onNcChange()">
+    <div class="infobox" id="nc-info" style="font-size:12px"></div>
+    <div class="infobox" style="font-size:12px">After scaling by R(n), the difference is <strong>c − b = R(n)</strong>. Only the seed has c − b = 1.</div>
+  </div>
+
+  <div class="action-btns">
+    <button class="btn btn-primary" onclick="render()">⟳ &nbsp;Generate</button>
+    <button class="btn btn-xlsx"    onclick="dlXlsx()">⬇ &nbsp;Download Excel .xlsx</button>
+    <button class="btn btn-dl"      onclick="dlTxt()">⬇ &nbsp;Download .txt</button>
+    <button class="btn btn-html"    onclick="dlHtml()">⬇ &nbsp;Download figure .html</button>
+  </div>
+
+</aside>
+
+<!-- ═══════ MAIN ═══════ -->
+<main class="main">
+  <div class="view-tabs">
+    <div class="vtab active" onclick="setView('fig')"   data-v="fig">Figure style</div>
+    <div class="vtab"        onclick="setView('plain')" data-v="plain">Plain text</div>
+  </div>
+  <div id="out"><div class="empty"><div class="big">𝑎²+𝑏²=𝑐²</div>Configure options and press Generate</div></div>
+</main>
+
+</div>
+
+<footer class="site-footer"><strong>Inder J. Taneja</strong> · <a href="https://numbers-magic.com/" target="_blank" rel="noopener">numbers-magic.com</a> · <a href="https://inderjtaneja.wordpress.com/" target="_blank" rel="noopener">inderjtaneja.wordpress.com</a> · <a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/" target="_blank" rel="noopener">Mathematical Generators</a></footer>
+
+<script>
+// ══════════════════════════════════════════
+//  DATA
+// ══════════════════════════════════════════
+const FAM=[
+  {k:9,bm:180,xs:'019',ys:'181'},
+  {k:8,bm:160,xs:'036',ys:'164'},
+  {k:7,bm:140,xs:'051',ys:'149'},
+  {k:6,bm:120,xs:'064',ys:'136'},
+  {k:5,bm:100,xs:'075',ys:'125'},
+  {k:4,bm:80, xs:'084',ys:'116'},
+  {k:3,bm:60, xs:'091',ys:'109'},
+  {k:2,bm:40, xs:'096',ys:'104'},
+  {k:1,bm:20, xs:'099',ys:'101'},
+];
+
+let curType='spine', curView='fig', curIMode='std', curScope='pandigital';
+let selK=new Set([9,1]);
+
+// ══════════════════════════════════════════
+//  MATH
+// ══════════════════════════════════════════
+function getSpineN(n){
+  if(n===0)return 0;
+  const up=[],dn=[];
+  for(let i=1;i<=n+1;i++)up.push(i);
+  for(let i=n;i>=2;i--)dn.push(i);
+  return parseInt(up.concat(dn).join(''));
+}
+function R(n){return n<=0?0:parseInt('1'.repeat(n));}
+function RB(n){return n<=0?0n:BigInt('1'.repeat(n));}
+
+// Standard spine row (pandigital prefix grows with n)
+function spineRow(f,n){
+  const m=RB(n+1);
+  const prefix=(m*m-1n)/10n;
+  const x=BigInt(parseInt(f.xs)),y=BigInt(parseInt(f.ys));
+  return{a:String(prefix*1000n+x),b:String(BigInt(f.bm)*m),c:String(prefix*1000n+y),spine:prefix===0n?'':String(prefix),suf_a:f.xs,suf_c:f.ys,isStd:true,n,pattern:n<=8?'Pandigital spine':'Carry-extended spine'};
+}
+
+// Interval search: find all valid starting m0 where a0 ∈ [aMin,aMax]
+// Each m0 generates an infinite sequence: m_n = m0*10^n + R(n)
+function findSeqs(f,aMin,aMax,nRows){
+  const xi=parseInt(f.xs), yi=parseInt(f.ys);
+  // a0 = 100*m0^2 - 100 + xi  =>  m0^2 = (a0 + 100 - xi)/100
+  const m2lo=Math.ceil((aMin+100-xi)/100);
+  const m2hi=Math.floor((aMax+100-xi)/100);
+  if(m2lo>m2hi||m2hi<0)return[];
+  const mlo=Math.max(1,Math.ceil(Math.sqrt(m2lo)));
+  const mhi=Math.floor(Math.sqrt(Math.max(0,m2hi)));
+  const seqs=[];
+  for(let m0=mlo;m0<=mhi;m0++){
+    const d=m0%10; if(d!==1&&d!==9)continue;
+    if((m0*m0-1)%10!==0)continue;
+    const a0=(m0*m0-1)/10*1000+xi;
+    if(a0<aMin||a0>aMax)continue;
+    const rows=[];
+    for(let n=0;n<nRows;n++){
+      const rn=n===0?0:R(n);
+      const mn=BigInt(m0)*BigInt(10)**BigInt(n)+BigInt(rn);
+      const xB=BigInt(xi), yB=BigInt(yi), bmB=BigInt(f.bm);
+      const preB=(mn*mn-1n)/10n;
+      rows.push({
+        a:String(preB*1000n+xB),
+        b:String(bmB*mn),
+        c:String(preB*1000n+yB),
+        m0,mn:String(mn),n,raw:true
+      });
+    }
+    seqs.push({m0,rows});
+  }
+  return seqs;
+}
+
+function repRows(seed,s,e){
+  const[a0,b0,c0]=seed; const rows=[];
+  for(let n=s;n<=e;n++){const r=RB(n); rows.push({a:String(BigInt(a0)*r),b:String(BigInt(b0)*r),c:String(BigInt(c0)*r),raw:true});}
+  return rows;
+}
+
+function verifyTriple(row){
+  try{const a=BigInt(row.a),b=BigInt(row.b),c=BigInt(row.c);return a*a+b*b===c*c;}catch{return false;}
+}
+
+// ══════════════════════════════════════════
+//  HTML RENDERING
+// ══════════════════════════════════════════
+function colorNum(s,cls){
+  if(!s)return s;
+  let i=0; while(i<s.length&&s[i]===s[0])i++;
+  if(i>1) return`<span class="sp">${s.slice(0,i)}</span><span class="${cls}">${s.slice(i)}</span>`;
+  return`<span class="${cls}">${s}</span>`;
+}
+
+function rowHtml(row,isSpine){
+  let ah,bh,ch;
+  if(isSpine&&row.isStd){
+    ah=(row.spine?`<span class="sp">${row.spine}</span>`:'')+`<span class="sa">${row.spine?row.suf_a:String(parseInt(row.suf_a))}</span>`;
+    ch=(row.spine?`<span class="sp">${row.spine}</span>`:'')+`<span class="sc">${row.spine?row.suf_c:String(parseInt(row.suf_c))}</span>`;
+    bh=`<span class="bd">${row.b}</span>`;
+  }else{
+    ah=colorNum(row.a,'sa'); bh=colorNum(row.b,'bd'); ch=colorNum(row.c,'sc');
+  }
+  return`<tr><td class="lhs">${ah}<sup>2</sup>&thinsp;<span class="pl">+</span>&thinsp;${bh}<sup>2</sup></td>`+
+        `<td class="rhs"><span class="eq">=&thinsp;</span>${ch}<sup>2</sup></td></tr>`;
+}
+
+function figBox(cap,sub,rows,isSpine){
+  return`<div class="figbox"><div class="figcap">${cap}</div>${sub?`<div class="figsub">${sub}</div>`:''}`+
+         `<table class="eqtbl"><tbody>${rows.map(r=>rowHtml(r,isSpine)).join('')}</tbody></table></div>`;
+}
+
+function legend(isSpine){
+  if(isSpine) return`<div class="legend">
+    <div class="legit"><div class="legdot" style="background:var(--spine-col)"></div><span style="color:var(--spine-col);font-family:'JetBrains Mono',monospace;font-size:12px">pandigital spine</span></div>
+    <div class="legit"><div class="legdot" style="background:var(--suf-a)"></div><span style="color:var(--suf-a);font-family:'JetBrains Mono',monospace;font-size:12px">suffix of a</span></div>
+    <div class="legit"><div class="legdot" style="background:var(--suf-c)"></div><span style="color:var(--suf-c);font-family:'JetBrains Mono',monospace;font-size:12px">suffix of c</span></div>
+    <div class="legit"><div class="legdot" style="background:var(--b-col)"></div><span style="color:var(--b-col);font-family:'JetBrains Mono',monospace;font-size:12px">b = 20k · R(n)</span></div>
+  </div>`;
+  return`<div class="legend">
+    <div class="legit"><div class="legdot" style="background:var(--spine-col)"></div><span style="color:var(--spine-col);font-family:'JetBrains Mono',monospace;font-size:12px">repeating block</span></div>
+    <div class="legit"><div class="legdot" style="background:var(--suf-a)"></div><span style="color:var(--suf-a);font-family:'JetBrains Mono',monospace;font-size:12px">a trailing</span></div>
+    <div class="legit"><div class="legdot" style="background:var(--suf-c)"></div><span style="color:var(--suf-c);font-family:'JetBrains Mono',monospace;font-size:12px">c trailing</span></div>
+  </div>`;
+}
+
+// ══════════════════════════════════════════
+//  RENDER
+// ══════════════════════════════════════════
+function render(){
+  const el=document.getElementById('out');
+  if(curView==='plain'){el.innerHTML=`<pre style="font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.75;white-space:pre-wrap;color:var(--text)">${esc(genTxt())}</pre>`;return;}
+
+  if(curType==='spine')      renderSpine(el);
+  else if(curType==='repunit') renderRepunit(el);
+  else if(curType==='near')    renderNear(el);
+  else                         renderAll(el);
+}
+
+function renderSpine(el){
+  const ks=[...selK].sort((a,b)=>b-a);
+  if(!ks.length){el.innerHTML='<div class="empty"><div class="big">∅</div>Select at least one k-family</div>';return;}
+  const scopeName=curScope==='pandigital'?'Pandigital n=0–8':curScope==='extended'?'Extended n=9–30':'Pandigital + Extended';
+  let html=`<div class="out-header"><span class="out-title">Spine Families</span><span class="out-meta">k ∈ {${ks.join(',')}}${curIMode==='range'?' · By-value interval':' · '+scopeName}</span></div>`;
+  html+=legend(true)+'<div style="height:14px"></div><div class="fig-grid">';
+
+  if(curIMode==='std'){
+    const s=+document.getElementById('start-row').value, e=+document.getElementById('end-row').value;
+    ks.forEach(k=>{
+      const f=FAM.find(x=>x.k===k);
+      const rows=[]; for(let n=s;n<=e;n++) rows.push(spineRow(f,n));
+      if(curScope==='all'){
+        const classic=rows.filter(r=>r.n<=8),extended=rows.filter(r=>r.n>=9);
+        if(classic.length)html+=figBox(`[Pandigital] k = ${k} · b = ${f.bm}×R(n+1) · ${f.xs}/${f.ys}`,`rows n = ${classic[0].n} … ${classic[classic.length-1].n}`,classic,true);
+        if(extended.length)html+=figBox(`[Extended] k = ${k} · b = ${f.bm}×R(n+1) · ${f.xs}/${f.ys}`,`rows n = ${extended[0].n} … ${extended[extended.length-1].n}`,extended,true);
+      }else html+=figBox(`${curScope==='pandigital'?'[Pandigital]':'[Extended]'} k = ${k} · b = ${f.bm}×R(n+1) · ${f.xs}/${f.ys}`,`rows n = ${s} … ${e}`,rows,true);
+    });
+  } else {
+    const aMin=+document.getElementById('a-min').value||1;
+    const aMax=+document.getElementById('a-max').value||999999;
+    const nRows=+document.getElementById('n-rows').value||6;
+    ks.forEach(k=>{
+      const f=FAM.find(x=>x.k===k);
+      const seqs=findSeqs(f,aMin,aMax,nRows);
+      if(!seqs.length){html+=`<div class="figbox"><div class="figcap">k=${k}: no triple found with a ∈ [${aMin.toLocaleString()}, ${aMax.toLocaleString()}]</div></div>`;return;}
+      seqs.forEach(seq=>{
+        html+=figBox(
+          `k = ${k}  ·  m₀ = ${seq.m0}  ·  ${f.xs} / ${f.ys}`,
+          `m_n = ${seq.m0}·10ⁿ + R(n),  b = ${f.bm}·mₙ`,
+          seq.rows,false);
+      });
+    });
+  }
+  html+='</div>';
+  el.innerHTML=html;
+}
+
+function renderRepunit(el){
+  const seed=document.getElementById('ru-seed').value.split(',').map(Number);
+  const s=+document.getElementById('ru-start').value, e=+document.getElementById('ru-end').value;
+  let html=`<div class="out-header"><span class="out-title">Repunit-Scaled Family</span><span class="out-meta">(${seed.join(',')}) × R(n), n = ${s}..${e}</span></div>`;
+  html+=legend(false)+'<div style="height:14px"></div><div class="fig-grid">';
+  html+=figBox(`(${seed[0]}, ${seed[1]}, ${seed[2]}) × R(n)`,`R(n) = 1, 11, 111, …`,repRows(seed,s,e),false);
+  html+='</div>';
+  el.innerHTML=html;
+}
+
+function renderNear(el){
+  const seed=document.getElementById('nc-seed').value.split(',').map(Number);
+  const s=+document.getElementById('nc-start').value, e=+document.getElementById('nc-end').value;
+  let html=`<div class="out-header"><span class="out-title">Near-Consecutive Seed Family</span><span class="out-meta">seed c = b + 1 · scaled difference c − b = R(n) · n = ${s}..${e}</span></div>`;
+  html+=legend(false)+'<div style="height:14px"></div><div class="fig-grid">';
+  html+=figBox(`(${seed[0]}, ${seed[1]}, ${seed[2]}) × R(n)`,`R(n) = 1, 11, 111, … · c − b = R(n)`,repRows(seed,s,e),false);
+  html+='</div>';
+  el.innerHTML=html;
+}
+
+function renderAll(el){
+  const ks=[...selK].sort((a,b)=>b-a);
+  const s=+document.getElementById('start-row').value, e=+document.getElementById('end-row').value;
+  const ruSeed=document.getElementById('ru-seed').value.split(',').map(Number);
+  const ruS=+document.getElementById('ru-start').value, ruE=+document.getElementById('ru-end').value;
+  const ncSeed=document.getElementById('nc-seed').value.split(',').map(Number);
+  const ncS=+document.getElementById('nc-start').value, ncE=+document.getElementById('nc-end').value;
+  let html=`<div class="out-header"><span class="out-title">All Family Types</span></div>`;
+  html+=legend(true)+'<div style="height:14px"></div><div class="fig-grid">';
+  ks.forEach(k=>{
+    const f=FAM.find(x=>x.k===k);
+    const rows=[]; for(let n=s;n<=e;n++) rows.push(spineRow(f,n));
+    if(curScope==='all'){
+      const classic=rows.filter(r=>r.n<=8),extended=rows.filter(r=>r.n>=9);
+      if(classic.length)html+=figBox(`[Pandigital spine k=${k}] b=${f.bm}×R(n+1) · ${f.xs}/${f.ys}`,`rows ${classic[0].n}–${classic[classic.length-1].n}`,classic,true);
+      if(extended.length)html+=figBox(`[Extended spine k=${k}] b=${f.bm}×R(n+1) · ${f.xs}/${f.ys}`,`rows ${extended[0].n}–${extended[extended.length-1].n}`,extended,true);
+    }else html+=figBox(`[${curScope==='pandigital'?'Pandigital':'Extended'} spine k=${k}] b=${f.bm}×R(n+1) · ${f.xs}/${f.ys}`,`rows ${s}–${e}`,rows,true);
+  });
+  html+=figBox(`[Repunit] (${ruSeed.join(',')}) × R(n)`,`n = ${ruS}..${ruE}`,repRows(ruSeed,ruS,ruE),false);
+  html+=figBox(`[Near-cons. seed] (${ncSeed.join(',')}) × R(n)`,`n = ${ncS}..${ncE} · c − b = R(n)`,repRows(ncSeed,ncS,ncE),false);
+  html+='</div>';
+  el.innerHTML=html;
+}
+
+// ══════════════════════════════════════════
+//  PLAIN TEXT
+// ══════════════════════════════════════════
+function genTxt(){
+  const L=[];
+  L.push('Pandigital-Type Pythagorean Triple Patterns Generator — a\u00b2 + b\u00b2 = c\u00b2');
+  L.push('Created by Inder J. Taneja');
+  L.push('='.repeat(60));
+  const ks=[...selK].sort((a,b)=>b-a);
+
+  if(curType==='spine'||curType==='all'){
+    if(curIMode==='std'||curType==='all'){
+      const s=+document.getElementById('start-row').value, e=+document.getElementById('end-row').value;
+      ks.forEach(k=>{
+        const f=FAM.find(x=>x.k===k);
+        L.push(`\nFamily k=${k}  b=${f.bm}\u00d7R(n+1)  suffixes ${f.xs}/${f.ys}  rows ${s}\u2013${e}`);
+        L.push('-'.repeat(55));
+        for(let n=s;n<=e;n++){const r=spineRow(f,n); L.push(`  ${r.a}\u00b2 + ${r.b}\u00b2 = ${r.c}\u00b2`);}
+      });
+    } else {
+      const aMin=+document.getElementById('a-min').value||1;
+      const aMax=+document.getElementById('a-max').value||999999;
+      const nRows=+document.getElementById('n-rows').value||6;
+      ks.forEach(k=>{
+        const f=FAM.find(x=>x.k===k);
+        const seqs=findSeqs(f,aMin,aMax,nRows);
+        L.push(`\nFamily k=${k}  suffixes ${f.xs}/${f.ys}  a \u2208 [${aMin},${aMax}]`);
+        L.push('-'.repeat(55));
+        if(!seqs.length){L.push('  (no starting triple in this range)');return;}
+        seqs.forEach(seq=>{
+          L.push(`  m\u2080=${seq.m0}:`);
+          seq.rows.forEach(r=>L.push(`    ${r.a}\u00b2 + ${r.b}\u00b2 = ${r.c}\u00b2`));
+        });
+      });
+    }
+  }
+
+  if(curType==='repunit'||curType==='all'){
+    const seed=document.getElementById('ru-seed').value.split(',').map(Number);
+    const s=+document.getElementById('ru-start').value, e=+document.getElementById('ru-end').value;
+    L.push(`\nRepunit family: (${seed.join(',')}) \u00d7 R(n)  n=${s}..${e}`);
+    L.push('-'.repeat(55));
+    repRows(seed,s,e).forEach(r=>L.push(`  ${r.a}\u00b2 + ${r.b}\u00b2 = ${r.c}\u00b2`));
+  }
+
+  if(curType==='near'||curType==='all'){
+    const seed=document.getElementById('nc-seed').value.split(',').map(Number);
+    const s=+document.getElementById('nc-start').value, e=+document.getElementById('nc-end').value;
+    L.push(`\nNear-consecutive seed (seed c=b+1): (${seed.join(',')}) \u00d7 R(n)  n=${s}..${e}; scaled c-b=R(n)`);
+    L.push('-'.repeat(55));
+    repRows(seed,s,e).forEach(r=>L.push(`  ${r.a}\u00b2 + ${r.b}\u00b2 = ${r.c}\u00b2`));
+  }
+  return L.join('\n');
+}
+
+// ══════════════════════════════════════════
+//  DOWNLOADS
+// ══════════════════════════════════════════
+function dlTxt(){
+  const a=document.createElement('a');
+  a.href='data:text/plain;charset=utf-8,'+encodeURIComponent(genTxt());
+  a.download='pandigital_type_pythagorean_patterns.txt'; a.click();
+}
+
+function collectExportRows(){
+  const rows=[];
+  const add=(type,family,n,row,detail='')=>rows.push({type,family,n,detail,...row});
+  const ks=[...selK].sort((a,b)=>b-a);
+  if(curType==='spine'||curType==='all'){
+    if(curIMode==='std'||curType==='all'){
+      const s=+document.getElementById('start-row').value,e=+document.getElementById('end-row').value;
+      ks.forEach(k=>{const f=FAM.find(x=>x.k===k);for(let n=s;n<=e;n++){const row=spineRow(f,n);add(row.pattern,`k=${k}`,n,row,`b=${f.bm}×R(n+1); suffixes ${f.xs}/${f.ys}`);}});
+    }else{
+      const aMin=+document.getElementById('a-min').value||1,aMax=+document.getElementById('a-max').value||999999,nRows=+document.getElementById('n-rows').value||6;
+      ks.forEach(k=>{const f=FAM.find(x=>x.k===k);findSeqs(f,aMin,aMax,nRows).forEach(seq=>seq.rows.forEach(row=>add('Spine interval',`k=${k}; m₀=${seq.m0}`,row.n,row,`a in [${aMin}, ${aMax}]`)));});
+    }
+  }
+  if(curType==='repunit'||curType==='all'){
+    const seed=document.getElementById('ru-seed').value.split(',').map(Number),s=+document.getElementById('ru-start').value,e=+document.getElementById('ru-end').value;
+    repRows(seed,s,e).forEach((row,i)=>add('Repunit',`(${seed.join(', ')}) × R(n)`,s+i,row,'R(n) = repeated digit 1'));
+  }
+  if(curType==='near'||curType==='all'){
+    const seed=document.getElementById('nc-seed').value.split(',').map(Number),s=+document.getElementById('nc-start').value,e=+document.getElementById('nc-end').value;
+    repRows(seed,s,e).forEach((row,i)=>add('Near-consecutive seed',`(${seed.join(', ')}) × R(n)`,s+i,row,'seed c−b=1; scaled c−b=R(n)'));
+  }
+  return rows;
+}
+
+function dlXlsx(){
+  if(typeof XLSX==='undefined'){alert('The Excel component could not load. Please check your internet connection and try again.');return;}
+  const source=collectExportRows();
+  if(!source.length){alert('No results are selected for export.');return;}
+  const data=[
+    ['Pandigital-Type Pythagorean Triple Patterns Generator'],
+    ['Created by Inder J. Taneja'],
+    ['Identity','a','b','c','Family type','Family','Row n','Details'],
+    ...source.map(r=>[`${r.a}² + ${r.b}² = ${r.c}²`,r.a,r.b,r.c,r.type,r.family,r.n,r.detail])
+  ];
+  const ws=XLSX.utils.aoa_to_sheet(data);
+  ws['!cols']=[{wch:44},{wch:23},{wch:23},{wch:23},{wch:22},{wch:28},{wch:9},{wch:38}];
+  ws['!autofilter']={ref:`A3:H${data.length}`};
+  ws['!freeze']={xSplit:0,ySplit:3,topLeftCell:'A4',activePane:'bottomLeft',state:'frozen'};
+  ws['!merges']=[XLSX.utils.decode_range('A1:H1'),XLSX.utils.decode_range('A2:H2')];
+  const info=XLSX.utils.aoa_to_sheet([
+    ['About','Pandigital-Type Pythagorean Triple Patterns Generator'],
+    ['Author','Inder J. Taneja'],
+    ['Definition','Every exported row satisfies a² + b² = c².'],
+    ['Near-consecutive note','The selected seed has c − b = 1. After multiplying by R(n), c − b = R(n).'],
+    ['Website','https://numbers-magic.com/'],
+    ['Website','https://inderjtaneja.wordpress.com/'],
+    ['Generator site','https://taneja-mathematical-generators.ijtaneja.chatgpt.site/']
+  ]);
+  info['!cols']=[{wch:24},{wch:90}];
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Pythagorean Patterns');XLSX.utils.book_append_sheet(wb,info,'About');
+  XLSX.writeFile(wb,'pandigital_type_pythagorean_patterns.xlsx',{compression:true});
+}
+function dlHtml(){
+  const inner=document.getElementById('out').innerHTML;
+  const css=document.querySelector('style').outerHTML;
+  const gf=`<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">`;
+  const h=`<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Pandigital-Type Pythagorean Triple Patterns Generator</title>${gf}${css}</head>`+
+    `<body style="background:var(--bg);padding:30px;font-family:'EB Garamond',Georgia,serif">`+
+    `<h2 style="font-size:24px;font-weight:500;margin-bottom:4px">Pandigital-Type Pythagorean Triple Patterns Generator \u2014 a\u00b2 + b\u00b2 = c\u00b2</h2>`+
+    `<p style="margin:0 0 18px;color:var(--text2)">Created by <strong>Inder J. Taneja</strong></p>${inner}`+
+    `<footer style="margin-top:24px;padding-top:14px;border-top:1px solid var(--border);color:var(--text2)"><strong>Inder J. Taneja</strong> · numbers-magic.com · inderjtaneja.wordpress.com · taneja-mathematical-generators.ijtaneja.chatgpt.site</footer></body></html>`;
+  const a=document.createElement('a');
+  a.href='data:text/html;charset=utf-8,'+encodeURIComponent(h);
+  a.download='pandigital_type_pythagorean_figures.html'; a.click();
+}
+
+// ══════════════════════════════════════════
+//  UI STATE
+// ══════════════════════════════════════════
+function buildKGrid(){
+  const g=document.getElementById('k-grid'); g.innerHTML='';
+  FAM.forEach(f=>{
+    const b=document.createElement('div');
+    b.className='kbtn'+(selK.has(f.k)?' active':'');
+    b.innerHTML=`k=${f.k}<small>${f.xs}/${f.ys}</small>`;
+    b.onclick=()=>{selK.has(f.k)?selK.delete(f.k):selK.add(f.k);b.classList.toggle('active');curIMode==='range'?onRangeChange():updateSpineInfo();};
+    g.appendChild(b);
+  });
+}
+
+function refreshKButtons(){
+  document.querySelectorAll('.kbtn').forEach((button,index)=>button.classList.toggle('active',selK.has(FAM[index].k)));
+  curIMode==='range'?onRangeChange():updateSpineInfo();
+}
+
+function selectAllK(){
+  selK=new Set(FAM.map(f=>f.k));
+  refreshKButtons();
+  render();
+}
+
+function clearAllK(){
+  selK.clear();
+  refreshKButtons();
+  render();
+}
+
+function setType(t){
+  curType=t;
+  document.querySelectorAll('.ttab[data-t]').forEach(el=>el.classList.toggle('active',el.dataset.t===t));
+  ['spine','repunit','near'].forEach(id=>document.getElementById('panel-'+id).classList.toggle('show',id===t||t==='all'));
+  render();
+}
+
+function setIMode(m){
+  curIMode=m;
+  document.getElementById('imode-std').classList.toggle('active',m==='std');
+  document.getElementById('imode-range').classList.toggle('active',m==='range');
+  document.getElementById('std-mode').style.display=m==='std'?'block':'none';
+  document.getElementById('range-mode').style.display=m==='range'?'block':'none';
+  updateSpineInfo();
+}
+
+function setScope(scope){
+  curScope=scope;
+  ['pandigital','extended','all'].forEach(id=>document.getElementById('scope-'+id).classList.toggle('active',id===scope));
+  const start=document.getElementById('start-row'),end=document.getElementById('end-row'),info=document.getElementById('scope-info');
+  if(scope==='pandigital'){
+    start.min=0;start.max=8;start.value=0;end.min=0;end.max=8;end.value=8;
+    info.innerHTML='<strong>Pandigital spine:</strong> rows before the carry transition, n = 0–8.';
+  }else if(scope==='extended'){
+    start.min=9;start.max=30;start.value=9;end.min=9;end.max=30;end.value=15;
+    info.innerHTML='<strong>Extended spine:</strong> rows beginning with the decimal carry transition, n = 9–30.';
+  }else{
+    start.min=0;start.max=30;start.value=0;end.min=0;end.max=30;end.value=12;
+    info.innerHTML='<strong>Both types:</strong> pandigital and carry-extended results are shown in separate figure cards.';
+  }
+  onStdRange();render();
+}
+
+function setView(v){
+  curView=v;
+  document.querySelectorAll('.vtab').forEach(el=>el.classList.toggle('active',el.dataset.v===v));
+  render();
+}
+
+function onStdRange(){
+  let s=+document.getElementById('start-row').value, e=+document.getElementById('end-row').value;
+  if(s>e){document.getElementById('end-row').value=s;e=s;}
+  document.getElementById('sv').textContent=`n = ${s}`;
+  document.getElementById('ev').textContent=`n = ${e}`;
+  updateSpineInfo();
+}
+
+function onRangeChange(){
+  const aMin=+document.getElementById('a-min').value||1;
+  const aMax=+document.getElementById('a-max').value||999999;
+  const nRows=+document.getElementById('n-rows').value||6;
+  document.getElementById('rows-val').textContent=nRows;
+  let total=0;
+  selK.forEach(k=>{const f=FAM.find(x=>x.k===k);total+=findSeqs(f,aMin,aMax,nRows).length;});
+  const badge=total?`<span class="badge">${total} sequence${total!==1?'s':''} found</span>`:`<span class="badge none">0 sequences found — try widening the range</span>`;
+  document.getElementById('found-info').innerHTML=`<strong>a \u2208 [${aMin.toLocaleString()}, ${aMax.toLocaleString()}]</strong><br>${badge}`;
+  updateSpineInfo();
+}
+
+function updateSpineInfo(){
+  const ks=[...selK].sort((a,b)=>b-a);
+  const info=document.getElementById('spine-info');
+  if(!ks.length){info.innerHTML='<em>No family selected</em>';return;}
+  if(curIMode==='std'){
+    const s=+document.getElementById('start-row').value, e=+document.getElementById('end-row').value;
+    const f=FAM.find(x=>x.k===ks[0]);
+    const r=spineRow(f,s);
+    info.innerHTML=`<strong>${ks.length} famil${ks.length===1?'y':'ies'}, rows ${s}\u2013${e}</strong><br>First row (k=${ks[0]}):<br><span class="mono">${r.a}\u00b2 + ${r.b}\u00b2 = ${r.c}\u00b2</span>`;
+  } else {
+    info.innerHTML='<em>See found-count above</em>';
+  }
+}
+
+function onRuChange(){
+  let s=+document.getElementById('ru-start').value, e=+document.getElementById('ru-end').value;
+  if(s>e){document.getElementById('ru-end').value=s;e=s;}
+  document.getElementById('ru-sv').textContent=`n = ${s}`;
+  document.getElementById('ru-ev').textContent=`n = ${e}`;
+  const seed=document.getElementById('ru-seed').value.split(',').map(Number);
+  const r=RB(s);
+  document.getElementById('ru-info').innerHTML=`<strong>(${seed.join(',')}) \u00d7 R(n)</strong><br>First row:<br><span class="mono">${BigInt(seed[0])*r}\u00b2 + ${BigInt(seed[1])*r}\u00b2 = ${BigInt(seed[2])*r}\u00b2</span>`;
+}
+
+function onNcChange(){
+  let s=+document.getElementById('nc-start').value, e=+document.getElementById('nc-end').value;
+  if(s>e){document.getElementById('nc-end').value=s;e=s;}
+  document.getElementById('nc-sv').textContent=`n = ${s}`;
+  document.getElementById('nc-ev').textContent=`n = ${e}`;
+  const seed=document.getElementById('nc-seed').value.split(',').map(Number);
+  const r=RB(s);
+  document.getElementById('nc-info').innerHTML=`<strong>seed c = b+1; scaled c−b = R(n)</strong><br>First row:<br><span class="mono">${BigInt(seed[0])*r}\u00b2 + ${BigInt(seed[1])*r}\u00b2 = ${BigInt(seed[2])*r}\u00b2</span>`;
+}
+
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ══════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════
+buildKGrid();
+onStdRange();
+onRuChange();
+onNcChange();
+render();
+</script>
+</body>
+</html>

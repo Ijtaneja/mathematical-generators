@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Water Reflection Plates: Orders 17 and 18</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Oswald:wght@400;500&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root{
+  --s:230px;
+  --orig:#f7c5dd;      /* original faces (pink, as on numbers-magic.com) */
+  --refl:#bfe8f5;      /* water-reflection faces */
+  --ink:#111111;
+  --sh:1.6;            /* sky and water heights (equal) */
+  --lw:1;
+  --faint:rgba(70,60,50,.22);   /* ordinary cell lines inside block squares */              /* line thickness multiplier */
+  --line:#2a2a2a;      /* grid line colour */
+  --gold:#e8c66a;
+  --violet:#a98bff;
+  --bg:#07050E;
+}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,#fbf4e0 0%,#f7ecd0 55%,#f3e4bd 100%);color:#2a2340;font-family:'Share Tech Mono',monospace;}
+header{text-align:center;padding:22px 16px 6px}
+h1{font-family:'Cinzel',serif;color:var(--gold);margin:0;font-size:clamp(22px,3.4vw,38px);letter-spacing:.06em}
+.sub{color:#b9b0d8;margin-top:6px;font-size:14px}
+.wrap{display:grid;grid-template-columns:1fr 370px;gap:18px;max-width:1300px;margin:12px auto;padding:0 16px}
+@media (max-width:950px){.wrap{grid-template-columns:1fr}}
+
+/* ---------- stage ---------- */
+.stage{position:relative;border:1px solid #2a2340;border-radius:14px;overflow:hidden;
+  background:radial-gradient(ellipse at 50% 30%,#1b1433 0%,#0a0716 70%);cursor:grab;user-select:none;touch-action:none}
+.stage:active{cursor:grabbing}
+.scene{position:relative;height:calc(var(--s)*var(--sh));perspective:calc(var(--s)*5);display:flex;align-items:center;justify-content:center}
+.cube{position:relative;width:var(--s);height:var(--s);transform-style:preserve-3d}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.face.active .grid{box-shadow:0 0 calc(var(--s)*.09) var(--gold)}
+.badge{position:absolute;top:4%;left:4%;font:600 calc(var(--s)*.045) 'Share Tech Mono',monospace;
+  background:rgba(0,0,0,.72);color:var(--gold);padding:.15em .4em;border-radius:.3em;pointer-events:none}
+.face.refl .badge{color:#8fe3ff}
+.hidelabels .badge{display:none}
+
+.waterline{height:2px;background:linear-gradient(90deg,transparent,rgba(190,235,255,.5) 18%,rgba(255,238,200,.75) 50%,rgba(190,235,255,.5) 82%,transparent);
+  background-size:200% 100%;animation:shimmer 9s linear infinite;box-shadow:0 0 10px rgba(120,200,255,.35)}
+@keyframes shimmer{to{background-position:-200% 0}}
+.water{position:relative;height:calc(var(--s)*var(--sh));overflow:hidden;
+  background:linear-gradient(#0b2b46 0%,#06192b 55%,#030a14 100%)}
+.rl{position:absolute;inset:0;pointer-events:none}
+.rl .scene{transform:scaleY(-1)}
+/* near layer: crisp, gently rippled, strongest right under the surface */
+.rl-near{filter:url(#ripple) brightness(.88) saturate(.95);opacity:.9;
+  -webkit-mask-image:linear-gradient(to bottom,#000 0%,rgba(0,0,0,.9) 45%,rgba(0,0,0,.55) 80%,rgba(0,0,0,.25) 100%);
+          mask-image:linear-gradient(to bottom,#000 0%,rgba(0,0,0,.9) 45%,rgba(0,0,0,.55) 80%,rgba(0,0,0,.25) 100%)}
+/* deep layer: softer, more distorted, fades into the dark */
+.rl-far{filter:url(#rippleDeep) blur(1.5px) brightness(.72);opacity:.55;
+  -webkit-mask-image:linear-gradient(to bottom,transparent 25%,rgba(0,0,0,.6) 55%,rgba(0,0,0,.6) 85%,transparent 100%);
+          mask-image:linear-gradient(to bottom,transparent 25%,rgba(0,0,0,.6) 55%,rgba(0,0,0,.6) 85%,transparent 100%)}
+.water .tint{position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(rgba(60,140,200,.08) 0%,rgba(10,45,80,.22) 50%,rgba(3,10,20,.5) 100%)}
+.water .glow{position:absolute;left:50%;top:0;width:calc(var(--s)*2.2);height:calc(var(--s)*.4);transform:translate(-50%,-50%);
+  background:radial-gradient(ellipse at center,rgba(232,198,106,.16),rgba(120,200,255,.06) 45%,transparent 70%);pointer-events:none}
+.glints{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;mix-blend-mode:screen}
+.glints path{fill:none;stroke-linecap:round;vector-effect:non-scaling-stroke;animation:glint linear infinite}
+@keyframes glint{to{stroke-dashoffset:-600}}
+.nowater .water,.nowater .waterline{display:none}
+
+/* ---------- grids (shared by cube + cards) ---------- */
+.grid{display:grid;width:100%;height:100%;border:calc(var(--s)*.009*var(--lw)) solid var(--line);background:var(--orig)}
+.refl .grid,.grid.refl{background:var(--refl)}
+.cell{display:flex;align-items:center;justify-content:center;border:calc(var(--s)*.0032*var(--lw)) solid var(--line);
+  font-family:'Oswald',sans-serif;font-weight:500;color:var(--ink);line-height:1}
+/* "1" drawn as a plain bar so it stays a 1 in the water (as in the original figures) */
+.edge{position:absolute;background:linear-gradient(90deg,#7a5f22,#e8c66a 50%,#7a5f22);backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.cell{overflow:hidden;min-width:0;min-height:0}
+.ct{display:inline-flex;align-items:center;white-space:nowrap;transform-origin:center}
+.seg7{height:.8em;width:auto;margin:0 .05em;fill:currentColor;display:block}
+.cell.sg{gap:0}
+.one{display:inline-block;width:.1em;height:.72em;background:currentColor;margin:0 .13em;vertical-align:baseline}
+
+/* ---------- panel ---------- */
+.panel{display:flex;flex-direction:column;gap:12px}
+.box{border:1px solid #2a2340;border-radius:12px;padding:12px 14px;background:#0e0a1c}
+.box h2{font-family:'Cinzel',serif;font-size:15px;color:var(--gold);margin:0 0 10px;letter-spacing:.05em}
+.btns{display:flex;flex-wrap:wrap;gap:6px}
+button{font:13px 'Share Tech Mono',monospace;background:#1c1533;color:#eee;border:1px solid #3d3363;
+  border-radius:7px;padding:6px 9px;cursor:pointer}
+button:hover{border-color:var(--gold);color:var(--gold)}
+button.o{border-left:4px solid var(--orig)}
+button.r{border-left:4px solid var(--refl)}
+button.w{background:#0d3150;border-color:#2c78a8}
+.prow{display:grid;grid-template-columns:88px 1fr 1fr 34px;gap:6px;align-items:center;margin-bottom:6px;font-size:13px}
+.ctl{display:grid;grid-template-columns:120px 1fr 48px;gap:8px;align-items:center;font-size:13px;margin:6px 0}
+.ctl input[type=range]{width:100%}
+.chk{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;margin-top:6px}
+input[type=color]{width:100%;height:26px;border:none;background:none;padding:0}
+#activeInfo{font-size:13px;line-height:1.55}
+#activeInfo .t{color:var(--gold);font-size:14px}
+#activeMini{width:150px;height:150px;margin:8px auto;--s:150px}
+.ok{color:#7ee2a8}.bad{color:#ff8f8f}
+
+/* ---------- pairs section ---------- */
+section.pairs{max-width:1300px;margin:8px auto 30px;padding:0 16px}
+section.pairs h2{font-family:'Cinzel',serif;color:var(--gold);font-size:20px;margin:18px 0 10px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:14px}
+.card{border:1px solid #2a2340;border-radius:12px;padding:12px;background:#0e0a1c}
+.card h3{margin:0 0 8px;font-family:'Cinzel',serif;color:#f1d98f;font-size:15px}
+.duo{display:flex;gap:14px;justify-content:center}
+.duo figure{margin:0;text-align:center;font-size:12px;color:#b9b0d8}
+.mini{--s:120px;width:120px;height:120px;margin:4px auto}
+.lake{margin:10px auto 4px;width:150px}
+.lake .mini{--s:120px}
+.lake .wl{height:2px;margin:3px 0;background:linear-gradient(90deg,transparent,#8fe3ff,transparent)}
+.lake .mir{transform:scaleY(-1);opacity:.85;filter:url(#rippleSoft) brightness(.85);
+  -webkit-mask-image:linear-gradient(to top,#000 0%,rgba(0,0,0,.55) 55%,transparent 100%);
+          mask-image:linear-gradient(to top,#000 0%,rgba(0,0,0,.55) 55%,transparent 100%)}
+.card p{font-size:12.5px;line-height:1.5;margin:8px 0 0;color:#d6d0e6}
+details{margin-top:14px}
+summary{cursor:pointer;color:var(--gold);font-family:'Cinzel',serif}
+.ed{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:10px}
+textarea{width:100%;height:90px;background:#120d24;color:#eee;border:1px solid #3d3363;border-radius:8px;
+  font:14px 'Share Tech Mono',monospace;padding:6px}
+.tabs{display:grid;grid-template-columns:repeat(2,auto);justify-content:center;align-items:center;gap:8px 30px;margin:12px auto 6px;max-width:1000px}
+.tabgroup{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.tablabel{font-family:'Cinzel',serif;color:var(--gold);font-size:13px;font-weight:700;margin-right:2px;white-space:nowrap}
+@media (max-width:760px){.tabs{grid-template-columns:1fr;justify-items:center}}
+.tabs a{font:13px 'Share Tech Mono',monospace;color:#cfc6ee;text-decoration:none;padding:5px 11px;border:1px solid #3d3363;border-radius:20px;background:#140f27}
+.tabs a:hover{border-color:var(--gold);color:var(--gold)}
+.tabs a.on{background:var(--gold);color:#1a1206;border-color:var(--gold);font-weight:600}
+.chips{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:4px 0 6px}
+.chips a{font:13px 'Share Tech Mono',monospace;color:#cfc6ee;text-decoration:none;padding:5px 11px;border:1px solid #3d3363;border-radius:8px;background:#100c20}
+.chips a:hover{border-color:var(--gold);color:var(--gold)}
+.chips a.on{border-color:#8fe3ff;color:#8fe3ff;background:#0d3150}
+footer{text-align:center;color:#6f6790;font-size:12px;padding:10px 0 24px}
+
+/* ---------- light page with coloured cards ---------- */
+h1{color:#4b2e83}
+.sub{color:#5a5275}
+.box{box-shadow:0 3px 12px rgba(90,60,10,.16)}
+.panel .box:nth-child(1){background:#efe9ff;border-color:#cfc3f7}
+.panel .box:nth-child(1) h2{color:#5b3fb5}
+.panel .box:nth-child(2){background:#e6f7ee;border-color:#ade0c4}
+.panel .box:nth-child(2) h2{color:#1f7a4d}
+.panel .box:nth-child(3){background:#fff1e3;border-color:#f3cfa8}
+.panel .box:nth-child(3) h2{color:#b5651d}
+#activeInfo{color:#2a2340}
+#activeInfo .t{color:#1f7a4d}
+button{background:#fff;color:#2a2340;border:1px solid #c9c0e0}
+button:hover{border-color:#c79a2a;color:#9a6b00}
+button.w{background:#dff2fb;border-color:#8cc8e6;color:#0d4d6e}
+.tabs a{background:#fff;color:#3b3355;border-color:#d5cdea}
+.tabs a:hover{border-color:#c79a2a;color:#9a6b00}
+.tabs a.on{background:#e8c66a;color:#1a1206;border-color:#c9a43f}
+.tablabel{color:#9a6b00}
+.chips a{background:#fff;color:#3b3355;border-color:#d5cdea}
+.chips a.on{background:#dff2fb;border-color:#5fb3d9;color:#0d4d6e}
+.stage{border-color:#cfc6e6;box-shadow:0 6px 22px rgba(30,20,60,.28)}
+section.pairs h2{color:#3d2470}
+.cards .card:nth-child(3n+1){background:#e4f1fb;border-color:#a8cde9}
+.cards .card:nth-child(3n+1) h3{color:#1f5f8b}
+.cards .card:nth-child(3n+2){background:#fde9f0;border-color:#f0b3c8}
+.cards .card:nth-child(3n+2) h3{color:#a8325e}
+.cards .card:nth-child(3n){background:#fbf5d6;border-color:#eadb8e}
+.cards .card:nth-child(3n) h3{color:#7d6200}
+.card{box-shadow:0 3px 12px rgba(90,60,10,.16)}
+.card p{color:#2a2340}
+.duo figure{color:#5a5275}
+.ok{color:#1d7a46}.bad{color:#c0392b}
+summary{color:#6b4500}
+textarea{background:#fff;color:#2a2340;border-color:#cfc6e6}
+footer{color:#7a7290}
+
+/* ---------- title & index cards, left stripes, footer ---------- */
+header{padding:18px 16px 4px;max-width:1300px;margin:0 auto;display:grid;gap:12px}
+.hcard{position:relative;border-radius:12px;padding:16px 20px 14px 26px;border:1px solid #e2dbf0;box-shadow:0 3px 12px rgba(90,60,10,.16);overflow:hidden}
+.hcard::before,.box::before,.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:7px}
+.box,.card{position:relative;overflow:hidden;padding-left:22px}
+.titlecard{background:linear-gradient(100deg,#fffaf0,#f3ecff);text-align:center}
+.titlecard::before{background:linear-gradient(#7b4fd6,#e8c66a)}
+.titlecard h1{margin:0}
+.byline{font-family:'Cinzel',serif;font-size:15px;color:#8a5a00;margin-top:6px;letter-spacing:.04em}
+.byline b{color:#4b2e83}
+.indexcard{background:#fffdf6;text-align:center}
+.indexcard::before{background:linear-gradient(#e8a33a,#d8577a)}
+.idxhead{font-family:'Cinzel',serif;font-weight:700;color:#b5651d;font-size:15px;letter-spacing:.08em;text-transform:uppercase;text-align:left;margin-bottom:4px}
+.indexcard .tabs{margin:6px auto 4px}
+.note{font-size:12.5px;color:#7a7290;margin-top:4px}
+.panel .box:nth-child(1)::before{background:#7b4fd6}
+.panel .box:nth-child(2)::before{background:#2fa36b}
+.panel .box:nth-child(3)::before{background:#e08a3a}
+.cards .card:nth-child(3n+1)::before{background:#3a8fd0}
+.cards .card:nth-child(3n+2)::before{background:#d8577a}
+.cards .card:nth-child(3n)::before{background:#d4b02a}
+footer{text-align:center;padding:18px 16px 30px;font-size:13px;color:#3d3355}
+.fname{font-family:'Cinzel',serif;font-weight:700;color:#4b2e83;font-size:16px;margin-bottom:6px}
+.flinks{display:flex;gap:18px;justify-content:center;flex-wrap:wrap}
+.flinks a{color:#14466b;text-decoration:none;border-bottom:1px dotted #14466b}
+.flinks a:hover{color:#9a6b00;border-bottom-color:#9a6b00}
+
+.sectioncard{background:#eefaf8;border-color:#b5e3dc;text-align:center;padding-top:12px;padding-bottom:12px}
+.sectioncard::before{background:linear-gradient(#1aa39a,#3a8fd0)}
+.sechead{font-family:'Cinzel',serif;font-weight:700;color:#137a73;font-size:13px;letter-spacing:.08em;text-transform:uppercase;text-align:left;margin-bottom:2px}
+.sectext{font-size:15px;color:#0f4f4a;line-height:1.5}
+
+.refcard{position:relative;overflow:hidden;max-width:1268px;margin:8px auto 4px;background:#f2f6ff;border:1px solid #c7d4f0;border-radius:12px;padding:14px 20px 14px 28px;box-shadow:0 3px 12px rgba(90,60,10,.16)}
+.refcard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:7px;background:linear-gradient(#3a5bd0,#7b4fd6)}
+.refhead{font-family:'Cinzel',serif;font-weight:700;color:#2c3f94;font-size:17px;margin:0 0 8px;letter-spacing:.04em}
+.reflist{margin:0;list-style:decimal;padding-left:22px;color:#2a2340;font-size:13.5px;line-height:1.6}
+.reflist > li{margin-bottom:6px}
+.sublinks{margin:6px 0 0;padding-left:18px;list-style:disc}
+.sublinks li{margin:2px 0}
+.refcard a{color:#1f5f8b;text-decoration:none;border-bottom:1px dotted #1f5f8b;word-break:break-word}
+.refcard a:hover{color:#9a6b00;border-bottom-color:#9a6b00}
+@media (max-width:1300px){.refcard{margin-left:16px;margin-right:16px}}
+
+/* ---------- recessed 3D gradient cards ---------- */
+.hcard,.box,.card,.refcard{
+  border:1px solid rgba(120,85,20,.28) !important;
+  box-shadow:inset 8px 8px 18px rgba(70,45,0,.32), inset 2px 2px 3px rgba(70,45,0,.25),
+             inset -6px -6px 14px rgba(255,255,255,.9),
+             1px 1px 0 rgba(255,255,255,.85), -1px -1px 0 rgba(120,85,20,.28) !important}
+.titlecard{background:linear-gradient(145deg,#fffaf0 0%,#f3eafe 55%,#e3d3fb 100%)}
+.indexcard{background:linear-gradient(145deg,#fffdf4 0%,#fbf0d6 55%,#f2deb0 100%)}
+.sectioncard{background:linear-gradient(145deg,#f4fdfb 0%,#dff4ef 55%,#c6e9e1 100%)}
+.panel .box:nth-child(1){background:linear-gradient(145deg,#f7f3ff 0%,#e7ddfd 55%,#d5c6f8 100%)}
+.panel .box:nth-child(2){background:linear-gradient(145deg,#f3fcf7 0%,#dcf3e6 55%,#c3e7d2 100%)}
+.panel .box:nth-child(3){background:linear-gradient(145deg,#fff8ef 0%,#fde7cf 55%,#f7d2ac 100%)}
+.cards .card:nth-child(3n+1){background:linear-gradient(145deg,#f1f8fe 0%,#dcebf8 55%,#c4dcf1 100%)}
+.cards .card:nth-child(3n+2){background:linear-gradient(145deg,#fff3f7 0%,#fbdfe9 55%,#f3c7d7 100%)}
+.cards .card:nth-child(3n){background:linear-gradient(145deg,#fffcea 0%,#f9efc2 55%,#efdf98 100%)}
+.refcard{background:linear-gradient(145deg,#f6f9ff 0%,#e3eafb 55%,#cfdaf5 100%)}
+/* stripe sits inside the recess */
+.hcard::before,.box::before,.card::before,.refcard::before{box-shadow:inset -2px 0 3px rgba(0,0,0,.18), inset 2px 2px 3px rgba(0,0,0,.15)}
+/* raised controls stand out against the sunken cards */
+.tabs a,.chips a,button{box-shadow:0 2px 3px rgba(70,45,0,.18), inset 0 1px 0 rgba(255,255,255,.9)}
+.tabs a.on,.chips a.on{box-shadow:inset 1px 1px 3px rgba(70,45,0,.25)}
+button:active{box-shadow:inset 1px 1px 3px rgba(70,45,0,.3)}
+/* the 3D stage as a recessed window */
+.stage{border:1px solid rgba(120,85,20,.35);box-shadow:0 1px 0 rgba(255,255,255,.7), 0 -1px 0 rgba(120,85,20,.15)}
+.stage::after{content:"";position:absolute;inset:0;border-radius:14px;pointer-events:none;z-index:5;
+  box-shadow:inset 6px 8px 22px rgba(0,0,0,.65), inset -3px -4px 12px rgba(255,255,255,.06)}
+/* mini grids inside cards look set into the surface */
+#activeMini .grid,.mini .grid{box-shadow:inset 1px 1px 2px rgba(0,0,0,.15)}
+
+/* striped squares: each vertical stripe its own colour (lighter on the water-reflection side) */
+.cell.st0{background:#ffc98b}
+.cell.st1{background:#a9d6ff}
+.refl .cell.st0,.grid.refl .cell.st0{background:#ffe2c2}
+.refl .cell.st1,.grid.refl .cell.st1{background:#d6ecff}
+
+/* pair card: four images in one row */
+.cards{grid-template-columns:1fr !important}
+.quad{display:grid;grid-template-columns:repeat(4,minmax(0,180px));gap:18px;justify-content:center;align-items:end;margin:6px 0 4px}
+.quad figure{margin:0;text-align:center;font-size:12px;color:#5a5275;container-type:inline-size;position:relative}
+.quad figcaption{min-height:2.6em;line-height:1.3;display:flex;align-items:flex-end;justify-content:center;margin-bottom:4px}
+.quad .mini{--s:100cqw;width:100%;height:auto;aspect-ratio:1;margin:0}
+.quad .qwl{position:absolute;left:-4px;right:-4px;height:3px;bottom:calc(100cqw + 2px);border-radius:2px;
+  background:linear-gradient(90deg,transparent,#4fb3e8 15%,#8fe3ff 50%,#4fb3e8 85%,transparent)}
+.quad .mir{transform:scaleY(-1);opacity:.9;filter:url(#rippleSoft) brightness(.9);
+  -webkit-mask-image:linear-gradient(to top,#000 0%,rgba(0,0,0,.8) 60%,rgba(0,0,0,.45) 100%);
+          mask-image:linear-gradient(to top,#000 0%,rgba(0,0,0,.8) 60%,rgba(0,0,0,.45) 100%)}
+@media (max-width:700px){.quad{grid-template-columns:repeat(2,minmax(0,170px))}}
+
+.ordline{font-family:'Cinzel',serif;font-size:19px;font-weight:700;color:#8a5a00;letter-spacing:.06em;margin-top:2px}
+
+/* index: every example visible */
+.tabs{grid-template-columns:1fr !important;justify-items:center;gap:8px !important;max-width:1250px !important}
+.tabgroup{justify-content:center;row-gap:6px}
+.secgroup{display:inline-flex;align-items:center;gap:3px;padding:3px 5px 3px 3px;border-radius:20px;background:rgba(255,255,255,.45);border:1px solid rgba(160,130,60,.25);margin:0 3px}
+.secgroup.on{background:rgba(232,198,106,.25);border-color:rgba(199,154,42,.6)}
+.tabs a.seclink{padding:4px 10px}
+.tabs a.exlink{min-width:26px;text-align:center;padding:3px 7px;font-size:12px;border-radius:12px}
+.tabs a.exlink.on{background:#dff2fb;border-color:#5fb3d9;color:#0d4d6e;font-weight:700}
+.chips:empty{display:none}
+
+/* gold outer frame on the plates */
+.face .grid{border-color:#d4a72c !important;border-width:calc(var(--s)*.016) !important;
+  box-shadow:inset 0 0 0 1px #8a6a12, 0 0 0 1px #8a6a12}
+.edge{background:linear-gradient(90deg,#8a6a12,#f3d27a 50%,#8a6a12) !important}
+
+/* larger grids in the side panel and pair cards */
+#activeMini{width:100% !important;max-width:340px;height:auto !important;aspect-ratio:1;container-type:inline-size;margin:10px auto !important}
+#activeMini .grid{--s:100cqw}
+.quad{grid-template-columns:repeat(4,minmax(0,1fr)) !important;max-width:1180px;margin:8px auto 6px !important;gap:22px !important}
+.quad figure{font-size:13px}
+@media (max-width:700px){.quad{grid-template-columns:repeat(2,minmax(0,1fr)) !important;gap:14px !important}}
+
+.quad.big{grid-template-columns:repeat(2,minmax(0,1fr)) !important;max-width:1000px;gap:26px 34px !important}
+
+/* the digit 1 drawn as the font's capital I: same height and stroke as 0, 3, 8, and symmetric in water */
+.one{width:auto !important;height:auto !important;background:none !important;margin:0 .045em !important;vertical-align:baseline}
+
+.subline{font-family:'Cinzel',serif;font-size:20px;font-weight:700;color:#5b3fb5;letter-spacing:.08em;margin-top:2px}
+
+.refsub{font-size:14px;color:#2c3f94;font-style:italic;margin:-2px 0 8px}
+
+.cell.hlc{background:#ffd9a8}
+.refl .cell.hlc,.grid.refl .cell.hlc{background:#ffe9c9}
+
+.genlink{margin-top:10px;padding-top:8px;border-top:1px dashed rgba(44,63,148,.3);font-size:13.5px;color:#2a2340}
+</style>
+</head>
+<body>
+
+<!-- water filters: horizontal-only displacement (G fixed at 0.5 = no vertical shift) -->
+<svg width="0" height="0" style="position:absolute">
+  <filter id="ripple" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.006 0.055" numOctaves="2" seed="11" result="n">
+      <animate attributeName="baseFrequency" dur="7s" values="0.006 0.055;0.0066 0.063;0.006 0.055" repeatCount="indefinite"/>
+    </feTurbulence>
+    <feColorMatrix in="n" type="matrix" values="1 0 0 0 0  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 1" result="x"/>
+    <feDisplacementMap id="dNear" in="SourceGraphic" in2="x" scale="5" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+  <filter id="rippleDeep" x="-8%" y="-5%" width="116%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.008 0.035" numOctaves="2" seed="4" result="n">
+      <animate attributeName="baseFrequency" dur="9s" values="0.008 0.035;0.009 0.042;0.008 0.035" repeatCount="indefinite"/>
+    </feTurbulence>
+    <feColorMatrix in="n" type="matrix" values="1 0 0 0 0  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 1" result="x"/>
+    <feDisplacementMap id="dDeep" in="SourceGraphic" in2="x" scale="11" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+  <filter id="rippleSoft" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.02 0.09" numOctaves="1" seed="2" result="n">
+      <animate attributeName="baseFrequency" dur="6s" values="0.02 0.09;0.022 0.1;0.02 0.09" repeatCount="indefinite"/>
+    </feTurbulence>
+    <feColorMatrix in="n" type="matrix" values="1 0 0 0 0  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 1" result="x"/>
+    <feDisplacementMap id="dSoft" in="SourceGraphic" in2="x" scale="2.5" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<header>
+  <div class="hcard titlecard">
+    <h1>Water Reflection Magic Squares</h1>
+    <div class="subline">Plate Representations</div>
+    <div class="ordline">Orders 17 and 18</div>
+    <div class="byline">Created by <b>Inder J. Taneja</b></div>
+  </div>
+  <div class="hcard indexcard">
+    <div class="idxhead">Index</div>
+    <nav class="tabs" id="tabs"></nav>
+    <nav class="chips" id="chips"></nav>
+    <div class="sub note">Each plate carries the original on one side and its water reflection on the other</div>
+  </div>
+  <div class="hcard sectioncard">
+    <div class="sechead">Current Section</div>
+    <div class="sectext" id="subTitle"></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div>
+    <div class="stage" id="stage">
+      <div class="scene"><div class="cube" id="cube"></div></div>
+      <div class="waterline"></div>
+      <div class="water">
+        <div class="glow"></div>
+        <div class="rl rl-far"><div class="scene"><div class="cube" id="cube3"></div></div></div>
+        <div class="rl rl-near"><div class="scene"><div class="cube" id="cube2"></div></div></div>
+        <div class="tint"></div>
+        <svg class="glints" id="glints" viewBox="0 0 1000 400" preserveAspectRatio="none"></svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="box">
+      <h2>Faces &amp; Water Flips</h2>
+      <div id="faceBtns"></div>
+      <div class="btns" style="margin-top:8px">
+        <button id="playBtn" style="border-color:#c79a2a;color:#8a5a00;background:#fff6dc;font-weight:600">⏸ Pause</button>
+        <button class="w" id="flipBtn">🌊 Water flip (current face)</button>
+        <button id="prevBtn">◀ Previous</button>
+        <button id="nextBtn">Next ▶</button>
+        <label style="font-size:13px;display:flex;align-items:center;gap:6px">Auto-play
+          <select id="scopeSel" style="background:#fff;color:#2a2340;border:1px solid #c9c0e0;border-radius:6px;padding:4px;font:13px 'Share Tech Mono',monospace">
+            <option value="all">all 30 examples</option><option value="section">this section only</option></select></label>
+        <div id="autoInfo" style="font-size:12px;color:#8d84ad;width:100%"></div>
+      </div>
+    </div>
+
+    <div class="box">
+      <h2>Showing Now</h2>
+      <div id="activeInfo"></div>
+    </div>
+
+    <div class="box">
+      <h2>Controls</h2>
+      <div class="ctl"><span>Play speed</span><input type="range" id="speed" min="0.4" max="2.5" step="0.1" value="1"><span id="speedV">1.0×</span></div>
+      <div class="ctl"><span>Plate size</span><input type="range" id="size" min="140" max="950" value="230"><span id="sizeV">230</span></div>
+      <div class="ctl"><span>Ripple strength</span><input type="range" id="rippleIn" min="0" max="12" step="0.5" value="5"><span id="rippleV">5</span></div>
+      <div class="ctl"><span>Line thickness</span><input type="range" id="lw" min="0.3" max="3" step="0.1" value="1"><span id="lwV">1.0</span></div>
+      <div class="ctl"><span>Line colour</span><input type="color" id="cLine" value="#2a2a2a"><span></span></div>
+      <div class="ctl"><span>Digit style</span><select id="styleSel" style="background:#fff;color:#2a2340;border:1px solid #c9c0e0;border-radius:6px;padding:4px;font:13px 'Share Tech Mono',monospace"><option value="classic">Classic (condensed)</option><option value="seg">Seven-segment</option></select><span></span></div>
+      <div class="ctl"><span>Original colour</span><input type="color" id="cOrig" value="#f7c5dd"><span></span></div>
+      <div class="ctl"><span>Reflection colour</span><input type="color" id="cRefl" value="#bfe8f5"><span></span></div>
+      <div class="ctl"><span>Digit colour</span><input type="color" id="cInk" value="#111111"><span></span></div>
+      <div class="chk">
+        <label><input type="checkbox" id="showWater" checked> Water surface</label>
+        <label><input type="checkbox" id="showLabels" checked> Face labels</label>
+      </div>
+      <div style="font-size:12px;color:#8d84ad;margin-top:8px">Drag the plate to rotate it by hand.</div>
+    </div>
+  </div>
+</div>
+
+<section class="pairs">
+  <h2 id="pairsTitle">The Three Pairs</h2>
+  <div class="cards" id="cards"></div>
+
+  <details>
+    <summary>Edit the original squares of this set (reflections are derived automatically)</summary>
+    <div class="ed" id="editor"></div>
+    <div class="btns" style="margin-top:8px"><button id="applyBtn">Apply</button></div>
+    <div id="edMsg" style="font-size:13px;margin-top:6px"></div>
+  </details>
+</section>
+
+<section class="refcard">
+  <h2 class="refhead">References</h2>
+  <div class="refsub">Based on the author's following research works:</div>
+  <ol class="reflist">
+    <li><span class="refmain">Inder J. Taneja, <i>Upside-Down, Mirror Looking and Water Reflection Magic Squares: Orders 17 to 20</i>, Zenodo, January 17, 2025, pp. 1-86,
+      <a href="https://doi.org/10.5281/zenodo.14676293" target="_blank" rel="noopener">https://doi.org/10.5281/zenodo.14676293</a>.</span>
+      <ul class="sublinks">
+        <li>Site link: <a href="https://numbers-magic.com/?p=13186" target="_blank" rel="noopener">Universal and Upside-Down Magic Squares of Order 20 (new site)</a></li>
+        <li>Site link: <a href="https://numbers-magic.com/?p=14561" target="_blank" rel="noopener">Water Reflection Magic Squares: Orders 17 to 20 (new site)</a></li>
+        <li>Site link: <a href="https://inderjtaneja.wordpress.com/2024/10/23/universal-and-upside-down-magic-and-bimagic-squares-of-order-16-2/" target="_blank" rel="noopener">Universal and Upside-Down Magic Squares of Order 20 (old site)</a></li>
+        <li>Site link: <a href="https://inderjtaneja.wordpress.com/2025/01/23/water-reflection-magic-squares-orders-17-to-20/" target="_blank" rel="noopener">Water Reflection Magic Squares: Orders 17 to 20 (old site)</a></li>
+      </ul>
+    </li>
+    <li><span class="refmain">Inder J. Taneja, Online generator: <a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/generators/water-reflection-magic-squares-generator" target="_blank" rel="noopener">Water-Reflection Magic Squares Generator</a></span></li>
+  </ol>
+</section>
+<footer>
+  <div class="fname">Inder J. Taneja</div>
+  <div class="flinks"><a href="https://numbers-magic.com/" target="_blank" rel="noopener">https://numbers-magic.com/</a>
+  <a href="https://inderjtaneja.wordpress.com/" target="_blank" rel="noopener">https://inderjtaneja.wordpress.com/</a></div>
+</footer>
+
+<script>
+/* =========================================================
+   DATA — the three originals; the water reflection of each is
+   its rows in reverse order. Digits 0, 1, 3, 8 are symmetric
+   about a horizontal axis, so they read the same in water.
+   ========================================================= */
+const SETS = {
+  'o17d4s': { tab:'Order 17 · 4-Digit 7-seg', style:'seg', orig:'#ffe1f0', refl:'#e6f6c6', size:610,
+    sub:'Order 17 · 4-digit entries · seven-segment · (0,2,3,5,8), (0,1,2,3,5), (1,2,3,5,8), (0,1,2,3,5,8) · in water 2 ↔ 5 · pandiagonal magic squares', data:[
+    { name:'Example 1', orig:[['0088','5508','8828','3053','5805','3855','5233','2382','2238','0322','8020','3250','0803','2058','8235','3583','8552'],['3222','0820','2050','8203','3558','8535','0083','5552','8888','3008','5828','3853','5205','2355','2233','0382','8038'],['3808','5228','2353','2205','0355','8033','3282','0838','2022','8220','3550','8503','0058','5535','8883','3052','5888'],['8520','0050','5503','8858','3035','5883','3852','5288','2308','2228','0353','8005','3255','0833','2082','8238','3522'],['8028','3253','0805','2055','8233','3582','8538','0022','5520','8850','3003','5858','3835','5283','2352','2288','0308'],['5850','3803','5258','2335','2283','0352','8088','3208','0828','2053','8205','3555','8533','0082','5538','8822','3020'],['3553','8505','0055','5533','8882','3038','5822','3820','5250','2303','2258','0335','8083','3252','0888','2008','8228'],['0303','8058','3235','0883','2052','8288','3508','8528','0053','5505','8855','3033','5882','3838','5222','2320','2250'],['3005','5855','3833','5282','2338','2222','0320','8050','3203','0858','2035','8283','3552','8588','0008','5528','8853'],['8258','3535','8583','0052','5588','8808','3028','5853','3805','5255','2333','2282','0338','8022','3220','0850','2003'],['2255','0333','8082','3238','0822','2020','8250','3503','8558','0035','5583','8852','3088','5808','3828','5253','2305'],['8835','3083','5852','3888','5208','2328','2253','0305','8055','3233','0882','2038','8222','3520','8550','0003','5558'],['2033','8282','3538','8522','0020','5550','8803','3058','5835','3883','5252','2388','2208','0328','8053','3205','0855'],['2383','2252','0388','8008','3228','0853','2005','8255','3533','8582','0038','5522','8820','3050','5803','3858','5235'],['5582','8838','3022','5820','3850','5203','2358','2235','0383','8052','3288','0808','2028','8253','3505','8555','0033'],['0852','2088','8208','3528','8553','0005','5555','8833','3082','5838','3822','5220','2350','2203','0358','8035','3283'],['5238','2322','2220','0350','8003','3258','0835','2083','8252','3588','8508','0028','5553','8805','3055','5833','3882']] },
+    { name:'Example 2', orig:[['0011','5501','1121','3053','5105','3155','5233','2312','2231','0322','1020','3250','0103','2051','1235','3513','1552'],['3222','0120','2050','1203','3551','1535','0013','5552','1111','3001','5121','3153','5205','2355','2233','0312','1031'],['3101','5221','2353','2205','0355','1033','3212','0131','2022','1220','3550','1503','0051','5535','1113','3052','5111'],['1520','0050','5503','1151','3035','5113','3152','5211','2301','2221','0353','1005','3255','0133','2012','1231','3522'],['1021','3253','0105','2055','1233','3512','1531','0022','5520','1150','3003','5151','3135','5213','2352','2211','0301'],['5150','3103','5251','2335','2213','0352','1011','3201','0121','2053','1205','3555','1533','0012','5531','1122','3020'],['3553','1505','0055','5533','1112','3031','5122','3120','5250','2303','2251','0335','1013','3252','0111','2001','1221'],['0303','1051','3235','0113','2052','1211','3501','1521','0053','5505','1155','3033','5112','3131','5222','2320','2250'],['3005','5155','3133','5212','2331','2222','0320','1050','3203','0151','2035','1213','3552','1511','0001','5521','1153'],['1251','3535','1513','0052','5511','1101','3021','5153','3105','5255','2333','2212','0331','1022','3220','0150','2003'],['2255','0333','1012','3231','0122','2020','1250','3503','1551','0035','5513','1152','3011','5101','3121','5253','2305'],['1135','3013','5152','3111','5201','2321','2253','0305','1055','3233','0112','2031','1222','3520','1550','0003','5551'],['2033','1212','3531','1522','0020','5550','1103','3051','5135','3113','5252','2311','2201','0321','1053','3205','0155'],['2313','2252','0311','1001','3221','0153','2005','1255','3533','1512','0031','5522','1120','3050','5103','3151','5235'],['5512','1131','3022','5120','3150','5203','2351','2235','0313','1052','3211','0101','2021','1253','3505','1555','0033'],['0152','2011','1201','3521','1553','0005','5555','1133','3012','5131','3122','5220','2350','2203','0351','1035','3213'],['5231','2322','2220','0350','1003','3251','0135','2013','1252','3511','1501','0021','5553','1105','3055','5133','3112']] },
+    { name:'Example 3', orig:[['1188','5518','8828','3153','5815','3855','5233','2382','2238','1322','8121','3251','1813','2158','8235','3583','8552'],['3222','1821','2151','8213','3558','8535','1183','5552','8888','3118','5828','3853','5215','2355','2233','1382','8138'],['3818','5228','2353','2215','1355','8133','3282','1838','2122','8221','3551','8513','1158','5535','8883','3152','5888'],['8521','1151','5513','8858','3135','5883','3852','5288','2318','2228','1353','8115','3255','1833','2182','8238','3522'],['8128','3253','1815','2155','8233','3582','8538','1122','5521','8851','3113','5858','3835','5283','2352','2288','1318'],['5851','3813','5258','2335','2283','1352','8188','3218','1828','2153','8215','3555','8533','1182','5538','8822','3121'],['3553','8515','1155','5533','8882','3138','5822','3821','5251','2313','2258','1335','8183','3252','1888','2118','8228'],['1313','8158','3235','1883','2152','8288','3518','8528','1153','5515','8855','3133','5882','3838','5222','2321','2251'],['3115','5855','3833','5282','2338','2222','1321','8151','3213','1858','2135','8283','3552','8588','1118','5528','8853'],['8258','3535','8583','1152','5588','8818','3128','5853','3815','5255','2333','2282','1338','8122','3221','1851','2113'],['2255','1333','8182','3238','1822','2121','8251','3513','8558','1135','5583','8852','3188','5818','3828','5253','2315'],['8835','3183','5852','3888','5218','2328','2253','1315','8155','3233','1882','2138','8222','3521','8551','1113','5558'],['2133','8282','3538','8522','1121','5551','8813','3158','5835','3883','5252','2388','2218','1328','8153','3215','1855'],['2383','2252','1388','8118','3228','1853','2115','8255','3533','8582','1138','5522','8821','3151','5813','3858','5235'],['5582','8838','3122','5821','3851','5213','2358','2235','1383','8152','3288','1818','2128','8253','3515','8555','1133'],['1852','2188','8218','3528','8553','1115','5555','8833','3182','5838','3822','5221','2351','2213','1358','8135','3283'],['5238','2322','2221','1351','8113','3258','1835','2183','8252','3588','8518','1128','5553','8815','3155','5833','3882']] },
+    { name:'Example 4', orig:[['5583','0101','2858','2012','3515','3218','8011','3302','5333','0538','8113','1888','5080','8830','1123','1535','5885'],['1838','5013','8888','1180','1530','5823','5535','0185','2883','2001','3558','3212','8015','3318','5311','0502','8133'],['3201','8058','3312','5315','0518','8111','1802','5033','8838','1113','1588','5880','5530','0123','2835','2085','3583'],['5813','5588','0180','2830','2023','3535','3285','8083','3301','5358','0512','8115','1818','5011','8802','1133','1538'],['8158','1812','5015','8818','1111','1502','5833','5538','0113','2888','2080','3530','3223','8035','3385','5383','0501'],['3588','3280','8030','3323','5335','0585','8183','1801','5058','8812','1115','1518','5811','5502','0133','2838','2013'],['1512','5815','5518','0111','2802','2033','3538','3213','8088','3380','5330','0523','8135','1885','5083','8801','1158'],['0580','8130','1823','5035','8885','1183','1501','5858','5512','0115','2818','2011','3502','3233','8038','3313','5388'],['2015','3518','3211','8002','3333','5338','0513','8188','1880','5030','8823','1135','1585','5883','5501','0158','2812'],['1130','1523','5835','5585','0183','2801','2058','3512','3215','8018','3311','5302','0533','8138','1813','5088','8880'],['5318','0511','8102','1833','5038','8813','1188','1580','5830','5523','0135','2885','2083','3501','3258','8012','3315'],['2823','2035','3585','3283','8001','3358','5312','0515','8118','1811','5002','8833','1138','1513','5888','5580','0130'],['8811','1102','1533','5838','5513','0188','2880','2030','3523','3235','8085','3383','5301','0558','8112','1815','5018'],['3335','5385','0583','8101','1858','5012','8815','1118','1511','5802','5533','0138','2813','2088','3580','3230','8023'],['0102','2833','2038','3513','3288','8080','3330','5323','0535','8185','1883','5001','8858','1112','1515','5818','5511'],['5085','8883','1101','1558','5812','5515','0118','2811','2002','3533','3238','8013','3388','5380','0530','8123','1835'],['8033','3338','5313','0588','8180','1830','5023','8835','1185','1583','5801','5558','0112','2815','2018','3511','3202']] },
+  ]},
+  'o17d6': { tab:'Order 17 · 6-Digit', orig:'#fff4c4', refl:'#e6f6c6', size:630,
+    sub:'Order 17 · 6-digit entries · classic digits · (0,1,3,8), (0,1,3), (0,3,8), (1,3,8) · pandiagonal magic squares', data:[
+    { name:'Example 5', orig:[['881003','103813','318188','011111','303308','811011','301118','100300','808383','131181','188013','380183','383133','000100','030380','833001','838301'],['380181','383013','000183','030133','833100','838380','881001','103301','318003','011813','303188','811111','301308','100011','808118','131300','188383'],['811813','301188','100111','808308','131011','188118','380300','383383','000181','030013','833183','838133','881100','103380','318001','011301','303003'],['838013','881183','103133','318100','011380','303001','811301','301003','100813','808188','131111','188308','380011','383118','000300','030383','833181'],['188188','380111','383308','000011','030118','833300','838383','881181','103013','318183','011133','303100','811380','301001','100301','808003','131813'],['303183','811133','301100','100380','808001','131301','188003','380813','383188','000111','030308','833011','838118','881300','103383','318181','011013'],['833111','838308','881011','103118','318300','011383','303181','811013','301183','100133','808100','131380','188001','380301','383003','000813','030188'],['131133','188100','380380','383001','000301','030003','833813','838188','881111','103308','318011','011118','303300','811383','301181','100013','808183'],['011308','303011','811118','301300','100383','808181','131013','188183','380133','383100','000380','030001','833301','838003','881813','103188','318111'],['030100','833380','838001','881301','103003','318813','011188','303111','811308','301011','100118','808300','131383','188181','380013','383183','000133'],['808011','131118','188300','380383','383181','000013','030183','833133','838100','881380','103001','318301','011003','303813','811188','301111','100308'],['318380','011001','303301','811003','301813','100188','808111','131308','188011','380118','383300','000383','030181','833013','838183','881133','103100'],['000118','030300','833383','838181','881013','103183','318133','011100','303380','811001','301301','100003','808813','131188','188111','380308','383011'],['100001','808301','131003','188813','380188','383111','000308','030011','833118','838300','881383','103181','318013','011183','303133','811100','301380'],['103300','318383','011181','303013','811183','301133','100100','808380','131001','188301','380003','383813','000188','030111','833308','838011','881118'],['383301','000003','030813','833188','838111','881308','103011','318118','011300','303383','811181','301013','100183','808133','131100','188380','380001'],['301383','100181','808013','131183','188133','380100','383380','000001','030301','833003','838813','881188','103111','318308','011011','303118','811300']] },
+    { name:'Example 6', orig:[['130133','311303','110333','300030','031331','030013','303010','131311','331113','310100','033300','010033','103031','333130','113103','013131','003313'],['010100','103300','333033','113031','013130','003103','130131','311313','110133','300303','031333','030030','303331','131013','331010','310311','033113'],['030303','303333','131030','331331','310013','033010','010311','103113','333100','113300','013033','003031','130130','311103','110131','300313','031133'],['003300','130033','311031','110130','300103','031131','030313','303133','131303','331333','310030','033331','010013','103010','333311','113113','013100'],['033333','010030','103331','333013','113010','013311','003113','130100','311300','110033','300031','031130','030103','303131','131313','331133','310303'],['031033','030031','303130','131103','331131','310313','033133','010303','103333','333030','113331','013013','003010','130311','311113','110100','300300'],['013030','003331','130013','311010','110311','300113','031100','030300','303033','131031','331130','310103','033131','010313','103133','333303','113333'],['310031','033130','010103','103131','333313','113133','013303','003333','130030','311331','110013','300010','031311','030113','303100','131300','331033'],['300331','031013','030010','303311','131113','331100','310300','033033','010031','103130','333103','113131','013313','003133','130303','311333','110030'],['113130','013103','003131','130313','311133','110303','300333','031030','030331','303013','131010','331311','310113','033100','010300','103033','333031'],['331013','310010','033311','010113','103100','333300','113033','013031','003130','130103','311131','110313','300133','031303','030333','303030','131331'],['110103','300131','031313','030133','303303','131333','331030','310331','033013','010010','103311','333113','113100','013300','003033','130031','311130'],['333010','113311','013113','003100','130300','311033','110031','300130','031103','030131','303313','131133','331303','310333','033030','010331','103013'],['131131','331313','310133','033303','010333','103030','333331','113013','013010','003311','130113','311100','110300','300033','031031','030130','303103'],['311311','110113','300100','031300','030033','303031','131130','331103','310131','033313','010133','103303','333333','113030','013331','003013','130010'],['103313','333133','113303','013333','003030','130331','311013','110010','300311','031113','030100','303300','131033','331031','310130','033103','010131'],['303113','131100','331300','310033','033031','010130','103103','333131','113313','013133','003303','130333','311030','110331','300013','031010','030311']] },
+    { name:'Example 7', orig:[['830833','388303','880333','300030','038338','030083','303080','838388','338883','380800','033300','080033','803038','333830','883803','083838','003383'],['080800','803300','333033','883038','083830','003803','830838','388383','880833','300303','038333','030030','303338','838083','338080','380388','033883'],['030303','303333','838030','338338','380083','033080','080388','803883','333800','883300','083033','003038','830830','388803','880838','300383','038833'],['003300','830033','388038','880830','300803','038838','030383','303833','838303','338333','380030','033338','080083','803080','333388','883883','083800'],['033333','080030','803338','333083','883080','083388','003883','830800','388300','880033','300038','038830','030803','303838','838383','338833','380303'],['038033','030038','303830','838803','338838','380383','033833','080303','803333','333030','883338','083083','003080','830388','388883','880800','300300'],['083030','003338','830083','388080','880388','300883','038800','030300','303033','838038','338830','380803','033838','080383','803833','333303','883333'],['380038','033830','080803','803838','333383','883833','083303','003333','830030','388338','880083','300080','038388','030883','303800','838300','338033'],['300338','038083','030080','303388','838883','338800','380300','033033','080038','803830','333803','883838','083383','003833','830303','388333','880030'],['883830','083803','003838','830383','388833','880303','300333','038030','030338','303083','838080','338388','380883','033800','080300','803033','333038'],['338083','380080','033388','080883','803800','333300','883033','083038','003830','830803','388838','880383','300833','038303','030333','303030','838338'],['880803','300838','038383','030833','303303','838333','338030','380338','033083','080080','803388','333883','883800','083300','003033','830038','388830'],['333080','883388','083883','003800','830300','388033','880038','300830','038803','030838','303383','838833','338303','380333','033030','080338','803083'],['838838','338383','380833','033303','080333','803030','333338','883083','083080','003388','830883','388800','880300','300033','038038','030830','303803'],['388388','880883','300800','038300','030033','303038','838830','338803','380838','033383','080833','803303','333333','883030','083338','003083','830080'],['803383','333833','883303','083333','003030','830338','388083','880080','300388','038883','030800','303300','838033','338038','380830','033803','080838'],['303883','838800','338300','380033','033038','080830','803803','333838','883383','083833','003303','830333','388030','880338','300083','038080','030388']] },
+    { name:'Example 8', orig:[['831833','388313','881333','311131','138338','131183','313181','838388','338883','381811','133311','181133','813138','333831','883813','183838','113383'],['181811','813311','333133','883138','183831','113813','831838','388383','881833','311313','138333','131131','313338','838183','338181','381388','133883'],['131313','313333','838131','338338','381183','133181','181388','813883','333811','883311','183133','113138','831831','388813','881838','311383','138833'],['113311','831133','388138','881831','311813','138838','131383','313833','838313','338333','381131','133338','181183','813181','333388','883883','183811'],['133333','181131','813338','333183','883181','183388','113883','831811','388311','881133','311138','138831','131813','313838','838383','338833','381313'],['138133','131138','313831','838813','338838','381383','133833','181313','813333','333131','883338','183183','113181','831388','388883','881811','311311'],['183131','113338','831183','388181','881388','311883','138811','131311','313133','838138','338831','381813','133838','181383','813833','333313','883333'],['381138','133831','181813','813838','333383','883833','183313','113333','831131','388338','881183','311181','138388','131883','313811','838311','338133'],['311338','138183','131181','313388','838883','338811','381311','133133','181138','813831','333813','883838','183383','113833','831313','388333','881131'],['883831','183813','113838','831383','388833','881313','311333','138131','131338','313183','838181','338388','381883','133811','181311','813133','333138'],['338183','381181','133388','181883','813811','333311','883133','183138','113831','831813','388838','881383','311833','138313','131333','313131','838338'],['881813','311838','138383','131833','313313','838333','338131','381338','133183','181181','813388','333883','883811','183311','113133','831138','388831'],['333181','883388','183883','113811','831311','388133','881138','311831','138813','131838','313383','838833','338313','381333','133131','181338','813183'],['838838','338383','381833','133313','181333','813131','333338','883183','183181','113388','831883','388811','881311','311133','138138','131831','313813'],['388388','881883','311811','138311','131133','313138','838831','338813','381838','133383','181833','813313','333333','883131','183338','113183','831181'],['813383','333833','883313','183333','113131','831338','388183','881181','311388','138883','131811','313311','838133','338138','381831','133813','181838'],['313883','838811','338311','381133','133138','181831','813813','333838','883383','183833','113313','831333','388131','881338','311183','138181','131388']] },
+  ]},
+  'o17d6s': { tab:'Order 17 · 6-Digit 7-seg', style:'seg', orig:'#ffe1f0', refl:'#e6f6c6', size:630,
+    sub:'Order 17 · 6-digit entries · seven-segment · (0,2,3,5), (1,2,3,5), (2,3,5,8), (2,3,5) · in water 2 ↔ 5 · pandiagonal magic squares', data:[
+    { name:'Example 9', orig:[['552003','203523','325255','022222','303305','522022','302225','200300','505353','232252','255023','350253','353233','000200','030350','533002','535302'],['350252','353023','000253','030233','533200','535350','552002','203302','325003','022523','303255','522222','302305','200022','505225','232300','255353'],['522523','302255','200222','505305','232022','255225','350300','353353','000252','030023','533253','535233','552200','203350','325002','022302','303003'],['535023','552253','203233','325200','022350','303002','522302','302003','200523','505255','232222','255305','350022','353225','000300','030353','533252'],['255255','350222','353305','000022','030225','533300','535353','552252','203023','325253','022233','303200','522350','302002','200302','505003','232523'],['303253','522233','302200','200350','505002','232302','255003','350523','353255','000222','030305','533022','535225','552300','203353','325252','022023'],['533222','535305','552022','203225','325300','022353','303252','522023','302253','200233','505200','232350','255002','350302','353003','000523','030255'],['232233','255200','350350','353002','000302','030003','533523','535255','552222','203305','325022','022225','303300','522353','302252','200023','505253'],['022305','303022','522225','302300','200353','505252','232023','255253','350233','353200','000350','030002','533302','535003','552523','203255','325222'],['030200','533350','535002','552302','203003','325523','022255','303222','522305','302022','200225','505300','232353','255252','350023','353253','000233'],['505022','232225','255300','350353','353252','000023','030253','533233','535200','552350','203002','325302','022003','303523','522255','302222','200305'],['325350','022002','303302','522003','302523','200255','505222','232305','255022','350225','353300','000353','030252','533023','535253','552233','203200'],['000225','030300','533353','535252','552023','203253','325233','022200','303350','522002','302302','200003','505523','232255','255222','350305','353022'],['200002','505302','232003','255523','350255','353222','000305','030022','533225','535300','552353','203252','325023','022253','303233','522200','302350'],['203300','325353','022252','303023','522253','302233','200200','505350','232002','255302','350003','353523','000255','030222','533305','535022','552225'],['353302','000003','030523','533255','535222','552305','203022','325225','022300','303353','522252','302023','200253','505233','232200','255350','350002'],['302353','200252','505023','232253','255233','350200','353350','000002','030302','533003','535523','552255','203222','325305','022022','303225','522300']] },
+    { name:'Example 10', orig:[['552113','213523','325255','122222','313315','522122','312225','211311','515353','232252','255123','351253','353233','111211','131351','533112','535312'],['351252','353123','111253','131233','533211','535351','552112','213312','325113','122523','313255','522222','312315','211122','515225','232311','255353'],['522523','312255','211222','515315','232122','255225','351311','353353','111252','131123','533253','535233','552211','213351','325112','122312','313113'],['535123','552253','213233','325211','122351','313112','522312','312113','211523','515255','232222','255315','351122','353225','111311','131353','533252'],['255255','351222','353315','111122','131225','533311','535353','552252','213123','325253','122233','313211','522351','312112','211312','515113','232523'],['313253','522233','312211','211351','515112','232312','255113','351523','353255','111222','131315','533122','535225','552311','213353','325252','122123'],['533222','535315','552122','213225','325311','122353','313252','522123','312253','211233','515211','232351','255112','351312','353113','111523','131255'],['232233','255211','351351','353112','111312','131113','533523','535255','552222','213315','325122','122225','313311','522353','312252','211123','515253'],['122315','313122','522225','312311','211353','515252','232123','255253','351233','353211','111351','131112','533312','535113','552523','213255','325222'],['131211','533351','535112','552312','213113','325523','122255','313222','522315','312122','211225','515311','232353','255252','351123','353253','111233'],['515122','232225','255311','351353','353252','111123','131253','533233','535211','552351','213112','325312','122113','313523','522255','312222','211315'],['325351','122112','313312','522113','312523','211255','515222','232315','255122','351225','353311','111353','131252','533123','535253','552233','213211'],['111225','131311','533353','535252','552123','213253','325233','122211','313351','522112','312312','211113','515523','232255','255222','351315','353122'],['211112','515312','232113','255523','351255','353222','111315','131122','533225','535311','552353','213252','325123','122253','313233','522211','312351'],['213311','325353','122252','313123','522253','312233','211211','515351','232112','255312','351113','353523','111255','131222','533315','535122','552225'],['353312','111113','131523','533255','535222','552315','213122','325225','122311','313353','522252','312123','211253','515233','232211','255351','351112'],['312353','211252','515123','232253','255233','351211','353351','111112','131312','533113','535523','552255','213222','325315','122122','313225','522311']] },
+    { name:'Example 11', orig:[['552883','283523','325255','822222','383385','522822','382225','288388','585353','232252','255823','358253','353233','888288','838358','533882','535382'],['358252','353823','888253','838233','533288','535358','552882','283382','325883','822523','383255','522222','382385','288822','585225','232388','255353'],['522523','382255','288222','585385','232822','255225','358388','353353','888252','838823','533253','535233','552288','283358','325882','822382','383883'],['535823','552253','283233','325288','822358','383882','522382','382883','288523','585255','232222','255385','358822','353225','888388','838353','533252'],['255255','358222','353385','888822','838225','533388','535353','552252','283823','325253','822233','383288','522358','382882','288382','585883','232523'],['383253','522233','382288','288358','585882','232382','255883','358523','353255','888222','838385','533822','535225','552388','283353','325252','822823'],['533222','535385','552822','283225','325388','822353','383252','522823','382253','288233','585288','232358','255882','358382','353883','888523','838255'],['232233','255288','358358','353882','888382','838883','533523','535255','552222','283385','325822','822225','383388','522353','382252','288823','585253'],['822385','383822','522225','382388','288353','585252','232823','255253','358233','353288','888358','838882','533382','535883','552523','283255','325222'],['838288','533358','535882','552382','283883','325523','822255','383222','522385','382822','288225','585388','232353','255252','358823','353253','888233'],['585822','232225','255388','358353','353252','888823','838253','533233','535288','552358','283882','325382','822883','383523','522255','382222','288385'],['325358','822882','383382','522883','382523','288255','585222','232385','255822','358225','353388','888353','838252','533823','535253','552233','283288'],['888225','838388','533353','535252','552823','283253','325233','822288','383358','522882','382382','288883','585523','232255','255222','358385','353822'],['288882','585382','232883','255523','358255','353222','888385','838822','533225','535388','552353','283252','325823','822253','383233','522288','382358'],['283388','325353','822252','383823','522253','382233','288288','585358','232882','255382','358883','353523','888255','838222','533385','535822','552225'],['353382','888883','838523','533255','535222','552385','283822','325225','822388','383353','522252','382823','288253','585233','232288','255358','358882'],['382353','288252','585823','232253','255233','358288','353358','888882','838382','533883','535523','552255','283222','325385','822822','383225','522388']] },
+    { name:'Example 12', orig:[['532533','355323','552333','322232','235335','232253','323252','535355','335553','352522','233322','252233','523235','333532','553523','253535','223353'],['252522','523322','333233','553235','253532','223523','532535','355353','552533','322323','235333','232232','323335','535253','335252','352355','233553'],['232323','323333','535232','335335','352253','233252','252355','523553','333522','553322','253233','223235','532532','355523','552535','322353','235533'],['223322','532233','355235','552532','322523','235535','232353','323533','535323','335333','352232','233335','252253','523252','333355','553553','253522'],['233333','252232','523335','333253','553252','253355','223553','532522','355322','552233','322235','235532','232523','323535','535353','335533','352323'],['235233','232235','323532','535523','335535','352353','233533','252323','523333','333232','553335','253253','223252','532355','355553','552522','322322'],['253232','223335','532253','355252','552355','322553','235522','232322','323233','535235','335532','352523','233535','252353','523533','333323','553333'],['352235','233532','252523','523535','333353','553533','253323','223333','532232','355335','552253','322252','235355','232553','323522','535322','335233'],['322335','235253','232252','323355','535553','335522','352322','233233','252235','523532','333523','553535','253353','223533','532323','355333','552232'],['553532','253523','223535','532353','355533','552323','322333','235232','232335','323253','535252','335355','352553','233522','252322','523233','333235'],['335253','352252','233355','252553','523522','333322','553233','253235','223532','532523','355535','552353','322533','235323','232333','323232','535335'],['552523','322535','235353','232533','323323','535333','335232','352335','233253','252252','523355','333553','553522','253322','223233','532235','355532'],['333252','553355','253553','223522','532322','355233','552235','322532','235523','232535','323353','535533','335323','352333','233232','252335','523253'],['535535','335353','352533','233323','252333','523232','333335','553253','253252','223355','532553','355522','552322','322233','235235','232532','323523'],['355355','552553','322522','235322','232233','323235','535532','335523','352535','233353','252533','523323','333333','553232','253335','223253','532252'],['523353','333533','553323','253333','223232','532335','355253','552252','322355','235553','232522','323322','535233','335235','352532','233523','252535'],['323553','535522','335322','352233','233235','252532','523523','333535','553353','253533','223323','532333','355232','552335','322253','235252','232355']] },
+  ]},
+  'o17d10': { tab:'Order 17 · 10-Digit', orig:'#fff4c4', refl:'#e6f6c6', size:670,
+    sub:'Order 17 · 10-digit entries · classic digits · (0,3), (1,3), (3,8) · pandiagonal magic squares', data:[
+    { name:'Example 13', orig:[['0333300303','0300030003','0003300333','0000303000','3333003033','0300333000','0033033030','0303030333','0333033330','0303303303','3300300000','3000333003','3333333300','3030330033','0330330000','3303000003','0030030303'],['3000303303','3333300000','3030333003','0330333300','3303030033','0030030000','0333300003','0300030303','0003300303','0000330003','3333000333','0300303000','0033003033','0303033000','0333033030','0303330333','3300333330'],['0300330003','0033000333','0303003000','0333003033','0303333000','3300333030','3000330333','3333333330','3030303303','0330300000','3303033003','0030033300','0333330033','0300030000','0003300003','0000330303','3333000303'],['0030000000','0333333003','0300033300','0003330033','0000330000','3333000003','0300330303','0033000303','0303030003','0333000333','0303303000','3300303033','3000333000','3333333030','3030330333','0330333330','3303003303'],['3300300333','3000303000','3333303033','3030333000','0330333030','3303030333','0030033330','0333303303','0300000000','0003333003','0000333300','3333030033','0300330000','0033000003','0303030303','0333000303','0303330003'],['3333033003','0300333300','0033030033','0303030000','0333000003','0303330303','3300300303','3000330003','3333300333','3030303000','0330303033','3303033000','0030033030','0333330333','0300033330','0003303303','0000300000'],['3303003000','0030003033','0333333000','0300033030','0003330333','0000333330','3333003303','0300300000','0033033003','0303033300','0333030033','0303330000','3300300003','3000330303','3333300303','3030330003','0330300333'],['0303333300','3300330033','3000330000','3333300003','3030330303','0330300303','3303030003','0030000333','0333303000','0300003033','0003333000','0000333030','3333030333','0300333330','0033003303','0303000000','0333033003'],['0000303033','3333033000','0300333030','0033030333','0303033330','0333003303','0303300000','3300333003','3000333300','3333330033','3030330000','0330300003','3303030303','0030000303','0333330003','0300000333','0003303000'],['0330330033','3303030000','0030000003','0333330303','0300000303','0003330003','0000300333','3333003000','0300303033','0033033000','0303033030','0333030333','0303333330','3300303303','3000300000','3333333003','3030333300'],['0333033000','0303333030','3300330333','3000333330','3333303303','3030300000','0330333003','3303033300','0030030033','0333330000','0300000003','0003330303','0000300303','3333030003','0300300333','0033003000','0303003033'],['0003330000','0000300003','3333030303','0300300303','0033030003','0303000333','0333003000','0303303033','3300333000','3000333030','3333330333','3030333330','0330303303','3303000000','0030033003','0333333300','0300030033'],['3030333030','0330330333','3303033330','0030003303','0333300000','0300033003','0003333300','0000330033','3333030000','0300300003','0033030303','0303000303','0333030003','0303300333','3300303000','3000303033','3333333000'],['0303000003','0333030303','0303300303','3300330003','3000300333','3333303000','3030303033','0330333000','3303033030','0030030333','0333333330','0300003303','0003300000','0000333003','3333033300','0300330033','0033030000'],['0300030333','0003333330','0000303303','3333000000','0300333003','0033033300','0303030033','0333030000','0303300003','3300330303','3000300303','3333330003','3030300333','0330303000','3303003033','0030033000','0333333030'],['3333330303','3030300303','0330330003','3303000333','0030003000','0333303033','0300033000','0003333030','0000330333','3333033330','0300303303','0033000000','0303033003','0333033300','0303330033','3300330000','3000300003'],['0033033330','0303003303','0333000000','0303333003','3300333300','3000330033','3333330000','3030300003','0330330303','3303000303','0030030003','0333300333','0300003000','0003303033','0000333000','3333033030','0300330333']] },
+    { name:'Example 14', orig:[['1333311313','1311131113','1113311333','1111313111','3333113133','1311333111','1133133131','1313131333','1333133331','1313313313','3311311111','3111333113','3333333311','3131331133','1331331111','3313111113','1131131313'],['3111313313','3333311111','3131333113','1331333311','3313131133','1131131111','1333311113','1311131313','1113311313','1111331113','3333111333','1311313111','1133113133','1313133111','1333133131','1313331333','3311333331'],['1311331113','1133111333','1313113111','1333113133','1313333111','3311333131','3111331333','3333333331','3131313313','1331311111','3313133113','1131133311','1333331133','1311131111','1113311113','1111331313','3333111313'],['1131111111','1333333113','1311133311','1113331133','1111331111','3333111113','1311331313','1133111313','1313131113','1333111333','1313313111','3311313133','3111333111','3333333131','3131331333','1331333331','3313113313'],['3311311333','3111313111','3333313133','3131333111','1331333131','3313131333','1131133331','1333313313','1311111111','1113333113','1111333311','3333131133','1311331111','1133111113','1313131313','1333111313','1313331113'],['3333133113','1311333311','1133131133','1313131111','1333111113','1313331313','3311311313','3111331113','3333311333','3131313111','1331313133','3313133111','1131133131','1333331333','1311133331','1113313313','1111311111'],['3313113111','1131113133','1333333111','1311133131','1113331333','1111333331','3333113313','1311311111','1133133113','1313133311','1333131133','1313331111','3311311113','3111331313','3333311313','3131331113','1331311333'],['1313333311','3311331133','3111331111','3333311113','3131331313','1331311313','3313131113','1131111333','1333313111','1311113133','1113333111','1111333131','3333131333','1311333331','1133113313','1313111111','1333133113'],['1111313133','3333133111','1311333131','1133131333','1313133331','1333113313','1313311111','3311333113','3111333311','3333331133','3131331111','1331311113','3313131313','1131111313','1333331113','1311111333','1113313111'],['1331331133','3313131111','1131111113','1333331313','1311111313','1113331113','1111311333','3333113111','1311313133','1133133111','1313133131','1333131333','1313333331','3311313313','3111311111','3333333113','3131333311'],['1333133111','1313333131','3311331333','3111333331','3333313313','3131311111','1331333113','3313133311','1131131133','1333331111','1311111113','1113331313','1111311313','3333131113','1311311333','1133113111','1313113133'],['1113331111','1111311113','3333131313','1311311313','1133131113','1313111333','1333113111','1313313133','3311333111','3111333131','3333331333','3131333331','1331313313','3313111111','1131133113','1333333311','1311131133'],['3131333131','1331331333','3313133331','1131113313','1333311111','1311133113','1113333311','1111331133','3333131111','1311311113','1133131313','1313111313','1333131113','1313311333','3311313111','3111313133','3333333111'],['1313111113','1333131313','1313311313','3311331113','3111311333','3333313111','3131313133','1331333111','3313133131','1131131333','1333333331','1311113313','1113311111','1111333113','3333133311','1311331133','1133131111'],['1311131333','1113333331','1111313313','3333111111','1311333113','1133133311','1313131133','1333131111','1313311113','3311331313','3111311313','3333331113','3131311333','1331313111','3313113133','1131133111','1333333131'],['3333331313','3131311313','1331331113','3313111333','1131113111','1333313133','1311133111','1113333131','1111331333','3333133331','1311313313','1133111111','1313133113','1333133311','1313331133','3311331111','3111311113'],['1133133331','1313113313','1333111111','1313333113','3311333311','3111331133','3333331111','3131311113','1331331313','3313111313','1131131113','1333311333','1311113111','1113313133','1111333111','3333133131','1311331333']] },
+    { name:'Example 15', orig:[['8333388383','8388838883','8883388333','8888383888','3333883833','8388333888','8833833838','8383838333','8333833338','8383383383','3388388888','3888333883','3333333388','3838338833','8338338888','3383888883','8838838383'],['3888383383','3333388888','3838333883','8338333388','3383838833','8838838888','8333388883','8388838383','8883388383','8888338883','3333888333','8388383888','8833883833','8383833888','8333833838','8383338333','3388333338'],['8388338883','8833888333','8383883888','8333883833','8383333888','3388333838','3888338333','3333333338','3838383383','8338388888','3383833883','8838833388','8333338833','8388838888','8883388883','8888338383','3333888383'],['8838888888','8333333883','8388833388','8883338833','8888338888','3333888883','8388338383','8833888383','8383838883','8333888333','8383383888','3388383833','3888333888','3333333838','3838338333','8338333338','3383883383'],['3388388333','3888383888','3333383833','3838333888','8338333838','3383838333','8838833338','8333383383','8388888888','8883333883','8888333388','3333838833','8388338888','8833888883','8383838383','8333888383','8383338883'],['3333833883','8388333388','8833838833','8383838888','8333888883','8383338383','3388388383','3888338883','3333388333','3838383888','8338383833','3383833888','8838833838','8333338333','8388833338','8883383383','8888388888'],['3383883888','8838883833','8333333888','8388833838','8883338333','8888333338','3333883383','8388388888','8833833883','8383833388','8333838833','8383338888','3388388883','3888338383','3333388383','3838338883','8338388333'],['8383333388','3388338833','3888338888','3333388883','3838338383','8338388383','3383838883','8838888333','8333383888','8388883833','8883333888','8888333838','3333838333','8388333338','8833883383','8383888888','8333833883'],['8888383833','3333833888','8388333838','8833838333','8383833338','8333883383','8383388888','3388333883','3888333388','3333338833','3838338888','8338388883','3383838383','8838888383','8333338883','8388888333','8883383888'],['8338338833','3383838888','8838888883','8333338383','8388888383','8883338883','8888388333','3333883888','8388383833','8833833888','8383833838','8333838333','8383333338','3388383383','3888388888','3333333883','3838333388'],['8333833888','8383333838','3388338333','3888333338','3333383383','3838388888','8338333883','3383833388','8838838833','8333338888','8388888883','8883338383','8888388383','3333838883','8388388333','8833883888','8383883833'],['8883338888','8888388883','3333838383','8388388383','8833838883','8383888333','8333883888','8383383833','3388333888','3888333838','3333338333','3838333338','8338383383','3383888888','8838833883','8333333388','8388838833'],['3838333838','8338338333','3383833338','8838883383','8333388888','8388833883','8883333388','8888338833','3333838888','8388388883','8833838383','8383888383','8333838883','8383388333','3388383888','3888383833','3333333888'],['8383888883','8333838383','8383388383','3388338883','3888388333','3333383888','3838383833','8338333888','3383833838','8838838333','8333333338','8388883383','8883388888','8888333883','3333833388','8388338833','8833838888'],['8388838333','8883333338','8888383383','3333888888','8388333883','8833833388','8383838833','8333838888','8383388883','3388338383','3888388383','3333338883','3838388333','8338383888','3383883833','8838833888','8333333838'],['3333338383','3838388383','8338338883','3383888333','8838883888','8333383833','8388833888','8883333838','8888338333','3333833338','8388383383','8833888888','8383833883','8333833388','8383338833','3388338888','3888388883'],['8833833338','8383883383','8333888888','8383333883','3388333388','3888338833','3333338888','3838388883','8338338383','3383888383','8838838883','8333388333','8388883888','8883383833','8888333888','3333833838','8388338333']] },
+  ]},
+  'o18d6s': { tab:'Order 18 · 6-Digit 7-seg', style:'seg', orig:'#ffe1f0', refl:'#e6f6c6', size:650,
+    sub:'Order 18 · 6-digit entries · seven-segment · (0,2,3,5,8), (0,1,2,3,5), (1,2,3,5,8), (0,1,2,3,5,8), (0,2,3,5), (1,2,3,5), (2,3,5,8), (2,3,5) · in water 2 ↔ 5 · magic squares', data:[
+    { name:'Example 1', orig:[['888208','383808','555580','225808','555500','523500','583380','888288','225888','305200','038308','583308','383880','238880','305280','238800','523588','038388'],['525200','033508','388280','308380','388200','233300','223800','525208','308388','585500','558880','223808','033588','885880','585508','885888','233388','558888'],['583880','235888','523308','558208','523380','228388','038888','583800','558280','383500','885200','038880','235808','305588','383588','305500','228300','885208'],['235580','553380','035288','588888','035208','883888','303508','235508','588800','228288','385880','303580','553308','528300','228200','528380','883800','385808'],['583888','235800','523300','558288','523388','228380','038800','583808','558200','383580','885288','038808','235880','305580','383508','305508','228308','885280'],['558388','585200','305808','233580','305888','385508','528280','558300','233588','888808','223388','528200','585208','033800','888880','033880','385580','223308'],['223580','888300','233888','385200','233800','308808','555808','223588','385288','033388','525500','555800','888388','588200','033300','588280','308888','525588'],['888200','383888','555508','225800','555588','523508','583300','888280','225880','305288','038380','583388','383800','238888','305208','238808','523580','038300'],['235588','553388','035200','588808','035280','883880','303588','235500','588880','228208','385800','303500','553300','528388','228280','528308','883808','385888'],['035888','308280','228888','523880','228808','555280','885580','035808','523808','238300','583588','885588','308200','383300','238388','383308','555200','583500'],['388800','225588','588300','883380','588388','038280','235200','388888','883308','525880','303800','235208','225508','553500','525888','553580','038288','303808'],['223500','888380','233808','385208','233880','308800','555880','223508','385280','033380','525508','555888','888308','588208','033308','588288','308880','525580'],['525280','033500','388208','308308','388288','233380','223888','525288','308300','585580','558808','223880','033580','885808','585588','885800','233308','558800'],['303308','528888','883580','035588','883508','585880','388388','303300','035508','553800','238208','388380','528880','225200','553808','225288','585800','238280'],['035800','308208','228880','523800','228800','555208','885500','035880','523888','238308','583508','885508','308288','383388','238380','383380','555288','583580'],['303388','528808','883588','035580','883500','585808','388308','303380','035500','553888','238288','388300','528800','225208','553880','225280','585888','238200'],['558308','585280','305800','233500','305880','385588','528208','558380','233508','888888','223380','528288','585288','033888','888800','033808','385500','223300'],['388808','225500','588380','883388','588308','038208','235288','388880','883300','525808','303880','235280','225580','553588','525800','553508','038200','303888']] },
+    { name:'Example 2', orig:[['111201','313101','555510','225101','555500','523500','513310','111211','225111','305200','031301','513301','313110','231110','305210','231100','523511','031311'],['525200','033501','311210','301310','311200','233300','223100','525201','301311','515500','551110','223101','033511','115110','515501','115111','233311','551111'],['513110','235111','523301','551201','523310','221311','031111','513100','551210','313500','115200','031110','235101','305511','313511','305500','221300','115201'],['235510','553310','035211','511111','035201','113111','303501','235501','511100','221211','315110','303510','553301','521300','221200','521310','113100','315101'],['513111','235100','523300','551211','523311','221310','031100','513101','551200','313510','115211','031101','235110','305510','313501','305501','221301','115210'],['551311','515200','305101','233510','305111','315501','521210','551300','233511','111101','223311','521200','515201','033100','111110','033110','315510','223301'],['223510','111300','233111','315200','233100','301101','555101','223511','315211','033311','525500','555100','111311','511200','033300','511210','301111','525511'],['111200','313111','555501','225100','555511','523501','513300','111210','225110','305211','031310','513311','313100','231111','305201','231101','523510','031300'],['235511','553311','035200','511101','035210','113110','303511','235500','511110','221201','315100','303500','553300','521311','221210','521301','113101','315111'],['035111','301210','221111','523110','221101','555210','115510','035101','523101','231300','513511','115511','301200','313300','231311','313301','555200','513500'],['311100','225511','511300','113310','511311','031210','235200','311111','113301','525110','303100','235201','225501','553500','525111','553510','031211','303101'],['223500','111310','233101','315201','233110','301100','555110','223501','315210','033310','525501','555111','111301','511201','033301','511211','301110','525510'],['525210','033500','311201','301301','311211','233310','223111','525211','301300','515510','551101','223110','033510','115101','515511','115100','233301','551100'],['303301','521111','113510','035511','113501','515110','311311','303300','035501','553100','231201','311310','521110','225200','553101','225211','515100','231210'],['035100','301201','221110','523100','221100','555201','115500','035110','523111','231301','513501','115501','301211','313311','231310','313310','555211','513510'],['303311','521101','113511','035510','113500','515101','311301','303310','035500','553111','231211','311300','521100','225201','553110','225210','515111','231200'],['551301','515210','305100','233500','305110','315511','521201','551310','233501','111111','223310','521211','515211','033111','111100','033101','315500','223300'],['311101','225500','511310','113311','511301','031201','235211','311110','113300','525101','303110','235210','225510','553511','525100','553501','031200','303111']] },
+    { name:'Example 3', orig:[['888218','383818','555581','225818','555511','523511','583381','888288','225888','315211','138318','583318','383881','238881','315281','238811','523588','138388'],['525211','133518','388281','318381','388211','233311','223811','525218','318388','585511','558881','223818','133588','885881','585518','885888','233388','558888'],['583881','235888','523318','558218','523381','228388','138888','583811','558281','383511','885211','138881','235818','315588','383588','315511','228311','885218'],['235581','553381','135288','588888','135218','883888','313518','235518','588811','228288','385881','313581','553318','528311','228211','528381','883811','385818'],['583888','235811','523311','558288','523388','228381','138811','583818','558211','383581','885288','138818','235881','315581','383518','315518','228318','885281'],['558388','585211','315818','233581','315888','385518','528281','558311','233588','888818','223388','528211','585218','133811','888881','133881','385581','223318'],['223581','888311','233888','385211','233811','318818','555818','223588','385288','133388','525511','555811','888388','588211','133311','588281','318888','525588'],['888211','383888','555518','225811','555588','523518','583311','888281','225881','315288','138381','583388','383811','238888','315218','238818','523581','138311'],['235588','553388','135211','588818','135281','883881','313588','235511','588881','228218','385811','313511','553311','528388','228281','528318','883818','385888'],['135888','318281','228888','523881','228818','555281','885581','135818','523818','238311','583588','885588','318211','383311','238388','383318','555211','583511'],['388811','225588','588311','883381','588388','138281','235211','388888','883318','525881','313811','235218','225518','553511','525888','553581','138288','313818'],['223511','888381','233818','385218','233881','318811','555881','223518','385281','133381','525518','555888','888318','588218','133318','588288','318881','525581'],['525281','133511','388218','318318','388288','233381','223888','525288','318311','585581','558818','223881','133581','885818','585588','885811','233318','558811'],['313318','528888','883581','135588','883518','585881','388388','313311','135518','553811','238218','388381','528881','225211','553818','225288','585811','238281'],['135811','318218','228881','523811','228811','555218','885511','135881','523888','238318','583518','885518','318288','383388','238381','383381','555288','583581'],['313388','528818','883588','135581','883511','585818','388318','313381','135511','553888','238288','388311','528811','225218','553881','225281','585888','238211'],['558318','585281','315811','233511','315881','385588','528218','558381','233518','888888','223381','528288','585288','133888','888811','133818','385511','223311'],['388818','225511','588381','883388','588318','138218','235288','388881','883311','525818','313881','235281','225581','553588','525811','553518','138211','313888']] },
+    { name:'Example 4', orig:[['280223','323323','011811','533023','011821','802321','351111','280213','533013','208521','053523','351123','323311','338311','208511','338321','802313','053513'],['808521','052323','320211','203511','320221','331121','533321','808523','203513','351821','018311','533323','052313','283011','351823','283013','331113','018313'],['353311','333013','801123','010223','801111','533513','058313','353321','010211','322321','288521','058311','333023','201813','322313','201821','533521','288523'],['331811','011111','058513','358313','058523','283313','202323','331823','358321','530213','323011','202311','011123','803521','530221','803511','283321','323023'],['353313','333021','801121','010213','801113','533511','058321','353323','010221','322311','288513','058323','333011','201811','322323','201823','533523','288511'],['013513','358521','203023','332311','203013','321823','800211','013521','332313','288323','531113','800221','358523','053321','288311','053311','321811','531123'],['532311','283521','333313','328521','333321','208323','013023','532313','328513','051113','801821','013021','283513','350221','051121','350211','208313','801813'],['280221','323313','011823','533021','011813','802323','351121','280211','533011','208513','053511','351113','323321','338313','208523','338323','802311','053521'],['331813','011113','058521','358323','058511','283311','202313','331821','358311','530223','323021','202321','011121','803513','530211','803523','283323','323013'],['053013','200211','538313','803311','538323','018511','281811','053023','803323','333521','352313','281813','200221','321121','333513','321123','018521','352321'],['328321','531813','353521','281111','353513','050211','338521','328313','281123','803011','203321','338523','531823','012321','803013','012311','050213','203323'],['532321','283511','333323','328523','333311','208321','013011','532323','328511','051111','801823','013013','283523','350223','051123','350213','208311','801811'],['808511','052321','320223','203523','320213','331111','533313','808513','203521','351811','018323','533311','052311','283023','351813','283021','331123','018321'],['201123','808313','282311','051813','282323','353011','323513','201121','051823','013321','330223','323511','808311','538521','013323','538513','353021','330211'],['053021','200223','538311','803321','538321','018523','281821','053011','803313','333523','352323','281823','200213','321113','333511','321111','018513','352311'],['201113','808323','282313','051811','282321','353023','323523','201111','051821','013313','330213','323521','808321','538523','013311','538511','353013','330221'],['013523','358511','203021','332321','203011','321813','800223','013511','332323','288313','531111','800213','358513','053313','288321','053323','321821','531121'],['328323','531821','353511','281113','353523','050223','338513','328311','281121','803023','203311','338511','531811','012313','803021','012323','050221','203313']] },
+    { name:'Example 5', orig:[['503233','250533','533022','552533','533032','350032','022222','503223','552523','050332','005233','022233','250522','233322','050322','233332','350023','005223'],['350332','000033','253222','055222','253232','232232','550532','350333','055223','023032','533322','550533','000023','502522','023033','502523','232223','533323'],['020522','232523','352233','533233','352222','555223','003323','020532','533222','250032','500332','003322','232533','053023','250023','053032','555232','500333'],['233022','532222','000323','023323','000333','500523','050033','233033','023332','553223','252522','050022','532233','355232','553232','355222','500532','252533'],['020523','232532','352232','533223','352223','555222','003332','020533','533232','250022','500323','003333','232522','053022','250033','053033','555233','500322'],['535223','020332','052533','230022','052523','253033','353222','535232','230023','503333','552223','353232','020333','000532','503322','000522','253022','552233'],['550022','505232','230523','250332','230532','053333','532533','550023','250323','002223','353032','532532','505223','023232','002232','023222','053323','353023'],['503232','250523','533033','552532','533023','350033','022232','503222','552522','050323','005222','022223','250532','233323','050333','233333','350022','005232'],['233023','532223','000332','023333','000322','500522','050023','233032','023322','553233','252532','050032','532232','355223','553222','355233','500533','252523'],['002523','053222','553323','350522','553333','530322','503022','002533','350533','235232','020023','503023','053232','252232','235223','252233','530332','020032'],['253332','553023','025232','502222','025223','003222','230332','253323','502233','352522','050532','230333','553033','530032','352523','530022','003223','050533'],['550032','505222','230533','250333','230522','053332','532522','550033','250322','002222','353033','532523','505233','023233','002233','023223','053322','353022'],['350322','000032','253233','055233','253223','232222','550523','350323','055232','023022','533333','550522','000022','502533','023023','502532','232233','533332'],['052233','353323','500022','003023','500033','022522','255223','052232','003033','530532','233233','255222','353322','550332','530533','550323','022532','233222'],['002532','053233','553322','350532','553332','530333','503032','002522','350523','235233','020033','503033','053223','252223','235222','252222','530323','020022'],['052223','353333','500023','003022','500032','022533','255233','052222','003032','530523','233223','255232','353332','550333','530522','550322','022523','233232'],['535233','020322','052532','230032','052522','253023','353233','535222','230033','503323','552222','353223','020323','000523','503332','000533','253032','552232'],['253333','553032','025222','502223','025233','003233','230323','253322','502232','352533','050522','230322','553022','530023','352532','530033','003232','050523']] },
+    { name:'Example 6', orig:[['513233','251533','533122','552533','533132','351132','122222','513223','552523','151332','115233','122233','251522','233322','151322','233332','351123','115223'],['351332','111133','253222','155222','253232','232232','551532','351333','155223','123132','533322','551533','111123','512522','123133','512523','232223','533323'],['121522','232523','352233','533233','352222','555223','113323','121532','533222','251132','511332','113322','232533','153123','251123','153132','555232','511333'],['233122','532222','111323','123323','111333','511523','151133','233133','123332','553223','252522','151122','532233','355232','553232','355222','511532','252533'],['121523','232532','352232','533223','352223','555222','113332','121533','533232','251122','511323','113333','232522','153122','251133','153133','555233','511322'],['535223','121332','152533','231122','152523','253133','353222','535232','231123','513333','552223','353232','121333','111532','513322','111522','253122','552233'],['551122','515232','231523','251332','231532','153333','532533','551123','251323','112223','353132','532532','515223','123232','112232','123222','153323','353123'],['513232','251523','533133','552532','533123','351133','122232','513222','552522','151323','115222','122223','251532','233323','151333','233333','351122','115232'],['233123','532223','111332','123333','111322','511522','151123','233132','123322','553233','252532','151132','532232','355223','553222','355233','511533','252523'],['112523','153222','553323','351522','553333','531322','513122','112533','351533','235232','121123','513123','153232','252232','235223','252233','531332','121132'],['253332','553123','125232','512222','125223','113222','231332','253323','512233','352522','151532','231333','553133','531132','352523','531122','113223','151533'],['551132','515222','231533','251333','231522','153332','532522','551133','251322','112222','353133','532523','515233','123233','112233','123223','153322','353122'],['351322','111132','253233','155233','253223','232222','551523','351323','155232','123122','533333','551522','111122','512533','123123','512532','232233','533332'],['152233','353323','511122','113123','511133','122522','255223','152232','113133','531532','233233','255222','353322','551332','531533','551323','122532','233222'],['112532','153233','553322','351532','553332','531333','513132','112522','351523','235233','121133','513133','153223','252223','235222','252222','531323','121122'],['152223','353333','511123','113122','511132','122533','255233','152222','113132','531523','233223','255232','353332','551333','531522','551322','122523','233232'],['535233','121322','152532','231132','152522','253123','353233','535222','231133','513323','552222','353223','121323','111523','513332','111533','253132','552232'],['253333','553132','125222','512223','125233','113233','231323','253322','512232','352533','151522','231322','553122','531123','352532','531133','113232','151523']] },
+    { name:'Example 7', orig:[['583233','258533','533822','552533','533832','358832','822222','583223','552523','858332','885233','822233','258522','233322','858322','233332','358823','885223'],['358332','888833','253222','855222','253232','232232','558532','358333','855223','823832','533322','558533','888823','582522','823833','582523','232223','533323'],['828522','232523','352233','533233','352222','555223','883323','828532','533222','258832','588332','883322','232533','853823','258823','853832','555232','588333'],['233822','532222','888323','823323','888333','588523','858833','233833','823332','553223','252522','858822','532233','355232','553232','355222','588532','252533'],['828523','232532','352232','533223','352223','555222','883332','828533','533232','258822','588323','883333','232522','853822','258833','853833','555233','588322'],['535223','828332','852533','238822','852523','253833','353222','535232','238823','583333','552223','353232','828333','888532','583322','888522','253822','552233'],['558822','585232','238523','258332','238532','853333','532533','558823','258323','882223','353832','532532','585223','823232','882232','823222','853323','353823'],['583232','258523','533833','552532','533823','358833','822232','583222','552522','858323','885222','822223','258532','233323','858333','233333','358822','885232'],['233823','532223','888332','823333','888322','588522','858823','233832','823322','553233','252532','858832','532232','355223','553222','355233','588533','252523'],['882523','853222','553323','358522','553333','538322','583822','882533','358533','235232','828823','583823','853232','252232','235223','252233','538332','828832'],['253332','553823','825232','582222','825223','883222','238332','253323','582233','352522','858532','238333','553833','538832','352523','538822','883223','858533'],['558832','585222','238533','258333','238522','853332','532522','558833','258322','882222','353833','532523','585233','823233','882233','823223','853322','353822'],['358322','888832','253233','855233','253223','232222','558523','358323','855232','823822','533333','558522','888822','582533','823823','582532','232233','533332'],['852233','353323','588822','883823','588833','822522','255223','852232','883833','538532','233233','255222','353322','558332','538533','558323','822532','233222'],['882532','853233','553322','358532','553332','538333','583832','882522','358523','235233','828833','583833','853223','252223','235222','252222','538323','828822'],['852223','353333','588823','883822','588832','822533','255233','852222','883832','538523','233223','255232','353332','558333','538522','558322','822523','233232'],['535233','828322','852532','238832','852522','253823','353233','535222','238833','583323','552222','353223','828323','888523','583332','888533','253832','552232'],['253333','553832','825222','582223','825233','883233','238323','253322','582232','352533','858522','238322','553822','538823','352532','538833','883232','858523']] },
+    { name:'Example 8', orig:[['533352','233552','522335','355352','522355','325255','255535','533332','355332','223255','552552','255552','233535','332235','223235','332255','325232','552532'],['323255','555252','233335','222535','233355','335555','353555','323252','222532','252355','522235','353552','555232','535335','252352','535332','335532','522232'],['253535','335332','325552','523352','325535','352532','552232','253555','523335','235255','533255','552235','335352','222332','235232','222355','352555','533252'],['332335','525535','553232','252232','553252','533532','225252','332352','252255','353332','235335','225235','525552','322555','353355','322535','533555','235352'],['253532','335355','325555','523332','325532','352535','552255','253552','523355','235235','533232','552252','335335','222335','235252','222352','352552','533235'],['522532','253255','225352','335235','225332','232352','323335','522555','335232','532252','355532','323355','253252','553555','532235','553535','232335','355552'],['355235','532555','333532','233255','333555','222252','525352','355232','233232','555532','322355','525355','532532','253355','555555','253335','222232','322332'],['533355','233532','522352','355355','522332','325252','255555','533335','355335','223232','552535','255532','233555','332232','223252','332252','325235','552555'],['332332','525532','553255','252252','553235','533535','225232','332355','252235','353352','235355','225255','525555','322532','353335','322552','533552','235332'],['555332','223335','352232','323535','352252','523235','532335','555352','323552','332555','255232','532332','223355','235555','332532','235552','523255','255255'],['232255','352332','252555','535535','252532','553335','333255','232232','535552','325335','223555','333252','352352','525255','325332','525235','553332','223552'],['355255','532535','333552','233252','333535','222255','525335','355252','233235','555535','322352','525332','532552','253352','555552','253332','222235','322335'],['323235','555255','233352','222552','233332','335535','353532','323232','222555','252335','522252','353535','555235','535352','252332','535355','335552','522255'],['225552','322232','535235','552332','535252','255335','232532','225555','552352','523555','333352','232535','322235','353255','523552','353232','255355','333335'],['555355','223352','352235','323555','352255','523252','532355','555335','323532','332552','255252','532352','223332','235532','332535','235535','523232','255235'],['225532','322252','535232','552335','535255','255352','232552','225535','552355','523532','333332','232555','322255','353252','523535','353235','255332','333355'],['522552','253235','225355','335255','225335','232332','323352','522535','335252','532232','355535','323332','253232','553532','532255','553552','232355','355555'],['232252','352355','252535','535532','252552','553352','333232','232235','535555','325352','223535','333235','352335','525232','325355','525252','553355','223532']] },
+  ]},
+  'o18d6': { tab:'Order 18 · 6-Digit', orig:'#fff4c4', refl:'#e6f6c6', size:650,
+    sub:'Order 18 · 6-digit entries · classic digits · (0,1,3,8), (0,1,3), (0,3,8), (1,3,8) · magic squares', data:[
+    { name:'Example 9', orig:[['803133','180833','833011','881833','833031','380031','011111','803113','881813','080331','008133','011133','180811','133311','080311','133331','380013','008113'],['380331','000033','183111','088111','183131','131131','880831','380333','088113','013031','833311','880833','000013','801811','013033','801813','131113','833313'],['010811','131813','381133','833133','381111','888113','003313','010831','833111','180031','800331','003311','131833','083013','180013','083031','888131','800333'],['133011','831111','000313','013313','000333','800813','080033','133033','013331','883113','181811','080011','831133','388131','883131','388111','800831','181833'],['010813','131831','381131','833113','381113','888111','003331','010833','833131','180011','800313','003333','131811','083011','180033','083033','888133','800311'],['838113','010331','081833','130011','081813','183033','383111','838131','130013','803333','881113','383131','010333','000831','803311','000811','183011','881133'],['880011','808131','130813','180331','130831','083333','831833','880013','180313','001113','383031','831831','808113','013131','001131','013111','083313','383013'],['803131','180813','833033','881831','833013','380033','011131','803111','881811','080313','008111','011113','180831','133313','080333','133333','380011','008131'],['133013','831113','000331','013333','000311','800811','080013','133031','013311','883133','181831','080031','831131','388113','883111','388133','800833','181813'],['001813','083111','883313','380811','883333','830311','803011','001833','380833','138131','010013','803013','083131','181131','138113','181133','830331','010031'],['183331','883013','018131','801111','018113','003111','130331','183313','801133','381811','080831','130333','883033','830031','381813','830011','003113','080833'],['880031','808111','130833','180333','130811','083331','831811','880033','180311','001111','383033','831813','808133','013133','001133','013113','083311','383011'],['380311','000031','183133','088133','183113','131111','880813','380313','088131','013011','833333','880811','000011','801833','013013','801831','131133','833331'],['081133','383313','800011','003013','800033','011811','188113','081131','003033','830831','133133','188111','383311','880331','830833','880313','011831','133111'],['001831','083133','883311','380831','883331','830333','803031','001811','380813','138133','010033','803033','083113','181113','138111','181111','830313','010011'],['081113','383333','800013','003011','800031','011833','188133','081111','003031','830813','133113','188131','383331','880333','830811','880311','011813','133131'],['838133','010311','081831','130031','081811','183013','383133','838111','130033','803313','881111','383113','010313','000813','803331','000833','183031','881131'],['183333','883031','018111','801113','018133','003133','130313','183311','801131','381833','080811','130311','883011','830013','381831','830033','003131','080813']] },
+    { name:'Example 10', orig:[['133310','033110','100331','311310','100311','301011','011131','133330','311330','003011','110110','011110','033131','330031','003031','330011','301030','110130'],['303011','111010','033331','000131','033311','331111','313111','303010','000130','010311','100031','313110','111030','131331','010310','131330','331130','100030'],['013131','331330','301110','103310','301131','310130','110030','013111','103331','031011','133011','110031','331310','000330','031030','000311','310111','133010'],['330331','101131','113030','010030','113010','133130','001010','330310','010011','313330','031331','001031','101110','300111','313311','300131','133111','031310'],['013130','331311','301111','103330','301130','310131','110011','013110','103311','031031','133030','110010','331331','000331','031010','000310','310110','133031'],['100130','013011','001310','331031','001330','030310','303331','100111','331030','130010','311130','303311','013010','113111','130031','113131','030331','311110'],['311031','130111','333130','033011','333111','000010','101310','311030','033030','111130','300311','101311','130130','013311','111111','013331','000030','300330'],['133311','033130','100310','311311','100330','301010','011111','133331','311331','003030','110131','011130','033111','330030','003010','330010','301031','110111'],['330330','101130','113011','010010','113031','133131','001030','330311','010031','313310','031311','001011','101111','300130','313331','300110','133110','031330'],['111330','003331','310030','303131','310010','103031','130331','111310','303110','330111','011030','130330','003311','031111','330130','031110','103011','011011'],['030011','310330','010111','131131','010130','113331','333011','030030','131110','301331','003111','333010','310310','101011','301330','101031','113330','003110'],['311011','130131','333110','033010','333131','000011','101331','311010','033031','111131','300310','101330','130110','013310','111110','013330','000031','300331'],['303031','111011','033310','000110','033330','331131','313130','303030','000111','010331','100010','313131','111031','131310','010330','131311','331110','100011'],['001110','300030','131031','110330','131010','011331','030130','001111','110310','103111','333310','030131','300031','313011','103110','313030','011311','333331'],['111311','003310','310031','303111','310011','103010','130311','111331','303130','330110','011010','130310','003330','031130','330131','031131','103030','011031'],['001130','300010','131030','110331','131011','011310','030110','001131','110311','103130','333330','030111','300011','313010','103131','313031','011330','333311'],['100110','013031','001311','331011','001331','030330','303310','100131','331010','130030','311131','303330','013030','113130','130011','113110','030311','311111'],['030010','310311','010131','131130','010110','113310','333030','030031','131111','301310','003131','333031','310331','101030','301311','101010','113311','003130']] },
+    { name:'Example 11', orig:[['833380','033880','800338','388380','800388','308088','088838','833330','388330','003088','880880','088880','033838','330038','003038','330088','308030','880830'],['303088','888080','033338','000838','033388','338888','383888','303080','000830','080388','800038','383880','888030','838338','080380','838330','338830','800030'],['083838','338330','308880','803380','308838','380830','880030','083888','803338','038088','833088','880038','338380','000330','038030','000388','380888','833080'],['330338','808838','883030','080030','883080','833830','008080','330380','080088','383330','038338','008038','808880','300888','383388','300838','833888','038380'],['083830','338388','308888','803330','308830','380838','880088','083880','803388','038038','833030','880080','338338','000338','038080','000380','380880','833038'],['800830','083088','008380','338038','008330','030380','303338','800888','338030','830080','388830','303388','083080','883888','830038','883838','030338','388880'],['388038','830888','333830','033088','333888','000080','808380','388030','033030','888830','300388','808388','830830','083388','888888','083338','000030','300330'],['833388','033830','800380','388388','800330','308080','088888','833338','388338','003030','880838','088830','033888','330030','003080','330080','308038','880888'],['330330','808830','883088','080080','883038','833838','008030','330388','080038','383380','038388','008088','808888','300830','383338','300880','833880','038330'],['888330','003338','380030','303838','380080','803038','830338','888380','303880','330888','088030','830330','003388','038888','330830','038880','803088','088088'],['030088','380330','080888','838838','080830','883338','333088','030030','838880','308338','003888','333080','380380','808088','308330','808038','883330','003880'],['388088','830838','333880','033080','333838','000088','808338','388080','033038','888838','300380','808330','830880','083380','888880','083330','000038','300338'],['303038','888088','033380','000880','033330','338838','383830','303030','000888','080338','800080','383838','888038','838380','080330','838388','338880','800088'],['008880','300030','838038','880330','838080','088338','030830','008888','880380','803888','333380','030838','300038','383088','803880','383030','088388','333338'],['888388','003380','380038','303888','380088','803080','830388','888338','303830','330880','088080','830380','003330','038830','330838','038838','803030','088038'],['008830','300080','838030','880338','838088','088380','030880','008838','880388','803830','333330','030888','300088','383080','803838','383038','088330','333388'],['800880','083038','008388','338088','008338','030330','303380','800838','338080','830030','388838','303330','083030','883830','830088','883880','030388','388888'],['030080','380388','080838','838830','080880','883380','333030','030038','838888','308380','003838','333038','380338','808030','308388','808080','883388','003830']] },
+    { name:'Example 12', orig:[['833381','133881','811338','388381','811388','318188','188838','833331','388331','113188','881881','188881','133838','331138','113138','331188','318131','881831'],['313188','888181','133338','111838','133388','338888','383888','313181','111831','181388','811138','383881','888131','838338','181381','838331','338831','811131'],['183838','338331','318881','813381','318838','381831','881131','183888','813338','138188','833188','881138','338381','111331','138131','111388','381888','833181'],['331338','818838','883131','181131','883181','833831','118181','331381','181188','383331','138338','118138','818881','311888','383388','311838','833888','138381'],['183831','338388','318888','813331','318831','381838','881188','183881','813388','138138','833131','881181','338338','111338','138181','111381','381881','833138'],['811831','183188','118381','338138','118331','131381','313338','811888','338131','831181','388831','313388','183181','883888','831138','883838','131338','388881'],['388138','831888','333831','133188','333888','111181','818381','388131','133131','888831','311388','818388','831831','183388','888888','183338','111131','311331'],['833388','133831','811381','388388','811331','318181','188888','833338','388338','113131','881838','188831','133888','331131','113181','331181','318138','881888'],['331331','818831','883188','181181','883138','833838','118131','331388','181138','383381','138388','118188','818888','311831','383338','311881','833881','138331'],['888331','113338','381131','313838','381181','813138','831338','888381','313881','331888','188131','831331','113388','138888','331831','138881','813188','188188'],['131188','381331','181888','838838','181831','883338','333188','131131','838881','318338','113888','333181','381381','818188','318331','818138','883331','113881'],['388188','831838','333881','133181','333838','111188','818338','388181','133138','888838','311381','818331','831881','183381','888881','183331','111138','311338'],['313138','888188','133381','111881','133331','338838','383831','313131','111888','181338','811181','383838','888138','838381','181331','838388','338881','811188'],['118881','311131','838138','881331','838181','188338','131831','118888','881381','813888','333381','131838','311138','383188','813881','383131','188388','333338'],['888388','113381','381138','313888','381188','813181','831388','888338','313831','331881','188181','831381','113331','138831','331838','138838','813131','188138'],['118831','311181','838131','881338','838188','188381','131881','118838','881388','813831','333331','131888','311188','383181','813838','383138','188331','333388'],['811881','183138','118388','338188','118338','131331','313381','811838','338181','831131','388838','313331','183131','883831','831188','883881','131388','388888'],['131181','381388','181838','838831','181881','883381','333131','131138','838888','318381','113838','333138','381338','818131','318388','818181','883388','113831']] },
+  ]},
+  'o18d10': { tab:'Order 18 · 10-Digit', orig:'#fff4c4', refl:'#e6f6c6', size:690,
+    sub:'Order 18 · 10-digit entries · classic digits · (0,3), (1,3), (3,8) · magic squares', data:[
+    { name:'Example 13', orig:[['3300300300','0333003300','3330300033','3333033300','3330300003','3033000003','0003030333','3300300330','3333033330','0033003003','0000330300','0003030300','0333003333','0330303033','0033003033','0330303003','3033000030','0000330330'],['3033003003','0000000000','0333300333','0033330333','0333300303','0330030303','3333003303','3033003000','0033330330','0003300003','3330303033','3333003300','0000000030','3300033333','0003300000','3300033330','0330030330','3330303030'],['0003003333','0330033330','3033030300','3330300300','3033030333','3333330330','0000303030','0003003303','3330300333','0333000003','3300003003','0000303033','0330033300','0033300030','0333000030','0033300003','3333330303','3300003000'],['0330300033','3330030333','0000003030','0003303030','0000003000','3300003330','0033000000','0330300000','0003303003','3333300330','0333033333','0033000033','3330030300','3033330303','3333300303','3033330333','3300003303','0333033300'],['0003003330','0330033303','3033030303','3330300330','3033030330','3333330333','0000303003','0003003300','3330300303','0333000033','3300003030','0000303000','0330033333','0033300033','0333000000','0033300000','3333330300','3300003033'],['3330330330','0003003003','0033033300','0330000033','0033033330','0333300000','3033300333','3330330303','0330000030','3300303000','3333030330','3033300303','0003003000','0000003303','3300303033','0000003333','0333300033','3333030300'],['3333000033','3300330303','0330003330','0333003003','0330003303','0033303000','3330033300','3333000030','0333003030','0000030330','3033300003','3330033303','3300330330','0003300303','0000030303','0003300333','0033303030','3033300030'],['3300300303','0333003330','3330300000','3333033303','3330300030','3033000000','0003030303','3300300333','3333033333','0033003030','0000330333','0003030330','0333003303','0330303030','0033003000','0330303000','3033000033','0000330303'],['0330300030','3330030330','0000003003','0003303000','0000003033','3300003333','0033000030','0330300003','0003303033','3333300300','0333033303','0033000003','3330030303','3033330330','3333300333','3033330300','3300003300','0333033330'],['0000033330','0033300333','3333303030','3033003333','3333303000','3330003033','3300300033','0000033300','3033003300','0330330303','0003000030','3300300030','0033300303','0333030303','0330330330','0333030300','3330003003','0003000003'],['0333303003','3333300030','0003330303','3300030333','0003330330','0000300333','0330003003','0333303030','3300030300','3033033333','0033003303','0330003000','3333300000','3330000003','3033033330','3330000033','0000300330','0033003300'],['3333000003','3300330333','0330003300','0333003000','0330003333','0033303003','3330033333','3333000000','0333003033','0000030333','3033300000','3330033330','3300330300','0003300300','0000030300','0003300330','0033303033','3033300033'],['3033003033','0000000003','0333300300','0033330300','0333300330','0330030333','3333003330','3033003030','0033330303','0003300033','3330303000','3333003333','0000000033','3300033300','0003300030','3300033303','0330030300','3330303003'],['0033030300','3033303030','3300000033','0000300030','3300000000','0003033333','0333330330','0033030303','0000300000','3330003303','0330300300','0333330333','3033303033','3333003003','3330003300','3333003030','0003033303','0330300333'],['0000033303','0033300300','3333303033','3033003303','3333303003','3330003000','3300300003','0000033333','3033003330','0330330300','0003000000','3300300000','0033300330','0333030330','0330330333','0333030333','3330003030','0003000033'],['0033030330','3033303000','3300000030','0000300033','3300000003','0003033300','0333330300','0033030333','0000300003','3330003330','0330300330','0333330303','3033303003','3333003000','3330003333','3333003033','0003033330','0330300303'],['3330330300','0003003033','0033033303','0330000003','0033033333','0333300030','3033300300','3330330333','0330000000','3300303030','3333030333','3033300330','0003003030','0000003330','3300303003','0000003300','0333300003','3333030303'],['0333303000','3333300003','0003330333','3300030330','0003330300','0000300300','0330003030','0333303033','3300030303','3033033300','0033003333','0330003033','3333300033','3330000030','3033033303','3330000000','0000300303','0033003330']] },
+    { name:'Example 14', orig:[['3311311311','1333113311','3331311133','3333133311','3331311113','3133111113','1113131333','3311311331','3333133331','1133113113','1111331311','1113131311','1333113333','1331313133','1133113133','1331313113','3133111131','1111331331'],['3133113113','1111111111','1333311333','1133331333','1333311313','1331131313','3333113313','3133113111','1133331331','1113311113','3331313133','3333113311','1111111131','3311133333','1113311111','3311133331','1331131331','3331313131'],['1113113333','1331133331','3133131311','3331311311','3133131333','3333331331','1111313131','1113113313','3331311333','1333111113','3311113113','1111313133','1331133311','1133311131','1333111131','1133311113','3333331313','3311113111'],['1331311133','3331131333','1111113131','1113313131','1111113111','3311113331','1133111111','1331311111','1113313113','3333311331','1333133333','1133111133','3331131311','3133331313','3333311313','3133331333','3311113313','1333133311'],['1113113331','1331133313','3133131313','3331311331','3133131331','3333331333','1111313113','1113113311','3331311313','1333111133','3311113131','1111313111','1331133333','1133311133','1333111111','1133311111','3333331311','3311113133'],['3331331331','1113113113','1133133311','1331111133','1133133331','1333311111','3133311333','3331331313','1331111131','3311313111','3333131331','3133311313','1113113111','1111113313','3311313133','1111113333','1333311133','3333131311'],['3333111133','3311331313','1331113331','1333113113','1331113313','1133313111','3331133311','3333111131','1333113131','1111131331','3133311113','3331133313','3311331331','1113311313','1111131313','1113311333','1133313131','3133311131'],['3311311313','1333113331','3331311111','3333133313','3331311131','3133111111','1113131313','3311311333','3333133333','1133113131','1111331333','1113131331','1333113313','1331313131','1133113111','1331313111','3133111133','1111331313'],['1331311131','3331131331','1111113113','1113313111','1111113133','3311113333','1133111131','1331311113','1113313133','3333311311','1333133313','1133111113','3331131313','3133331331','3333311333','3133331311','3311113311','1333133331'],['1111133331','1133311333','3333313131','3133113333','3333313111','3331113133','3311311133','1111133311','3133113311','1331331313','1113111131','3311311131','1133311313','1333131313','1331331331','1333131311','3331113113','1113111113'],['1333313113','3333311131','1113331313','3311131333','1113331331','1111311333','1331113113','1333313131','3311131311','3133133333','1133113313','1331113111','3333311111','3331111113','3133133331','3331111133','1111311331','1133113311'],['3333111113','3311331333','1331113311','1333113111','1331113333','1133313113','3331133333','3333111111','1333113133','1111131333','3133311111','3331133331','3311331311','1113311311','1111131311','1113311331','1133313133','3133311133'],['3133113133','1111111113','1333311311','1133331311','1333311331','1331131333','3333113331','3133113131','1133331313','1113311133','3331313111','3333113333','1111111133','3311133311','1113311131','3311133313','1331131311','3331313113'],['1133131311','3133313131','3311111133','1111311131','3311111111','1113133333','1333331331','1133131313','1111311111','3331113313','1331311311','1333331333','3133313133','3333113113','3331113311','3333113131','1113133313','1331311333'],['1111133313','1133311311','3333313133','3133113313','3333313113','3331113111','3311311113','1111133333','3133113331','1331331311','1113111111','3311311111','1133311331','1333131331','1331331333','1333131333','3331113131','1113111133'],['1133131331','3133313111','3311111131','1111311133','3311111113','1113133311','1333331311','1133131333','1111311113','3331113331','1331311331','1333331313','3133313113','3333113111','3331113333','3333113133','1113133331','1331311313'],['3331331311','1113113133','1133133313','1331111113','1133133333','1333311131','3133311311','3331331333','1331111111','3311313131','3333131333','3133311331','1113113131','1111113331','3311313113','1111113311','1333311113','3333131313'],['1333313111','3333311113','1113331333','3311131331','1113331311','1111311311','1331113131','1333313133','3311131313','3133133311','1133113333','1331113133','3333311133','3331111131','3133133313','3331111111','1111311313','1133113331']] },
+    { name:'Example 15', orig:[['3388388388','8333883388','3338388833','3333833388','3338388883','3833888883','8883838333','3388388338','3333833338','8833883883','8888338388','8883838388','8333883333','8338383833','8833883833','8338383883','3833888838','8888338338'],['3833883883','8888888888','8333388333','8833338333','8333388383','8338838383','3333883383','3833883888','8833338338','8883388883','3338383833','3333883388','8888888838','3388833333','8883388888','3388833338','8338838338','3338383838'],['8883883333','8338833338','3833838388','3338388388','3833838333','3333338338','8888383838','8883883383','3338388333','8333888883','3388883883','8888383833','8338833388','8833388838','8333888838','8833388883','3333338383','3388883888'],['8338388833','3338838333','8888883838','8883383838','8888883888','3388883338','8833888888','8338388888','8883383883','3333388338','8333833333','8833888833','3338838388','3833338383','3333388383','3833338333','3388883383','8333833388'],['8883883338','8338833383','3833838383','3338388338','3833838338','3333338333','8888383883','8883883388','3338388383','8333888833','3388883838','8888383888','8338833333','8833388833','8333888888','8833388888','3333338388','3388883833'],['3338338338','8883883883','8833833388','8338888833','8833833338','8333388888','3833388333','3338338383','8338888838','3388383888','3333838338','3833388383','8883883888','8888883383','3388383833','8888883333','8333388833','3333838388'],['3333888833','3388338383','8338883338','8333883883','8338883383','8833383888','3338833388','3333888838','8333883838','8888838338','3833388883','3338833383','3388338338','8883388383','8888838383','8883388333','8833383838','3833388838'],['3388388383','8333883338','3338388888','3333833383','3338388838','3833888888','8883838383','3388388333','3333833333','8833883838','8888338333','8883838338','8333883383','8338383838','8833883888','8338383888','3833888833','8888338383'],['8338388838','3338838338','8888883883','8883383888','8888883833','3388883333','8833888838','8338388883','8883383833','3333388388','8333833383','8833888883','3338838383','3833338338','3333388333','3833338388','3388883388','8333833338'],['8888833338','8833388333','3333383838','3833883333','3333383888','3338883833','3388388833','8888833388','3833883388','8338338383','8883888838','3388388838','8833388383','8333838383','8338338338','8333838388','3338883883','8883888883'],['8333383883','3333388838','8883338383','3388838333','8883338338','8888388333','8338883883','8333383838','3388838388','3833833333','8833883383','8338883888','3333388888','3338888883','3833833338','3338888833','8888388338','8833883388'],['3333888883','3388338333','8338883388','8333883888','8338883333','8833383883','3338833333','3333888888','8333883833','8888838333','3833388888','3338833338','3388338388','8883388388','8888838388','8883388338','8833383833','3833388833'],['3833883833','8888888883','8333388388','8833338388','8333388338','8338838333','3333883338','3833883838','8833338383','8883388833','3338383888','3333883333','8888888833','3388833388','8883388838','3388833383','8338838388','3338383883'],['8833838388','3833383838','3388888833','8888388838','3388888888','8883833333','8333338338','8833838383','8888388888','3338883383','8338388388','8333338333','3833383833','3333883883','3338883388','3333883838','8883833383','8338388333'],['8888833383','8833388388','3333383833','3833883383','3333383883','3338883888','3388388883','8888833333','3833883338','8338338388','8883888888','3388388888','8833388338','8333838338','8338338333','8333838333','3338883838','8883888833'],['8833838338','3833383888','3388888838','8888388833','3388888883','8883833388','8333338388','8833838333','8888388883','3338883338','8338388338','8333338383','3833383883','3333883888','3338883333','3333883833','8883833338','8338388383'],['3338338388','8883883833','8833833383','8338888883','8833833333','8333388838','3833388388','3338338333','8338888888','3388383838','3333838333','3833388338','8883883838','8888883338','3388383883','8888883388','8333388883','3333838383'],['8333383888','3333388883','8883338333','3388838338','8883338388','8888388388','8338883838','8333383833','3388838383','3833833388','8833883333','8338883833','3333388833','3338888838','3833833383','3338888888','8888388383','8833883338']] },
+  ]},
+};
+let STYLE='classic', STRIPES=0, BLOCKS=null, CENTER=null;
+const cloneSet = k => SETS[k].data.map(d=>({name:d.name, orig:d.orig.map(r=>r.slice())}));
+/* every example becomes its own two-sided plate */
+const EXAMPLES=[]; Object.entries(SETS).forEach(([k,v])=>v.data.forEach((d,i)=>EXAMPLES.push({set:k,idx:i,name:d.name,num:'o'+d.orig.length+'e'+(d.name.match(/\d+/)||['x'])[0]})));
+function exFromHash(){
+  const h=location.hash.slice(1), m=h.match(/^(o\d+e\w+)$/);
+  if(m){ const i=EXAMPLES.findIndex(e=>String(e.num)===m[1]); if(i>=0) return i; }
+  if(SETS[h]) return EXAMPLES.findIndex(e=>e.set===h);
+  return 0;
+}
+let currentEx = exFromHash(), currentSet = EXAMPLES[currentEx].set;
+const PLATE_SIZE = k => { if(SETS[k].size) return SETS[k].size; const d=SETS[k].data[0].orig, n=d.length, L=Math.max(...d.flat().map(c=>c.length));
+  return Math.min(400, 240 + (n-3)*35 + (L>=6?30:L>=4?15:0)); };
+let DATA = cloneSet(currentSet);
+/* Water image of a digit (vertical flip). 0,1,3,8 are unchanged; in seven-segment
+   form 2 and 5 turn into each other (segments top↔bottom, upper↔lower sides). */
+const WATER_MAP = {'0':'0','1':'1','3':'3','8':'8','2':'5','5':'2'};
+const safeDigits = () => STYLE==='seg' ? ['0','1','2','3','5','8'] : ['0','1','3','8'];
+
+/* Each original is opposite its reflection.
+   Placements are chosen so that a 180° flip about the HORIZONTAL screen
+   axis (a "water flip") turns any original into its reflection, upright. */
+const HALF='calc(var(--s) / 2)', TILE_T=0.07, TILE_Z='calc(var(--s) * 0.035)';
+const CUBE_FACES = [
+  { id:'front',  pair:0, refl:false, rot:'rotateX(0deg)',   z:HALF },
+  { id:'back',   pair:0, refl:true,  rot:'rotateX(180deg)', z:HALF },
+  { id:'top',    pair:1, refl:false, rot:'rotateX(90deg)',  z:HALF },
+  { id:'bottom', pair:1, refl:true,  rot:'rotateX(-90deg)', z:HALF },
+  { id:'right',  pair:2, refl:false, rot:'rotateY(90deg)',  z:HALF },
+  { id:'left',   pair:2, refl:true,  rot:'rotateY(90deg) rotateX(180deg)', z:HALF }
+];
+/* two-sided tile: same water-flip geometry as the cube's front/back pair */
+const TILE_FACES = [
+  { id:'front', pair:0, refl:false, rot:'rotateX(0deg)',   z:TILE_Z },
+  { id:'back',  pair:0, refl:true,  rot:'rotateX(180deg)', z:TILE_Z }
+];
+[...CUBE_FACES,...TILE_FACES].forEach(f=>{
+  const P = new DOMMatrix(f.rot);
+  f.view = P.inverse();                                   // cube rotation that brings this face to the front, upright
+  const n = P.transformPoint(new DOMPoint(0,0,1,0));
+  f.normal = [n.x,n.y,n.z];
+});
+let FACES = CUBE_FACES;
+
+const reflect = g => g.slice().reverse().map(r=>r.map(c=>c.split('').map(d=>WATER_MAP[d]??d).join('')));
+const gridOf = f => f.refl ? reflect(DATA[f.pair].orig) : DATA[f.pair].orig;
+
+function analyse(g){
+  const n=g.length, v=g.map(r=>r.map(Number));
+  const rows=v.map(r=>r.reduce((a,b)=>a+b,0));
+  const cols=v[0].map((_,j)=>v.reduce((a,r)=>a+r[j],0));
+  let d1=0,d2=0; for(let i=0;i<n;i++){d1+=v[i][i]; d2+=v[i][n-1-i];}
+  const all=[...rows,...cols], S=all[0], rc=all.every(x=>x===S);
+  let type = rc ? (d1===S&&d2===S ? 'magic' : 'semi-magic') : 'not magic';
+  if(type==='magic'){          // all broken diagonals in both directions
+    let pan=true;
+    for(let k=0;k<n&&pan;k++){ let a=0,b=0; for(let i=0;i<n;i++){ a+=v[i][(i+k)%n]; b+=v[i][(k-i+n)%n]; } if(a!==S||b!==S) pan=false; }
+    if(pan) type='pandiagonal magic';
+  }
+  let stripes=null, Sx=S;
+  if(STRIPES){
+    stripes=[]; for(let c0=0;c0<n;c0+=STRIPES){ let t=0; for(let i=0;i<n;i++) for(let j=c0;j<c0+STRIPES;j++) t+=v[i][j]; stripes.push(t); }
+    const colEq=cols.every(x=>x===cols[0]), stEq=stripes.every(x=>x===stripes[0]);
+    if(type==='not magic' && colEq && stEq && d1===cols[0] && d2===cols[0]){ type='striped (rows differ)'; Sx=cols[0]; }
+  }
+  let blocks=null;
+  if(BLOCKS){ const [bh,bw]=BLOCKS; const bs=[]; let allMagic=true;
+    for(let a=0;a<n;a+=bh) for(let c0=0;c0<n;c0+=bw){ let t=0; for(let i=a;i<a+bh;i++) for(let j=c0;j<c0+bw;j++) t+=v[i][j]; bs.push(t);
+      if(bh===bw){ const s0=v[a].slice(c0,c0+bw).reduce((x,y)=>x+y,0); let ok=true;
+        for(let i=0;i<bh;i++){ if(v[a+i].slice(c0,c0+bw).reduce((x,y)=>x+y,0)!==s0) ok=false; let cs=0; for(let r=0;r<bh;r++) cs+=v[a+r][c0+i]; if(cs!==s0) ok=false; }
+        let e1=0,e2=0; for(let i=0;i<bh;i++){ e1+=v[a+i][c0+i]; e2+=v[a+i][c0+bw-1-i]; } if(e1!==s0||e2!==s0) ok=false;
+        if(!ok) allMagic=false; } }
+    let rc=true;
+    for(let a=0;a<n;a+=bh) for(let c0=0;c0<n;c0+=bw){ const s0=v[a].slice(c0,c0+bw).reduce((x,y)=>x+y,0);
+      for(let i=0;i<bh;i++){ if(v[a+i].slice(c0,c0+bw).reduce((x,y)=>x+y,0)!==s0) rc=false; let cs=0; for(let r=0;r<bh;r++) cs+=v[a+r][c0+i]; if(cs!==s0) rc=false; } }
+    blocks={size:bh+'×'+bw, sums:[...new Set(bs)], magic:bh===bw?allMagic:null, sub:bh===bw?bs[0]/bh:null, rc}; }
+  let center=null;
+  if(CENTER&&n>=CENTER[0]+CENTER[1]){ const [o,m]=CENTER, B=v.slice(o,o+m).map(r=>r.slice(o,o+m)), s0=B[0].reduce((x,y)=>x+y,0);
+    let ok=B.every(r=>r.reduce((x,y)=>x+y,0)===s0); for(let j=0;j<m;j++){ let cs=0; for(let i=0;i<m;i++) cs+=B[i][j]; if(cs!==s0) ok=false; }
+    let e1=0,e2=0; for(let i=0;i<m;i++){ e1+=B[i][i]; e2+=B[i][m-1-i]; } if(e1!==s0||e2!==s0) ok=false;
+    center={m,magic:ok,S:s0}; }
+  return {rows,cols,d1,d2,S:Sx,type,stripes,blocks,center};
+}
+const digitsUsed = g => [...new Set(g.flat().join('').split(''))].sort();
+const waterSafe  = g => digitsUsed(g).every(d=>safeDigits().includes(d));
+
+/* seven-segment glyphs, exactly symmetric about the horizontal mid-line */
+const H=(x0,x1,y)=>`${x0},${y} ${x0+5},${y-5} ${x1-5},${y-5} ${x1},${y} ${x1-5},${y+5} ${x0+5},${y+5}`;
+const V=(x,y0,y1)=>`${x},${y0} ${x+5},${y0+5} ${x+5},${y1-5} ${x},${y1} ${x-5},${y1-5} ${x-5},${y0+5}`;
+const SEGS={a:H(8,52,6),g:H(8,52,50),d:H(8,52,94),f:V(6,8,49),b:V(54,8,49),e:V(6,51,92),c:V(54,51,92)};
+const DIGIT_SEGS={'0':'abcdef','1':'bc','2':'abged','3':'abgcd','4':'fgbc','5':'afgcd','6':'afgedc','7':'abc','8':'abcdefg','9':'abcdfg'};
+const segDigit=d=>`<svg class="seg7" viewBox="${d==='1'?'46 0 16 100':'0 0 60 100'}">${(DIGIT_SEGS[d]||'').split('').map(k=>`<polygon points="${SEGS[k]}"/>`).join('')}</svg>`;
+const cellContent=c=> '<span class="ct">'+(STYLE==='seg' ? c.split('').map(segDigit).join('') : c.replace(/1/g,'<span class="one">I</span>'))+'</span>';
+/* squeeze long numbers horizontally so each fits its cell (like a condensed font) */
+function fitCells(root=document){
+  root.querySelectorAll('.cell .ct').forEach(el=>{
+    el.style.transform='';
+    const avail=el.parentElement.clientWidth*0.9, w=el.offsetWidth;
+    if(avail>0 && w>avail) el.style.transform=`scaleX(${(avail/w).toFixed(3)})`;
+  });
+}
+
+function blockBorder(i,n){
+  if(!BLOCKS) return ';border-color:var(--faint)';   /* order 7: faint cell lines, dark outer frame */
+  const r=Math.floor(i/n), c=i%n, [bh,bw]=BLOCKS, t='calc(var(--s)*.0034*var(--lw))';
+  /* ordinary cell lines faint; block edges in the normal grid-line colour */
+  return ';border-color:var(--faint)'
+    +(c%bw===bw-1 && c<n-1 ? ';border-right-width:'+t+';border-right-color:var(--line)' : '')
+    +(r%bh===bh-1 && r<n-1 ? ';border-bottom-width:'+t+';border-bottom-color:var(--line)' : '');
+}
+function gridHTML(g, extraCls=''){
+  const n=g.length, maxLen=Math.max(...g.flat().map(s=>s.length));
+  const fs = (0.5/n)*Math.min(1, (maxLen>6?5.6:maxLen>4?4.4:2.9)/maxLen);
+  return `<div class="grid ${extraCls}" style="grid-template-columns:repeat(${n},minmax(0,1fr));grid-template-rows:repeat(${n},minmax(0,1fr))">`+
+    g.flat().map((c,i)=>`<div class="cell${STYLE==='seg'?' sg':''}${CENTER&&Math.floor(i/n)>=CENTER[0]&&Math.floor(i/n)<CENTER[0]+CENTER[1]&&i%n>=CENTER[0]&&i%n<CENTER[0]+CENTER[1]?' hlc':''}${STRIPES?(Math.floor((i%n)/STRIPES)%2?' st1':' st0'):''}" style="font-size:calc(var(--s)*${fs.toFixed(4)})${blockBorder(i,n)}">${cellContent(c)}</div>`).join('')+`</div>`;
+}
+const faceLabel = f => `${DATA[f.pair].name.replace('Example ','Ex ')} · ${f.refl?'Water':'Original'}`;
+
+function buildCube(el){
+  el.innerHTML = FACES.map(f=>
+    `<div class="face ${f.refl?'refl':'orig'}" data-face="${f.id}"
+          style="transform:${f.rot} translateZ(${f.z})">
+       ${gridHTML(gridOf(f))}<span class="badge">${faceLabel(f)}</span></div>`).join('') + (FACES===TILE_FACES ? tileEdges() : '');
+}
+function tileEdges(){
+  const t=`calc(var(--s) * ${TILE_T})`, off=`calc(50% - var(--s) * ${TILE_T/2})`;
+  return [
+    `top:${off};left:0;width:100%;height:${t};transform:rotateX(90deg) translateZ(${HALF})`,
+    `top:${off};left:0;width:100%;height:${t};transform:rotateX(-90deg) translateZ(${HALF})`,
+    `left:${off};top:0;height:100%;width:${t};transform:rotateY(90deg) translateZ(${HALF})`,
+    `left:${off};top:0;height:100%;width:${t};transform:rotateY(-90deg) translateZ(${HALF})`
+  ].map(st=>`<div class="edge" style="${st}"></div>`).join('');
+}
+
+/* ---------- rotation state ---------- */
+const cube=document.getElementById('cube'), cube2=document.getElementById('cube2'), cube3=document.getElementById('cube3');
+let M = new DOMMatrix().rotateAxisAngleSelf(1,0,0,-22).rotateAxisAngleSelf(0,1,0,28);
+let spinning=true, speed=22, dragging=false, anim=null, queue=[], frameCount=0, activeId=null;
+const SPIN_AXIS=[0.25,1,0.12];
+
+const R = (x,y,z,deg)=> new DOMMatrix().rotateAxisAngleSelf(x,y,z,deg);
+function apply(){ const s=M.toString(); cube.style.transform=s; cube2.style.transform=s; cube3.style.transform=s; }
+
+function orthonormalize(){
+  const c=[[M.m11,M.m12,M.m13],[M.m21,M.m22,M.m23],[M.m31,M.m32,M.m33]];
+  const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2], nrm=a=>{const l=Math.hypot(...a);return a.map(v=>v/l)};
+  const a=nrm(c[0]); let b=c[1].map((v,i)=>v-dot(c[1],a)*a[i]); b=nrm(b);
+  const k=[a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+  M = DOMMatrix.fromFloat64Array(new Float64Array([...a,0,...b,0,...k,0,0,0,0,1]));
+}
+
+/* axis–angle of a rotation matrix, verified against DOMMatrix's own convention */
+function axisAngle(Rm){
+  const r=[[Rm.m11,Rm.m21,Rm.m31],[Rm.m12,Rm.m22,Rm.m32],[Rm.m13,Rm.m23,Rm.m33]];
+  const cos=Math.max(-1,Math.min(1,(r[0][0]+r[1][1]+r[2][2]-1)/2)), ang=Math.acos(cos);
+  if(ang<1e-4) return null;
+  let ax; const s=Math.sin(ang);
+  if(s>1e-3) ax=[r[2][1]-r[1][2], r[0][2]-r[2][0], r[1][0]-r[0][1]].map(v=>v/(2*s));
+  else{
+    let x=Math.sqrt(Math.max(0,(r[0][0]+1)/2)), y=Math.sqrt(Math.max(0,(r[1][1]+1)/2)), z=Math.sqrt(Math.max(0,(r[2][2]+1)/2));
+    const sg=v=>v<0?-1:1;
+    if(x>=y&&x>=z){y*=sg(r[0][1]);z*=sg(r[0][2]);} else if(y>=z){x*=sg(r[0][1]);z*=sg(r[1][2]);} else {x*=sg(r[0][2]);y*=sg(r[1][2]);}
+    ax=[x,y,z];
+  }
+  const deg=ang*180/Math.PI, diff=Q=>Math.abs(Q.m11-Rm.m11)+Math.abs(Q.m12-Rm.m12)+Math.abs(Q.m13-Rm.m13)+
+    Math.abs(Q.m21-Rm.m21)+Math.abs(Q.m22-Rm.m22)+Math.abs(Q.m23-Rm.m23)+Math.abs(Q.m31-Rm.m31)+Math.abs(Q.m32-Rm.m32)+Math.abs(Q.m33-Rm.m33);
+  return diff(R(...ax,deg))<=diff(R(...ax,-deg)) ? {ax,deg} : {ax,deg:-deg};
+}
+
+function startAnim(axis,deg,dur,target){ anim={axis,deg,dur,target,M0:M,t0:null}; }
+function snapTo(f){
+  queue.push(()=>{ const aa=axisAngle(f.view.multiply(M.inverse()));
+    if(!aa){M=f.view;apply();return false;} startAnim(aa.ax,aa.deg,950,f.view); return true; });
+}
+function waterFlip(){
+  queue.push(()=>{ startAnim([1,0,0],180,1500,R(1,0,0,180).multiply(M)); return true; });
+}
+let autoplay=true;
+function setPlayLabel(){ playBtn.textContent = autoplay ? '⏸ Pause' : '▶ Play';
+  const ai=document.getElementById('autoInfo'); if(ai) ai.textContent = autoplay ? 'Playing automatically — press Pause to stop' : 'Paused — press Play to continue'; }
+function pause(){ autoplay=false; spinning=false; queue=[]; setPlayLabel(); }
+
+const ease=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+let last=null;
+function frame(t){
+  const dt = last==null?0:(t-last)/1000; last=t;
+  if(!anim && queue.length){ while(queue.length && !anim){ queue.shift()(); } }
+  if(anim){
+    if(anim.t0==null) anim.t0=t;
+    const p=Math.min(1,(t-anim.t0)/anim.dur);
+    M = R(...anim.axis, anim.deg*ease(p)).multiply(anim.M0);
+    if(p>=1){ if(anim.target) M=anim.target; anim=null; }
+  } else if(spinning && !dragging && speed>0){
+    M = R(...SPIN_AXIS, speed*dt).multiply(M);
+  }
+  if(++frameCount%240===0 && !anim) orthonormalize();
+  apply(); updateActive();
+  requestAnimationFrame(frame);
+}
+
+/* ---------- active face ---------- */
+function updateActive(){
+  let best=null,bz=-2;
+  for(const f of FACES){ const p=M.transformPoint(new DOMPoint(...f.normal,0)); if(p.z>bz){bz=p.z;best=f;} }
+  if(best.id===activeId) return;
+  activeId=best.id;
+  document.querySelectorAll('.face').forEach(el=>el.classList.toggle('active',el.dataset.face===activeId));
+  const g=gridOf(best), a=analyse(g), partner=FACES.find(x=>x.pair===best.pair&&x.refl!==best.refl);
+  document.getElementById('activeInfo').innerHTML=
+    `<div class="t">${DATA[best.pair].name} — ${best.refl?'Water reflection':'Original'}</div>
+     <div style="color:#8d84ad">${best.id} face · opposite: ${partner.id} (${partner.refl?'water reflection':'original'})</div>
+     <div id="activeMini" class="${best.refl?'refl':''}">${gridHTML(g)}</div>
+     Rows: ${a.rows.join(', ')}<br>Columns: ${a.cols.join(', ')}<br>Diagonals: ${a.d1}, ${a.d2}<br>${a.center?`<span style="color:#8a4b00">Centre ${a.center.m}×${a.center.m} block: ${a.center.magic?'magic, S = '+a.center.S:'not magic'}</span><br>`:''}${a.blocks?`<span style="color:#8a4b00">${a.blocks.size} blocks: ${a.blocks.sums.length===1?'all '+a.blocks.sums[0]:(a.blocks.rc?'equal row and column sums in each':'sums differ')}${a.blocks.magic?' · each magic':''}</span><br>`:''}${a.stripes?`<span style="color:#8a4b00">Vertical ${best.refl?'':''}${g.length}×${STRIPES} stripes: ${a.stripes.join(', ')}</span><br>`:''}
+     <span class="${a.type==='not magic'?'bad':'ok'}">${a.type}${a.type!=='not magic'?' · S = '+a.S:''}</span>`;
+  fitCells(document.getElementById('activeInfo'));
+}
+
+/* ---------- UI ---------- */
+const playBtn=document.getElementById('playBtn');
+function buildButtons(){
+  document.getElementById('faceBtns').innerHTML = DATA.map((d,p)=>{
+    const o=FACES.find(f=>f.pair===p&&!f.refl), r=FACES.find(f=>f.pair===p&&f.refl);
+    return `<div class="prow"><span>${d.name}</span>
+      <button class="o" data-snap="${o.id}">Original</button>
+      <button class="r" data-snap="${r.id}">Water</button>
+      <button class="w" data-pair="${p}" title="Show original, then flip to its water reflection">🌊</button></div>`;
+  }).join('');
+  document.querySelectorAll('[data-snap]').forEach(b=>b.onclick=()=>{pause();queue=[];snapTo(FACES.find(f=>f.id===b.dataset.snap));});
+  document.querySelectorAll('[data-pair]').forEach(b=>b.onclick=()=>{pause();queue=[];
+    snapTo(FACES.find(f=>f.pair===+b.dataset.pair&&!f.refl)); waterFlip();});
+}
+playBtn.onclick=()=>{ if(autoplay){ pause(); anim=null; } else { autoplay=true; spinning=false; queue=[]; anim=null; setPlayLabel(); autoCycle(); } };
+document.getElementById('flipBtn').onclick=()=>{ pause(); waterFlip(); };
+
+const speedEl=document.getElementById('speed'), sizeEl=document.getElementById('size');
+speedEl.oninput=()=>{document.getElementById('speedV').textContent=(+speedEl.value).toFixed(1)+'×';};
+sizeEl.oninput=()=>{document.documentElement.style.setProperty('--s',sizeEl.value+'px');document.getElementById('sizeV').textContent=sizeEl.value;fitCells();};
+[['cOrig','--orig'],['cRefl','--refl'],['cInk','--ink']].forEach(([id,v])=>
+  document.getElementById(id).oninput=e=>document.documentElement.style.setProperty(v,e.target.value));
+document.getElementById('styleSel').onchange=e=>{ STYLE=e.target.value; rebuild(); };
+const lwEl=document.getElementById('lw');
+lwEl.oninput=()=>{document.documentElement.style.setProperty('--lw',lwEl.value);document.getElementById('lwV').textContent=(+lwEl.value).toFixed(1);fitCells();};
+document.getElementById('cLine').oninput=e=>document.documentElement.style.setProperty('--line',e.target.value);
+const ripEl=document.getElementById('rippleIn');
+ripEl.oninput=()=>{ const v=+ripEl.value; document.getElementById('rippleV').textContent=v;
+  document.getElementById('dNear').setAttribute('scale',v);
+  document.getElementById('dDeep').setAttribute('scale',v*2.2);
+  document.getElementById('dSoft').setAttribute('scale',v*0.5); };
+
+/* surface glints: thin broken wave-lines, spaced wider toward the viewer (perspective) */
+(function buildGlints(){
+  const svg=document.getElementById('glints'), N=16; let html='';
+  for(let i=0;i<N;i++){
+    const t=(i+0.6)/N, y=400*Math.pow(t,1.55), amp=1.5+t*4, k=0.006+Math.random()*0.006, ph=Math.random()*6.28;
+    let d=`M -20 ${y.toFixed(1)}`;
+    for(let x=0;x<=1040;x+=20) d+=` L ${x} ${(y+amp*Math.sin(k*x+ph)).toFixed(1)}`;
+    const dash=`${(10+Math.random()*40).toFixed(0)} ${(60+Math.random()*160).toFixed(0)} ${(4+Math.random()*14).toFixed(0)} ${(80+Math.random()*200).toFixed(0)}`;
+    const op=(0.28-0.16*t).toFixed(2), w=(0.6+t*1.4).toFixed(2), dur=(9+Math.random()*10).toFixed(1);
+    const dir=Math.random()<0.5?'normal':'reverse';
+    html+=`<path d="${d}" stroke="rgba(205,238,255,${op})" stroke-width="${w}" stroke-dasharray="${dash}" style="animation-duration:${dur}s;animation-direction:${dir}"/>`;
+  }
+  svg.innerHTML=html;
+})();
+
+document.getElementById('showWater').onchange=e=>{document.body.classList.toggle('nowater',!e.target.checked);fitCells();};
+if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>fitCells());
+document.getElementById('showLabels').onchange=e=>document.body.classList.toggle('hidelabels',!e.target.checked);
+
+/* drag to rotate */
+const stage=document.getElementById('stage'); let px,py;
+stage.addEventListener('pointerdown',e=>{dragging=true;anim=null;pause();px=e.clientX;py=e.clientY;stage.setPointerCapture(e.pointerId);});
+stage.addEventListener('pointermove',e=>{ if(!dragging)return;
+  const dx=e.clientX-px, dy=e.clientY-py; px=e.clientX; py=e.clientY;
+  M = R(0,1,0,dx*0.45).multiply(R(1,0,0,-dy*0.45)).multiply(M); });
+['pointerup','pointercancel'].forEach(ev=>stage.addEventListener(ev,()=>dragging=false));
+
+/* ---------- pair cards ---------- */
+function buildCards(){
+  document.getElementById('cards').innerHTML = DATA.map(d=>{
+    const g=d.orig, w=reflect(g), a=analyse(g), b=analyse(w), safe=waterSafe(g);
+    return `<div class="card">
+      <h3>${d.name} — digits (${digitsUsed(g).join(', ')})</h3>
+      <div class="${g.length>=7?'big':''} quad">
+        <figure><figcaption>Original</figcaption><div class="mini">${gridHTML(g)}</div></figure>
+        <figure><figcaption>Water reflection<br>(rows reversed)</figcaption><div class="mini">${gridHTML(w,'refl')}</div></figure>
+        <figure><figcaption>Original<br>above the water</figcaption><div class="mini">${gridHTML(g)}</div></figure>
+        <figure><figcaption>Its image in the water<br>(true mirror)</figcaption><div class="qwl"></div><div class="mini mir">${gridHTML(g,'refl')}</div></figure>
+      </div>
+      <p>Original: rows ${a.rows.join(', ')} · columns ${a.cols.join(', ')} · diagonals ${a.d1}, ${a.d2}
+        → <span class="${a.type==='not magic'?'bad':'ok'}">${a.type}${a.type!=='not magic'?', S = '+a.S:''}</span><br>
+        Reflection: rows ${b.rows.join(', ')} · columns ${b.cols.join(', ')} · diagonals ${b.d1}, ${b.d2}
+        → <span class="${b.type==='not magic'?'bad':'ok'}">${b.type}${b.type!=='not magic'?', S = '+b.S:''}</span><br>
+        ${a.blocks?`<span style="color:#8a4b00">${a.blocks.size} blocks — original: ${a.blocks.sums.length===1?'every block sums to '+a.blocks.sums[0]:(a.blocks.rc?'each block has equal row and column sums':'block sums differ')}${a.blocks.magic?' · each block is a magic square, S = '+a.blocks.sub:''} · reflection: ${b.blocks.sums.length===1?'every block sums to '+b.blocks.sums[0]:(b.blocks.rc?'each block has equal row and column sums':'block sums differ')}${b.blocks.magic?' (each magic)':''}</span><br>`:''}
+        ${a.center?`<span style="color:#8a4b00">Centre ${a.center.m}×${a.center.m} block — original: ${a.center.magic?'magic, S = '+a.center.S:'not magic'} · reflection: ${b.center.magic?'magic, S = '+b.center.S:'not magic'}</span><br>`:''}
+        ${a.stripes?`<span style="color:#8a4b00">Vertical ${g.length}×${STRIPES} stripes — original: ${a.stripes.join(', ')} · reflection: ${b.stripes.join(', ')}</span><br>`:''}
+        ${b.type.startsWith('striped')?`<span style="color:#5a3d8a">In water the 2 ↔ 5 swap changes the row sums, but the columns, both diagonals and the ${g.length}×${STRIPES} stripes keep their equal sums.</span><br>`:''}
+        ${safe ? `<span class="ok">✓ All digits are water-symmetric (${STYLE==='seg'?'0, 1, 3, 8 unchanged; 2 ↔ 5':'0, 1, 3, 8'}): the mirrored image reads exactly as the reflection square.</span>`
+               : '<span class="bad">⚠ Some digits are not symmetric about a horizontal axis — the water image will not read as numbers.</span>'}</p>
+    </div>`;}).join('');
+}
+
+/* ---------- editor ---------- */
+function buildEditor(){
+  document.getElementById('editor').innerHTML = DATA.map((d,i)=>
+    `<div><div style="font-size:13px;margin-bottom:4px">${d.name}</div>
+     <textarea id="ta${i}">${d.orig.map(r=>r.join(' ')).join('\n')}</textarea></div>`).join('');
+}
+document.getElementById('applyBtn').onclick=()=>{
+  const msg=document.getElementById('edMsg'), next=[]; const warn=[];
+  for(let i=0;i<DATA.length;i++){
+    const rows=document.getElementById('ta'+i).value.trim().split(/\n+/).map(l=>l.trim().split(/[\s,;]+/).filter(Boolean));
+    const n=rows.length;
+    if(n<3||rows.some(r=>r.length!==n)||rows.flat().some(c=>!/^\d+$/.test(c))){
+      msg.innerHTML=`<span class="bad">${DATA[i].name}: enter an n×n block of whole numbers (one row per line).</span>`; return; }
+    next.push({name:DATA[i].name, orig:rows});
+    if(!waterSafe(rows)) warn.push(DATA[i].name);
+  }
+  DATA=next; rebuild();
+  msg.innerHTML = warn.length ? `<span class="bad">Applied. Not water-symmetric: ${warn.join(', ')}.</span>` : '<span class="ok">Applied.</span>';
+};
+
+function rebuild(){ buildCube(cube); buildCube(cube2); buildCube(cube3); buildButtons(); buildCards(); activeId=null; fitCells(); }
+/* section links grouped by order, laid out in two compact rows */
+const shortTab=v=>v.tab.replace(/^Order \d+ · /,'').replace(/ Entries$/,'').replace(/ Cell$/,'').replace('Example ','Ex ');
+function tabsHTML(k){
+  const groups={};
+  Object.entries(SETS).forEach(([key,v])=>{ const n=v.data[0].orig.length; (groups[n]=groups[n]||[]).push([key,v]); });
+  const cur=EXAMPLES[currentEx];
+  return Object.entries(groups).map(([n,list])=>`<div class="tabgroup"><span class="tablabel">Order ${n}</span>`+
+    list.map(([key,v])=>`<span class="secgroup${key===k?' on':''}"><a href="#${key}" class="seclink${key===k?' on':''}">${shortTab(v)}</a>`+
+      EXAMPLES.filter(e=>e.set===key).map(e=>`<a href="#${e.num}" class="exlink${cur&&e.num===cur.num?' on':''}">${(e.name.match(/\d+/)||[e.name.split(' ')[0]])[0]}</a>`).join('')+
+    `</span>`).join('')+`</div>`).join('');
+}
+function loadExample(ei, keepQueue=false){
+  currentEx=ei; const E=EXAMPLES[ei], k=E.set; currentSet=k;
+  const d=SETS[k].data[E.idx]; DATA=[{name:d.name, orig:d.orig.map(r=>r.slice())}];
+  FACES = TILE_FACES;
+  document.getElementById('pairsTitle').textContent='The Pair';
+  const sz=Math.round(Math.min(PLATE_SIZE(k), document.querySelector('.mirrorpane') ? (innerWidth-40)/3.3 : innerWidth-70)); sizeEl.value=sz; document.getElementById('sizeV').textContent=sz;
+  document.documentElement.style.setProperty('--s',sz+'px');
+  STRIPES=SETS[k].stripes||0; BLOCKS=SETS[k].blocks||null; CENTER=SETS[k].center||null;
+  STYLE=SETS[k].style||'classic'; document.getElementById('styleSel').value=STYLE;
+  const co=(SETS[k].data[E.idx].col)||SETS[k].orig||'#f7c5dd', cr=SETS[k].refl||'#bfe8f5', rs=document.documentElement.style;
+  rs.setProperty('--orig',co); rs.setProperty('--refl',cr);
+  document.getElementById('cOrig').value=co; document.getElementById('cRefl').value=cr;
+  document.getElementById('subTitle').textContent=SETS[k].sub.replace(/ · a two-sided tile[^·]*/,' ').replace(/\s+·/g,' ·').replace(/\s+$/,'');
+  document.getElementById('tabs').innerHTML=tabsHTML(k);
+  document.getElementById('chips').innerHTML='';
+  document.getElementById('edMsg').textContent='';
+  if(!keepQueue){ queue=[]; anim=null; }
+  if(!keepQueue && autoplay) autoCycle();
+  if(location.hash!=='#'+E.num) history.replaceState(null,'','#'+E.num);
+  rebuild(); buildEditor();
+}
+window.addEventListener('hashchange',()=>{ if(!location.hash.slice(1)) return; const ei=exFromHash(); if(ei!==currentEx) loadExample(ei); });
+const step=dir=>loadExample((currentEx+dir+EXAMPLES.length)%EXAMPLES.length);
+document.getElementById('prevBtn').onclick=()=>step(-1);
+document.getElementById('nextBtn').onclick=()=>step(1);
+const hold=ms=>queue.push(()=>{anim={axis:[1,0,0],deg:0,dur:ms,M0:M,t0:null};return true;});
+/* automatic run: original → water flip → full turn showing both sides → next plate, looping */
+function nextIndex(){
+  if(document.getElementById('scopeSel').value==='section'){
+    const list=EXAMPLES.map((e,i)=>i).filter(i=>EXAMPLES[i].set===currentSet);
+    return list[(list.indexOf(currentEx)+1)%list.length];
+  }
+  return (currentEx+1)%EXAMPLES.length;
+}
+function autoCycle(){
+  const f=()=>Math.max(0.4,+speedEl.value);
+  snapTo(TILE_FACES[0]);
+  queue.push(()=>{anim={axis:[1,0,0],deg:0,dur:1600/f(),M0:M,t0:null};return true;});
+  queue.push(()=>{ startAnim([1,0,0],180,1500/f(),R(1,0,0,180).multiply(M)); return true; });
+  queue.push(()=>{anim={axis:[1,0,0],deg:0,dur:1900/f(),M0:M,t0:null};return true;});
+  queue.push(()=>{ startAnim([0,1,0],360,2800/f(),R(0,1,0,360).multiply(M)); return true; });
+  queue.push(()=>{ if(autoplay){ loadExample(nextIndex(),true); autoCycle(); } return false; });
+}
+spinning=false; setPlayLabel(); loadExample(currentEx); apply(); requestAnimationFrame(frame);
+</script>
+</body>
+</html>

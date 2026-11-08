@@ -1,0 +1,67 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Thirty-Six-Face Six Magic Cubes · 3×3 · Inder J. Taneja</title><style>
+:root{font-family:system-ui,Segoe UI,sans-serif;color:#ebf8ff;background:#06182c}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 32% 10%,#1a4f67,#06182c 70%)}.wrap{max-width:1700px;margin:auto;padding:20px}h1{margin:0;color:#fff0c9;font-size:clamp(1.65rem,3vw,2.8rem)}header p{color:#b9dce9;margin:7px 0 19px}.layout{display:grid;grid-template-columns:minmax(550px,1.14fr) minmax(470px,.86fr);gap:16px}.panel{background:#0d2b43e8;border:1px solid #4a819c;border-radius:20px;padding:15px;box-shadow:0 14px 35px #0005}.stage{position:relative;aspect-ratio:1.22;background:radial-gradient(circle,#20526f,#071c31 75%);border:1px solid #386a85;border-radius:17px;overflow:hidden}canvas{width:100%;height:100%;display:block}.badge{position:absolute;left:13px;bottom:13px;background:#08243adf;border:1px solid #7cbbcc;border-radius:11px;padding:8px 12px;color:#e7f5fb;font-size:.83rem}.controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:13px 0}.controls button,.controls select{font:inherit;color:white;background:#1b5871;border:1px solid #88bdce;border-radius:9px;padding:7px 11px;cursor:pointer}.controls label{font-size:.86rem;color:#d1e6ef}.controls input{vertical-align:middle;accent-color:#f4d08d}.note{font-size:.85rem;color:#bdd7e3;line-height:1.55}.right h2{margin:3px 0 8px;font-size:1.18rem;color:#f8d88f}.faces{max-height:710px;overflow:auto;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding-right:4px}.cube-group{grid-column:1/-1;background:#15445b;color:#e5f6f8;border-radius:8px;padding:7px 10px;font-weight:800;margin-top:9px}.tile{background:#173e56;border:1px solid #5a8da3;border-radius:9px;padding:6px 3px;text-align:center}.tile strong{display:block;font-size:.70rem;margin-bottom:5px}.tile small{font-size:.70rem;color:#dfebf1}.mini{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#396776;border:1px solid #97bdc7;width:min(100%,102px);margin:auto auto 4px}.mini span{aspect-ratio:1;display:grid;place-items:center;font-size:.7rem;font-weight:800;color:#173248;background:linear-gradient(145deg,#f9fdff,var(--shade))}footer{text-align:center;color:#bdd7e0;margin:24px 0 6px;line-height:1.7;font-size:.87rem}footer a{color:#a9e9f0}@media(max-width:1050px){.layout{grid-template-columns:1fr}.stage{min-height:460px}.faces{max-height:450px}}@media(max-width:560px){.wrap{padding:9px}.layout{grid-template-columns:minmax(0,1fr)}.panel{padding:9px}.stage{min-height:390px}.faces{grid-template-columns:repeat(3,minmax(0,1fr))}.mini span{font-size:.59rem}}
+</style></head><body><div class="wrap"><header><h1>Thirty-Six-Face Six Magic Cubes · 3×3</h1><p>Six transparent cubes in a rotating cross · 36 numbered magic-square faces · Created by Inder J. Taneja</p></header><main class="layout"><section class="panel"><div class="stage"><canvas id="scene" aria-label="Six rotating transparent magic cubes"></canvas><div class="badge" id="status">Six cubes · 36 magic faces · numbers 1–324</div></div><div class="controls"><button id="pause">Pause rotation</button><label>Speed <input id="speed" type="range" min="0" max="100" value="60"></label><label>Transparency <input id="opacity" type="range" min="7" max="40" value="16"></label><label>Numbers <select id="numberMode"><option value="front">Front-facing faces</option><option value="all">All visible through cubes</option></select></label></div><p class="note">Each cube occupies one arm of the six-direction cross. The wireframes remain transparent while all 36 complete squares are listed at right. Rounded, luminous vertices mark every cube corner. Select “All visible through cubes” to reveal the more distant face numbers as well.</p></section><section class="panel right"><h2>36 magic-square faces · six per cube</h2><div id="faces" class="faces"></div><p id="verify" class="note"></p></section></main><footer>Created by <strong>Inder J. Taneja</strong><br><a href="https://numbers-magic.com/">numbers-magic.com</a> · <a href="https://inderjtaneja.wordpress.com/">inderjtaneja.wordpress.com</a> · <a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/">Mathematical Generators</a><br>Magic square source: <a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/generators/multi-magic-square-generator-orders-3-12">Multiple Faces Magic Squares Generator · Orders 3–12</a></footer></div><script>
+'use strict';
+const base=[[4,9,2],[3,5,7],[8,1,6]],squares=Array.from({length:36},(_,k)=>base.map(row=>row.map(v=>36*(v-1)+k+1)));
+const sums=squares.map(s=>s[0].reduce((a,b)=>a+b,0));
+const values=squares.flat(2).sort((a,b)=>a-b);
+if(values.length!==324||!values.every((v,i)=>v===i+1)||!squares.every((s,k)=>s.every(row=>row.reduce((a,b)=>a+b,0)===sums[k])&&[0,1,2].every(c=>s.reduce((a,row)=>a+row[c],0)===sums[k])&&s.reduce((a,row,i)=>a+row[i],0)===sums[k]&&s.reduce((a,row,i)=>a+row[2-i],0)===sums[k]))throw Error('Magic-square verification failed');
+document.getElementById('verify').textContent='✓ 36 order-3 magic squares checked; integers 1–324 occur once each. Face sums run from '+sums[0]+' to '+sums[35]+' in steps of 3.';
+const names=['Right','Left','Top','Bottom','Front','Back'];
+const shades=['#ffe1ad','#aae9e9','#f5cddd','#c4dcff','#d7eabf','#ffd3bb'];
+const host=document.getElementById('faces');
+for(let cube=0;cube<6;cube++){
+ const label=document.createElement('div');label.className='cube-group';label.textContent=`Cube ${cube+1} · ${names[cube]} arm · six faces`;host.append(label);
+ for(let face=0;face<6;face++){
+  const k=cube*6+face,tile=document.createElement('div');tile.className='tile';
+  tile.innerHTML=`<strong>Face ${face+1} · Σ ${sums[k]}</strong><div class="mini">${squares[k].flat().map(v=>`<span style="--shade:${shades[cube]}">${v}</span>`).join('')}</div>`;
+  host.append(tile);
+ }
+}
+const corners=[[[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]],[[1,-1,1],[1,-1,-1],[1,1,-1],[1,1,1]],[[1,-1,-1],[-1,-1,-1],[-1,1,-1],[1,1,-1]],[[-1,-1,-1],[-1,-1,1],[-1,1,1],[-1,1,-1]],[[-1,-1,-1],[1,-1,-1],[1,-1,1],[-1,-1,1]],[[-1,1,1],[1,1,1],[1,1,-1],[-1,1,-1]]];
+const normals=[[0,0,1],[1,0,0],[-0,-0,-1],[-1,0,0],[0,-1,0],[0,1,0]];
+const offsets=[[1.27,0,0],[-1.27,0,0],[0,-1.27,0],[0,1.27,0],[0,0,1.27],[0,0,-1.27]];
+const colors=['#ffdc95','#9de7e6','#f6badc','#a9ccfb','#cde7a1','#ffc7ae'];
+const canvas=document.getElementById('scene'),ctx=canvas.getContext('2d');
+let theta=.38,last=0,playing=true;
+function rgba(hex,a){return`rgba(${parseInt(hex.slice(1,3),16)},${parseInt(hex.slice(3,5),16)},${parseInt(hex.slice(5,7),16)},${a})`}
+function rotate(p,ax,ay){let [x,y,z]=p,c=Math.cos(ax),s=Math.sin(ax);[y,z]=[y*c-z*s,y*s+z*c];c=Math.cos(ay);s=Math.sin(ay);return[x*c+z*s,y,-x*s+z*c]}
+function project(p,w,h){let scale=Math.min(w,h)*.20,per=7/(7-p[2]);return{x:w/2+p[0]*scale*per,y:h/2+p[1]*scale*per,z:p[2]}}
+function point(q,u,v){return{x:q[0].x*(1-u)*(1-v)+q[1].x*u*(1-v)+q[2].x*u*v+q[3].x*(1-u)*v,y:q[0].y*(1-u)*(1-v)+q[1].y*u*(1-v)+q[2].y*u*v+q[3].y*(1-u)*v}}
+function polygon(q,fill,stroke,width=1){ctx.beginPath();ctx.moveTo(q[0].x,q[0].y);for(let i=1;i<q.length;i++)ctx.lineTo(q[i].x,q[i].y);ctx.closePath();if(fill){ctx.fillStyle=fill;ctx.fill()}if(stroke){ctx.lineWidth=width;ctx.strokeStyle=stroke;ctx.stroke()}}
+function render(t){let dt=last?Math.min(.05,(t-last)/1000):0;last=t;if(playing)theta+=dt*(.14+Number(document.getElementById('speed').value)*.004);
+ const bounds=canvas.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2),w=bounds.width,h=bounds.height;
+ if(canvas.width!==Math.round(w*dpr)||canvas.height!==Math.round(h*dpr)){canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr)}
+ ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
+ const ax=.34+Math.sin(theta*.63)*.24,ay=theta;
+ const faces=[],vertices=[];
+ for(let cube=0;cube<6;cube++){
+  const local=offsets[cube];
+  for(let face=0;face<6;face++){
+   const q=corners[face].map(p=>project(rotate(p.map((v,i)=>local[i]+v*.54),ax,ay),w,h));
+   const normal=rotate(normals[face],ax,ay),depth=q.reduce((a,p)=>a+p.z,0)/4;
+   faces.push({cube,face,k:cube*6+face,q,near:normal[2]>.03,depth});
+  }
+  for(let mask=0;mask<8;mask++)vertices.push({cube,p:project(rotate([0,1,2].map(i=>local[i]+(mask&(1<<i)?1:-1)*.54),ax,ay),w,h)});
+ }
+ faces.sort((a,b)=>a.depth-b.depth);
+ const opacity=Number(document.getElementById('opacity').value)/100,all=document.getElementById('numberMode').value==='all';
+ for(const f of faces){const color=colors[f.cube],q=f.q;polygon(q,rgba(color,opacity*(f.near?1:.33)),rgba(color,f.near?.56:.17),f.near?1.5:.7);
+  for(let r=0;r<3;r++)for(let c=0;c<3;c++){
+   const cell=[point(q,c/3,r/3),point(q,(c+1)/3,r/3),point(q,(c+1)/3,(r+1)/3),point(q,c/3,(r+1)/3)];
+   polygon(cell,rgba('#ffffff',f.near?.035:.005),rgba(color,f.near?.43:.10),f.near?.9:.4);
+   if(f.near||all){const m=point(q,(c+.5)/3,(r+.5)/3),side=Math.hypot(cell[1].x-cell[0].x,cell[1].y-cell[0].y);if(side>11){ctx.font=`800 ${Math.max(10,Math.min(22,side*.36))}px system-ui`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=rgba('#ffffff',f.near?.94:.28);ctx.shadowColor='#001421';ctx.shadowBlur=f.near?5:0;ctx.fillText(squares[f.k][r][c],m.x,m.y);ctx.shadowBlur=0}}
+  }
+  polygon(q,null,rgba(color,f.near?.92:.28),f.near?2.1:1);
+ }
+ // Round endpoints are drawn after the translucent faces, preserving their silhouette.
+ vertices.sort((a,b)=>a.p.z-b.p.z);
+ for(const {cube,p} of vertices){const color=colors[cube],radius=(p.z>0?5.3:3.5)*(7/(7-p.z));
+  ctx.save();ctx.shadowColor=color;ctx.shadowBlur=p.z>0?14:5;
+  const glow=ctx.createRadialGradient(p.x-radius*.3,p.y-radius*.4,.2,p.x,p.y,radius);
+  glow.addColorStop(0,'#ffffff');glow.addColorStop(.45,color);glow.addColorStop(1,rgba(color,.42));
+  ctx.beginPath();ctx.arc(p.x,p.y,radius,0,Math.PI*2);ctx.fillStyle=glow;ctx.fill();ctx.restore();
+ }
+ requestAnimationFrame(render)}requestAnimationFrame(render);
+document.getElementById('pause').onclick=()=>{playing=!playing;document.getElementById('pause').textContent=playing?'Pause rotation':'Resume rotation'};
+</script></body></html>

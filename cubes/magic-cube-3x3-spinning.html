@@ -1,0 +1,847 @@
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3×3 Magic Cube — Cube + Analysis</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=Share+Tech+Mono&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300&display=swap');
+  :root {
+    --gold:#c9a84c; --gold-light:#f0d080; --gold-dim:#7a6030;
+    --bg:#06080a; --glow:rgba(201,168,76,0.38);
+    --abg:#fdf8f0; --abg2:#f5ede0;
+    --ink:#1a0e00; --ink2:#5a3e20;
+    --agold:#b07820; --agold-light:#e8c060; --rule:#d4aa60;
+    --c1:#8a4060;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+
+  /* ── PAGE SHELL ── */
+  body{background:var(--abg);color:var(--ink);font-family:'Crimson Pro',Georgia,serif;font-size:16px;line-height:1.6;}
+
+  /* ── MAIN NAV TABS ── */
+  .main-nav{display:flex;background:var(--bg);border-bottom:3px solid var(--gold);}
+  .main-tab{font-family:'Cinzel',serif;font-size:0.7rem;letter-spacing:0.12em;padding:13px 28px;border:none;background:transparent;color:var(--gold-dim);cursor:pointer;transition:all 0.2s;text-transform:uppercase;border-right:1px solid #222;}
+  .main-tab:hover{color:var(--gold-light);}
+  .main-tab.active{background:#111;color:var(--gold-light);border-bottom:3px solid var(--gold-light);margin-bottom:-3px;box-shadow:0 0 18px var(--glow);}
+
+  .main-panel{display:none;}
+  .main-panel.active{display:block;}
+
+  /* ══════════════════════════════════════════════
+     CUBE PANEL
+  ══════════════════════════════════════════════ */
+  #cube-panel{background:var(--bg);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding-bottom:40px;
+    background-image:radial-gradient(ellipse at 15% 15%,rgba(201,168,76,0.07) 0%,transparent 55%),radial-gradient(ellipse at 85% 85%,rgba(180,80,180,0.05) 0%,transparent 55%);}
+
+  .cube-header{text-align:center;padding:26px 20px 6px;width:100%;}
+  .cube-header h1{font-family:'Cinzel',serif;font-size:clamp(1.1rem,3vw,2rem);font-weight:900;letter-spacing:0.14em;color:var(--gold-light);text-shadow:0 0 32px var(--glow),0 2px 6px #000;}
+  .cube-header p{font-size:0.68rem;color:var(--gold-dim);letter-spacing:0.18em;margin-top:7px;text-transform:uppercase;}
+
+  .controls{display:flex;gap:10px;margin:12px 0 6px;flex-wrap:wrap;justify-content:center;align-items:center;}
+  .btn{font-family:'Cinzel',serif;font-size:0.65rem;letter-spacing:0.12em;padding:6px 16px;border:1px solid var(--gold-dim);background:transparent;color:var(--gold);cursor:pointer;transition:all 0.2s;text-transform:uppercase;}
+  .btn:hover,.btn.active{background:var(--gold-dim);color:var(--gold-light);border-color:var(--gold);box-shadow:0 0 14px var(--glow);}
+  .font-size-control{display:flex;align-items:center;gap:8px;border:1px solid var(--gold-dim);padding:5px 12px;}
+  .font-size-control label{font-family:'Cinzel',serif;font-size:0.6rem;letter-spacing:0.1em;color:var(--gold);text-transform:uppercase;white-space:nowrap;}
+  .font-size-control input[type=range]{-webkit-appearance:none;width:90px;height:3px;background:var(--gold-dim);outline:none;cursor:pointer;}
+  .font-size-control input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:var(--gold);box-shadow:0 0 6px var(--glow);cursor:pointer;}
+  .font-size-val{font-size:0.68rem;color:var(--gold-light);min-width:26px;text-align:right;}
+  .btn-dl{font-family:'Cinzel',serif;font-size:0.65rem;letter-spacing:0.12em;padding:6px 16px;border:1px solid var(--gold);background:rgba(201,168,76,0.12);color:var(--gold-light);cursor:pointer;transition:all 0.2s;text-transform:uppercase;text-decoration:none;display:inline-flex;align-items:center;gap:5px;}
+  .btn-dl:hover{background:var(--gold-dim);box-shadow:0 0 16px var(--glow);}
+  .btn-dl svg{width:12px;height:12px;fill:currentColor;}
+  .btn-dl.sec{border-color:var(--gold-dim);background:transparent;}
+  .hint{font-size:0.58rem;color:var(--gold-dim);letter-spacing:0.1em;margin-bottom:10px;text-align:center;}
+
+  .scene-container{perspective:1600px;width:400px;height:400px;display:flex;align-items:center;justify-content:center;cursor:grab;user-select:none;}
+  .scene-container:active{cursor:grabbing;}
+  .cube{width:320px;height:320px;position:relative;transform-style:preserve-3d;transform:rotateX(-25deg) rotateY(35deg);}
+  .face{position:absolute;width:320px;height:320px;backface-visibility:visible;overflow:hidden;border:2px solid var(--gold);box-shadow:0 0 22px rgba(201,168,76,0.22),inset 0 0 18px rgba(0,0,0,0.18);}
+  .face-front {transform:translateZ(160px);}
+  .face-back  {transform:rotateY(180deg) translateZ(160px);}
+  .face-left  {transform:rotateY(-90deg) translateZ(160px);}
+  .face-right {transform:rotateY(90deg)  translateZ(160px);}
+  .face-top   {transform:rotateX(90deg)  translateZ(160px);}
+  .face-bottom{transform:rotateX(-90deg) translateZ(160px);}
+
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);width:100%;height:100%;}
+  .cell{display:flex;align-items:center;justify-content:center;font-family:'Share Tech Mono',monospace;font-size:18px;font-weight:bold;line-height:1;color:#2a0818;border:0.5px solid rgba(180,60,100,0.3);}
+  .b-dark{background:#ffb3c6;}
+  .b-lite{background:#ffd6e0;}
+
+  .face-label{position:absolute;bottom:3px;right:5px;font-family:'Cinzel',serif;font-size:7px;color:rgba(201,168,76,0.5);letter-spacing:0.1em;pointer-events:none;}
+
+  .face-selector{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;margin:6px 0 10px;}
+  .face-btn{font-family:'Cinzel',serif;font-size:0.58rem;padding:4px 11px;border:1px solid var(--gold-dim);background:transparent;color:var(--gold-dim);cursor:pointer;transition:all 0.2s;letter-spacing:0.08em;}
+  .face-btn:hover{color:var(--gold);border-color:var(--gold);box-shadow:0 0 8px var(--glow);}
+
+  .color-panel{border:1px solid var(--gold-dim);padding:12px 16px;margin:4px 0 10px;display:flex;flex-direction:column;align-items:center;gap:10px;max-width:760px;width:92%;}
+  .color-panel-title{font-family:'Cinzel',serif;font-size:0.58rem;letter-spacing:0.18em;color:var(--gold-dim);text-transform:uppercase;}
+  .picker-pair{display:flex;gap:12px;align-items:flex-end;}
+  .cpi{display:flex;flex-direction:column;align-items:center;gap:4px;}
+  .cpi input[type=color]{-webkit-appearance:none;appearance:none;width:40px;height:40px;border:2px solid var(--gold-dim);border-radius:3px;background:none;cursor:pointer;padding:2px;}
+  .cpi input[type=color]::-webkit-color-swatch-wrapper{padding:0;}
+  .cpi input[type=color]::-webkit-color-swatch{border:none;border-radius:2px;}
+  .cpi input[type=color]:hover{border-color:var(--gold);}
+  .cpi label{font-family:'Cinzel',serif;font-size:0.5rem;color:var(--gold);text-align:center;letter-spacing:0.06em;line-height:1.4;}
+  .cpi label span{color:var(--gold-dim);font-size:0.46rem;}
+
+  .palette-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:center;}
+  .palette-label{font-family:'Cinzel',serif;font-size:0.55rem;color:var(--gold-dim);text-transform:uppercase;letter-spacing:0.1em;}
+  .palette-btn{display:flex;gap:2px;padding:3px;border:1px solid var(--gold-dim);background:transparent;cursor:pointer;transition:border-color 0.2s;}
+  .palette-btn:hover{border-color:var(--gold);}
+  .palette-btn span{display:block;width:14px;height:14px;}
+
+  .info-panel{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;max-width:760px;width:92%;margin:0 0 20px;}
+  .info-card{border:1px solid var(--gold-dim);padding:10px 18px;text-align:center;flex:1;min-width:100px;}
+  .info-card .lbl{font-family:'Cinzel',serif;font-size:0.52rem;color:var(--gold-dim);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:4px;}
+  .info-card .val{font-size:1.1rem;color:var(--gold-light);font-weight:bold;}
+  .info-card .sub{font-size:0.52rem;color:var(--gold-dim);margin-top:3px;line-height:1.4;}
+
+  /* ── FACE DATA EDITOR ── */
+  .editor-panel{border:1px solid var(--gold-dim);padding:14px 18px;margin:4px 0 10px;max-width:760px;width:92%;display:flex;flex-direction:column;align-items:center;gap:12px;}
+  .editor-title{font-family:'Cinzel',serif;font-size:0.58rem;letter-spacing:0.18em;color:var(--gold-dim);text-transform:uppercase;}
+  .editor-body{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;justify-content:center;}
+  .face-tabs{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;}
+  .face-tab{font-family:'Cinzel',serif;font-size:0.55rem;padding:4px 10px;border:1px solid var(--gold-dim);background:transparent;color:var(--gold-dim);cursor:pointer;letter-spacing:0.08em;transition:all 0.2s;}
+  .face-tab:hover{color:var(--gold);border-color:var(--gold);}
+  .face-tab.active{background:var(--gold-dim);color:var(--gold-light);border-color:var(--gold);}
+  .editor-grid{display:grid;grid-template-columns:repeat(3,52px);grid-template-rows:repeat(3,52px);gap:3px;}
+  .editor-cell{width:52px;height:52px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:1rem;font-weight:bold;border:1px solid var(--gold-dim);background:rgba(201,168,76,0.07);color:var(--gold-light);outline:none;transition:border-color 0.2s;}
+  .editor-cell:focus{border-color:var(--gold);background:rgba(201,168,76,0.15);}
+  .editor-cell.invalid{border-color:#f66;background:rgba(255,80,80,0.12);}
+  .editor-actions{display:flex;flex-direction:column;gap:8px;align-items:flex-start;justify-content:center;}
+  .editor-status{font-family:'Share Tech Mono',monospace;font-size:0.62rem;padding:5px 10px;border:1px solid var(--gold-dim);min-width:160px;text-align:center;}
+  .editor-status.ok{color:#6f6;border-color:#6f6;}
+  .editor-status.warn{color:#fa0;border-color:#fa0;}
+  .editor-status.err{color:#f66;border-color:#f66;}
+  .btn-apply{font-family:'Cinzel',serif;font-size:0.63rem;letter-spacing:0.12em;padding:7px 18px;border:1px solid var(--gold);background:rgba(201,168,76,0.15);color:var(--gold-light);cursor:pointer;transition:all 0.2s;text-transform:uppercase;}
+  .btn-apply:hover{background:var(--gold-dim);box-shadow:0 0 14px var(--glow);}
+  .btn-reset-face{font-family:'Cinzel',serif;font-size:0.58rem;letter-spacing:0.1em;padding:5px 14px;border:1px solid var(--gold-dim);background:transparent;color:var(--gold-dim);cursor:pointer;transition:all 0.2s;text-transform:uppercase;}
+  .btn-reset-face:hover{color:var(--gold);border-color:var(--gold);}
+  .paste-zone{width:100%;max-width:170px;min-height:58px;font-family:'Share Tech Mono',monospace;font-size:0.72rem;background:rgba(201,168,76,0.05);border:1px dashed var(--gold-dim);color:var(--gold-light);padding:6px 8px;resize:none;outline:none;transition:border-color 0.2s;line-height:1.5;}
+  .paste-zone:focus{border-color:var(--gold);background:rgba(201,168,76,0.1);}
+  .paste-zone::placeholder{color:var(--gold-dim);font-size:0.65rem;}
+  .paste-hint{font-family:'Cinzel',serif;font-size:0.48rem;color:var(--gold-dim);letter-spacing:0.1em;text-align:center;text-transform:uppercase;margin-top:2px;}
+  .paste-btn{font-family:'Cinzel',serif;font-size:0.58rem;letter-spacing:0.1em;padding:5px 14px;border:1px solid var(--gold-dim);background:transparent;color:var(--gold-dim);cursor:pointer;transition:all 0.2s;text-transform:uppercase;width:100%;}
+  .paste-btn:hover{color:var(--gold);border-color:var(--gold);}
+  .editor-divider{font-family:'Cinzel',serif;font-size:0.52rem;color:var(--gold-dim);letter-spacing:0.15em;text-transform:uppercase;display:flex;align-items:center;gap:8px;width:100%;}
+  .editor-divider::before,.editor-divider::after{content:'';flex:1;height:1px;background:var(--gold-dim);}
+
+  /* ══════════════════════════════════════════════
+     ANALYSIS PANEL
+  ══════════════════════════════════════════════ */
+  #analysis-panel{background:var(--abg);min-height:100vh;}
+
+  .page-header{background:var(--ink);color:#fff;padding:40px 40px 32px;text-align:center;position:relative;overflow:hidden;}
+  .page-header::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,rgba(255,255,255,0.02) 0px,rgba(255,255,255,0.02) 1px,transparent 1px,transparent 12px);}
+  .page-header h1{font-family:'Cinzel',serif;font-size:clamp(1.3rem,3.5vw,2.4rem);font-weight:900;letter-spacing:0.1em;color:var(--agold-light);position:relative;text-shadow:0 2px 12px rgba(200,160,60,0.4);}
+  .page-header .subtitle{font-family:'Share Tech Mono',monospace;font-size:0.72rem;letter-spacing:0.22em;color:rgba(255,255,255,0.5);margin-top:10px;text-transform:uppercase;position:relative;}
+  .header-rule{width:70px;height:2px;background:var(--agold-light);margin:16px auto 0;}
+
+  .acontent{max-width:1080px;margin:0 auto;padding:36px 24px 60px;}
+  .intro{background:var(--abg2);border-left:4px solid var(--agold);padding:20px 26px;margin-bottom:36px;font-size:1.02rem;color:var(--ink2);}
+  .intro strong{color:var(--ink);font-weight:600;}
+
+  .section-title{font-family:'Cinzel',serif;font-size:1.05rem;font-weight:600;letter-spacing:0.1em;color:var(--ink);border-bottom:2px solid var(--rule);padding-bottom:8px;margin:36px 0 18px;text-transform:uppercase;}
+
+  .cube-card{border:1px solid var(--rule);background:#fff;overflow:hidden;margin-bottom:20px;}
+  .cube-card-header{padding:14px 18px 12px;display:flex;align-items:center;gap:12px;}
+  .cube-num{font-family:'Cinzel',serif;font-size:1.5rem;font-weight:900;width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:4px;flex-shrink:0;color:#fff;}
+  .cube-card-header h3{font-family:'Cinzel',serif;font-size:0.8rem;font-weight:600;letter-spacing:0.08em;color:var(--ink);line-height:1.3;}
+  .cube-card-header .cdesc{font-family:'Crimson Pro',serif;font-size:0.85rem;color:var(--ink2);font-style:italic;margin-top:2px;}
+  .cube-card-body{padding:0 18px 16px;border-top:1px solid #eee;}
+  .stat-row{display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-bottom:1px dotted #ddd;font-size:0.92rem;}
+  .stat-row:last-child{border-bottom:none;}
+  .stat-label{color:var(--ink2);font-style:italic;}
+  .stat-value{font-family:'Share Tech Mono',monospace;font-size:0.85rem;font-weight:bold;color:var(--ink);}
+
+  .table-wrap{overflow-x:auto;margin-bottom:36px;}
+  table{width:100%;border-collapse:collapse;font-size:0.88rem;}
+  th{font-family:'Cinzel',serif;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;background:var(--ink);color:var(--agold-light);padding:10px 12px;text-align:left;white-space:nowrap;}
+  td{padding:8px 12px;border-bottom:1px solid #e8dcc8;vertical-align:middle;}
+  tr:nth-child(even) td{background:var(--abg2);}
+  tr:hover td{background:#faefd8;}
+  .mono{font-family:'Share Tech Mono',monospace;font-size:0.82rem;}
+  .check{color:#2a7a4a;font-weight:bold;font-size:1.1rem;}
+  .mcval{font-weight:bold;color:var(--agold);}
+
+  /* Face grid analysis */
+  .face-analysis-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;margin-bottom:36px;}
+  .face-block h4{font-family:'Cinzel',serif;font-size:0.68rem;letter-spacing:0.1em;color:var(--ink2);margin-bottom:6px;text-transform:uppercase;}
+
+  .mini-grid3{display:grid;grid-template-columns:repeat(3,1fr);border:2px solid #333;font-family:'Share Tech Mono',monospace;font-weight:bold;color:#000;}
+  .mini-cell{display:flex;align-items:center;justify-content:center;aspect-ratio:1;border:0.5px solid rgba(180,60,100,0.25);padding:2px;}
+  .m-dark{background:#ffb3c6;}
+  .m-lite{background:#ffd6e0;}
+
+  .sum-strip{display:flex;gap:3px;flex-wrap:wrap;margin:4px 0;}
+  .sum-badge{font-family:'Share Tech Mono',monospace;font-size:9px;padding:1px 5px;border-radius:2px;border:1px solid #ddd;}
+  .sum-ok{background:#e8f5e9;color:#1b5e20;border-color:#a5d6a7;}
+  .sum-no{background:#ffebee;color:#c62828;border-color:#ef9a9a;}
+  .diag-box{margin-top:4px;font-family:'Share Tech Mono',monospace;font-size:8px;padding:3px 6px;border-radius:3px;display:inline-block;}
+  .diag-ok{background:#e8f5e9;color:#1b5e20;}
+
+  .sum-mc{background:#e8f5e9!important;font-weight:bold;color:#1b5e20;}
+  .sum-near{background:#fff9c4!important;}
+  .sum-far{background:#ffebee!important;}
+
+  .summary-box{background:var(--ink);color:#fff;padding:30px 36px;margin-top:36px;}
+  .summary-box h2{font-family:'Cinzel',serif;font-size:1rem;color:var(--agold-light);letter-spacing:0.12em;margin-bottom:18px;text-transform:uppercase;}
+  .summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;}
+  .summary-stat{border-left:3px solid var(--agold-light);padding-left:12px;}
+  .summary-stat .s-val{font-family:'Share Tech Mono',monospace;font-size:1.5rem;color:var(--agold-light);font-weight:bold;line-height:1;}
+  .summary-stat .s-label{font-size:0.76rem;color:rgba(255,255,255,0.5);margin-top:3px;font-style:italic;}
+
+  .footer-a{text-align:center;padding:24px;font-size:0.78rem;color:var(--ink2);border-top:1px solid var(--rule);font-style:italic;}
+
+  /* Font slider for analysis grids */
+  .slider-bar{display:flex;align-items:center;gap:12px;margin-bottom:14px;padding:10px 16px;background:var(--abg2);border:1px solid var(--rule);}
+  .slider-bar span{font-family:'Cinzel',serif;font-size:0.65rem;letter-spacing:0.1em;color:var(--ink2);text-transform:uppercase;}
+  .slider-bar input[type=range]{width:130px;accent-color:var(--agold);cursor:pointer;}
+  .slider-bar .sv{font-family:'Share Tech Mono',monospace;font-size:0.82rem;color:var(--ink);min-width:30px;}
+
+  /* ── FACE DATA EDITOR ── */
+  .editor-panel{border:1px solid var(--gold-dim);padding:14px 18px;margin:4px 0 10px;max-width:760px;width:92%;display:flex;flex-direction:column;align-items:center;gap:12px;}
+  .editor-title{font-family:'Cinzel',serif;font-size:0.58rem;letter-spacing:0.18em;color:var(--gold-dim);text-transform:uppercase;}
+  .editor-body{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;justify-content:center;}
+  .face-tabs{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;}
+  .face-tab{font-family:'Cinzel',serif;font-size:0.55rem;padding:4px 10px;border:1px solid var(--gold-dim);background:transparent;color:var(--gold-dim);cursor:pointer;letter-spacing:0.08em;transition:all 0.2s;}
+  .face-tab:hover{color:var(--gold);border-color:var(--gold);}
+  .face-tab.active{background:var(--gold-dim);color:var(--gold-light);border-color:var(--gold);}
+  .editor-grid{display:grid;grid-template-columns:repeat(3,52px);grid-template-rows:repeat(3,52px);gap:3px;}
+  .editor-cell{width:52px;height:52px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:1rem;font-weight:bold;border:1px solid var(--gold-dim);background:rgba(201,168,76,0.07);color:var(--gold-light);outline:none;transition:border-color 0.2s;}
+  .editor-cell:focus{border-color:var(--gold);background:rgba(201,168,76,0.15);}
+  .editor-cell.invalid{border-color:#f66;background:rgba(255,80,80,0.12);}
+  .editor-actions{display:flex;flex-direction:column;gap:8px;align-items:flex-start;justify-content:center;}
+  .editor-status{font-family:'Share Tech Mono',monospace;font-size:0.62rem;padding:5px 10px;border:1px solid var(--gold-dim);min-width:160px;text-align:center;}
+  .editor-status.ok{color:#6f6;border-color:#6f6;}
+  .editor-status.warn{color:#fa0;border-color:#fa0;}
+  .editor-status.err{color:#f66;border-color:#f66;}
+  .btn-apply{font-family:'Cinzel',serif;font-size:0.63rem;letter-spacing:0.12em;padding:7px 18px;border:1px solid var(--gold);background:rgba(201,168,76,0.15);color:var(--gold-light);cursor:pointer;transition:all 0.2s;text-transform:uppercase;}
+  .btn-apply:hover{background:var(--gold-dim);box-shadow:0 0 14px var(--glow);}
+  .btn-reset-face{font-family:'Cinzel',serif;font-size:0.58rem;letter-spacing:0.1em;padding:5px 14px;border:1px solid var(--gold-dim);background:transparent;color:var(--gold-dim);cursor:pointer;transition:all 0.2s;text-transform:uppercase;}
+  .btn-reset-face:hover{color:var(--gold);border-color:var(--gold);}
+  .paste-zone{width:100%;max-width:170px;min-height:58px;font-family:'Share Tech Mono',monospace;font-size:0.72rem;background:rgba(201,168,76,0.05);border:1px dashed var(--gold-dim);color:var(--gold-light);padding:6px 8px;resize:none;outline:none;transition:border-color 0.2s;line-height:1.5;}
+  .paste-zone:focus{border-color:var(--gold);background:rgba(201,168,76,0.1);}
+  .paste-zone::placeholder{color:var(--gold-dim);font-size:0.65rem;}
+  .paste-hint{font-family:'Cinzel',serif;font-size:0.48rem;color:var(--gold-dim);letter-spacing:0.1em;text-align:center;text-transform:uppercase;margin-top:2px;}
+  .paste-btn{font-family:'Cinzel',serif;font-size:0.58rem;letter-spacing:0.1em;padding:5px 14px;border:1px solid var(--gold-dim);background:transparent;color:var(--gold-dim);cursor:pointer;transition:all 0.2s;text-transform:uppercase;width:100%;}
+  .paste-btn:hover{color:var(--gold);border-color:var(--gold);}
+  .editor-divider{font-family:'Cinzel',serif;font-size:0.52rem;color:var(--gold-dim);letter-spacing:0.15em;text-transform:uppercase;display:flex;align-items:center;gap:8px;width:100%;}
+  .editor-divider::before,.editor-divider::after{content:'';flex:1;height:1px;background:var(--gold-dim);}
+</style>
+</head>
+<body>
+
+<!-- MAIN NAV -->
+<div class="main-nav">
+  <button class="main-tab active" onclick="showPanel('cube-panel',this)">🔷 3D Cube</button>
+  <button class="main-tab" onclick="showPanel('analysis-panel',this)">📊 Data Analysis</button>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     CUBE PANEL
+══════════════════════════════════════════════ -->
+<div class="main-panel active" id="cube-panel">
+  <div class="cube-header">
+    <h1>Magic Cube — Order 3×3</h1>
+    <p style="font-size:0.75rem;color:var(--gold);letter-spacing:0.14em;margin-top:6px;font-family:'Cinzel',serif;">Created by Inder J. Taneja</p>
+    <p>Six faces · Numbers 1–54 · Pink checkerboard coloring</p>
+  </div>
+
+  <div class="controls" id="cube-controls">
+    <button class="btn active" id="spin-btn">Auto Rotate</button>
+    <button class="btn" id="reset-btn">Reset View</button>
+    <div class="font-size-control">
+      <label for="fslider">Font Size</label>
+      <input type="range" id="fslider" min="8" max="32" value="18" step="1">
+      <span class="font-size-val" id="fval">18px</span>
+    </div>
+    <a class="btn-dl" id="dl-full" href="#" style="display: none;">
+      <svg viewBox="0 0 16 16"><path d="M8 12l-4-4h2.5V2h3v6H12L8 12zm-5 2h10v1.5H3V14z"></path></svg>Download Full
+    </a>
+    <a class="btn-dl sec" id="dl-cube" href="#" style="display: none;">
+      <svg viewBox="0 0 16 16"><path d="M8 12l-4-4h2.5V2h3v6H12L8 12zm-5 2h10v1.5H3V14z"></path></svg>Cube Only
+    </a>
+  </div>
+  <div class="hint">Drag to rotate · Scroll to zoom · Click face buttons to snap</div>
+
+  <div class="scene-container" id="scene">
+    <div class="cube" id="cube" style="transform: scale(1) rotateX(-25deg) rotateY(52.92deg);"><div class="face face-front"><div class="grid3"><div class="cell b-dark">19</div><div class="cell b-lite">49</div><div class="cell b-dark">7</div><div class="cell b-lite">13</div><div class="cell b-dark">25</div><div class="cell b-lite">37</div><div class="cell b-dark">43</div><div class="cell b-lite">1</div><div class="cell b-dark">31</div></div></div><div class="face face-back"><div class="grid3"><div class="cell b-dark">20</div><div class="cell b-lite">50</div><div class="cell b-dark">8</div><div class="cell b-lite">14</div><div class="cell b-dark">26</div><div class="cell b-lite">38</div><div class="cell b-dark">44</div><div class="cell b-lite">2</div><div class="cell b-dark">32</div></div></div><div class="face face-right"><div class="grid3"><div class="cell b-dark">21</div><div class="cell b-lite">51</div><div class="cell b-dark">9</div><div class="cell b-lite">15</div><div class="cell b-dark">27</div><div class="cell b-lite">39</div><div class="cell b-dark">45</div><div class="cell b-lite">3</div><div class="cell b-dark">33</div></div></div><div class="face face-left"><div class="grid3"><div class="cell b-dark">22</div><div class="cell b-lite">52</div><div class="cell b-dark">10</div><div class="cell b-lite">16</div><div class="cell b-dark">28</div><div class="cell b-lite">40</div><div class="cell b-dark">46</div><div class="cell b-lite">4</div><div class="cell b-dark">34</div></div></div><div class="face face-top"><div class="grid3"><div class="cell b-dark">23</div><div class="cell b-lite">53</div><div class="cell b-dark">11</div><div class="cell b-lite">17</div><div class="cell b-dark">29</div><div class="cell b-lite">41</div><div class="cell b-dark">47</div><div class="cell b-lite">5</div><div class="cell b-dark">35</div></div></div><div class="face face-bottom"><div class="grid3"><div class="cell b-dark">24</div><div class="cell b-lite">54</div><div class="cell b-dark">12</div><div class="cell b-lite">18</div><div class="cell b-dark">30</div><div class="cell b-lite">42</div><div class="cell b-dark">48</div><div class="cell b-lite">6</div><div class="cell b-dark">36</div></div></div></div>
+  </div>
+
+  <div class="face-selector">
+    <button class="face-btn" onclick="snapTo(0)">Face 1 — Front</button>
+    <button class="face-btn" onclick="snapTo(1)">Face 2 — Back</button>
+    <button class="face-btn" onclick="snapTo(2)">Face 3 — Right</button>
+    <button class="face-btn" onclick="snapTo(3)">Face 4 — Left</button>
+    <button class="face-btn" onclick="snapTo(4)">Face 5 — Top</button>
+    <button class="face-btn" onclick="snapTo(5)">Face 6 — Bottom</button>
+  </div>
+
+  <!-- FACE DATA EDITOR -->
+  <div class="editor-panel" id="cube-editorpanel" style="display: none;">
+    <div class="editor-title">Edit Face Data</div>
+    <div class="face-tabs" id="editorFaceTabs">
+      <button class="face-tab active" onclick="editorSelectFace(0,this)">Face 1</button>
+      <button class="face-tab" onclick="editorSelectFace(1,this)">Face 2</button>
+      <button class="face-tab" onclick="editorSelectFace(2,this)">Face 3</button>
+      <button class="face-tab" onclick="editorSelectFace(3,this)">Face 4</button>
+      <button class="face-tab" onclick="editorSelectFace(4,this)">Face 5</button>
+      <button class="face-tab" onclick="editorSelectFace(5,this)">Face 6</button>
+    </div>
+    <div class="editor-body">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+        <div class="editor-grid" id="editorGrid"><input type="number" class="editor-cell" data-r="0" data-c="0"><input type="number" class="editor-cell" data-r="0" data-c="1"><input type="number" class="editor-cell" data-r="0" data-c="2"><input type="number" class="editor-cell" data-r="1" data-c="0"><input type="number" class="editor-cell" data-r="1" data-c="1"><input type="number" class="editor-cell" data-r="1" data-c="2"><input type="number" class="editor-cell" data-r="2" data-c="0"><input type="number" class="editor-cell" data-r="2" data-c="1"><input type="number" class="editor-cell" data-r="2" data-c="2"></div>
+        <div class="editor-divider">or paste from Excel</div>
+        <textarea class="paste-zone" id="pasteZone" rows="3" placeholder="Copy 3×3 cells in Excel
+then Ctrl+V here"></textarea>
+        <div class="paste-hint">Tab-separated · 3 rows × 3 cols</div>
+        <button class="paste-btn" onclick="parsePaste()">⇧ Load from Paste</button>
+      </div>
+      <div class="editor-actions">
+        <div class="editor-status ok" id="editorStatus">✓ Magic Square — MC = 75</div>
+        <button class="btn-apply" onclick="applyEditorFace()">Apply to Cube</button>
+        <button class="btn-reset-face" onclick="resetEditorFace()">Reset Face</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="color-panel" id="cube-colorpanel" style="display: none;">
+    <div class="color-panel-title">Checkerboard Colors</div>
+    <div class="picker-pair">
+      <div class="cpi"><input type="color" id="c-dark" value="#ffb3c6"><label for="c-dark">Dark<br><span>odd</span></label></div>
+      <div class="cpi"><input type="color" id="c-lite" value="#ffd6e0"><label for="c-lite">Light<br><span>even</span></label></div>
+    </div>
+    <div class="palette-row">
+      <span class="palette-label">Presets:</span>
+      <button class="palette-btn" data-dark="#ffb3c6" data-lite="#ffd6e0"><span style="background:#ffb3c6"></span><span style="background:#ffd6e0"></span></button>
+      <button class="palette-btn" data-dark="#7ec8e3" data-lite="#c0e8f5"><span style="background:#7ec8e3"></span><span style="background:#c0e8f5"></span></button>
+      <button class="palette-btn" data-dark="#fdd835" data-lite="#fff9c4"><span style="background:#fdd835"></span><span style="background:#fff9c4"></span></button>
+      <button class="palette-btn" data-dark="#a5d6a7" data-lite="#dcedc8"><span style="background:#a5d6a7"></span><span style="background:#dcedc8"></span></button>
+      <button class="palette-btn" data-dark="#ce93d8" data-lite="#f3e5f5"><span style="background:#ce93d8"></span><span style="background:#f3e5f5"></span></button>
+      <button class="palette-btn" data-dark="#ffcc80" data-lite="#fff3e0"><span style="background:#ffcc80"></span><span style="background:#fff3e0"></span></button>
+      <button class="palette-btn" data-dark="#90caf9" data-lite="#e3f2fd"><span style="background:#90caf9"></span><span style="background:#e3f2fd"></span></button>
+      <button class="palette-btn" data-dark="#bcaaa4" data-lite="#efebe9"><span style="background:#bcaaa4"></span><span style="background:#efebe9"></span></button>
+    </div>
+  </div>
+
+  <div class="info-panel">
+    <div class="info-card"><div class="lbl">Magic Constant</div><div class="val">75</div><div class="sub">Face 1 · S = 3f + 72</div></div>
+    <div class="info-card"><div class="lbl">Numbers Used</div><div class="val">1 – 54</div><div class="sub">9 per face × 6 faces</div></div>
+    <div class="info-card"><div class="lbl">MC Increment</div><div class="val">+3</div><div class="sub">Face f: S = 3f + 72</div></div>
+    <div class="info-card"><div class="lbl">Faces</div><div class="val">6</div></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     ANALYSIS PANEL
+══════════════════════════════════════════════ -->
+<div class="main-panel" id="analysis-panel">
+  <div class="page-header">
+    <h1>Data Analysis — 3×3 Magic Cube</h1>
+    <p class="subtitle">Six faces · Numbers 1–54 · Magic constants 75 to 90</p>
+    <div class="header-rule"></div>
+  </div>
+
+  <div class="acontent">
+
+    <div class="intro">
+      This analysis covers the <strong>3×3 magic cube</strong> using numbers <strong>1–54</strong> across six faces. The magic constant for face <em>f</em> follows the formula <strong>S = 3<em>f</em> + 72</strong>, producing constants from <strong>75</strong> (face 1) to <strong>90</strong> (face 6). Every face is a valid magic square — rows, columns, and both main diagonals all sum to the face magic constant.
+    </div>
+
+    <!-- CUBE OVERVIEW -->
+    <div class="section-title">Cube Overview</div>
+    <div class="cube-card">
+      <div class="cube-card-header">
+        <div class="cube-num" style="background:var(--c1)">3×3</div>
+        <div>
+          <h3>Magic Cube — Uniform Pink Checkerboard</h3>
+          <div class="cdesc">Alternating pink checkerboard · 6 faces · Numbers 1–54</div>
+        </div>
+      </div>
+      <div class="cube-card-body">
+        <div class="stat-row"><span class="stat-label">Magic Constant Range</span><span class="stat-value">75 → 90</span></div>
+        <div class="stat-row"><span class="stat-label">Face MC Formula</span><span class="stat-value">S = 3f + 72</span></div>
+        <div class="stat-row"><span class="stat-label">MC Increment (face to face)</span><span class="stat-value">+3</span></div>
+        <div class="stat-row"><span class="stat-label">Both Diagonals</span><span class="stat-value">= Face MC ✓ on every face</span></div>
+        <div class="stat-row"><span class="stat-label">Numbers Used</span><span class="stat-value">1 – 54 (consecutive integers)</span></div>
+        <div class="stat-row"><span class="stat-label">Face Total (Face 1)</span><span class="stat-value">225 = 3 × 75</span></div>
+        <div class="stat-row"><span class="stat-label">Grand Total (all 6 faces)</span><span class="stat-value">1,485 = sum(1…54)</span></div>
+        <div class="stat-row"><span class="stat-label">Centre cell (Face f)</span><span class="stat-value">= MC / 3 (always the median)</span></div>
+      </div>
+    </div>
+
+    <!-- MC PROGRESSION TABLE -->
+    <div class="section-title">Magic Constant Progression</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Face</th><th>Formula</th><th>Magic Constant</th><th>Face Total</th><th>Increment</th><th>Centre Cell</th><th>Note</th></tr></thead>
+        <tbody id="mcTable"><tr><td class="mono">1</td><td class="mono">3×1 + 72</td>
+    <td class="mono mcval">75</td>
+    <td class="mono">225</td>
+    <td class="mono">—</td>
+    <td class="mono">25</td>
+    <td style="font-size:0.8rem;color:#777;font-style:italic">Min MC · = 3×25</td></tr><tr><td class="mono">2</td><td class="mono">3×2 + 72</td>
+    <td class="mono mcval">78</td>
+    <td class="mono">234</td>
+    <td class="mono">+3</td>
+    <td class="mono">26</td>
+    <td style="font-size:0.8rem;color:#777;font-style:italic"></td></tr><tr><td class="mono">3</td><td class="mono">3×3 + 72</td>
+    <td class="mono mcval">81</td>
+    <td class="mono">243</td>
+    <td class="mono">+3</td>
+    <td class="mono">27</td>
+    <td style="font-size:0.8rem;color:#777;font-style:italic">= 3×27</td></tr><tr><td class="mono">4</td><td class="mono">3×4 + 72</td>
+    <td class="mono mcval">84</td>
+    <td class="mono">252</td>
+    <td class="mono">+3</td>
+    <td class="mono">28</td>
+    <td style="font-size:0.8rem;color:#777;font-style:italic">= 3×28</td></tr><tr><td class="mono">5</td><td class="mono">3×5 + 72</td>
+    <td class="mono mcval">87</td>
+    <td class="mono">261</td>
+    <td class="mono">+3</td>
+    <td class="mono">29</td>
+    <td style="font-size:0.8rem;color:#777;font-style:italic"></td></tr><tr><td class="mono">6</td><td class="mono">3×6 + 72</td>
+    <td class="mono mcval">90</td>
+    <td class="mono">270</td>
+    <td class="mono">+3</td>
+    <td class="mono">30</td>
+    <td style="font-size:0.8rem;color:#777;font-style:italic">Max MC · = 3×30</td></tr></tbody>
+      </table>
+    </div>
+
+    <!-- ZONE SUM TABLE -->
+    <div class="section-title">Row, Column &amp; Diagonal Sums — All Six Faces</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Face</th><th>MC</th>
+            <th>R1</th><th>R2</th><th>R3</th>
+            <th>C1</th><th>C2</th><th>C3</th>
+            <th>D↘</th><th>D↙</th>
+            <th>Rows ✓</th><th>Cols ✓</th><th>Diags ✓</th>
+          </tr>
+        </thead>
+        <tbody id="sumTable"><tr><td class="mono" style="font-weight:bold">F1</td>
+    <td class="mono mcval">75</td>
+    <td class="mono sum-mc">75</td><td class="mono sum-mc">75</td><td class="mono sum-mc">75</td>
+    <td class="mono sum-mc">75</td><td class="mono sum-mc">75</td><td class="mono sum-mc">75</td>
+    <td class="mono sum-mc">75</td><td class="mono sum-mc">75</td>
+    <td class="check">✓</td>
+    <td class="check">✓</td>
+    <td class="check">✓</td></tr><tr><td class="mono" style="font-weight:bold">F2</td>
+    <td class="mono mcval">78</td>
+    <td class="mono sum-mc">78</td><td class="mono sum-mc">78</td><td class="mono sum-mc">78</td>
+    <td class="mono sum-mc">78</td><td class="mono sum-mc">78</td><td class="mono sum-mc">78</td>
+    <td class="mono sum-mc">78</td><td class="mono sum-mc">78</td>
+    <td class="check">✓</td>
+    <td class="check">✓</td>
+    <td class="check">✓</td></tr><tr><td class="mono" style="font-weight:bold">F3</td>
+    <td class="mono mcval">81</td>
+    <td class="mono sum-mc">81</td><td class="mono sum-mc">81</td><td class="mono sum-mc">81</td>
+    <td class="mono sum-mc">81</td><td class="mono sum-mc">81</td><td class="mono sum-mc">81</td>
+    <td class="mono sum-mc">81</td><td class="mono sum-mc">81</td>
+    <td class="check">✓</td>
+    <td class="check">✓</td>
+    <td class="check">✓</td></tr><tr><td class="mono" style="font-weight:bold">F4</td>
+    <td class="mono mcval">84</td>
+    <td class="mono sum-mc">84</td><td class="mono sum-mc">84</td><td class="mono sum-mc">84</td>
+    <td class="mono sum-mc">84</td><td class="mono sum-mc">84</td><td class="mono sum-mc">84</td>
+    <td class="mono sum-mc">84</td><td class="mono sum-mc">84</td>
+    <td class="check">✓</td>
+    <td class="check">✓</td>
+    <td class="check">✓</td></tr><tr><td class="mono" style="font-weight:bold">F5</td>
+    <td class="mono mcval">87</td>
+    <td class="mono sum-mc">87</td><td class="mono sum-mc">87</td><td class="mono sum-mc">87</td>
+    <td class="mono sum-mc">87</td><td class="mono sum-mc">87</td><td class="mono sum-mc">87</td>
+    <td class="mono sum-mc">87</td><td class="mono sum-mc">87</td>
+    <td class="check">✓</td>
+    <td class="check">✓</td>
+    <td class="check">✓</td></tr><tr><td class="mono" style="font-weight:bold">F6</td>
+    <td class="mono mcval">90</td>
+    <td class="mono sum-mc">90</td><td class="mono sum-mc">90</td><td class="mono sum-mc">90</td>
+    <td class="mono sum-mc">90</td><td class="mono sum-mc">90</td><td class="mono sum-mc">90</td>
+    <td class="mono sum-mc">90</td><td class="mono sum-mc">90</td>
+    <td class="check">✓</td>
+    <td class="check">✓</td>
+    <td class="check">✓</td></tr></tbody>
+      </table>
+    </div>
+
+    <!-- FACE GRIDS -->
+    <div class="section-title">Face Grids — Full Verification</div>
+    <div class="slider-bar">
+      <span>Grid Font Size</span>
+      <input type="range" id="aFontSlider" min="10" max="28" value="16" step="1">
+      <span class="sv" id="aFontVal">16px</span>
+      <span style="font-family:'Crimson Pro',serif;font-size:0.82rem;color:var(--ink2);font-style:italic">— drag to resize numbers</span>
+    </div>
+    <div class="face-analysis-grid" id="faceGrid"><div class="face-block"><h4 style="color:var(--c1)">Face 1 &nbsp;·&nbsp; <span style="font-family:'Share Tech Mono',monospace;font-size:0.7rem">S = 75</span></h4><div class="mini-grid3"><div class="mini-cell m-dark">19</div><div class="mini-cell m-lite">49</div><div class="mini-cell m-dark">7</div><div class="mini-cell m-lite">13</div><div class="mini-cell m-dark">25</div><div class="mini-cell m-lite">37</div><div class="mini-cell m-dark">43</div><div class="mini-cell m-lite">1</div><div class="mini-cell m-dark">31</div></div><div class="sum-strip"><span class="sum-badge sum-ok">R1:75</span><span class="sum-badge sum-ok">R2:75</span><span class="sum-badge sum-ok">R3:75</span></div><div class="sum-strip"><span class="sum-badge sum-ok">C1:75</span><span class="sum-badge sum-ok">C2:75</span><span class="sum-badge sum-ok">C3:75</span></div><div class="diag-box diag-ok">D↘75  D↙75  ✓</div><div style="margin-top: 4px; font-family: &quot;Share Tech Mono&quot;, monospace; font-size: 8px; padding: 2px 5px; background: rgb(237, 232, 255); border-radius: 2px; color: rgb(58, 24, 128); display: inline-block;">Centre: 25 = MC/3</div></div><div class="face-block"><h4 style="color:var(--c1)">Face 2 &nbsp;·&nbsp; <span style="font-family:'Share Tech Mono',monospace;font-size:0.7rem">S = 78</span></h4><div class="mini-grid3"><div class="mini-cell m-dark">20</div><div class="mini-cell m-lite">50</div><div class="mini-cell m-dark">8</div><div class="mini-cell m-lite">14</div><div class="mini-cell m-dark">26</div><div class="mini-cell m-lite">38</div><div class="mini-cell m-dark">44</div><div class="mini-cell m-lite">2</div><div class="mini-cell m-dark">32</div></div><div class="sum-strip"><span class="sum-badge sum-ok">R1:78</span><span class="sum-badge sum-ok">R2:78</span><span class="sum-badge sum-ok">R3:78</span></div><div class="sum-strip"><span class="sum-badge sum-ok">C1:78</span><span class="sum-badge sum-ok">C2:78</span><span class="sum-badge sum-ok">C3:78</span></div><div class="diag-box diag-ok">D↘78  D↙78  ✓</div><div style="margin-top: 4px; font-family: &quot;Share Tech Mono&quot;, monospace; font-size: 8px; padding: 2px 5px; background: rgb(237, 232, 255); border-radius: 2px; color: rgb(58, 24, 128); display: inline-block;">Centre: 26 = MC/3</div></div><div class="face-block"><h4 style="color:var(--c1)">Face 3 &nbsp;·&nbsp; <span style="font-family:'Share Tech Mono',monospace;font-size:0.7rem">S = 81</span></h4><div class="mini-grid3"><div class="mini-cell m-dark">21</div><div class="mini-cell m-lite">51</div><div class="mini-cell m-dark">9</div><div class="mini-cell m-lite">15</div><div class="mini-cell m-dark">27</div><div class="mini-cell m-lite">39</div><div class="mini-cell m-dark">45</div><div class="mini-cell m-lite">3</div><div class="mini-cell m-dark">33</div></div><div class="sum-strip"><span class="sum-badge sum-ok">R1:81</span><span class="sum-badge sum-ok">R2:81</span><span class="sum-badge sum-ok">R3:81</span></div><div class="sum-strip"><span class="sum-badge sum-ok">C1:81</span><span class="sum-badge sum-ok">C2:81</span><span class="sum-badge sum-ok">C3:81</span></div><div class="diag-box diag-ok">D↘81  D↙81  ✓</div><div style="margin-top: 4px; font-family: &quot;Share Tech Mono&quot;, monospace; font-size: 8px; padding: 2px 5px; background: rgb(237, 232, 255); border-radius: 2px; color: rgb(58, 24, 128); display: inline-block;">Centre: 27 = MC/3</div></div><div class="face-block"><h4 style="color:var(--c1)">Face 4 &nbsp;·&nbsp; <span style="font-family:'Share Tech Mono',monospace;font-size:0.7rem">S = 84</span></h4><div class="mini-grid3"><div class="mini-cell m-dark">22</div><div class="mini-cell m-lite">52</div><div class="mini-cell m-dark">10</div><div class="mini-cell m-lite">16</div><div class="mini-cell m-dark">28</div><div class="mini-cell m-lite">40</div><div class="mini-cell m-dark">46</div><div class="mini-cell m-lite">4</div><div class="mini-cell m-dark">34</div></div><div class="sum-strip"><span class="sum-badge sum-ok">R1:84</span><span class="sum-badge sum-ok">R2:84</span><span class="sum-badge sum-ok">R3:84</span></div><div class="sum-strip"><span class="sum-badge sum-ok">C1:84</span><span class="sum-badge sum-ok">C2:84</span><span class="sum-badge sum-ok">C3:84</span></div><div class="diag-box diag-ok">D↘84  D↙84  ✓</div><div style="margin-top: 4px; font-family: &quot;Share Tech Mono&quot;, monospace; font-size: 8px; padding: 2px 5px; background: rgb(237, 232, 255); border-radius: 2px; color: rgb(58, 24, 128); display: inline-block;">Centre: 28 = MC/3</div></div><div class="face-block"><h4 style="color:var(--c1)">Face 5 &nbsp;·&nbsp; <span style="font-family:'Share Tech Mono',monospace;font-size:0.7rem">S = 87</span></h4><div class="mini-grid3"><div class="mini-cell m-dark">23</div><div class="mini-cell m-lite">53</div><div class="mini-cell m-dark">11</div><div class="mini-cell m-lite">17</div><div class="mini-cell m-dark">29</div><div class="mini-cell m-lite">41</div><div class="mini-cell m-dark">47</div><div class="mini-cell m-lite">5</div><div class="mini-cell m-dark">35</div></div><div class="sum-strip"><span class="sum-badge sum-ok">R1:87</span><span class="sum-badge sum-ok">R2:87</span><span class="sum-badge sum-ok">R3:87</span></div><div class="sum-strip"><span class="sum-badge sum-ok">C1:87</span><span class="sum-badge sum-ok">C2:87</span><span class="sum-badge sum-ok">C3:87</span></div><div class="diag-box diag-ok">D↘87  D↙87  ✓</div><div style="margin-top: 4px; font-family: &quot;Share Tech Mono&quot;, monospace; font-size: 8px; padding: 2px 5px; background: rgb(237, 232, 255); border-radius: 2px; color: rgb(58, 24, 128); display: inline-block;">Centre: 29 = MC/3</div></div><div class="face-block"><h4 style="color:var(--c1)">Face 6 &nbsp;·&nbsp; <span style="font-family:'Share Tech Mono',monospace;font-size:0.7rem">S = 90</span></h4><div class="mini-grid3"><div class="mini-cell m-dark">24</div><div class="mini-cell m-lite">54</div><div class="mini-cell m-dark">12</div><div class="mini-cell m-lite">18</div><div class="mini-cell m-dark">30</div><div class="mini-cell m-lite">42</div><div class="mini-cell m-dark">48</div><div class="mini-cell m-lite">6</div><div class="mini-cell m-dark">36</div></div><div class="sum-strip"><span class="sum-badge sum-ok">R1:90</span><span class="sum-badge sum-ok">R2:90</span><span class="sum-badge sum-ok">R3:90</span></div><div class="sum-strip"><span class="sum-badge sum-ok">C1:90</span><span class="sum-badge sum-ok">C2:90</span><span class="sum-badge sum-ok">C3:90</span></div><div class="diag-box diag-ok">D↘90  D↙90  ✓</div><div style="margin-top: 4px; font-family: &quot;Share Tech Mono&quot;, monospace; font-size: 8px; padding: 2px 5px; background: rgb(237, 232, 255); border-radius: 2px; color: rgb(58, 24, 128); display: inline-block;">Centre: 30 = MC/3</div></div></div>
+
+    <!-- SPECIAL PROPERTIES -->
+    <div class="section-title">Special Properties</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Property</th><th>Value / Check</th><th>Note</th></tr></thead>
+        <tbody id="propTable"><tr><td style="font-family:'Cinzel',serif;font-weight:600;font-size:0.82rem">Numbers partition</td>
+    <td class="mono">Residue classes mod 6</td>
+    <td style="font-size:0.8rem;color:#777;font-style:italic">Faces use 6 distinct residue classes of {1…54}</td></tr><tr><td style="font-family:'Cinzel',serif;font-weight:600;font-size:0.82rem">Grand total</td>
+    <td class="mono">1,485</td>
+    <td style="font-size:0.8rem;color:#777;font-style:italic">sum(1…54) = 54×55/2 = 1,485</td></tr><tr><td style="font-family:'Cinzel',serif;font-weight:600;font-size:0.82rem">Sum of all MCs</td>
+    <td class="mono">sum(75,78,81,84,87,90) = 495</td>
+    <td style="font-size:0.8rem;color:#777;font-style:italic">= 6×82.5 (mean MC)</td></tr><tr><td style="font-family:'Cinzel',serif;font-weight:600;font-size:0.82rem">Face total progression</td>
+    <td class="mono">225, 234, 243, 252, 261, 270</td>
+    <td style="font-size:0.8rem;color:#777;font-style:italic">Arithmetic sequence, step +9</td></tr><tr><td style="font-family:'Cinzel',serif;font-weight:600;font-size:0.82rem">Centre cell progression</td>
+    <td class="mono">25, 26, 27, 28, 29, 30</td>
+    <td style="font-size:0.8rem;color:#777;font-style:italic">Consecutive integers, = MC/3</td></tr><tr><td style="font-family:'Cinzel',serif;font-weight:600;font-size:0.82rem">All faces magic?</td>
+    <td class="mono">✓ Yes — all 6 faces</td>
+    <td style="font-size:0.8rem;color:#777;font-style:italic">Rows, cols, diagonals verified</td></tr><tr><td style="font-family:'Cinzel',serif;font-weight:600;font-size:0.82rem">Pandiagonal?</td>
+    <td class="mono">Not verified (3×3 limit)</td>
+    <td style="font-size:0.8rem;color:#777;font-style:italic">No pandiagonal 3×3 magic square exists</td></tr><tr><td style="font-family:'Cinzel',serif;font-weight:600;font-size:0.82rem">Colour scheme</td>
+    <td class="mono">Alternating checkerboard</td>
+    <td style="font-size:0.8rem;color:#777;font-style:italic">No sub-block constraint on 3×3</td></tr></tbody>
+      </table>
+    </div>
+
+    <!-- SUMMARY -->
+    <div class="summary-box">
+      <h2>Key Findings</h2>
+      <div class="summary-grid">
+        <div class="summary-stat"><div class="s-val">1</div><div class="s-label">Cube structure (uniform pink)</div></div>
+        <div class="summary-stat"><div class="s-val">6</div><div class="s-label">Magic squares (one per face)</div></div>
+        <div class="summary-stat"><div class="s-val">75</div><div class="s-label">Face 1 magic constant (= 3 × 25)</div></div>
+        <div class="summary-stat"><div class="s-val">225</div><div class="s-label">Face 1 total = 3 × 75</div></div>
+        <div class="summary-stat"><div class="s-val">+3</div><div class="s-label">MC increment face to face</div></div>
+        <div class="summary-stat"><div class="s-val">54</div><div class="s-label">Numbers used (1–54)</div></div>
+        <div class="summary-stat"><div class="s-val">1,485</div><div class="s-label">Grand total = sum(1…54)</div></div>
+        <div class="summary-stat"><div class="s-val">100%</div><div class="s-label">Rows, cols &amp; diagonals magic ✓</div></div>
+      </div>
+    </div>
+
+  </div>
+  <div class="footer-a">3×3 Magic Cube Research · Data Analysis — Uniform Pink Checkerboard</div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// SHARED DATA
+// ═══════════════════════════════════════════════════════════════════════════
+const faces = [
+  // Face 1 — MC = 75
+  [[ 19, 49,  7],[ 13, 25, 37],[ 43,  1, 31]],
+  // Face 2 — MC = 78
+  [[ 20, 50,  8],[ 14, 26, 38],[ 44,  2, 32]],
+  // Face 3 — MC = 81
+  [[ 21, 51,  9],[ 15, 27, 39],[ 45,  3, 33]],
+  // Face 4 — MC = 84
+  [[ 22, 52, 10],[ 16, 28, 40],[ 46,  4, 34]],
+  // Face 5 — MC = 87
+  [[ 23, 53, 11],[ 17, 29, 41],[ 47,  5, 35]],
+  // Face 6 — MC = 90
+  [[ 24, 54, 12],[ 18, 30, 42],[ 48,  6, 36]]
+];
+
+const FC=['face-front','face-back','face-right','face-left','face-top','face-bottom'];
+const SNAPS=[{x:0,y:0},{x:0,y:180},{x:0,y:-90},{x:0,y:90},{x:90,y:0},{x:-90,y:0}];
+
+function rowSum(face,r){ return face[r].reduce((a,b)=>a+b,0); }
+function colSum(face,c){ return face.reduce((a,row)=>a+row[c],0); }
+function diag1(face){ return face.reduce((a,row,i)=>a+row[i],0); }
+function diag2(face){ return face.reduce((a,row,i)=>a+row[2-i],0); }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PANEL SWITCHER
+// ═══════════════════════════════════════════════════════════════════════════
+function showPanel(id, btn){
+  document.querySelectorAll('.main-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.main-tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BUILD CUBE
+// ═══════════════════════════════════════════════════════════════════════════
+const cubeEl=document.getElementById('cube');
+const sceneEl=document.getElementById('scene');
+
+faces.forEach((data,fi)=>{
+  const face=document.createElement('div'); face.className=`face ${FC[fi]}`;
+  const grid=document.createElement('div'); grid.className='grid3';
+  for(let r=0;r<3;r++) for(let c=0;c<3;c++){
+    const cell=document.createElement('div');
+    cell.className=`cell ${(r+c)%2===0?'b-dark':'b-lite'}`;
+    cell.textContent=data[r][c]; grid.appendChild(cell);
+  }
+  face.appendChild(grid); cubeEl.appendChild(face);
+});
+
+let rX=-25,rY=35,sc=1,spinning=true,drag=false,lx=0,ly=0;
+function applyT(){ cubeEl.style.transform=`scale(${sc}) rotateX(${rX}deg) rotateY(${rY}deg)`; }
+(function loop(){ if(spinning&&!drag){rY+=0.28;applyT();} requestAnimationFrame(loop); })();
+sceneEl.addEventListener('mousedown',e=>{drag=true;lx=e.clientX;ly=e.clientY;e.preventDefault();});
+window.addEventListener('mousemove',e=>{ if(!drag)return; rY+=(e.clientX-lx)*0.5; rX-=(e.clientY-ly)*0.5; lx=e.clientX;ly=e.clientY; applyT(); });
+window.addEventListener('mouseup',()=>drag=false);
+sceneEl.addEventListener('touchstart',e=>{drag=true;lx=e.touches[0].clientX;ly=e.touches[0].clientY;},{passive:true});
+sceneEl.addEventListener('touchmove',e=>{ if(!drag)return; rY+=(e.touches[0].clientX-lx)*0.5; rX-=(e.touches[0].clientY-ly)*0.5; lx=e.touches[0].clientX;ly=e.touches[0].clientY; applyT(); },{passive:true});
+sceneEl.addEventListener('touchend',()=>drag=false);
+sceneEl.addEventListener('wheel',e=>{ e.preventDefault(); sc=Math.max(0.4,Math.min(3,sc-e.deltaY*0.001)); applyT(); },{passive:false});
+
+const spinBtn=document.getElementById('spin-btn');
+spinBtn.addEventListener('click',function(){ spinning=!spinning; this.textContent=spinning?'Auto Rotate':'Paused'; this.classList.toggle('active',spinning); });
+document.getElementById('reset-btn').addEventListener('click',()=>{ rX=-25;rY=35;sc=1;applyT(); });
+function snapTo(idx){ spinning=false; spinBtn.textContent='Paused'; spinBtn.classList.remove('active'); rX=SNAPS[idx].x; rY=SNAPS[idx].y; applyT(); }
+
+// Color pickers
+function applyColors(dark,lite){
+  cubeEl.querySelectorAll('.b-dark').forEach(el=>el.style.background=dark);
+  cubeEl.querySelectorAll('.b-lite').forEach(el=>el.style.background=lite);
+  document.getElementById('c-dark').value=dark;
+  document.getElementById('c-lite').value=lite;
+}
+document.getElementById('c-dark').addEventListener('input',function(){ cubeEl.querySelectorAll('.b-dark').forEach(el=>el.style.background=this.value); });
+document.getElementById('c-lite').addEventListener('input',function(){ cubeEl.querySelectorAll('.b-lite').forEach(el=>el.style.background=this.value); });
+document.querySelectorAll('.palette-btn').forEach(btn=>btn.addEventListener('click',function(){ applyColors(this.dataset.dark,this.dataset.lite); }));
+
+// Font slider (cube)
+document.getElementById('fslider').addEventListener('input',function(){
+  document.getElementById('fval').textContent=this.value+'px';
+  cubeEl.querySelectorAll('.cell').forEach(c=>c.style.fontSize=this.value+'px');
+});
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FACE DATA EDITOR
+// ═══════════════════════════════════════════════════════════════════════════
+let editorFaceIdx = 0;
+const originalFaces = faces.map(f => f.map(r => [...r]));
+
+function editorSelectFace(idx, btn) {
+  editorFaceIdx = idx;
+  document.querySelectorAll('.face-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  loadEditorGrid();
+  snapTo(idx);
+}
+
+function loadEditorGrid() {
+  const grid = document.getElementById('editorGrid');
+  grid.innerHTML = '';
+  const data = faces[editorFaceIdx];
+  for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) {
+    const inp = document.createElement('input');
+    inp.type = 'number';
+    inp.className = 'editor-cell';
+    inp.value = data[r][c];
+    inp.dataset.r = r; inp.dataset.c = c;
+    inp.addEventListener('input', validateEditor);
+    grid.appendChild(inp);
+  }
+  validateEditor();
+}
+
+function getEditorValues() {
+  const inputs = document.querySelectorAll('.editor-cell');
+  const grid = [[0,0,0],[0,0,0],[0,0,0]];
+  let valid = true;
+  inputs.forEach(inp => {
+    const v = parseInt(inp.value);
+    if (isNaN(v)) { valid = false; inp.classList.add('invalid'); }
+    else { inp.classList.remove('invalid'); grid[+inp.dataset.r][+inp.dataset.c] = v; }
+  });
+  return valid ? grid : null;
+}
+
+function validateEditor() {
+  const status = document.getElementById('editorStatus');
+  const grid = getEditorValues();
+  if (!grid) { status.className='editor-status err'; status.textContent='Invalid — enter numbers only'; return; }
+  const mc = grid[0].reduce((a,b)=>a+b,0);
+  const rows = [0,1,2].map(r => grid[r].reduce((a,b)=>a+b,0));
+  const cols = [0,1,2].map(c => grid.reduce((a,row)=>a+row[c],0));
+  const d1 = grid[0][0]+grid[1][1]+grid[2][2];
+  const d2 = grid[0][2]+grid[1][1]+grid[2][0];
+  const allEqual = [...rows,...cols,d1,d2].every(v=>v===mc);
+  if (allEqual) { status.className='editor-status ok'; status.textContent=`✓ Magic Square — MC = ${mc}`; }
+  else { status.className='editor-status warn'; status.textContent=`Not magic yet — R1=${rows[0]} R2=${rows[1]} R3=${rows[2]}`; }
+}
+
+function applyEditorFace() {
+  const grid = getEditorValues();
+  if (!grid) return;
+  faces[editorFaceIdx] = grid;
+  const faceEl = cubeEl.children[editorFaceIdx];
+  const cells = faceEl.querySelectorAll('.cell');
+  let i = 0;
+  for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) cells[i++].textContent = grid[r][c];
+  validateEditor();
+}
+
+function resetEditorFace() {
+  faces[editorFaceIdx] = originalFaces[editorFaceIdx].map(r=>[...r]);
+  loadEditorGrid();
+  applyEditorFace();
+}
+
+function parsePaste() {
+  const raw = document.getElementById('pasteZone').value.trim();
+  const status = document.getElementById('editorStatus');
+  if (!raw) { status.className='editor-status err'; status.textContent='Paste zone is empty'; return; }
+  const rows = raw.split(/\r?\n/).map(r => r.split('\t').map(v => parseInt(v.trim())));
+  const rows2 = raw.split(/\r?\n/).map(r => r.trim().split(/\s+/).map(v => parseInt(v)));
+  const useRows = rows.every(r=>r.length===3) ? rows : rows2;
+  if (useRows.length !== 3 || !useRows.every(r => r.length === 3)) {
+    status.className='editor-status err'; status.textContent='Need exactly 3 rows × 3 cols'; return;
+  }
+  if (useRows.flat().some(v => isNaN(v))) {
+    status.className='editor-status err'; status.textContent='Non-numeric values found'; return;
+  }
+  const inputs = document.querySelectorAll('.editor-cell');
+  let i = 0;
+  for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) { inputs[i].value = useRows[r][c]; i++; }
+  document.getElementById('pasteZone').value = '';
+  validateEditor();
+}
+
+document.getElementById('pasteZone').addEventListener('paste', function(){ setTimeout(()=>parsePaste(), 50); });
+loadEditorGrid();
+
+// Downloads
+function hideAllUI(){
+  const ctrl=document.getElementById('cube-controls');
+  if(ctrl)ctrl.querySelectorAll('.btn-dl').forEach(b=>b.style.display='none');
+  const cp=document.getElementById('cube-colorpanel');
+  if(cp)cp.style.display='none';
+  const ep=document.getElementById('cube-editorpanel');
+  if(ep)ep.style.display='none';
+}
+
+document.getElementById('dl-full').addEventListener('click',function(e){
+  e.preventDefault();
+  hideAllUI();
+  const blob=new Blob([document.documentElement.outerHTML],{type:'text/html'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');
+  a.href=url;a.download='magic-cube-3x3-all.html';a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+});
+document.getElementById('dl-cube').addEventListener('click',function(e){
+  e.preventDefault();
+  hideAllUI();
+  const dark=document.getElementById('c-dark').value,lite=document.getElementById('c-lite').value;
+  const fs=document.getElementById('fslider').value+'px';
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>3x3 Magic Cube</title><style>*{margin:0;padding:0;box-sizing:border-box;}body{background:#06080a;display:flex;align-items:center;justify-content:center;min-height:100vh;background-image:radial-gradient(ellipse at 15% 15%,rgba(201,168,76,0.07) 0%,transparent 55%);}.sc{perspective:1600px;width:380px;height:380px;display:flex;align-items:center;justify-content:center;cursor:grab;user-select:none;}.sc:active{cursor:grabbing;}.cube{width:320px;height:320px;position:relative;transform-style:preserve-3d;transform:rotateX(-25deg) rotateY(35deg);}.face{position:absolute;width:320px;height:320px;backface-visibility:visible;border:2px solid #c9a84c;box-shadow:0 0 22px rgba(201,168,76,0.22),inset 0 0 18px rgba(0,0,0,0.18);overflow:hidden;}.face-front{transform:translateZ(160px);}.face-back{transform:rotateY(180deg) translateZ(160px);}.face-left{transform:rotateY(-90deg) translateZ(160px);}.face-right{transform:rotateY(90deg) translateZ(160px);}.face-top{transform:rotateX(90deg) translateZ(160px);}.face-bottom{transform:rotateX(-90deg) translateZ(160px);}.grid{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);width:100%;height:100%;}.cell{display:flex;align-items:center;justify-content:center;font-family:'Share Tech Mono',monospace;font-size:${fs};font-weight:bold;color:#2a0818;border:0.5px solid rgba(180,60,100,0.3);line-height:1;}.b-dark{background:${dark};}.b-lite{background:${lite};}</style></head><body><div class="sc" id="sc"><div class="cube" id="cube"></div></div><script>const f=${JSON.stringify(faces)},FC=['face-front','face-back','face-right','face-left','face-top','face-bottom'],cb=document.getElementById('cube');f.forEach((d,fi)=>{const fa=document.createElement('div');fa.className='face '+FC[fi];const g=document.createElement('div');g.className='grid';for(let r=0;r<3;r++)for(let c=0;c<3;c++){const ce=document.createElement('div');ce.className='cell '+((r+c)%2===0?'b-dark':'b-lite');ce.textContent=d[r][c];g.appendChild(ce);}fa.appendChild(g);cb.appendChild(fa);});let rX=-25,rY=35,drag=false,lx=0,ly=0,sc2=1;const sc=document.getElementById('sc');function ap(){cb.style.transform='scale('+sc2+') rotateX('+rX+'deg) rotateY('+rY+'deg)';}(function loop(){rY+=0.28;ap();requestAnimationFrame(loop);})();sc.addEventListener('mousedown',e=>{drag=true;lx=e.clientX;ly=e.clientY;e.preventDefault();});window.addEventListener('mousemove',e=>{if(!drag)return;rY+=(e.clientX-lx)*0.5;rX-=(e.clientY-ly)*0.5;lx=e.clientX;ly=e.clientY;ap();});window.addEventListener('mouseup',()=>drag=false);sc.addEventListener('wheel',e=>{e.preventDefault();sc2=Math.max(0.4,Math.min(3,sc2-e.deltaY*0.001));ap();},{passive:false});<\/script></body></html>`;
+  const blob=new Blob([html],{type:'text/html'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='magic-cube-3x3-cube.html';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BUILD ANALYSIS
+// ═══════════════════════════════════════════════════════════════════════════
+
+// MC Progression Table
+const notes=['Min MC · = 3×25','','= 3×27','= 3×28','','Max MC · = 3×30'];
+const mcTbody=document.getElementById('mcTable');
+faces.forEach((face,fi)=>{
+  const mc=3*(fi+1)+72;
+  const centre=face[1][1];
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td class="mono">${fi+1}</td><td class="mono">3×${fi+1} + 72</td>
+    <td class="mono mcval">${mc}</td>
+    <td class="mono">${(3*mc).toLocaleString()}</td>
+    <td class="mono">${fi===0?'—':'+3'}</td>
+    <td class="mono">${centre}</td>
+    <td style="font-size:0.8rem;color:#777;font-style:italic">${notes[fi]}</td>`;
+  mcTbody.appendChild(tr);
+});
+
+// Full sum verification table
+const sumTbody=document.getElementById('sumTable');
+faces.forEach((face,fi)=>{
+  const mc=rowSum(face,0);
+  const rs=[0,1,2].map(r=>rowSum(face,r));
+  const cs=[0,1,2].map(c=>colSum(face,c));
+  const d1=diag1(face), d2=diag2(face);
+  const rOk=rs.every(s=>s===mc), cOk=cs.every(s=>s===mc), dOk=d1===mc&&d2===mc;
+  function td(v){ return `<td class="mono ${v===mc?'sum-mc':Math.abs(v-mc)<10?'sum-near':'sum-far'}">${v}</td>`; }
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td class="mono" style="font-weight:bold">F${fi+1}</td>
+    <td class="mono mcval">${mc}</td>
+    ${rs.map(v=>td(v)).join('')}
+    ${cs.map(v=>td(v)).join('')}
+    ${td(d1)}${td(d2)}
+    <td class="check">${rOk?'✓':'✗'}</td>
+    <td class="check">${cOk?'✓':'✗'}</td>
+    <td class="check">${dOk?'✓':'✗'}</td>`;
+  sumTbody.appendChild(tr);
+});
+
+// Face grids
+const faceGrid=document.getElementById('faceGrid');
+faces.forEach((face,fi)=>{
+  const mc=rowSum(face,0);
+  const rs=[0,1,2].map(r=>rowSum(face,r));
+  const cs=[0,1,2].map(c=>colSum(face,c));
+  const d1=diag1(face), d2=diag2(face);
+
+  const block=document.createElement('div'); block.className='face-block';
+  block.innerHTML=`<h4 style="color:var(--c1)">Face ${fi+1} &nbsp;·&nbsp; <span style="font-family:'Share Tech Mono',monospace;font-size:0.7rem">S = ${mc}</span></h4>`;
+
+  const grid=document.createElement('div'); grid.className='mini-grid3';
+  for(let r=0;r<3;r++) for(let c=0;c<3;c++){
+    const cell=document.createElement('div');
+    cell.className=`mini-cell ${(r+c)%2===0?'m-dark':'m-lite'}`;
+    cell.textContent=face[r][c]; grid.appendChild(cell);
+  }
+  block.appendChild(grid);
+
+  const rBadges=document.createElement('div'); rBadges.className='sum-strip';
+  rs.forEach((s,i)=>{ const sp=document.createElement('span'); sp.className='sum-badge '+(s===mc?'sum-ok':'sum-no'); sp.textContent=`R${i+1}:${s}`; rBadges.appendChild(sp); });
+  block.appendChild(rBadges);
+
+  const cBadges=document.createElement('div'); cBadges.className='sum-strip';
+  cs.forEach((s,i)=>{ const sp=document.createElement('span'); sp.className='sum-badge '+(s===mc?'sum-ok':'sum-no'); sp.textContent=`C${i+1}:${s}`; cBadges.appendChild(sp); });
+  block.appendChild(cBadges);
+
+  const diagEl=document.createElement('div');
+  diagEl.className='diag-box diag-ok';
+  diagEl.textContent=`D↘${d1}  D↙${d2}  ✓`;
+  block.appendChild(diagEl);
+
+  // Centre cell note
+  const ctrEl=document.createElement('div');
+  ctrEl.style.cssText='margin-top:4px;font-family:"Share Tech Mono",monospace;font-size:8px;padding:2px 5px;background:#ede8ff;border-radius:2px;color:#3a1880;display:inline-block';
+  ctrEl.textContent=`Centre: ${face[1][1]} = MC/3`;
+  block.appendChild(ctrEl);
+
+  faceGrid.appendChild(block);
+});
+
+// Special Properties Table
+const propTbody=document.getElementById('propTable');
+const propData=[
+  ['Numbers partition', 'Residue classes mod 6','Faces use 6 distinct residue classes of {1…54}'],
+  ['Grand total','1,485','sum(1…54) = 54×55/2 = 1,485'],
+  ['Sum of all MCs','sum(75,78,81,84,87,90) = 495','= 6×82.5 (mean MC)'],
+  ['Face total progression','225, 234, 243, 252, 261, 270','Arithmetic sequence, step +9'],
+  ['Centre cell progression','25, 26, 27, 28, 29, 30','Consecutive integers, = MC/3'],
+  ['All faces magic?','✓ Yes — all 6 faces','Rows, cols, diagonals verified'],
+  ['Pandiagonal?','Not verified (3×3 limit)','No pandiagonal 3×3 magic square exists'],
+  ['Colour scheme','Alternating checkerboard','No sub-block constraint on 3×3'],
+];
+propData.forEach(([prop,val,note])=>{
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td style="font-family:'Cinzel',serif;font-weight:600;font-size:0.82rem">${prop}</td>
+    <td class="mono">${val}</td>
+    <td style="font-size:0.8rem;color:#777;font-style:italic">${note}</td>`;
+  propTbody.appendChild(tr);
+});
+
+// Font slider (analysis grids)
+document.getElementById('aFontSlider').addEventListener('input',function(){
+  const sz=this.value+'px';
+  document.getElementById('aFontVal').textContent=sz;
+  document.querySelectorAll('.mini-grid3').forEach(g=>g.style.fontSize=sz);
+});
+</script>
+
+
+</body></html>

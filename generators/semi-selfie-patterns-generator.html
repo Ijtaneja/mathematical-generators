@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Semi-Selfie Power Generator</title>
+<style>
+:root{--ink:#14213d;--ink2:#4a5568;--gold:#c8960a;--gold2:#8a6410;--pur:#7a1f6e;--red:#c0162c;--blue:#1035b0}
+*{box-sizing:border-box}
+body{margin:0;font-family:Georgia,"Times New Roman",serif;color:var(--ink);background:linear-gradient(120deg,#fbf5e2 0%,#f3edd2 45%,#dfe6c6 80%,#c9d6ad 100%);min-height:100vh}
+.wrap{max-width:1200px;margin:0 auto;padding:22px 16px 40px}
+.card{border-radius:24px;padding:20px 24px;margin:0 0 18px;border:10px solid transparent;
+  background:linear-gradient(var(--c1),var(--c2)) padding-box,linear-gradient(135deg,#f7e3a4,#d9ac3e 45%,#8f6514) border-box;
+  box-shadow:inset 6px 8px 18px rgba(70,45,5,.22),inset -4px -4px 10px rgba(255,250,225,.85),0 10px 26px rgba(60,40,5,.22)}
+.c-head{--c1:#1f3a7a;--c2:#101f5c;color:#fff}
+.c-pick{--c1:#fbf6e6;--c2:#f1e8cc}
+.c-main{--c1:#fffdf6;--c2:#f6efd9}
+.c-sum{--c1:#f3f6fc;--c2:#e1e8f5}
+.c-check{--c1:#f2f8f1;--c2:#e2efe0}
+.head{display:flex;align-items:center;gap:22px;flex-wrap:wrap}
+.head img{width:104px;height:104px;border-radius:50%;object-fit:cover;border:5px solid #e2b13c;box-shadow:0 6px 16px rgba(0,0,0,.4)}
+.head h1{margin:0;font-size:clamp(26px,4vw,40px);background:linear-gradient(#fff6d6,#f4d27a,#c8960a);-webkit-background-clip:text;background-clip:text;color:transparent}
+.head .sub{font-style:italic;color:#dbe6ff;font-size:18px;margin-top:4px}
+.head .by{margin-top:8px;font-weight:700;color:#ffe39a}
+.lead{margin:12px 0 0;color:#e8eeff;line-height:1.55;font-size:15.5px}
+.lead b{color:#ffe39a}
+h2{margin:0 0 12px;font-size:22px}
+.row{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center}
+.lbl{font:800 12px Georgia,serif;letter-spacing:.08em;text-transform:uppercase;color:var(--gold2);margin-right:4px}
+.fld{display:inline-flex;align-items:center;gap:6px}
+input[type=number],input[type=text]{font:700 16px Georgia,serif;padding:7px 10px;border-radius:12px;border:1px solid #c9b27a;background:#fffdf5;color:var(--ink);
+  box-shadow:inset 2px 2px 5px rgba(120,90,20,.18)}
+input[type=number]{width:90px}
+label.ck{font-size:15px;display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+select{font:700 14px Georgia,serif;padding:6px 10px;border-radius:12px;border:1px solid #c9b27a;background:#fffdf5}
+button.b{font:700 14px Georgia,serif;border-radius:999px;padding:8px 16px;cursor:pointer;border:1px solid rgba(0,0,0,.25);color:var(--ink);
+  background:linear-gradient(145deg,#fffaf0,#e9dcb8);box-shadow:inset 2px 3px 6px rgba(255,255,255,.7),inset -2px -3px 6px rgba(120,90,20,.25),0 3px 8px rgba(0,0,0,.15)}
+button.b:hover{filter:brightness(1.04)}
+button.b.go{background:linear-gradient(145deg,#8fe0c8,#2f9e86);color:#06281f}
+button.b.stop{background:linear-gradient(145deg,#f6c1c1,#d16b6b);color:#3a0808}
+button.b:disabled{opacity:.5;cursor:default}
+.presets button.b{padding:5px 12px;font-size:13px}
+.status{font:italic 15px Georgia,serif;color:#5b2d82;margin-top:10px;min-height:20px}
+.bar{height:8px;border-radius:6px;background:rgba(0,0,0,.08);overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#e2b13c,#2f9e86);transition:width .2s}
+.res{font-size:19px;line-height:1.9}
+.blk{padding:8px 4px 10px;border-bottom:1px dashed rgba(138,100,16,.35)}
+.blk:last-child{border-bottom:none}
+.lhs{color:var(--pur);font-weight:bold}
+.num{color:var(--red);font-weight:bold}
+.ex{color:var(--blue)}
+.rvt{display:inline-block;font-size:12px;font-family:Arial,sans-serif;font-weight:bold;letter-spacing:.04em;color:#fff;background:linear-gradient(135deg,#1c8a7a,#0e5c52);border-radius:7px;padding:1px 7px;margin:0 6px 0 2px;vertical-align:2px}
+.rnum{color:#0e7a6a;font-weight:bold}
+.blk.rvb{border-left:3px solid #1c8a7a;padding-left:10px;margin-top:4px}
+.pat .rv{margin:6px 0 2px 28px;padding:5px 12px 6px;border-left:3px solid #1c8a7a;border-radius:0 10px 10px 0;background:rgba(28,138,122,.07)}
+.pat .rv .rvh{font-size:13.5px;font-style:italic;color:#0e5c52;font-weight:bold;margin-bottom:2px}
+.pat .rv .pl{padding-left:6px}
+.cnt{font-size:13px;color:var(--ink2);font-style:italic;margin-left:8px}
+.none{color:#888;font-style:italic;font-size:15px}
+.ln{white-space:nowrap}
+.ln .eq{display:inline-block;min-width:1.4em;text-align:center;color:var(--ink2)}
+.tbl{border-collapse:separate;border-spacing:0;margin:4px 0;font-size:15px;width:100%}
+.tbl th,.tbl td{padding:6px 10px;text-align:center;border-bottom:1px solid rgba(0,0,0,.08)}
+.tbl th{font:800 12px Georgia,serif;letter-spacing:.06em;text-transform:uppercase;color:var(--gold2)}
+.tbl td.n{text-align:left;font-family:"Courier New",monospace;word-break:break-all}
+.tbl tr.zero td{color:#999}
+.tblwrap{max-height:340px;overflow:auto;border-radius:12px;background:rgba(255,255,255,.55);box-shadow:inset 2px 2px 6px rgba(0,0,0,.08)}
+textarea{width:100%;min-height:150px;font:15px "Courier New",monospace;padding:10px;border-radius:12px;border:1px solid #b9cdb5;background:#fbfffa;box-shadow:inset 2px 2px 5px rgba(0,0,0,.08)}
+.ok{color:#11804a;font-weight:bold}.bad{color:#c0162c;font-weight:bold}
+.chk div{padding:3px 0;font-size:15px}
+.note{font-size:14.5px;color:var(--ink2);line-height:1.5}
+.refs{margin:0;padding-left:24px;line-height:1.6;font-size:16px}.refs li{margin:6px 0}.refs a{color:#1f5fb0;word-break:break-all}
+details.opt summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:12px}
+details.opt summary::-webkit-details-marker{display:none}
+details.opt summary h2{margin:0;display:inline}
+details.opt summary::before{content:"\25B6";color:var(--gold2);font-size:16px;transition:transform .2s}
+details.opt[open] summary::before{transform:rotate(90deg)}
+details.opt .hint{font:italic 14px Georgia,serif;color:var(--ink2)}
+details.opt[open] .hint{display:none}
+details.opt[open] summary{margin-bottom:10px}
+.tabs{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:0 0 18px}
+.tabs .tab{font:700 16px Georgia,serif;padding:10px 22px;border-radius:999px;cursor:pointer;border:1px solid rgba(0,0,0,.25);color:var(--ink);
+  background:linear-gradient(145deg,#fffaf0,#e9dcb8);box-shadow:inset 2px 3px 6px rgba(255,255,255,.7),inset -2px -3px 6px rgba(120,90,20,.25),0 3px 8px rgba(0,0,0,.15)}
+.tabs .tab.on{background:linear-gradient(145deg,#2c5aa0,#4a86d0);color:#fff;box-shadow:inset 3px 3px 7px rgba(0,0,0,.35)}
+.pane{display:none}.pane.on{display:block}
+.pat{padding:10px 4px 12px;border-bottom:1px dashed rgba(138,100,16,.35)}
+.pat:last-child{border-bottom:none}
+.pat .no{font-weight:bold;color:var(--gold2);margin-right:8px}
+.pat .cap{font-size:13.5px;color:var(--ink2);font-style:italic}
+.pat .pl{white-space:nowrap;padding-left:28px}
+.pat .pl .num{display:inline-block;min-width:0}
+.digck{display:inline-flex;align-items:center;gap:2px;font-size:15px;margin-right:4px}
+.foot{text-align:center;color:var(--ink2);font-size:14px;margin-top:6px}
+.links{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:10px}
+.links a{display:inline-block;padding:9px 16px;border-radius:999px;text-decoration:none;font:700 14px Georgia,serif;color:#14213d;
+  background:linear-gradient(145deg,#fff6d6,#e2b13c);box-shadow:inset 2px 3px 5px rgba(255,255,255,.6),inset -2px -3px 6px rgba(120,80,0,.35),0 4px 10px rgba(0,0,0,.18)}
+@media (max-width:640px){.card{padding:16px 14px}.res{font-size:16px}.ln{white-space:normal}}
+
+body .card{background:linear-gradient(var(--c1),var(--c2)) padding-box,linear-gradient(135deg,var(--f1,#f7e3a4),var(--f2,#d9ac3e) 45%,var(--f3,#8f6514)) border-box}
+body.cs-ocean{--f1:#d6eafc;--f2:#5b9bd5;--f3:#1f4e89}
+body.cs-ocean .card:not(.c-head){--c1:#f4f9fe;--c2:#dbe9f7}
+body.cs-peach{--f1:#f7d6c8;--f2:#cf7f86;--f3:#7a2f4f}
+body.cs-peach .card:not(.c-head){--c1:#fff6f1;--c2:#f4dfd4}
+body.cs-mint{--f1:#f7e3a4;--f2:#d9ac3e;--f3:#8f6514}
+body.cs-mint .card:not(.c-head){--c1:#f3fcf7;--c2:#d9f0e3}
+body.st-classic .card{border-width:3px;box-shadow:0 3px 10px rgba(40,30,10,.14)}
+body.bg-cream{background:linear-gradient(120deg,#fbf5e2 0%,#f3edd2 45%,#dfe6c6 80%,#c9d6ad 100%)}
+body.bg-blue{background:linear-gradient(160deg,#e3f0fc,#cfe3f6)}
+body.bg-peach{background:linear-gradient(160deg,#fbeee4,#efd7c7)}
+body.bg-yellow{background:linear-gradient(160deg,#fff9e3,#fdefc4)}
+body.bg-mint{background:linear-gradient(160deg,#e6f7ef,#cdeedd)}
+body .c-theme{--c1:#fbf6e6;--c2:#f1e8cc}
+body .c-theme .tb{display:flex;flex-wrap:wrap;gap:12px 26px;align-items:center}
+body .c-theme .grp{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px;font:800 12px Georgia,serif;letter-spacing:.08em;text-transform:uppercase;color:#8a6410}
+body .c-theme select{font:700 14px Georgia,serif;padding:6px 10px;border-radius:12px;border:1px solid #c9b27a;background:#fffdf5;text-transform:none;letter-spacing:0}
+body .c-theme button{font:700 13px Georgia,serif;text-transform:none;letter-spacing:0;border-radius:999px;padding:6px 13px;cursor:pointer;border:1px solid rgba(0,0,0,.25);color:#14213d;
+  background:linear-gradient(145deg,#fffaf0,#e9dcb8);box-shadow:inset 2px 3px 6px rgba(255,255,255,.7),inset -2px -3px 6px rgba(120,90,20,.25),0 3px 8px rgba(0,0,0,.15)}
+body .c-theme button.on{background:linear-gradient(145deg,#2c5aa0,#4a86d0);color:#fff;box-shadow:inset 3px 3px 7px rgba(0,0,0,.35)}
+body .c-theme .sw{display:inline-block;width:13px;height:13px;border-radius:50%;vertical-align:-2px;margin-right:5px;border:1px solid rgba(0,0,0,.25)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card c-head">
+    <div class="head">
+      <img src="data:image/jpeg;base64,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" alt="Inder J. Taneja">
+      <div>
+        <h1>Semi-Selfie Power Generator</h1>
+        <div class="sub">The digits of a<sup>n</sup>, in order, give back a &mdash; with their patterns</div>
+        <div class="by">Created by Inder J. Taneja</div>
+      </div>
+    </div>
+    <p class="lead">Write the digits of <b>a<sup>n</sup></b> in their own order and put only <b>+</b> or <b>&minus;</b> between them (neighbouring digits may also be joined into one number).
+      When the result is the base <b>a</b>, we get a <b>semi-selfie</b> representation, for example
+      <b>2<sup>13</sup> = 8192 = (8+1&minus;9+2)<sup>13</sup></b> and <b>27<sup>3</sup> = 19683 = (1+9+6+8+3)<sup>3</sup></b>. The generator finds all such expressions for a range of exponents, and in the second tab it finds <b>patterns</b> of them.</p>
+  </div>
+
+  <div class="card c-theme"><h2 style="margin:0 0 12px">Colour options</h2><div class="tb">
+  <label class="grp">Colour system <select id="thCs"><option value="original">Original colours</option><option value="ocean">Ocean blue</option><option value="peach">Peach &amp; plum</option><option value="mint">Mint &amp; gold</option></select></label>
+  <span class="grp">Cards: <button data-st="glass">3D Glass</button><button data-st="classic">Classic</button></span>
+  <span class="grp">Background: <button data-bgc="cream"><span class="sw" style="background:#f3edd2"></span>Cream</button><button data-bgc="blue"><span class="sw" style="background:#cfe3f6"></span>Light blue</button><button data-bgc="peach"><span class="sw" style="background:#efd7c7"></span>Peach</button><button data-bgc="yellow"><span class="sw" style="background:#fdefc4"></span>Light yellow</button><button data-bgc="mint"><span class="sw" style="background:#cdeedd"></span>Mint</button></span>
+</div></div>
+
+  <div class="tabs"><button class="tab on" data-tab="pane1">Semi-Selfie Powers</button><button class="tab" data-tab="pane2">Patterns in Semi-Selfie Numbers</button></div>
+
+  <div class="pane on" id="pane1">
+  <div class="card c-pick">
+    <h2>Settings</h2>
+    <div class="row">
+      <span class="fld"><span class="lbl">Base <i style="text-transform:none;font-size:15px">a</i></span><input type="number" id="base" value="2" min="2"></span>
+      <span class="fld"><span class="lbl">Exponents <i style="text-transform:none;font-size:15px">n</i> from</span><input type="number" id="n1" value="2" min="1"></span>
+      <span class="fld"><span class="lbl">to</span><input type="number" id="n2" value="24" min="1"></span>
+      <span class="fld"><span class="lbl">Target</span><input type="text" id="target" value="" placeholder="= a" style="width:110px"></span>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <span class="fld"><span class="lbl">Joined digits up to</span><select id="grp"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option value="15">any</option></select></span>
+      <label class="ck"><input type="checkbox" id="lead" checked> minus sign before the first number</label>
+      <label class="ck"><input type="checkbox" id="zero" checked> numbers with a leading zero (04, 07, 048)</label>
+      <label class="ck"><input type="checkbox" id="neg"> also &minus;a for even n</label>
+      <label class="ck"><input type="checkbox" id="z1" checked> zeros joined to the next number (+0&minus;48 &rarr; &minus;048), counted once</label>
+      <label class="ck"><input type="checkbox" id="hide" checked> hide exponents with no representation</label>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <span class="fld"><span class="lbl">Show per exponent</span><select id="show"><option>5</option><option selected>20</option><option>100</option><option value="0">all</option></select></span>
+      <span class="fld"><span class="lbl">Order</span><select id="order"><option value="few">fewest numbers first</option><option value="many">most numbers first</option><option value="found">as found</option></select></span>
+      <span class="fld"><span class="lbl">Digits read</span><select id="dir"><option value="b" selected>forwards and backwards</option><option value="f">forwards only (normal)</option><option value="r">backwards only (reverse type)</option></select></span>
+      <span class="fld presets"><span class="lbl">Examples</span>
+        <button class="b" data-p="2,2,24">a = 2</button><button class="b" data-p="3,2,20">a = 3</button><button class="b" data-p="27,2,10">a = 27</button><button class="b" data-p="2027,2,6">a = 2027</button></span>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <button class="b go" id="go">Generate</button><button class="b stop" id="stop" disabled>Stop</button>
+      <button class="b" id="cpTxt" disabled>Copy text</button><button class="b" id="cpTex" disabled>Copy LaTeX</button><button class="b" id="dl" disabled>Download .txt</button>
+    </div>
+    <div class="status" id="status"></div>
+    <div class="bar"><i id="barI"></i></div>
+  </div>
+
+  <div class="card c-main">
+    <h2>Representations</h2>
+    <div class="res" id="res"><span class="none">Press Generate.</span></div>
+  </div>
+
+  <div class="card c-sum">
+    <h2>Summary</h2>
+    <div class="tblwrap"><table class="tbl"><thead><tr><th>n</th><th>a<sup>n</sup></th><th>digits</th><th>representations</th><th>reverse type</th></tr></thead><tbody id="sum"></tbody></table></div>
+  </div>
+  </div>
+
+  <div class="pane" id="pane2">
+  <div class="card c-pick">
+    <h2>Pattern settings</h2>
+    <p class="note" style="margin-top:0">A <b>pattern</b> is a run of semi-selfie numbers whose bases grow in a regular way and whose expressions keep the same signs, for example
+      <span class="ex">121 = (12&minus;1)<sup>2</sup>, 10201 = (102&minus;01)<sup>2</sup>, 1002001 = (1002&minus;001)<sup>2</sup>, 100020001 = (10002&minus;0001)<sup>2</sup></span>.</p>
+    <div class="row">
+      <span class="fld"><span class="lbl">Starting bases from</span><input type="number" id="pa1" value="2" min="2"></span>
+      <span class="fld"><span class="lbl">to</span><input type="number" id="pa2" value="150" min="2"></span>
+      <span class="fld"><span class="lbl">Exponents from</span><input type="number" id="pk1" value="2" min="2"></span>
+      <span class="fld"><span class="lbl">to</span><input type="number" id="pk2" value="4" min="2"></span>
+      <span class="fld"><span class="lbl">Lines per pattern</span><select id="pm"><option>3</option><option selected>4</option><option>5</option><option>6</option></select></span>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <span class="lbl">How the base grows</span>
+      <label class="ck"><input type="checkbox" id="gIns" checked> a repeated digit is inserted</label>
+      <span class="fld" id="digBox"><span class="lbl" style="margin-left:6px">digits</span></span>
+      <label class="ck"><input type="checkbox" id="gStep1" checked> 1 digit per step</label>
+      <label class="ck"><input type="checkbox" id="gStep2"> 2 digits per step</label>
+      <label class="ck"><input type="checkbox" id="gTen"> multiplied by 10</label>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <span class="lbl">Expressions</span>
+      <label class="ck"><input type="checkbox" id="pZeroT" checked> numbers made only of zeros (00, 0000)</label>
+      <label class="ck"><input type="checkbox" id="pPairs"> cancelling pairs such as +9&minus;9, +99&minus;99</label>
+      <label class="ck"><input type="checkbox" id="pStrict" checked> regular growth only (term lengths grow evenly)</label>
+      <label class="ck"><input type="checkbox" id="pRev" checked> also reverse type (digits read backwards)</label>
+      <span class="fld"><span class="lbl">Show</span><select id="pRevOnly"><option value="0" selected>all patterns</option><option value="1">only patterns that reverse in every line</option></select></span>
+      <span class="fld"><span class="lbl">Patterns per family</span><select id="pPer"><option value="1" selected>one</option><option value="0">all sign patterns</option></select></span>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <span class="fld presets"><span class="lbl">Examples</span>
+        <button class="b" data-pp="11,11,2,4,0,1,0,0">121, 10201, &hellip;</button><button class="b" data-pp="9,9,2,2,9,1,0,0">81, 9801, &hellip;</button>
+        <button class="b" data-pp="198,198,2,2,9,2,0,1">39204, &hellip; (pairs)</button><button class="b" data-pp="5,5,5,5,,0,1,0">3125, &hellip; (&times;10)</button></span>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <button class="b go" id="pGo">Find patterns</button><button class="b stop" id="pStop" disabled>Stop</button>
+      <button class="b" id="pTxt" disabled>Copy text</button><button class="b" id="pTex" disabled>Copy LaTeX</button><button class="b" id="pDl" disabled>Download .txt</button>
+    </div>
+    <div class="status" id="pStatus"></div>
+    <div class="bar"><i id="pBar"></i></div>
+  </div>
+
+  <div class="card c-main">
+    <h2>Patterns</h2>
+    <div class="res" id="pRes"><span class="none">Press Find patterns.</span></div>
+  </div>
+  </div>
+
+  <div class="card c-check">
+    <h2>Check your own expressions</h2>
+    <p class="note">Paste lines such as <code>2^{13}:=8192=(8+1-9+2)^{13}</code>, <code>27^3 = (1+9+6+8+3)^3</code> or pattern lines such as <code>10201 = (102-01)^2</code>, and reverse-type lines such as <code>2^{22}:=4194304, reversed 4034914=(4-03-4-9+14)^{22}</code> or <code>9801 reversed 1089 = (10+89)^2</code>, one per line. Each line is checked: the digits must be those of a<sup>n</sup> in order, and the bracket must give a (or &minus;a for even n).</p>
+    <textarea id="chkIn">2^{13}:=8192=(8+1-9+2)^{13};
+2^{20}:=1048576=(-1-048+57-6)^{20};
+27^5 = (14+3+4+8-9+07)^5
+2^{22}:=4194304, reversed 4034914=(4-03-4-9+14)^{22};
+9801 reversed 1089 = (10+89)^2</textarea>
+    <div class="row" style="margin-top:10px"><button class="b go" id="chkGo">Check</button></div>
+    <div class="chk" id="chkOut"></div>
+  </div>
+
+  <div class="card c-pick">
+    <details class="opt"><summary><h2>References</h2><span class="hint">click to show</span></summary>
+    <ol class="refs">
+      <li>J.S. Madachy, <i>Mathematics on Vacations</i>, Charles Scribner's Sons, New York, 1966, pp. 167-170.</li>
+      <li>H. Heinz, <i>Miscellaneous Number Patterns</i>, <a href="http://recmath.org/Magic%20Squares/miscnum.htm" target="_blank" rel="noopener">http://recmath.org/Magic%20Squares/miscnum.htm</a>.</li>
+      <li>Inder J. Taneja, <i>Semi-Selfie Numbers</i>, Zenodo, February 12, 2019, pp. 1-394, <a href="http://doi.org/10.5281/zenodo.2562390" target="_blank" rel="noopener">http://doi.org/10.5281/zenodo.2562390</a>.</li>
+      <li>Inder J. Taneja, <i>Power-Type Semi-Selfie Numbers and Patterns</i>, Zenodo, July 16, 2019, pp. 1-130, <a href="http://doi.org/10.5281/zenodo.3338366" target="_blank" rel="noopener">http://doi.org/10.5281/zenodo.3338366</a>.</li>
+      <li>Inder J. Taneja, <i>Patterns in Selfie and Semi-Selfie Numbers</i>, Zenodo, February 12, 2019, pp. 1-51, <a href="http://doi.org/10.5281/zenodo.2563202" target="_blank" rel="noopener">http://doi.org/10.5281/zenodo.2563202</a>.</li>
+    </ol></details>
+  </div>
+
+  <div class="card c-pick">
+    <details class="opt"><summary><h2>Previous Work</h2><span class="hint">click to show</span></summary>
+    <ol class="refs">
+      <li>Inder J. Taneja, <i>Semi-Selfie Numbers and Multiplicative Selfie Equalities</i>, RGMIA Research Report Collection, 20 (2017), Art. 37, pp. 1-63, <a href="https://rgmia.org/papers/v20/v20a37.pdf" target="_blank" rel="noopener">https://rgmia.org/papers/v20/v20a37.pdf</a>.</li>
+      <li>Inder J. Taneja, <i>Semi-Selfie Numbers-I</i>, RGMIA Research Report Collection, 20 (2017), Art. 83, <a href="https://rgmia.org/papers/v20/v20a83.pdf" target="_blank" rel="noopener">https://rgmia.org/papers/v20/v20a83.pdf</a>.</li>
+      <li>Inder J. Taneja, <i>Semi-Selfie Number-II</i>, RGMIA Research Report Collection, 20 (2017), Art. 116, <a href="https://rgmia.org/papers/v20/v20a116.pdf" target="_blank" rel="noopener">https://rgmia.org/papers/v20/v20a116.pdf</a>.</li>
+      <li>Inder J. Taneja, <i>Patterns in Semi-Selfie Numbers</i>, RGMIA Research Report Collection, 20 (2017), Art. 95, pp. 1-26, <a href="https://rgmia.org/papers/v20/v20a95.pdf" target="_blank" rel="noopener">https://rgmia.org/papers/v20/v20a95.pdf</a>.</li>
+      <li><i>Semi-Selfie Numbers &ndash; Numbers Magic</i>, <a href="https://inderjtaneja.wordpress.com/2017/07/11/semi-selfie-numbers/" target="_blank" rel="noopener">https://inderjtaneja.wordpress.com/2017/07/11/semi-selfie-numbers/</a>.</li>
+      <li><i>Patterns in Semi-Selfie Numbers &ndash; Numbers Magic</i>, <a href="https://inderjtaneja.wordpress.com/2017/08/21/patterns-in-semi-selfie-numbers/" target="_blank" rel="noopener">https://inderjtaneja.wordpress.com/2017/08/21/patterns-in-semi-selfie-numbers/</a>.</li>
+    </ol></details>
+  </div>
+
+  <div class="foot">Inder J. Taneja · Semi-Selfie Power Generator
+    <div class="links"><a href="https://numbers-magic.com/" target="_blank" rel="noopener">numbers-magic.com</a><a href="https://inderjtaneja.wordpress.com/" target="_blank" rel="noopener">inderjtaneja.wordpress.com</a><a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/" target="_blank" rel="noopener">Mathematical Generators</a></div>
+  </div>
+</div>
+<script>
+(function(){
+var $=function(id){return document.getElementById(id);};
+var running=false,stopFlag=false,results=[];
+var NODE_BUDGET=4e7;            /* per exponent: search steps before the count is reported as "at least" */
+
+function sup(n){return '<sup>'+n+'</sup>';}
+function pretty(e){return e.replace(/-/g,'−');}
+
+/* zero-only numbers join the next number and take its sign: +0-48 -> -048, 98+0+1 -> 98+01 (trailing zeros stay) */
+function mergeTerms(terms){var out=[],z='';
+  terms.forEach(function(t,i){var sg=t[0]==='+'||t[0]==='-'?t[0]:'',d=sg?t.slice(1):t;
+    if(i>0&&/^0+$/.test(d)&&out.length){z+=d;return;}out.push((i===0?sg:(sg||'+'))+z+d);z='';});
+  if(z)out.push('+'+z);
+  var e=out.join('');return {e:e[0]==='+'?e.slice(1):e,k:out.length};}
+/* All ways to put + / - between the digits of D (and join up to g digits) so that the value is one of targets. */
+function solveDigits(D,targets,opt,cap){
+  var L=D.length,g=opt.g,sols=[],count=0,steps=0,capped=false;
+  var tgt=targets.map(Number);
+  /* maxRest[i]: largest total that the digits i..L-1 can still add (in absolute value) */
+  var maxRest=new Array(L+1).fill(0);
+  for(var i=L-1;i>=0;i--){var best=0;for(var l=1;l<=g&&i+l<=L;l++){var v=+D.substr(i,l)+maxRest[i+l];if(v>best)best=v;}maxRest[i]=best;}
+  var terms=[],seenE={};
+  var tmin=Math.min.apply(null,tgt),tmax=Math.max.apply(null,tgt);
+  function rec(i,S){
+    if(++steps>NODE_BUDGET){capped=true;return;}
+    if(i===L){
+      for(var k=0;k<tgt.length;k++) if(S===tgt[k]){
+        var e=terms.join(''),kk=terms.length;
+        if(opt.z1){var mz=mergeTerms(terms);e=mz.e;kk=mz.k;if(seenE[e])continue;seenE[e]=1;}
+        count++;if(cap===0||sols.length<cap)sols.push({e:e,k:kk,t:tgt[k]});}
+      return;
+    }
+    if(S-maxRest[i]>tmax||S+maxRest[i]<tmin)return;
+    for(var l=1;l<=g&&i+l<=L;l++){
+      var s=D.substr(i,l);
+      if(l>1&&s[0]==='0'&&!opt.zero)continue;
+      var v=+s,noMinus=opt.z1&&v===0;
+      if(i===0){
+        terms.push(s);rec(l,v);terms.pop();if(capped)return;
+        if(opt.lead&&!noMinus){terms.push('-'+s);rec(l,-v);terms.pop();if(capped)return;}
+      }else{
+        terms.push('+'+s);rec(i+l,S+v);terms.pop();if(capped)return;
+        if(!noMinus){terms.push('-'+s);rec(i+l,S-v);terms.pop();if(capped)return;}
+      }
+    }
+  }
+  rec(0,0);
+  return {sols:sols,count:count,capped:capped};
+}
+
+function order(s,how){
+  if(how==='few')s.sort(function(a,b){return a.k-b.k;});
+  else if(how==='many')s.sort(function(a,b){return b.k-a.k;});
+  return s;
+}
+
+function revBlock(r){
+  var v=r.rev;if(!v)return '';
+  var head='<span class="lhs">'+r.a+sup(r.n)+'</span> <span class="eq">:=</span><span class="num">'+r.N+'</span> <span class="rvt">\u21ba reversed</span><span class="rnum">'+v.R+'</span>';
+  if(v.zero)return $('hide').checked?'':'<div class="blk rvb"><span class="ln">'+head+'</span> <span class="none">&nbsp;starts with 0, so no reverse form</span></div>';
+  if(!v.sols.length)return $('hide').checked?'':'<div class="blk rvb"><span class="ln">'+head+'</span> <span class="none">&nbsp;no reverse representation</span></div>';
+  var h='<div class="blk rvb">';
+  v.sols.forEach(function(s,j){h+='<div class="ln">'+(j===0?head:'<span style="visibility:hidden">'+head+'</span>')+' <span class="eq">=</span><span class="ex">('+pretty(s.e)+')'+sup(r.n)+'</span>'+(s.t!==r.tgt?'<span class="cnt">(gives '+s.t+')</span>':'')+'</div>';});
+  var more=v.count-v.sols.length;
+  return h+'<div class="cnt">'+(v.capped?'at least ':'')+v.count+' reverse representation'+(v.count===1?'':'s')+(more>0?' &middot; '+more+' more not shown':'')+'</div></div>';
+}
+function render(){
+  var html='';
+  results.forEach(function(r){
+    var rb=revBlock(r);
+    if(r.skipF){html+=rb;return;}
+    if(!r.sols.length&&$('hide').checked){html+=rb;return;}
+    if(!r.sols.length){html+='<div class="blk"><span class="ln"><span class="lhs">'+r.a+sup(r.n)+'</span> <span class="eq">:=</span><span class="num">'+r.N+'</span></span> <span class="none">&nbsp;no representation</span></div>'+rb;return;}
+    html+='<div class="blk">';
+    r.sols.forEach(function(s,j){
+      html+='<div class="ln">'+(j===0?'<span class="lhs">'+r.a+sup(r.n)+'</span> <span class="eq">:=</span><span class="num">'+r.N+'</span>':'<span style="visibility:hidden"><span class="lhs">'+r.a+sup(r.n)+'</span> <span class="eq">:=</span><span class="num">'+r.N+'</span></span>')+
+        ' <span class="eq">=</span><span class="ex">('+pretty(s.e)+')'+sup(r.n)+'</span>'+(s.t!==r.tgt?'<span class="cnt">(gives '+s.t+')</span>':'')+'</div>';
+    });
+    var more=r.count-r.sols.length;
+    html+='<div class="cnt">'+(r.capped?'at least ':'')+r.count+' representation'+(r.count===1?'':'s')+(more>0?' &middot; '+more+' more not shown':'')+'</div></div>'+rb;
+  });
+  $('res').innerHTML=html||'<span class="none">'+(running?'Searching\u2026':'No representation in this range.')+'</span>';
+  $('sum').innerHTML=results.map(function(r){return '<tr class="'+(r.count||(r.rev&&r.rev.count)?'':'zero')+'"><td>'+r.n+'</td><td class="n">'+r.N+'</td><td>'+r.N.length+'</td><td>'+(r.skipF?'&ndash;':(r.capped?'&ge; ':'')+r.count)+'</td><td>'+(!r.rev?'&ndash;':r.rev.zero?'starts with 0':(r.rev.capped?'&ge; ':'')+r.rev.count)+'</td></tr>';}).join('');
+}
+
+function setRunning(on){running=on;$('go').disabled=on;$('stop').disabled=!on;['cpTxt','cpTex','dl'].forEach(function(id){$(id).disabled=on||!results.length;});}
+
+function generate(){
+  if(running)return;
+  var a; try{a=BigInt($('base').value.trim());}catch(e){$('status').textContent='The base must be a whole number.';return;}
+  if(a<2n){$('status').textContent='The base must be at least 2.';return;}
+  var n1=parseInt($('n1').value,10),n2=parseInt($('n2').value,10);
+  if(!(n1>=1)||!(n2>=n1)){$('status').textContent='Check the range of exponents.';return;}
+  var tg=$('target').value.trim(),tgt;
+  try{tgt=tg===''?a:BigInt(tg);}catch(e){$('status').textContent='The target must be a whole number.';return;}
+  if(tgt>9007199254740991n||tgt<-9007199254740991n){$('status').textContent='The target is too large.';return;}
+  var opt={g:parseInt($('grp').value,10),lead:$('lead').checked,zero:$('zero').checked,z1:$('z1').checked};
+  var cap=parseInt($('show').value,10),how=$('order').value,neg=$('neg').checked,dir=$('dir').value;
+  results=[];stopFlag=false;setRunning(true);render();$('status').textContent='Working\u2026';$('barI').style.width='0';
+  var n=n1,t0=performance.now();
+  function step(){
+    if(stopFlag||n>n2){setRunning(false);
+      var tot=results.reduce(function(s,r){return s+r.count;},0),withSol=results.filter(function(r){return r.count;}).length;
+      var rtot=results.reduce(function(s,r){return s+(r.rev?r.rev.count:0);},0),rwith=results.filter(function(r){return r.rev&&r.rev.count;}).length;
+      $('status').textContent=(stopFlag?'Stopped. ':'Done. ')+(dir!=='r'?withSol+' of '+results.length+' exponents have representations; '+tot+' in all. ':'')+(dir!=='f'?'Reverse type: '+rwith+' of '+results.length+' exponents, '+rtot+' in all. ':'')+'('+((performance.now()-t0)/1000).toFixed(1)+' s)';
+      $('barI').style.width='100%';return;}
+    var N=(a**BigInt(n)).toString();
+    if(N.length>40){$('status').textContent='a^'+n+' has '+N.length+' digits: stopped at 40 digits.';stopFlag=true;setTimeout(step,0);return;}
+    var targets=[Number(tgt)];if(neg&&n%2===0&&tgt!==0n)targets.push(-Number(tgt));
+    var full=dir==='r'?{sols:[],count:0,capped:false}:solveDigits(N,targets,opt,5000);    /* keep up to 5000, then order and cut */
+    var sols=order(full.sols,how),rev=null;
+    if(dir!=='f'){var Rd=N.split('').reverse().join('');
+      if(Rd[0]==='0')rev={R:Rd,zero:true,count:0,capped:false,all:[],sols:[]};
+      else{var rf=solveDigits(Rd,targets,opt,5000),rs=order(rf.sols,how);rev={R:Rd,zero:false,count:rf.count,capped:rf.capped,all:rs,sols:cap?rs.slice(0,cap):rs};}}
+    results.push({a:a.toString(),n:n,N:N,tgt:Number(tgt),skipF:dir==='r',count:full.count,capped:full.capped,all:sols,sols:cap?sols.slice(0,cap):sols,rev:rev});
+    render();
+    $('status').textContent='Working: n = '+n+' ('+N.length+' digits)…';
+    $('barI').style.width=(100*(n-n1+1)/(n2-n1+1))+'%';
+    n++;setTimeout(step,0);
+  }
+  setTimeout(step,0);
+}
+
+function textOut(){
+  var out=[];
+  results.forEach(function(r){r.all.forEach(function(s){out.push(r.a+'^{'+r.n+'}:='+r.N+'=('+s.e+')^{'+r.n+'};');});
+    if(r.rev)r.rev.all.forEach(function(s){out.push(r.a+'^{'+r.n+'}:='+r.N+', reversed '+r.rev.R+'=('+s.e+')^{'+r.n+'};');});});
+  return out.join('\n');
+}
+function texOut(){
+  var rows=[];
+  results.forEach(function(r){
+    var first=true;
+    function lhs(){var t=first?'\\mathbf{\\color{purple}\\blacktriangleright\\;\\;'+r.a+'^{'+r.n+'}}&:=\\mathbf{\\color{red}'+r.N+'}':'&';first=false;return t;}
+    r.all.forEach(function(s){rows.push(lhs()+'&&=('+s.e+')^{'+r.n+'}');});
+    if(r.rev)r.rev.all.forEach(function(s,j){rows.push(lhs()+'&&\\overset{\\text{rev}}{=}('+s.e+')^{'+r.n+'}'+(j===0?'\\quad\\text{\\small (digits read backwards: '+r.rev.R+')}':''));});
+  });
+  return '{\\color{blue}\\begin{alignat*}{3}\n'+rows.join('\\\\\n')+'\n\\end{alignat*}}';
+}
+function copy(txt,what){
+  function done(){$('status').textContent=what+' copied ('+txt.split('\n').length+' lines).';}
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(done,function(){fallback();});}else fallback();
+  function fallback(){var t=document.createElement('textarea');t.value=txt;document.body.appendChild(t);t.select();try{document.execCommand('copy');done();}catch(e){$('status').textContent='Copy is not allowed here; use Download.';}document.body.removeChild(t);}
+}
+
+/* ---- checker ---- */
+function evalSigned(e){ /* only digits, + and - */
+  if(!/^[+-]?\d+([+-]\d+)*$/.test(e))return null;
+  var m=e.match(/[+-]?\d+/g),s=0n;m.forEach(function(x){s+=BigInt(x);});return s;
+}
+function check(){
+  var lines=$('chkIn').value.split('\n').map(function(x){return x.trim();}).filter(Boolean),out=[];
+  lines.forEach(function(line){
+    var L=line.replace(/\s+/g,'').replace(/;$/,'').replace(/−/g,'-');
+    var rv=L.match(/^(?:(\d+)\^\{?(\d+)\}?:?=)?(\d+),?(?:reversed|\u21ba|rev)(\d+)=\(([^()]*)\)\^?\{?(\d+)\}?$/i);
+    if(rv){var Nn=rv[3],Rr=rv[4],ex=rv[5],kk2=parseInt(rv[6],10),ms2=[],vv2=evalSigned(ex);
+      if(rv[1]){var pw2=(BigInt(rv[1])**BigInt(rv[2])).toString();if(pw2!==Nn)ms2.push(rv[1]+'^'+rv[2]+' is '+pw2+', not '+Nn);if(parseInt(rv[2],10)!==kk2)ms2.push('exponents differ');}
+      if(Nn.split('').reverse().join('')!==Rr)ms2.push(Rr+' is not '+Nn+' read backwards');
+      if(ex.replace(/[^0-9]/g,'')!==Rr)ms2.push('digits of the bracket are not those of '+Rr);
+      if(vv2===null)ms2.push('bracket must use only digits, + and \u2212');
+      else{var pw3=vv2**BigInt(kk2);if(pw3.toString()!==Nn)ms2.push('('+vv2+')^'+kk2+' = '+pw3+', not '+Nn);}
+      out.push('<div>'+(ms2.length?'<span class="bad">\u2717</span> ':'<span class="ok">\u2713</span> ')+esc(line)+(ms2.length?' &mdash; '+ms2.join('; '):' &mdash; reverse type')+'</div>');return;}
+    var m=L.match(/^(\d+)\^\{?(\d+)\}?(?::?=)?(?:k?(\d+))?=?\(([^()]*)\)\^?\{?(\d+)\}?$/);
+    if(!m){
+      var q=L.match(/^(\d+):?=\(([^()]*)\)\^?\{?(\d+)\}?$/);
+      if(q){var NN=q[1],ee=q[2],kk=parseInt(q[3],10),vv=evalSigned(ee),ms=[];
+        if(vv===null)ms.push('bracket must use only digits, + and \u2212');
+        else{var pw=vv**BigInt(kk);if(pw.toString()!==NN)ms.push('('+vv+')^'+kk+' = '+pw+', not '+NN);}
+        if(ee.replace(/[^0-9]/g,'')!==NN)ms.push('digits of the bracket are '+ee.replace(/[^0-9]/g,'')+', not '+NN);
+        out.push('<div>'+(ms.length?'<span class="bad">\u2717</span> ':'<span class="ok">\u2713</span> ')+esc(line)+(ms.length?' &mdash; '+ms.join('; '):'')+'</div>');return;}
+      out.push('<div><span class="bad">?</span> '+esc(line)+' &mdash; could not read this line</div>');return;}
+    var a=BigInt(m[1]),n=parseInt(m[2],10),stated=m[3],e=m[4],n2=parseInt(m[5],10);
+    var N=(a**BigInt(n)).toString(),v=evalSigned(e),msg=[];
+    if(n!==n2)msg.push('exponents differ ('+n+' and '+n2+')');
+    if(stated&&stated!==N)msg.push(a+'^'+n+' is '+N+', not '+stated);
+    if(e.replace(/[^0-9]/g,'')!==N)msg.push('digits are not those of '+N);
+    if(v===null)msg.push('bracket must use only digits, + and −');
+    else if(!(v===a||(n%2===0&&v===-a)))msg.push('bracket gives '+v+', not '+a);
+    out.push('<div>'+(msg.length?'<span class="bad">✗</span> ':'<span class="ok">✓</span> ')+esc(line)+(msg.length?' &mdash; '+msg.join('; '):'')+'</div>');
+  });
+  $('chkOut').innerHTML=out.join('');
+}
+function esc(s){return s.replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
+
+$('go').onclick=generate;
+$('stop').onclick=function(){stopFlag=true;};
+$('cpTxt').onclick=function(){copy(textOut(),'Text');};
+$('cpTex').onclick=function(){copy(texOut(),'LaTeX');};
+$('dl').onclick=function(){var b=new Blob([textOut()+'\n\n'+texOut()+'\n'],{type:'text/plain'}),u=URL.createObjectURL(b),l=document.createElement('a');
+  l.href=u;l.download='semi-selfie-'+$('base').value+'.txt';document.body.appendChild(l);l.click();setTimeout(function(){URL.revokeObjectURL(u);l.remove();},500);};
+$('chkGo').onclick=check;
+document.querySelectorAll('[data-p]').forEach(function(b){b.onclick=function(){var p=b.dataset.p.split(',');$('base').value=p[0];$('n1').value=p[1];$('n2').value=p[2];$('target').value='';generate();};});
+check();
+/* ================= Patterns in semi-selfie numbers ================= */
+(function(){
+var P={run:false,stop:false,list:[]};
+var digBox=$('digBox');
+for(var d=0;d<=9;d++){var l=document.createElement('label');l.className='digck';l.innerHTML='<input type="checkbox" data-dg="'+d+'"'+((d===0||d===9)?' checked':'')+'>'+d;digBox.appendChild(l);}
+document.querySelectorAll('.tabs .tab').forEach(function(t){t.onclick=function(){
+  document.querySelectorAll('.tabs .tab').forEach(function(x){x.classList.toggle('on',x===t);});
+  document.querySelectorAll('.pane').forEach(function(p){p.classList.toggle('on',p.id===t.dataset.tab);});};});
+
+/* all representations of the first number (digits D, base a <= 2^53) */
+function seedReps(D,a,opt,cap){
+  var L=D.length,out=[],terms=[],rest=[];
+  for(var i=0;i<=L;i++)rest[i]=i<L?+D.slice(i):0;
+  function rec(i,S){
+    if(out.length>=cap)return;
+    if(i===L){if(S===a)out.push(terms.slice());return;}
+    if(S-rest[i]>a||S+rest[i]<a)return;
+    for(var l=1;i+l<=L;l++){
+      var s=D.substr(i,l),v=+s,z=v===0;
+      if(z&&!opt.zeroT&&l>0&&i>0)continue;
+      if(i===0){if(z)continue;terms.push(['+',s]);rec(l,v);terms.pop();terms.push(['-',s]);rec(l,-v);terms.pop();}
+      else{terms.push(['+',s]);rec(i+l,S+v);terms.pop();if(!z){terms.push(['-',s]);rec(i+l,S-v);terms.pop();}}
+    }
+  }
+  rec(0,0);return out;
+}
+/* split digits D into terms with the given signs for the non-zero terms (terms made only of zeros may be added freely,
+   and optionally one cancelling pair) giving A; among the splits pick the one whose term lengths are closest to pred */
+function nzLen(row){return row.filter(function(x){return !/^0+$/.test(x[1]);}).map(function(x){return x[1].length;});}
+function fit(D,A,signs,opt,pred){
+  var L=D.length,t=signs.length,best=null,bestCost=1e18,found=0,steps=0,terms=[];
+  var rest=[];for(var i=0;i<=L;i++)rest[i]=i<L?BigInt(D.slice(i)):0n;
+  function cost(){
+    var v=nzLen(terms),c=0,zc=terms.length-v.length;
+    if(v.length!==pred.length)c+=50*Math.abs(v.length-pred.length);
+    for(var q=0;q<Math.min(v.length,pred.length);q++)c+=Math.abs(v[q]-pred[q])*(q===0?3:1);
+    return c+zc*3;
+  }
+  function rec(i,k,S,pairsUsed){
+    if(++steps>300000||found>600)return;
+    if(i===L){if(k===t&&S===A){found++;var c=cost();if(c<bestCost){bestCost=c;best=terms.slice();}}return;}
+    var R=rest[i],d=A-S;if(d>R||-d>R)return;
+    for(var l=1;i+l<=L;l++){
+      var s=D.substr(i,l),z=/^0+$/.test(s);
+      if(z){ if(i>0&&opt.zeroT){terms.push(['+',s]);rec(i+l,k,S,pairsUsed);terms.pop();} continue; }
+      if(k>=t)break;
+      var v=BigInt(s),sg=signs[k];
+      terms.push([sg,s]);rec(i+l,k+1,sg==='+'?S+v:S-v,pairsUsed);terms.pop();
+    }
+    if(opt.pairs&&pairsUsed<1&&i>0){
+      for(var l2=1;i+2*l2<=L;l2++){
+        var x=D.substr(i,l2);if(D.substr(i+l2,l2)!==x||/^0+$/.test(x))continue;
+        terms.push(['+',x,1],['-',x,1]);rec(i+2*l2,k,S,pairsUsed+1);terms.pop();terms.pop();
+        terms.push(['-',x,1],['+',x,1]);rec(i+2*l2,k,S,pairsUsed+1);terms.pop();terms.pop();
+      }
+    }
+  }
+  rec(0,0,0n,0);return best;
+}
+/* all splits of D with the given signs, one representative per vector of term lengths (fewest zero-only terms kept) */
+function fitAll(D,A,signs,opt){
+  var L=D.length,t=signs.length,map={},found=0,steps=0,terms=[];
+  var rest=[];for(var i=0;i<=L;i++)rest[i]=i<L?BigInt(D.slice(i)):0n;
+  function rec(i,k,S,pairsUsed){
+    if(++steps>600000||found>20000)return;
+    if(i===L){if(k===t&&S===A){found++;var v=nzLen(terms),key=v.join(','),z=terms.length-v.length;
+      if(!map[key]||map[key].z>z)map[key]={row:terms.slice(),z:z,v:v};}return;}
+    var R=rest[i],d=A-S;if(d>R||-d>R)return;
+    for(var l=1;i+l<=L;l++){
+      var s=D.substr(i,l),zz=/^0+$/.test(s);
+      if(zz){ if(i>0&&opt.zeroT){terms.push(['+',s]);rec(i+l,k,S,pairsUsed);terms.pop();} continue; }
+      if(k>=t)break;
+      var v=BigInt(s),sg=signs[k];
+      terms.push([sg,s]);rec(i+l,k+1,sg==='+'?S+v:S-v,pairsUsed);terms.pop();
+    }
+    if(opt.pairs&&pairsUsed<1&&i>0){
+      for(var l2=1;i+2*l2<=L;l2++){
+        var x=D.substr(i,l2);if(D.substr(i+l2,l2)!==x||/^0+$/.test(x))continue;
+        terms.push(['+',x,1],['-',x,1]);rec(i+2*l2,k,S,pairsUsed+1);terms.pop();terms.pop();
+        terms.push(['-',x,1],['+',x,1]);rec(i+2*l2,k,S,pairsUsed+1);terms.pop();terms.pop();
+      }
+    }
+  }
+  rec(0,0,0n,0);return map;
+}
+/* rows 1..m-1 whose term lengths grow evenly, or null */
+function regularRows(maps){
+  var keys1=Object.keys(maps[0]);
+  for(var a=0;a<keys1.length;a++){
+    var v1=maps[0][keys1[a]].v;
+    if(maps.length===1)return [maps[0][keys1[a]].row];
+    var keys2=Object.keys(maps[1]);
+    for(var b=0;b<keys2.length;b++){
+      var v2=maps[1][keys2[b]].v;if(v2.length!==v1.length)continue;
+      var d=v2.map(function(x,q){return x-v1[q];}),rows=[maps[0][keys1[a]].row,maps[1][keys2[b]].row],ok=true;
+      for(var j=2;j<maps.length;j++){var key=v1.map(function(x,q){return x+j*d[q];}).join(',');
+        if(!maps[j][key]){ok=false;break;}rows.push(maps[j][key].row);}
+      if(ok)return rows;
+    }
+  }
+  return null;
+}
+/* lengths of all non-zero terms, pairs included, grow by the same amounts from line 2 on */
+function regular(rows){
+  var V=rows.map(nzLen);
+  for(var j=1;j<V.length;j++)if(V[j].length!==V[1].length)return false;
+  for(var j2=3;j2<V.length;j2++)for(var q=0;q<V[1].length;q++)if(V[j2][q]-V[j2-1][q]!==V[j2-1][q]-V[j2-2][q])return false;
+  return true;
+}
+/* all splits of D (BigInt-safe) giving A, fewest numbers first */
+function revLine(D,A,opt,cap){
+  var L=D.length,out=[],terms=[],steps=0,rest=[];for(var i=0;i<=L;i++)rest[i]=i<L?BigInt(D.slice(i)):0n;
+  function rec(i,S){
+    if(out.length>=cap||++steps>400000)return;
+    if(i===L){if(S===A)out.push(terms.slice());return;}
+    var d=A-S,Rr=rest[i];if(d>Rr||-d>Rr)return;
+    for(var l=1;i+l<=L;l++){var s=D.substr(i,l),v=BigInt(s),z=v===0n;
+      if(z&&i>0&&!opt.zeroT)continue;
+      if(i===0){if(z)continue;terms.push(['+',s]);rec(l,v);terms.pop();terms.push(['-',s]);rec(l,-v);terms.pop();}
+      else{terms.push(['+',s]);rec(i+l,S+v);terms.pop();if(!z){terms.push(['-',s]);rec(i+l,S-v);terms.pop();}}}
+  }
+  rec(0,0n);
+  var nz=function(r){return r.filter(function(x){return !/^0+$/.test(x[1]);}).length;};
+  out.sort(function(x,y){return nz(x)-nz(y)||x.length-y.length;});return out;
+}
+/* reverse type of a pattern: every line read backwards, ideally again as a regular pattern */
+function reversePattern(b,k,opt){
+  var N=b.map(function(x){return (x**BigInt(k)).toString();}),Rv=N.map(function(x){return x.split('').reverse().join('');});
+  var res={N:N,R:Rv,rows:Rv.map(function(){return null;}),zero:Rv.map(function(x){return x[0]==='0';}),type:'none'};
+  if(!res.zero.some(Boolean)){
+    var seeds=revLine(Rv[0],b[0],opt,400),seen={},tries=0;
+    for(var r=0;r<seeds.length&&tries<12;r++){
+      var sg=seeds[r].filter(function(x){return !/^0+$/.test(x[1]);}).map(function(x){return x[0];}),key=sg.join('');
+      if(seen[key])continue;seen[key]=1;tries++;
+      var maps=[];for(var j=1;j<b.length;j++){var mp=fitAll(Rv[j],b[j],sg,opt);if(!Object.keys(mp).length){maps=null;break;}maps.push(mp);}
+      var rr=maps&&regularRows(maps);
+      if(rr){res.rows=[seeds[r]].concat(rr).map(mergeZeros);res.type='regular';return res;}
+    }
+  }
+  var ok=0;
+  for(var j2=0;j2<b.length;j2++){if(res.zero[j2])continue;var one=revLine(Rv[j2],b[j2],opt,40);if(one.length){res.rows[j2]=mergeZeros(one[0]);ok++;}}
+  res.type=ok===b.length?'lines':ok?'partial':(res.zero[0]?'zero':'none');
+  return res;
+}
+var REVH={regular:'regular reverse pattern',lines:'reversible line by line (no regular reverse pattern)',partial:'only some lines reversible',none:'not reversible',zero:'not reversible: the number read backwards starts with 0'};
+function mergeZeros(row){var out=[],z='';row.forEach(function(x){if(/^0+$/.test(x[1])&&out.length){z+=x[1];return;}out.push([x[0],z+x[1]]);z='';});if(z)out.push(['+',z]);return out;}
+function families(a,opt,m){
+  var s=String(a),fams=[],seen={};
+  function add(f,how){var key=f.join(',');if(seen[key])return;seen[key]=1;fams.push({b:f,how:how});}
+  if(opt.ins){
+    opt.digits.forEach(function(d){opt.steps.forEach(function(st){
+      for(var p=0;p<=s.length;p++){
+        if(p===0&&d==='0')continue;
+        var f=[];for(var j=0;j<m;j++)f.push(BigInt(s.slice(0,p)+d.repeat(st*j)+s.slice(p)));
+        add(f,'inserting '+d.repeat(st)+(st>1?' each step':''));
+      }});});
+  }
+  if(opt.ten){var f=[];for(var j=0;j<m;j++)f.push(BigInt(a)*10n**BigInt(j));add(f,'multiplying by 10');}
+  return fams;
+}
+function txt(row){var s=row.map(function(x){return x[0]+x[1];}).join('');return s[0]==='+'?s.slice(1):s;}
+function prettyRow(row){var s='';row.forEach(function(x,i){s+=(i===0?(x[0]==='-'?'\u2212':''):' '+(x[0]==='-'?'\u2212':'+')+' ')+x[1];});return s;}
+
+function renderP(){
+  if(!P.list.length){$('pRes').innerHTML='<span class="none">'+(P.run?'Searching\u2026':'No pattern found with these settings.')+'</span>';return;}
+  $('pRes').innerHTML=P.list.map(function(p,i){
+    return '<div class="pat"><div><span class="no">'+(i+1)+'.</span><span class="cap">bases '+p.b.map(String).join(', ')+' &middot; exponent '+p.k+' &middot; '+p.how+'</span></div>'+
+      p.rows.map(function(r,j){var N=(p.b[j]**BigInt(p.k)).toString();return '<div class="pl"><span class="num">'+N+'</span> <span class="eq">=</span> <span class="ex">('+prettyRow(r)+')'+sup(p.k)+'</span></div>';}).join('')+revHtml(p)+'</div>';
+  }).join('');
+}
+function revHtml(p){var v=p.rev;if(!v)return '';
+  return '<div class="rv"><div class="rvh">\u21ba Reverse type &middot; '+REVH[v.type]+'</div>'+v.N.map(function(N,j){
+    return '<div class="pl"><span class="num">'+N+'</span> <span class="rvt">\u21ba</span><span class="rnum">'+v.R[j]+'</span> '+(v.rows[j]?'<span class="eq">=</span> <span class="ex">('+prettyRow(v.rows[j])+')'+sup(p.k)+'</span>':'<span class="none">'+(v.zero[j]?'starts with 0':'no reverse form')+'</span>')+'</div>';}).join('')+'</div>';}
+function pText(){return P.list.map(function(p,i){return (i+1)+'.\n'+p.rows.map(function(r,j){return (p.b[j]**BigInt(p.k))+' = ('+txt(r)+')^'+p.k;}).join('\n')+
+  (p.rev?'\n   Reverse type: '+REVH[p.rev.type]+(p.rev.rows.some(Boolean)?'\n'+p.rev.N.map(function(N,j){return p.rev.rows[j]?N+' reversed '+p.rev.R[j]+' = ('+txt(p.rev.rows[j])+')^'+p.k:null;}).filter(Boolean).join('\n'):''):'');}).join('\n\n');}
+function pTex(){return '\\begin{enumerate}\n'+P.list.map(function(p){return '\\item{\\color{blue}\\begin{alignat*}{2}\n'+p.rows.map(function(r,j){
+  return '\\mathbf{\\color{purple}'+(p.b[j]**BigInt(p.k))+'}&=('+txt(r)+')^{'+p.k+'}';}).concat(p.rev?p.rev.N.map(function(N,j){return p.rev.rows[j]?'\\mathbf{\\color{teal}'+p.rev.R[j]+'}&\\overset{\\text{rev}}{=}('+txt(p.rev.rows[j])+')^{'+p.k+'}':null;}).filter(Boolean):[]).join('\\\\\n')+'\n\\end{alignat*}}';}).join('\n')+'\n\\end{enumerate}';}
+function setP(on){P.run=on;$('pGo').disabled=on;$('pStop').disabled=!on;['pTxt','pTex','pDl'].forEach(function(id){$(id).disabled=on||!P.list.length;});}
+
+function findPatterns(){
+  if(P.run)return;
+  var a1=parseInt($('pa1').value,10),a2=parseInt($('pa2').value,10),k1=parseInt($('pk1').value,10),k2=parseInt($('pk2').value,10),m=parseInt($('pm').value,10);
+  if(!(a1>=2&&a2>=a1&&k1>=2&&k2>=k1)){$('pStatus').textContent='Check the bases and exponents.';return;}
+  var digits=[].slice.call(document.querySelectorAll('[data-dg]')).filter(function(c){return c.checked;}).map(function(c){return c.dataset.dg;});
+  var steps=[];if($('gStep1').checked)steps.push(1);if($('gStep2').checked)steps.push(2);
+  var opt={ins:$('gIns').checked&&digits.length&&steps.length,digits:digits,steps:steps,ten:$('gTen').checked,zeroT:$('pZeroT').checked,strict:$('pStrict').checked,pairs:$('pPairs').checked,per:parseInt($('pPer').value,10),rev:$('pRev').checked,revOnly:$('pRev').checked&&$('pRevOnly').value==='1'};
+  if(!opt.ins&&!opt.ten){$('pStatus').textContent='Choose at least one way for the base to grow.';return;}
+  P.list=[];P.stop=false;setP(true);renderP();$('pStatus').textContent='Working\u2026';$('pBar').style.width='0';
+  var a=a1,k=k1,total=(a2-a1+1)*(k2-k1+1),done=0,skipped=0,t0=performance.now();
+  function step(){
+    var tEnd=performance.now()+60;
+    while(performance.now()<tEnd){
+      if(P.stop||a>a2){setP(false);renderP();
+        var nrv=P.list.filter(function(p){return p.rev&&(p.rev.type==='regular'||p.rev.type==='lines');}).length,nreg=P.list.filter(function(p){return p.rev&&p.rev.type==='regular';}).length;
+        $('pStatus').textContent=(P.stop?'Stopped. ':'Done. ')+P.list.length+' pattern'+(P.list.length===1?'':'s')+' found'+(opt.rev?' ('+nrv+' reverse in every line, '+nreg+' with a regular reverse pattern)':'')+' ('+((performance.now()-t0)/1000).toFixed(1)+' s)'+(skipped?'; '+skipped+' starting powers skipped because they have more than 15 digits':'')+'.';
+        $('pBar').style.width='100%';return;}
+      var N0=Math.pow(a,k);
+      if(N0<1e15){
+        var D0=String(Math.round(N0)),bi=BigInt(a)**BigInt(k);D0=bi.toString();
+        var R=seedReps(D0,a,opt,4000);
+        var zc=function(r){return r.filter(function(x){return /^0+$/.test(x[1]);}).length;};R.sort(function(x,y){return zc(x)-zc(y);});
+        if(R.length){
+          var fams=families(a,opt,m);
+          fams.forEach(function(F){
+            var bySig={},cnt=0;
+            for(var r=0;r<R.length;r++){
+              var sg=R[r].filter(function(x){return !/^0+$/.test(x[1]);}).map(function(x){return x[0];});
+              var sig=sg.join('');
+              if(bySig[sig])continue;bySig[sig]=1;
+              var rows=[R[r]],ok=true;
+              if(opt.strict){
+                var maps=[];
+                for(var j0=1;j0<F.b.length;j0++){var mp=fitAll((F.b[j0]**BigInt(k)).toString(),F.b[j0],sg,opt);if(!Object.keys(mp).length){maps=null;break;}maps.push(mp);}
+                var rr=maps&&regularRows(maps);
+                if(!rr)continue;
+                rows=rows.concat(rr);
+              }else
+              for(var j=1;j<F.b.length;j++){
+                var Nj=(F.b[j]**BigInt(k)).toString(),prev=nzLen(rows[j-1]),pred=prev;
+                if(j>=3){var pp=nzLen(rows[j-2]);if(pp.length===prev.length)pred=prev.map(function(x,q){return 2*x-pp[q];});}
+                else if(j===2){pred=prev.map(function(x,q){return x+(F.b[2].toString().length-F.b[1].toString().length);});}
+                else{pred=prev.map(function(x){return x+(F.b[1].toString().length-F.b[0].toString().length);});}
+                var f=fit(Nj,F.b[j],sg,opt,pred);
+                if(!f){ok=false;break;}rows.push(f);
+              }
+              if(ok){rows=rows.map(mergeZeros);var rv=opt.rev?reversePattern(F.b,k,opt):null;
+                if(!opt.revOnly||(rv&&(rv.type==='regular'||rv.type==='lines'))){P.list.push({b:F.b,k:k,how:F.how,rows:rows,rev:rv});cnt++;}
+                if(opt.per===1)break;}
+            }
+          });
+        }
+      }else skipped++;
+      done++;k++;if(k>k2){k=k1;a++;}
+    }
+    $('pBar').style.width=(100*done/total)+'%';$('pStatus').textContent='Working: base '+a+' \u2026 '+P.list.length+' found';renderP();
+    setTimeout(step,0);
+  }
+  setTimeout(step,0);
+}
+$('pGo').onclick=findPatterns;
+$('pStop').onclick=function(){P.stop=true;};
+$('pTxt').onclick=function(){copy(pText(),'Text');};
+$('pTex').onclick=function(){copy(pTex(),'LaTeX');};
+$('pDl').onclick=function(){var b=new Blob([pText()+'\n\n'+pTex()+'\n'],{type:'text/plain'}),u=URL.createObjectURL(b),l=document.createElement('a');
+  l.href=u;l.download='semi-selfie-patterns.txt';document.body.appendChild(l);l.click();setTimeout(function(){URL.revokeObjectURL(u);l.remove();},500);};
+document.querySelectorAll('[data-pp]').forEach(function(b){b.onclick=function(){
+  var p=b.dataset.pp.split(',');$('pa1').value=p[0];$('pa2').value=p[1];$('pk1').value=p[2];$('pk2').value=p[3];
+  document.querySelectorAll('[data-dg]').forEach(function(c){c.checked=(p[4]!==''&&c.dataset.dg===p[4]);});
+  $('gIns').checked=p[4]!=='';$('gStep1').checked=p[5]==='1';$('gStep2').checked=p[5]==='2';$('gTen').checked=p[6]==='1';$('pPairs').checked=p[7]==='1';$('pZeroT').checked=true;
+  findPatterns();};});
+})();
+})();
+</script>
+<script>(function(){var R=document.body;if(!R)return;
+var P="ssg-",S={};function g(k,d){try{return localStorage.getItem(P+k)||d;}catch(e){return d;}}function p(k,v){try{localStorage.setItem(P+k,v);}catch(e){}}
+S.cs=g("cs","original");S.st=g("st","glass");S.bg=g("bg","cream");
+function apply(){["ocean","peach","mint"].forEach(function(c){R.classList.toggle("cs-"+c,S.cs===c);});R.classList.toggle("st-classic",S.st==="classic");
+ ["cream","blue","peach","yellow","mint"].forEach(function(b){R.classList.toggle("bg-"+b,S.bg===b);});
+ document.querySelectorAll("[data-st]").forEach(function(b){b.classList.toggle("on",b.dataset.st===S.st);});
+ document.querySelectorAll("[data-bgc]").forEach(function(b){b.classList.toggle("on",b.dataset.bgc===S.bg);});
+ var sel=document.getElementById("thCs");if(sel)sel.value=S.cs;}
+document.getElementById("thCs").onchange=function(e){S.cs=e.target.value;p("cs",S.cs);apply();};
+document.querySelectorAll("[data-st]").forEach(function(b){b.onclick=function(){S.st=b.dataset.st;p("st",S.st);apply();};});
+document.querySelectorAll("[data-bgc]").forEach(function(b){b.onclick=function(){S.bg=b.dataset.bgc;p("bg",S.bg);apply();};});
+apply();})();</script>
+</body>
+</html>

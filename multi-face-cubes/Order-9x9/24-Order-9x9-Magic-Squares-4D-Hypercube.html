@@ -1,0 +1,766 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>24 Order 9×9 Magic Squares · Rotating 4D Hypercube · Inder J. Taneja</title>
+<style>
+:root{color-scheme:dark;--bg:#081321;--panel:#102239;--line:#48677e;--ink:#f3f7fc;--muted:#afc3d2;--gold:#f5c967}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 34% 7%,#1b3957,var(--bg) 52%);color:var(--ink);font:15px/1.5 system-ui,Segoe UI,sans-serif}.wrap{max-width:1320px;margin:auto;padding:24px}h1{font-size:clamp(1.65rem,3vw,2.7rem);line-height:1.12;margin:0;color:#f8d98b}header p{color:var(--muted);margin:8px 0 20px}.layout{display:grid;grid-template-columns:minmax(340px,1fr) minmax(350px,550px);gap:20px;align-items:start}.panel{background:#11253ad9;border:1px solid #375570;border-radius:17px;padding:17px;box-shadow:0 12px 32px #0004}.stage{position:relative;aspect-ratio:1/1;min-height:420px;background:radial-gradient(circle,#18334f 0%,#081522 73%);border-radius:12px;overflow:hidden}canvas{width:100%;height:100%;display:block}.overlay{position:absolute;left:14px;bottom:13px;right:14px;display:flex;justify-content:space-between;gap:9px;background:#081725df;border:1px solid #52758a;border-radius:9px;padding:8px 11px;color:#f5f9ff;font-size:.82rem}.panel h2{font-size:1rem;margin:0 0 12px}.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:14px}.controls button{background:#244a64;color:#fff;border:1px solid #5584a0;border-radius:9px;padding:8px 12px;cursor:pointer;font-weight:700}.controls button:hover,.controls button:focus-visible{background:#316383}label.speed{color:var(--muted);display:flex;align-items:center;gap:7px}.gallery{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;max-height:670px;overflow:auto;padding-right:5px}.tile{background:#173046;border:2px solid transparent;border-radius:10px;padding:7px;cursor:pointer;color:var(--ink);text-align:center}.tile.active{border-color:var(--gold);background:#25465c}.tile:focus-visible{outline:2px solid white}.tile strong{display:block;font-size:.78rem;margin-bottom:5px}.tile small{display:block;color:#c5d9e4;margin-top:4px;font-size:.72rem}.mini{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;max-width:104px;margin:auto;border:1px solid #96b4c8;background:#52738b}.mini span{aspect-ratio:1;display:grid;place-items:center;font-size:.74rem;font-weight:750;color:#fff;background:var(--cell)}.explain{color:var(--muted);font-size:.89rem;margin:12px 0 0}.stat{color:#c7e8d1;font-weight:700}footer{text-align:center;color:var(--muted);margin:26px 0 6px;font-size:.84rem}footer a{color:#8dd2f5;margin:0 6px}@media(max-width:880px){.layout{grid-template-columns:1fr}.gallery{grid-template-columns:repeat(6,minmax(0,1fr));max-height:none}}@media(max-width:610px){.wrap{padding:14px}.stage{min-height:300px}.gallery{grid-template-columns:repeat(3,minmax(0,1fr))}.overlay{font-size:.71rem}.mini span{font-size:.66rem}}
+.speed select{background:#244a64;color:#fff;border:1px solid #5584a0;border-radius:8px;padding:7px;font:inherit}.selected-box{margin-top:15px;padding:13px;background:#0b1c2e;border:1px solid #385b70;border-radius:12px}.selected-box strong{display:block;margin-bottom:9px;color:#f8d98b}.selected-grid{display:grid;gap:1px;width:min(100%,312px);background:#7592a2;border:1px solid #7592a2}.selected-grid span{aspect-ratio:1;display:grid;place-items:center;color:white;font-weight:800;font-size:clamp(.76rem,1.35vw,1rem);text-shadow:0 1px 2px #001b26}
+.tile .mini span{background:linear-gradient(145deg,#f8fbff,var(--cell) 65%,#184364)!important;color:#16324d!important;text-shadow:0 1px #fff7!important}
+.gallery{grid-template-columns:repeat(2,minmax(0,1fr))}.mini{max-width:222px}.tile .mini span{background:linear-gradient(145deg,#f8fbff,var(--cell) 65%,#184364)!important;color:#16324d!important;text-shadow:0 1px #fff7!important}.selected-grid{width:min(100%,435px)}@media(max-width:880px){.gallery{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:610px){.gallery{grid-template-columns:repeat(2,minmax(0,1fr))}.mini{max-width:175px}}
+.mini,.selected-grid{border:3px solid #090f18;box-shadow:0 0 0 1px #cfe2ee66}
+
+/* Large-order layout: wide rotating cube above the numbered faces. */
+.layout{display:grid;grid-template-columns:minmax(0,1fr);align-items:start;gap:20px}
+.layout>section{min-width:0}
+.wrap{max-width:1700px}.stage{aspect-ratio:1.8;min-height:640px;max-height:930px}
+.gallery{grid-template-columns:repeat(6,minmax(0,1fr));max-height:none}.mini{max-width:175px}
+@media(max-width:900px){.stage{aspect-ratio:1.25;min-height:450px}.gallery{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:550px){.stage{min-height:360px}.gallery{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Portrait-aware stage: keep the hypercube tall enough within the wide panel. */
+.layout{display:grid;grid-template-columns:minmax(0,1fr);align-items:start;gap:20px}
+.layout>section{min-width:0}
+.wrap{max-width:1700px}.stage{aspect-ratio:1.28;min-height:720px;max-height:1080px}
+.gallery{grid-template-columns:repeat(6,minmax(0,1fr));max-height:none}.mini{max-width:175px}
+@media(max-width:900px){.stage{aspect-ratio:1.12;min-height:540px}.gallery{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:550px){.stage{aspect-ratio:1;min-height:360px}.gallery{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style></head><body><div class="wrap"><header><h1>24 Order 9×9 Magic Squares · 4D Hypercube</h1><p id="subtitle">Choose a construction · Created by Inder J. Taneja</p></header>
+<div class="layout"><section class="panel"><div class="stage"><canvas id="space" aria-label="Rotating projection of a four-dimensional hypercube with several highlighted magic-square faces"></canvas><div class="overlay"><span id="faceInfo"></span><span id="sumInfo"></span></div></div><div class="controls"><label class="speed">Construction <select id="typeSelect"><option value="0">Pandiagonal</option><option value="1">Normal</option><option value="2">Standard</option><option value="3">Concentric</option><option value="4">Cornered</option><option value="5">Double-Layer</option><option value="6">Cyclic</option><option value="7">Sandwich</option><option value="8">Corner-Striped</option><option value="9">Sandwich-Cyclic</option></select></label><label class="speed">Faces together <select id="faceCount"><option value="1">1</option><option value="3">3</option><option value="4" selected>4</option><option value="6">6</option><option value="8">8</option><option value="12">12</option><option value="24">24</option></select></label><button id="play">Pause</button><button id="prev">← Previous group</button><button id="next">Next group →</button><label class="speed">Rotation <input id="speed" type="range" min="0" max="100" value="45"></label></div><div class="selected-box"><strong id="selectedTitle"></strong><div id="selectedGrid" class="selected-grid"></div></div><p class="explain">Each of the 24 square faces holds an order 9×9 magic square. Choose a construction above, then select how many faces to display together.</p></section>
+<section class="panel"><h2>All 24 square faces <span class="stat" id="verified"></span></h2><div id="gallery" class="gallery"></div><p class="explain" id="numberRange"></p></section></div>
+<footer>Created by Inder J. Taneja<br><a href="https://numbers-magic.com/">numbers-magic.com</a> · <a href="https://inderjtaneja.wordpress.com/">WordPress</a> · <a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/">Mathematical Generators</a><br>Magic square source: <a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/generators/multi-magic-square-generator-orders-3-12">Multiple Faces Magic Squares Generator · Orders 3–12</a></footer></div>
+<script>
+'use strict';
+const variants=[{"name":"Pandiagonal","grid":[[22,71,30,27,64,32,20,69,34],[35,21,67,28,23,72,33,25,65],[66,31,26,68,36,19,70,29,24],[40,8,75,45,1,77,38,6,79],[80,39,4,73,41,9,78,43,2],[3,76,44,5,81,37,7,74,42],[58,53,12,63,46,14,56,51,16],[17,57,49,10,59,54,15,61,47],[48,13,62,50,18,55,52,11,60]],"equal":false,"mask":null,"shade":"order9_normal"},{"name":"Normal","grid":[[31,36,29,76,81,74,13,18,11],[30,32,34,75,77,79,12,14,16],[35,28,33,80,73,78,17,10,15],[22,27,20,40,45,38,58,63,56],[21,23,25,39,41,43,57,59,61],[26,19,24,44,37,42,62,55,60],[67,72,65,4,9,2,49,54,47],[66,68,70,3,5,7,48,50,52],[71,64,69,8,1,6,53,46,51]],"equal":false,"mask":null,"shade":"order9_normal"},{"name":"Standard","grid":[[1,18,23,35,40,48,60,65,79],[33,38,52,55,72,77,8,13,21],[62,67,75,6,11,25,28,45,50],[27,5,10,49,30,44,74,61,69],[47,34,42,81,59,64,22,3,17],[76,57,71,20,7,15,54,32,37],[14,19,9,39,53,31,70,78,56],[43,51,29,68,73,63,12,26,4],[66,80,58,16,24,2,41,46,36]],"equal":false,"mask":null,"shade":"order9_normal"},{"name":"Concentric","grid":[[8,80,78,76,75,12,14,16,10],[1,58,54,56,21,20,18,60,81],[3,17,50,53,33,35,34,65,79],[5,19,30,40,45,38,52,63,77],[73,59,31,39,41,43,51,23,9],[71,57,46,44,37,42,36,25,11],[69,55,48,29,49,47,32,27,13],[67,22,28,26,61,62,64,24,15],[72,2,4,6,7,70,68,66,74]],"equal":false,"mask":null,"shade":"order9_concentric"},{"name":"Cornered","grid":[[38,43,42,50,32,27,55,15,67],[45,41,37,46,36,62,20,8,74],[40,39,44,49,33,26,56,80,2],[34,35,52,31,53,65,17,10,72],[48,47,30,29,51,23,59,14,68],[60,54,57,18,58,21,19,77,5],[22,28,25,64,24,63,61,81,1],[78,75,16,13,79,76,12,11,9],[4,7,66,69,3,6,70,73,71]],"equal":false,"mask":null,"shade":"order9_cornered"},{"name":"Double-Layer","grid":[[69,16,80,12,72,17,21,56,26],[13,66,2,70,10,65,61,58,24],[73,9,38,34,51,32,50,6,76],[68,14,44,48,31,39,43,79,3],[11,71,46,36,41,52,30,7,75],[78,4,42,40,53,33,37,59,23],[19,63,35,47,29,49,45,22,60],[20,62,55,25,77,8,67,1,54],[18,64,27,57,5,74,15,81,28]],"equal":false,"mask":null,"shade":"order9_doublelayer"},{"name":"Cyclic","grid":[[2,72,55,1,11,78,68,16,66],[80,10,27,81,71,4,14,9,73],[8,74,39,37,47,32,50,54,28],[21,61,43,45,35,51,31,57,25],[22,60,44,38,41,40,42,18,64],[67,15,49,33,53,34,36,70,12],[24,58,30,52,29,48,46,63,19],[69,13,23,62,26,79,17,75,5],[76,6,59,20,56,3,65,7,77]],"equal":false,"mask":null,"shade":"order9_cyclic"},{"name":"Sandwich","grid":[[25,28,58,75,26,5,17,72,63],[57,54,24,7,56,77,65,10,19],[66,16,45,52,29,36,43,18,64],[20,62,51,33,35,42,44,15,67],[55,27,32,34,41,48,50,73,9],[61,21,38,40,47,49,31,76,6],[3,79,39,46,53,30,37,23,59],[13,22,74,80,70,81,4,14,11],[69,60,8,2,12,1,78,68,71]],"equal":false,"mask":null,"shade":"order9_sandwich"},{"name":"Corner-Striped","grid":[[79,2,42,13,69,43,39,11,71],[3,40,80,64,18,50,32,54,28],[41,81,1,46,36,38,44,49,33],[37,21,27,72,48,51,31,52,30],[45,61,55,10,34,23,59,22,60],[12,67,73,35,17,26,57,75,7],[70,15,9,47,65,56,25,24,58],[19,8,29,66,20,76,5,78,68],[63,74,53,16,62,6,77,4,14]],"equal":false,"mask":null,"shade":"order9_cornerstriped"},{"name":"Sandwich-Cyclic","grid":[[25,28,58,75,26,5,17,72,63],[57,54,24,7,56,77,65,10,19],[66,16,39,37,47,32,50,18,64],[20,62,43,45,35,51,31,15,67],[55,27,44,38,41,40,42,73,9],[61,21,49,33,53,34,36,76,6],[3,79,30,52,29,48,46,23,59],[13,22,74,80,70,81,4,14,11],[69,60,8,2,12,1,78,68,71]],"equal":false,"mask":null,"shade":"order9_sandwichcyclic"}];
+const count=24;let selectedType=0,squares=[],faceOrders=[],visibleCount=4;
+function makeSquares(type,total=count){
+ const {grid,equal,mask}=type,n=grid.length,half=n*n/2;
+ return Array.from({length:total},(_,k)=>grid.map((row,r)=>row.map((v,c)=>{
+  if(mask)return total*(v-1)+1+(mask[r][c]?k:total-1-k);
+  if(!equal)return total*(v-1)+1+k;
+  return v<=half ? half*k+v : half*(2*total-k-1)+(v-half);
+ })));
+}
+const colors=Array.from({length:count},(_,i)=>`hsl(${Math.round(20+i*315/(count-1))} 68% 43%)`);
+const faces=[];
+for(let a=0;a<4;a++)for(let b=a+1;b<4;b++){
+ const other=[0,1,2,3].filter(x=>x!==a&&x!==b);
+ for(let fixed=0;fixed<4;fixed++){
+  const fixedValue=[fixed&1?1:-1,fixed&2?1:-1];
+  const vertex=(u,v)=>{const p=[0,0,0,0];p[other[0]]=fixedValue[0];p[other[1]]=fixedValue[1];p[a]=u;p[b]=v;return p};
+  faces.push({a,b,other,fixedValue,corners:[vertex(-1,-1),vertex(1,-1),vertex(1,1),vertex(-1,1)]});
+ }
+}
+function verify(){
+ const values=squares.flat(2).sort((a,b)=>a-b);
+ const needed=faceOrders.reduce((a,n)=>a+n*n,0);
+ if(faces.length!==24||squares.length!==24||values.length!==needed||values.some((v,i)=>v!==i+1))return false;
+ return squares.every((s,index)=>{
+  const n=faceOrders[index];
+  const M=s[0].reduce((a,b)=>a+b,0);
+  return s.every(r=>r.reduce((a,b)=>a+b,0)===M)&&Array.from({length:n},(_,c)=>c).every(c=>s.reduce((a,r)=>a+r[c],0)===M)&&[0,1].every(t=>s.reduce((a,r,i)=>a+r[t?n-1-i:i],0)===M);
+ });
+}
+function inTop(r,c,n){return r<=1&&c<=n-3}
+function inBottom(r,c,n){return r>=n-2&&c>=2}
+function inRight(r,c,n){return c>=n-2&&r<=n-3}
+function inLeft(r,c,n){return c<=1&&r>=2}
+const CUSTOM_REGION_FN = {
+  order4_striped: (r,c,n) => c>=2 ? "right" : "left",
+  order5_concentric: (r,c,n) => (r>=1&&r<=3&&c>=1&&c<=3) ? "core" : "border",
+  order5_cornered: (r,c,n) => {
+    if (r<3&&c<3) return "core";
+    if (r>=3&&c>=3) return "corner";
+    return "band";
+  },
+  order5_cyclic_border: (r,c,n) => {
+    const cc = Math.floor(n/2);
+    if (r===cc && c===cc) return "center";
+    if (inTop(r,c,n) || inBottom(r,c,n)) return "horiz";
+    if (inLeft(r,c,n) || inRight(r,c,n)) return "vert";
+    return "vert";
+  },
+  order5_semi_striped: (r,c,n) => {
+    if (r<3&&c<3) return "core";
+    if (r<3&&c>=3) return "rectMed";
+    return "band";
+  },
+  order6_concentric: (r,c,n) => (r>=1&&r<=4&&c>=1&&c<=4) ? "core" : "border",
+  order6_concentric_nested: (r,c,n) => {
+    if (r===0 || r===n-1 || c===0 || c===n-1) return "border";
+    return "core";
+  },
+  order6_cornered: (r,c,n) => {
+    if (r<4&&c<4) return "core";
+    if (r>=4&&c>=4) return "corner";
+    return "band";
+  },
+  order6_striped: (r,c,n) => {
+    if (r>=4) return "band";
+    if (c<=1) return "leftSide";
+    if (c>=4) return "rightSide";
+    return "core";
+  },
+  order6_striped2: (r,c,n) => {
+    if (r>=4) return "bottom";
+    if (c>=4) return "right";
+    if (r<2) return "core1";
+    return "core2";
+  },
+  order6_striped3: (r,c,n) => r<2 ? "top" : (r<4 ? "middle" : "bottom"),
+  order6_border_nested: (r,c,n) => {
+    if (r===0 || r===n-1) return "border";
+    if (r>=2 && r<=n-3 && c>=1 && c<=n-2) return "nested";
+    return "middle";
+  },
+  order7_concentric: (r,c,n) => {
+    if (r>=2&&r<=4&&c>=2&&c<=4) return "core";
+    if (r>=1&&r<=5&&c>=1&&c<=5) return "midRing";
+    return "outerRing";
+  },
+  order7_cornered: (r,c,n) => {
+    if (r<3&&c<3) return "core";
+    if (r>=3&&r<5&&c>=3&&c<5) return "corner1";
+    if (r<5&&c<5) return "band1";
+    if (r>=5&&c>=5) return "corner2";
+    return "band2";
+  },
+  order7_double_layer: (r,c,n) => {
+    if (r>=2&&r<=4&&c>=2&&c<=4) return "core";
+    if ((r<2||r>4)&&(c<2||c>4)) return "corners";
+    return "arms";
+  },
+  order7_cyclic: (r,c,n) => {
+    if (r===3&&c===3) return "center";
+    if (r>=2&&r<=4&&c>=2&&c<=4) return "center";
+    if (inTop(r,c,n)||inBottom(r,c,n)) return "horiz";
+    if (inLeft(r,c,n)||inRight(r,c,n)) return "vert";
+    return "vert";
+  },
+  order7_cornerstriped: (r,c,n) => {
+    if (r<3&&c<3) return "core";
+    if (r<3&&c>=3&&c<5) return "stage2a";
+    if (r>=3&&r<5&&c<5) return "stage2b";
+    if (r<5&&c>=5) return "stage3a";
+    return "stage3b";
+  },
+  order7_sandwich: (r,c,n) => {
+    if (r>=2&&r<=4&&c>=2&&c<=4) return "core";
+    if (r<=1||r>=5) return "tb";
+    return "lr";
+  },
+  order8_normal: (r,c,n) => {
+    return (r<4?"T":"B") + (c<4?"L":"R");
+  },
+  order8_concentric: (r,c,n) => {
+    if (r>=2&&r<=5&&c>=2&&c<=5) return "light";
+    if (r>=1&&r<=6&&c>=1&&c<=6) return "medium";
+    return "dark";
+  },
+  order8_cornered: (r,c,n) => {
+    if (r<4&&c<4) return "core";
+    if (r>=4&&r<6&&c>=4&&c<6) return "corner1";
+    if (r<6&&c<6) return "band1";
+    if (r>=6&&c>=6) return "corner2";
+    return "band2";
+  },
+  order8_doublelayer: (r,c,n) => {
+    if (r>=2&&r<=5&&c>=2&&c<=5) return "core";
+    if ((r<2||r>5)&&(c<2||c>5)) return "corners";
+    return "arms";
+  },
+  order8_cyclic: (r,c,n) => {
+    if (r>=2&&r<=5&&c>=2&&c<=5) return "center";
+    if (inTop(r,c,n)||inBottom(r,c,n)) return "horiz";
+    return "vert";
+  },
+  order8_cyclic2: (r,c,n) => {
+    if (r>=2&&r<=3&&c>=2&&c<=5) return "centerTop";
+    if (r>=4&&r<=5&&c>=2&&c<=5) return "centerBottom";
+    if (inTop(r,c,n)||inBottom(r,c,n)) return "horiz";
+    return "vert";
+  },
+  order8_corneredstriped: (r,c,n) => {
+    if (r<2&&c<4) return "tlTop";
+    if (r<4&&c<4) return "tlBottom";
+    if (r<4&&c<6) return "tm";
+    if (r<4) return "tr";
+    if (r<6) return "bottomUpper";
+    return "bottomLower";
+  },
+  order8_pinwheelnested: (r,c,n) => {
+    if (r<4&&c>=6) return "sideA";
+    if (r>=1&&r<=2&&c>=1&&c<=4) return "nestedA";
+    if (r<4) return "mainA";
+    if (r>=4&&c<2) return "sideB";
+    if (r>=5&&r<=6&&c>=3&&c<=6) return "nestedB";
+    return "mainB";
+  },
+  order8_striped1: (r,c,n) => {
+    const rectRow = Math.floor(r/2), rectCol = Math.floor(c/4);
+    return (rectRow+rectCol)%2===0 ? "light" : "medium";
+  },
+  order8_mixedrect: (r,c,n) => {
+    if (c<2||c>5) return "dark";
+    if (r<2||r>5) return "medium";
+    return "light";
+  },
+  order8_sandwich: (r,c,n) => {
+    if (r<2||r>5) return "dark";
+    if (c<2||c>5) return "medium";
+    return "light";
+  },
+  order8_hybrid: (r,c,n) => {
+    const quad = r<4 ? (c<4?"TL":"TR") : (c<4?"BL":"BR");
+    if (quad==="TL") return (r<2)?"outer":"inner";
+    if (quad==="BR") return (r<6)?"inner":"outer";
+    if (quad==="TR") return (c===4||c===5)?"inner":"outer";
+    return (c===0||c===1)?"outer":"inner";
+  },
+  order9_normal: (r,c,n) => {
+    const br = Math.floor(r/3), bc = Math.floor(c/3);
+    return "b" + br + bc;
+  },
+  order9_concentric: (r,c,n) => {
+    if (r>=3&&r<=5&&c>=3&&c<=5) return "core";
+    if (r>=2&&r<=6&&c>=2&&c<=6) return "ring5";
+    if (r>=1&&r<=7&&c>=1&&c<=7) return "ring7";
+    return "border";
+  },
+  order9_cornered: (r,c,n) => {
+    if (r<3&&c<3) return "core";
+    if (r>=3&&r<5&&c>=3&&c<5) return "corner1";
+    if (r<5&&c<5) return "band1";
+    if (r>=5&&r<7&&c>=5&&c<7) return "corner2";
+    if (r<7&&c<7) return "band2";
+    if (r>=7&&c>=7) return "corner3";
+    return "band3";
+  },
+  order9_doublelayer: (r,c,n) => {
+    if (r>=2&&r<=6&&c>=2&&c<=6) return "core";
+    if ((r<2||r>6)&&(c<2||c>6)) return "corners";
+    return "arms";
+  },
+  order9_cyclic: (r,c,n) => {
+    const cr=r-2, cc=c-2;
+    const inCore = cr>=0&&cr<=4&&cc>=0&&cc<=4;
+    if (!inCore) {
+      const inTopO=r<=1&&c<=n-3, inBotO=r>=n-2&&c>=2;
+      return (inTopO||inBotO) ? "horiz" : "vert";
+    }
+    if (cr===2&&cc===2) return "center";
+    const inTopI = cr<=1 && cc<=2;
+    const inBotI = cr>=3 && cc>=2;
+    return (inTopI||inBotI) ? "innerHoriz" : "innerVert";
+  },
+  order9_sandwich: (r,c,n) => {
+    if (r>=2&&r<=6&&c>=2&&c<=6) return "core";
+    if (r<2) return "top";
+    if (r>6) return "bottom";
+    return (c<2) ? "left" : "right";
+  },
+  order9_sandwichcyclic: (r,c,n) => {
+    if (r<2) return "top";
+    if (r>6) return "bottom";
+    if (c<2) return "left";
+    if (c>6) return "right";
+    const cr=r-2, cc=c-2;
+    if (cr===2&&cc===2) return "center";
+    const inTopI = cr<=1 && cc<=2;
+    const inBotI = cr>=3 && cc>=2;
+    return (inTopI||inBotI) ? "innerHoriz" : "innerVert";
+  },
+  order9_cornerstriped: (r,c,n) => {
+    if (r<3&&c<3) return "core";
+    if (r<3&&c>=3&&c<5) return "stage2a";
+    if (r>=3&&r<5&&c<5) return "stage2b";
+    if (r<5&&c>=5&&c<7) return "stage3a";
+    if (r>=5&&r<7&&c<7) return "stage3b";
+    if (r<7&&c>=7) return "stage4a";
+    return "stage4b";
+  },
+  order10_concentric: (r,c,n) => {
+    if (r>=3&&r<=6&&c>=3&&c<=6) return "core";
+    if (r>=2&&r<=7&&c>=2&&c<=7) return "ring6";
+    if (r>=1&&r<=8&&c>=1&&c<=8) return "ring8";
+    return "border";
+  },
+  order11_concentric: (r,c,n) => {
+    if (r>=4&&r<=6&&c>=4&&c<=6) return "core";
+    if (r>=3&&r<=7&&c>=3&&c<=7) return "ring5";
+    if (r>=2&&r<=8&&c>=2&&c<=8) return "ring7";
+    if (r>=1&&r<=9&&c>=1&&c<=9) return "ring9";
+    return "border";
+  },
+  order10_cornered: (r,c,n) => {
+    if (r<4&&c<4) return "core";
+    if (r>=4&&r<6&&c>=4&&c<6) return "corner1";
+    if (r<6&&c<6) return "band1";
+    if (r>=6&&r<8&&c>=6&&c<8) return "corner2";
+    if (r<8&&c<8) return "band2";
+    if (r>=8&&c>=8) return "corner3";
+    return "band3";
+  },
+  order11_cornered: (r,c,n) => {
+    if (r<3&&c<3) return "core";
+    if (r>=3&&r<5&&c>=3&&c<5) return "corner1";
+    if (r<5&&c<5) return "band1";
+    if (r>=5&&r<7&&c>=5&&c<7) return "corner2";
+    if (r<7&&c<7) return "band2";
+    if (r>=7&&r<9&&c>=7&&c<9) return "corner3";
+    if (r<9&&c<9) return "band3";
+    if (r>=9&&c>=9) return "corner4";
+    return "band4";
+  },
+  order10_doublelayer: (r,c,n) => {
+    if (r>=2&&r<=7&&c>=2&&c<=7) return "core";
+    if ((r<2||r>7)&&(c<2||c>7)) return "corners";
+    return "arms";
+  },
+  order11_doublelayer: (r,c,n) => {
+    // outer ring (order 11): rows/cols 0-1 and 9-10
+    const inOuterTop = r<2, inOuterBottom = r>8;
+    const inOuterLeft = c<2, inOuterRight = c>8;
+    if (inOuterTop||inOuterBottom||inOuterLeft||inOuterRight) {
+      const rowArm = inOuterTop||inOuterBottom, colArm = inOuterLeft||inOuterRight;
+      if (rowArm&&colArm) return "corner1";
+      return rowArm ? "arm1" : "side1";
+    }
+    // inner ring (order 7, local rows/cols 2-8): rows/cols 2-3 and 7-8
+    const inInnerTop = r<4, inInnerBottom = r>6;
+    const inInnerLeft = c<4, inInnerRight = c>6;
+    if (inInnerTop||inInnerBottom||inInnerLeft||inInnerRight) {
+      const rowArm2 = inInnerTop||inInnerBottom, colArm2 = inInnerLeft||inInnerRight;
+      if (rowArm2&&colArm2) return "corner2";
+      return rowArm2 ? "arm2" : "side2";
+    }
+    return "core3";
+  },
+  order11_nested9: (r,c,n) => {
+    if (r===0||r===n-1||c===0||c===n-1) return "border";
+    const br = Math.floor((r-1)/3), bc = Math.floor((c-1)/3);
+    return "block" + ((br+bc)%2===0 ? "A" : "B");
+  },
+  order11_cyclic: (r,c,n) => {
+    // outer pinwheel ring (global coords)
+    const inOuterTop = r<2 && c<=8;
+    const inOuterRight = c>=9 && r<=8;
+    const inOuterBottom = r>=9 && c>=2;
+    const inOuterLeft = c<2 && r>=2;
+    if (inOuterTop) return "outerTop";
+    if (inOuterRight) return "outerRight";
+    if (inOuterBottom) return "outerBottom";
+    if (inOuterLeft) return "outerLeft";
+    // inner 7x7 (global rows/cols 2-8), its own pinwheel
+    if (r>=4&&r<=6&&c>=4&&c<=6) return "center";
+    const inInnerTop = r<=3 && c<=6;
+    const inInnerRight = c>=7 && r<=6;
+    const inInnerBottom = r>=7 && c>=4;
+    const inInnerLeft = c<=3 && r>=4;
+    if (inInnerTop) return "innerTop";
+    if (inInnerRight) return "innerRight";
+    if (inInnerBottom) return "innerBottom";
+    return "innerLeft";
+  },
+  order11_sandwich: (r,c,n) => {
+    // outer sandwich frame: top/bottom full-width, left/right core-height (rows2-8)
+    if (r<2) return "outerTop";
+    if (r>8) return "outerBottom";
+    if (c<2) return "outerLeft";
+    if (c>8) return "outerRight";
+    // inner 7x7 (rows/cols 2-8), its own sandwich frame
+    if (r>=4&&r<=6&&c>=4&&c<=6) return "core";
+    if (r<4) return "innerTop";
+    if (r>6) return "innerBottom";
+    if (c<4) return "innerLeft";
+    return "innerRight";
+  },
+  order11_cornerstriped: (r,c,n) => {
+    if (r<3&&c<3) return "core";
+    if (r<3&&c>=3&&c<5) return "stage2a";
+    if (r>=3&&r<5&&c<5) return "stage2b";
+    if (r<5&&c>=5&&c<7) return "stage3a";
+    if (r>=5&&r<7&&c<7) return "stage3b";
+    if (r<7&&c>=7&&c<9) return "stage4a";
+    if (r>=7&&r<9&&c<9) return "stage4b";
+    if (r<9&&c>=9) return "stage5a";
+    return "stage5b";
+  },
+  order12_blocks3: (r,c,n) => {
+    const br = Math.floor(r/3), bc = Math.floor(c/3);
+    return "block" + ((br+bc)%2===0 ? "A" : "B");
+  },
+  order12_blocks4: (r,c,n) => {
+    const br = Math.floor(r/4), bc = Math.floor(c/4);
+    return "block" + ((br+bc)%2===0 ? "A" : "B");
+  },
+  order12_blocks6: (r,c,n) => {
+    const br = Math.floor(r/6), bc = Math.floor(c/6);
+    return "block" + ((br+bc)%2===0 ? "A" : "B");
+  },
+  order12_6x6concentric: (r,c,n) => {
+    const qr = r % 6, qc = c % 6;
+    const isCore = qr>=1 && qr<=4 && qc>=1 && qc<=4;
+    const br = Math.floor(r/6), bc = Math.floor(c/6);
+    const quadParity = (br+bc)%2===0 ? "A" : "B";
+    return (isCore ? "core" : "border") + quadParity;
+  },
+  order12_concentric: (r,c,n) => {
+    if (r>=4&&r<=7&&c>=4&&c<=7) return "core";
+    if (r>=3&&r<=8&&c>=3&&c<=8) return "ring6";
+    if (r>=2&&r<=9&&c>=2&&c<=9) return "ring8";
+    if (r>=1&&r<=10&&c>=1&&c<=10) return "ring10";
+    return "border";
+  },
+  order12_cornered: (r,c,n) => {
+    if (r<4&&c<4) return "core";
+    if (r>=4&&r<6&&c>=4&&c<6) return "corner1";
+    if (r<6&&c<6) return "band1";
+    if (r>=6&&r<8&&c>=6&&c<8) return "corner2";
+    if (r<8&&c<8) return "band2";
+    if (r>=8&&r<10&&c>=8&&c<10) return "corner3";
+    if (r<10&&c<10) return "band3";
+    if (r>=10&&c>=10) return "corner4";
+    return "band4";
+  },
+  order12_doublelayer: (r,c,n) => {
+    // outer ring (order 12): rows/cols 0-1 and 10-11
+    const inOuterTop = r<2, inOuterBottom = r>9;
+    const inOuterLeft = c<2, inOuterRight = c>9;
+    if (inOuterTop||inOuterBottom||inOuterLeft||inOuterRight) {
+      const rowArm = inOuterTop||inOuterBottom, colArm = inOuterLeft||inOuterRight;
+      if (rowArm&&colArm) return "corner1";
+      return rowArm ? "arm1" : "side1";
+    }
+    // inner ring (order 8, local rows/cols 2-9): rows/cols 2-3 and 8-9
+    const inInnerTop = r<4, inInnerBottom = r>7;
+    const inInnerLeft = c<4, inInnerRight = c>7;
+    if (inInnerTop||inInnerBottom||inInnerLeft||inInnerRight) {
+      const rowArm2 = inInnerTop||inInnerBottom, colArm2 = inInnerLeft||inInnerRight;
+      if (rowArm2&&colArm2) return "corner2";
+      return rowArm2 ? "arm2" : "side2";
+    }
+    return "core3";
+  },
+  order12_cyclic: (r,c,n) => {
+    // outer pinwheel ring (global coords)
+    const inOuterTop = r<2 && c<=9;
+    const inOuterRight = c>=10 && r<=9;
+    const inOuterBottom = r>=10 && c>=2;
+    const inOuterLeft = c<2 && r>=2;
+    if (inOuterTop) return "outerTop";
+    if (inOuterRight) return "outerRight";
+    if (inOuterBottom) return "outerBottom";
+    if (inOuterLeft) return "outerLeft";
+    // inner 8x8 (global rows/cols 2-9), its own pinwheel
+    if (r>=4&&r<=7&&c>=4&&c<=7) return "center";
+    const inInnerTop = r<=3 && c<=7;
+    const inInnerRight = c>=8 && r<=7;
+    const inInnerBottom = r>=8 && c>=4;
+    const inInnerLeft = c<=3 && r>=4;
+    if (inInnerTop) return "innerTop";
+    if (inInnerRight) return "innerRight";
+    if (inInnerBottom) return "innerBottom";
+    return "innerLeft";
+  },
+  order12_sandwich: (r,c,n) => {
+    // outer sandwich frame: top/bottom full-width, left/right core-height (rows2-9)
+    if (r<2) return "outerTop";
+    if (r>9) return "outerBottom";
+    if (c<2) return "outerLeft";
+    if (c>9) return "outerRight";
+    // inner 8x8 (rows/cols 2-9), its own sandwich frame
+    if (r>=4&&r<=7&&c>=4&&c<=7) return "core";
+    if (r<4) return "innerTop";
+    if (r>7) return "innerBottom";
+    if (c<4) return "innerLeft";
+    return "innerRight";
+  },
+  order12_cornerstriped: (r,c,n) => {
+    if (r<4&&c<4) return "core";
+    if (r<4&&c>=4&&c<6) return "stage2a";
+    if (r>=4&&r<6&&c<6) return "stage2b";
+    if (r<6&&c>=6&&c<8) return "stage3a";
+    if (r>=6&&r<8&&c<8) return "stage3b";
+    if (r<8&&c>=8&&c<10) return "stage4a";
+    if (r>=8&&r<10&&c<10) return "stage4b";
+    if (r<10&&c>=10) return "stage5a";
+    return "stage5b";
+  },
+  order12_striped18rects: (r,c,n) => {
+    const rb = Math.floor(r/2), cb = Math.floor(c/4);
+    return "block" + ((rb+cb)%2===0 ? "A" : "B");
+  },
+  order12_striped4x6blocks: (r,c,n) => {
+    const rb = Math.floor(r/4), cb = Math.floor(c/6);
+    return "block" + rb + "_" + cb;
+  },
+  order12_bordered4x6: (r,c,n) => {
+    const rb = Math.floor(r/4), cb = Math.floor(c/6);
+    const lr = r % 4, lc = c % 6;
+    const isCore = lr>=1 && lr<=2 && lc>=1 && lc<=4;
+    return (isCore ? "core" : "border") + rb + "_" + cb;
+  },
+  order12_twoconcentric: (r,c,n) => {
+    const half = c < 6 ? "L" : "R";
+    const lc = c % 6;
+    if (r>=2 && r<=9 && lc>=2 && lc<=3) return "core" + half;
+    if (r>=1 && r<=10 && lc>=1 && lc<=4) return "ring" + half;
+    return "full" + half;
+  },
+  order12_mixedfour: (r,c,n) => {
+    if (r<6 && c<8) {
+      if (r>=2 && r<=3 && c>=2 && c<=5) return "coreTL";
+      if (r>=1 && r<=4 && c>=1 && c<=6) return "ringTL";
+      return "fullTL";
+    }
+    if (r<6 && c>=8) {
+      if (r>=1 && r<=4 && c>=9 && c<=10) return "coreTR";
+      return "fullTR";
+    }
+    if (r>=6 && c<4) {
+      if (r>=7 && r<=10 && c>=1 && c<=2) return "coreBL";
+      return "fullBL";
+    }
+    if (r>=8 && r<=9 && c>=6 && c<=9) return "coreBR";
+    if (r>=7 && r<=10 && c>=5 && c<=10) return "ringBR";
+    return "fullBR";
+  },
+  order12_cyclicstriped: (r,c,n) => {
+    // outer pinwheel ring (global coords)
+    const inOuterTop = r<2 && c<=9;
+    const inOuterRight = c>=10 && r<=9;
+    const inOuterBottom = r>=10 && c>=2;
+    const inOuterLeft = c<2 && r>=2;
+    if (inOuterTop) return "outerTop";
+    if (inOuterRight) return "outerRight";
+    if (inOuterBottom) return "outerBottom";
+    if (inOuterLeft) return "outerLeft";
+    // inner 8x8 (global rows/cols 2-9), its own pinwheel
+    if (r>=4&&r<=7&&c>=4&&c<=7) {
+      return r<6 ? "coreTop" : "coreBottom";
+    }
+    const inInnerTop = r<=3 && c<=7;
+    const inInnerRight = c>=8 && r<=7;
+    const inInnerBottom = r>=8 && c>=4;
+    const inInnerLeft = c<=3 && r>=4;
+    if (inInnerTop) return "innerTop";
+    if (inInnerRight) return "innerRight";
+    if (inInnerBottom) return "innerBottom";
+    return "innerLeft";
+  },
+  order12_sandwichstriped: (r,c,n) => {
+    // outer sandwich frame: top/bottom full-width, left/right core-height (rows2-9)
+    if (r<2) return "outerTop";
+    if (r>9) return "outerBottom";
+    if (c<2) return "outerLeft";
+    if (c>9) return "outerRight";
+    // inner 8x8 (rows/cols 2-9), its own sandwich frame
+    if (r>=4&&r<=7&&c>=4&&c<=7) {
+      return r<6 ? "coreTop" : "coreBottom";
+    }
+    if (r<4) return "innerTop";
+    if (r>7) return "innerBottom";
+    if (c<4) return "innerLeft";
+    return "innerRight";
+  },
+  order10_cyclic: (r,c,n) => {
+    if (r>=2&&r<=7&&c>=2&&c<=7) return "center";
+    if (inTop(r,c,n)||inBottom(r,c,n)) return "horiz";
+    return "vert";
+  },
+  order10_nestedconcentric: (r,c,n) => {
+    if (r<1||r>8||c<1||c>8) return "border";
+    const br = r<5 ? 0 : 1, bc = c<5 ? 0 : 1;
+    return "b"+br+bc;
+  },
+  order10_nestedconcentric2: (r,c,n) => {
+    if (r<1||r>8||c<1||c>8) return "border";
+    const quad = r<5 ? (c<5?"TL":"TR") : (c<5?"BL":"BR");
+    if (quad==="TL") return (r<3)?"light":"medium";
+    if (quad==="BR") return (r<7)?"medium":"light";
+    if (quad==="TR") return (c===5||c===6)?"medium":"light";
+    return (c===1||c===2)?"light":"medium";
+  },
+  order10_sandwich: (r,c,n) => {
+    if (r>=2&&r<=7&&c>=2&&c<=7) return "core";
+    if (r<2) return "top";
+    if (r>7) return "bottom";
+    return (c<2) ? "left" : "right";
+  },
+  order10_cyclicstriped: (r,c,n) => {
+    const inTopO=r<=1&&c<=n-3, inBotO=r>=n-2&&c>=2;
+    if (r<2||r>7||c<2||c>7) {
+      return (inTopO||inBotO) ? "horiz" : "vert";
+    }
+    if (r<6) {
+      if (c<4) return "stripe1";
+      if (c<6) return "stripe2";
+      return "stripe3";
+    }
+    return "band";
+  },
+  order10_sandwichstriped: (r,c,n) => {
+    if (r<2) return "top";
+    if (r>7) return "bottom";
+    if (c<2) return "left";
+    if (c>7) return "right";
+    if (r<6) {
+      if (c<4) return "stripe1";
+      if (c<6) return "stripe2";
+      return "stripe3";
+    }
+    return "band";
+  },
+  order10_directstriped: (r,c,n) => {
+    const band = Math.floor(r/2);
+    return (c<6) ? "left"+band : "right"+band;
+  },
+  order10_2_cornerstriped: (r,c,n) => {
+    if (r<4&&c<4) return (r<2) ? "coretop" : "corebottom";
+    if (r<4&&c<6) return "stripe1";
+    if (r<4&&c<8) return "stripe2";
+    if (r<6&&c<8) return "band1";
+    if (r<8&&c<8) return "band2";
+    if (r<8) return "rightcol";
+    return "bottomband";
+  },
+};
+const BORDER_GROUP_FN = {
+  order6_border_nested: (r,c,n) => {
+    if (r===0 || r===n-1) return "border";
+    if (r>=2 && r<=n-3 && c>=1 && c<=n-2) return "nested";
+    return "middle";
+  },
+  order8_hybrid: (r,c,n) => {
+    const quad = r<4 ? (c<4?"TL":"TR") : (c<4?"BL":"BR");
+    if (quad==="TL") return (r<2)?"TL-top":"TL-bottom";
+    if (quad==="BR") return (r<6)?"BR-top":"BR-bottom";
+    if (quad==="TR") return (c===4||c===5)?"TR-left":"TR-right";
+    return (c===0||c===1)?"BL-left":"BL-right";
+  },
+  order10_nestedconcentric2: (r,c,n) => {
+    if (r<1||r>8||c<1||c>8) return "border";
+    const quad = r<5 ? (c<5?"TL":"TR") : (c<5?"BL":"BR");
+    if (quad==="TL") return (r<3)?"TL-top":"TL-bottom";
+    if (quad==="BR") return (r<7)?"BR-top":"BR-bottom";
+    if (quad==="TR") return (c===5||c===6)?"TR-left":"TR-right";
+    return (c===1||c===2)?"BL-left":"BL-right";
+  },
+};
+function regionAt(r,c,n){const shade=variants[selectedType].shade;return CUSTOM_REGION_FN[shade]?.(r,c,n)??'plain'}
+function boundaryAt(r,c,n){
+ const shade=variants[selectedType].shade;
+ if(BORDER_GROUP_FN[shade])return BORDER_GROUP_FN[shade](r,c,n);
+ if(shade==='order8_normal')return `block${Math.floor(r/4)}${Math.floor(c/4)}`;
+ if(shade==='order8_striped1')return `stripe${Math.floor(r/2)}${Math.floor(c/4)}`;
+ if(shade==='order9_normal')return `block${Math.floor(r/3)}${Math.floor(c/3)}`;
+ return regionAt(r,c,n);
+}
+function regionColor(index,r,c,n){
+ const tag=regionAt(r,c,n),hue=Math.round(20+index*315/23);
+ const palette={plain:51,dark:38,light:72,medium:56,border:39,core:72,center:72,TL:43,TR:61,BL:56,BR:73,
+  outer:40,inner:68,arms:54,corners:38,horiz:55,vert:44,band:48,
+  ring6:63,ring8:53,ring5:61,ring7:51,
+  centerTop:73,centerBottom:62,corner1:67,corner2:55,corner3:45,
+  band1:56,band2:48,band3:41,
+  stage2a:65,stage2b:58,stage3a:52,stage3b:45,stage4a:40,stage4b:35,
+  nestedA:73,nestedB:68,mainA:48,mainB:54,sideA:39,sideB:43,
+  tlTop:72,tlBottom:58,tm:53,tr:43,bottomUpper:49,bottomLower:37,
+  top:41,bottom:42,left:53,right:56,innerHoriz:63,innerVert:52,
+  stripe1:67,stripe2:54,stripe3:42,coretop:72,corebottom:62,
+  rightcol:43,bottomband:39};
+ let light=palette[tag];
+ if(light==null){
+  if(tag.startsWith('b')||tag.startsWith('block')){const parts=tag.match(/\d/g)||[];light=45+((parts.reduce((a,x)=>a+Number(x),0))%3)*10}
+  else if(tag.startsWith('left')||tag.startsWith('right')){const digit=Number(tag.match(/\d+/)?.[0]??0);light=42+digit*5+(tag.startsWith('right')?9:0)}
+  else light=tag.includes('core')?71:tag.includes('border')?39:tag.includes('medium')?56:51;
+ }
+ return `hsl(${hue} 65% ${Math.min(75,light)}%)`;
+}
+function regionEdges(r,c,n){
+ const me=boundaryAt(r,c,n);
+ return (c<n-1&&boundaryAt(r,c+1,n)!==me?'border-right:2.5px solid #173b56;':'')+
+        (r<n-1&&boundaryAt(r+1,c,n)!==me?'border-bottom:2.5px solid #173b56;':'');
+}
+function structureLines(q,n){
+ ctx.save();ctx.strokeStyle='#ffffff';ctx.lineWidth=2.4;ctx.shadowColor='#12334a';ctx.shadowBlur=2;
+ for(let r=0;r<n;r++)for(let c=0;c<n;c++){
+  const own=boundaryAt(r,c,n);
+  if(c<n-1&&boundaryAt(r,c+1,n)!==own){const a=bilinear(q,(c+1)/n,r/n),b=bilinear(q,(c+1)/n,(r+1)/n);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}
+  if(r<n-1&&boundaryAt(r+1,c,n)!==own){const a=bilinear(q,c/n,(r+1)/n),b=bilinear(q,(c+1)/n,(r+1)/n);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}
+ }
+ ctx.restore();
+}
+const gallery=document.getElementById('gallery');let chosen=0,playing=true,time=0,last=0,cycle=0;
+function shownFaces(){return Array.from({length:visibleCount},(_,k)=>(chosen+Math.floor(k*count/visibleCount))%count)}
+function setType(index){
+ selectedType=Number(index);const type=variants[selectedType];
+ faceOrders=Array(count).fill(9);squares=makeSquares(type);
+ chosen=0;cycle=0;
+ document.getElementById('subtitle').textContent=`${type.name} construction · Created by Inder J. Taneja`;
+ if(!verify())throw Error(`Magic-square or face verification failed for ${type.name}`);
+ document.getElementById('verified').textContent='✓ 24 verified';
+ const max=faceOrders.reduce((a,n)=>a+n*n,0);
+ document.getElementById('numberRange').textContent=`The 24 squares use the numbers 1–${max} exactly once. Every row, column, and diagonal is checked; internal colors and borders mark this construction.`;
+ gallery.replaceChildren();
+ for(let i=0;i<count;i++){
+  const n=faceOrders[i];
+  const tile=document.createElement('button');tile.className='tile';tile.type='button';tile.dataset.index=i;
+  const sum=squares[i][0].reduce((a,b)=>a+b,0);
+  tile.innerHTML=`<strong>Face ${i+1} · ${n}×${n}</strong><div class="mini" style="grid-template-columns:repeat(${n},1fr)">${squares[i].flat().map((v,pos)=>{const r=Math.floor(pos/n),c=pos%n;return `<span style="--cell:${regionColor(i,r,c,n)};${regionEdges(r,c,n)}font-size:${n>=10?'.48rem':n===9?'.52rem':'.55rem'}">${v}</span>`}).join('')}</div><small>Magic sum ${sum}</small>`;
+  tile.onclick=()=>{chosen=i;cycle=0;updateSelection()};gallery.appendChild(tile);
+ }
+ updateSelection();
+}
+function updateSelection(){
+ const active=shownFaces();
+ document.querySelectorAll('.tile').forEach((el,i)=>el.classList.toggle('active',active.includes(i)));
+ document.getElementById('faceInfo').textContent=`Faces ${active.map(i=>i+1).join(', ')} of 24`;
+ document.getElementById('sumInfo').textContent=`Magic sum ${squares[chosen][0].reduce((a,b)=>a+b,0)}`;
+ document.getElementById('selectedTitle').textContent=`Face ${chosen+1} · ${faceOrders[chosen]}×${faceOrders[chosen]} · Σ ${squares[chosen][0].reduce((a,b)=>a+b,0)}`;
+ const detail=document.getElementById('selectedGrid');detail.style.gridTemplateColumns=`repeat(${faceOrders[chosen]},1fr)`;
+ detail.innerHTML=squares[chosen].flat().map((v,pos)=>{const n=faceOrders[chosen],r=Math.floor(pos/n),c=pos%n;return `<span style="background:linear-gradient(145deg,#ffffffcc,${regionColor(chosen,r,c,n)} 75%);${regionEdges(r,c,n)}color:#122d43;text-shadow:none">${v}</span>`}).join('');
+}
+document.getElementById('typeSelect').onchange=e=>setType(e.target.value);
+document.getElementById('faceCount').onchange=e=>{visibleCount=Number(e.target.value);updateSelection()};
+setType(0);
+document.getElementById('play').onclick=()=>{playing=!playing;document.getElementById('play').textContent=playing?'Pause':'Play'};
+document.getElementById('prev').onclick=()=>{chosen=(chosen+23)%24;cycle=0;updateSelection()};
+document.getElementById('next').onclick=()=>{chosen=(chosen+1)%24;cycle=0;updateSelection()};
+const canvas=document.getElementById('space'),ctx=canvas.getContext('2d');
+function rotate(p,i,j,angle){const c=Math.cos(angle),s=Math.sin(angle);[p[i],p[j]]=[p[i]*c-p[j]*s,p[i]*s+p[j]*c]}
+function transform(point,w,h){
+ const p=point.slice();rotate(p,0,3,time*.47+.21);rotate(p,1,3,time*.34);rotate(p,2,3,time*.21+.42);rotate(p,0,2,time*.19);rotate(p,0,1,time*.12);
+ const k4=2.95/(3.5-p[3]),x=p[0]*k4,y=p[1]*k4,z=p[2]*k4;
+ const k3=3.7/(4.8-z);return{x:w/2+x*k3*w*.20,y:h/2+y*k3*h*.20,depth:z+p[3]*.33};
+}
+function polygon(points,fill,stroke,width=1){ctx.beginPath();ctx.moveTo(points[0].x,points[0].y);for(let i=1;i<points.length;i++)ctx.lineTo(points[i].x,points[i].y);ctx.closePath();if(fill){ctx.fillStyle=fill;ctx.fill()}if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=width;ctx.stroke()}}
+function bilinear(q,u,v){const x=q[0].x*(1-u)*(1-v)+q[1].x*u*(1-v)+q[2].x*u*v+q[3].x*(1-u)*v;const y=q[0].y*(1-u)*(1-v)+q[1].y*u*(1-v)+q[2].y*u*v+q[3].y*(1-u)*v;return{x,y}}
+function drawSelected(q,index){
+ const color=colors[index],square=squares[index],n=faceOrders[index];
+ for(let r=0;r<n;r++)for(let c=0;c<n;c++){
+  const cell=[bilinear(q,c/n,r/n),bilinear(q,(c+1)/n,r/n),bilinear(q,(c+1)/n,(r+1)/n),bilinear(q,c/n,(r+1)/n)];
+  const tone=regionColor(index,r,c,n),gradient=ctx.createLinearGradient(cell[0].x,cell[0].y,cell[2].x,cell[2].y);gradient.addColorStop(0,'#ffffff');gradient.addColorStop(.55,tone);gradient.addColorStop(1,'#16436a');polygon(cell,gradient,'#f5ffff',1.0);
+  const center=bilinear(q,(c+.5)/n,(r+.5)/n),size=Math.hypot(cell[1].x-cell[0].x,cell[1].y-cell[0].y);
+  if(size>10){ctx.font=`700 ${Math.max(9,Math.min(20,size*.52))}px system-ui`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#fff';ctx.shadowColor='#001522';ctx.shadowBlur=3;ctx.fillText(square[r][c],center.x,center.y);ctx.shadowBlur=0}
+ }
+ structureLines(q,n);polygon(q,null,'#090f18',4.5);
+}
+const edges=[];for(let i=0;i<16;i++)for(let axis=0;axis<4;axis++)if(!(i&(1<<axis)))edges.push([i,i|(1<<axis)]);
+function render(now){
+ const dt=Math.min(.05,(now-last)/1000||0);last=now;
+ if(playing){const velocity=Number(document.getElementById('speed').value)/50;time+=dt*velocity;cycle+=dt;if(cycle>=3.2){chosen=(chosen+1)%24;cycle=0;updateSelection()}}
+ const dpr=Math.min(devicePixelRatio||1,2),bounds=canvas.getBoundingClientRect(),w=bounds.width,h=bounds.height;
+ if(canvas.width!==Math.round(w*dpr)||canvas.height!==Math.round(h*dpr)){canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr)}
+ ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
+ const vertices=Array.from({length:16},(_,mask)=>transform([0,1,2,3].map(i=>mask&(1<<i)?1:-1),w,h));
+ const projected=faces.map(face=>face.corners.map(p=>transform(p,w,h)));
+ const order=projected.map((q,i)=>({i,z:q.reduce((a,p)=>a+p.depth,0)/4})).sort((a,b)=>a.z-b.z),active=shownFaces();
+ for(const {i} of order){if(active.includes(i))continue;polygon(projected[i],'#60b2dd0a','#6f9db63f',.8)}
+ for(const [a,b] of edges){ctx.beginPath();ctx.moveTo(vertices[a].x,vertices[a].y);ctx.lineTo(vertices[b].x,vertices[b].y);ctx.strokeStyle='#b5d8e7ae';ctx.lineWidth=1.15;ctx.stroke()}
+ for(const v of vertices){ctx.beginPath();ctx.arc(v.x,v.y,2.5,0,Math.PI*2);ctx.fillStyle='#e5f5fd';ctx.fill()}
+ for(const {i} of order){if(!active.includes(i))continue;ctx.globalAlpha=.82;drawSelected(projected[i],i);ctx.globalAlpha=1}
+ requestAnimationFrame(render);
+}
+requestAnimationFrame(render);
+</script></body></html>

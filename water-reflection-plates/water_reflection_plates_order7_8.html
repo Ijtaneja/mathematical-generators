@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Water Reflection Plates: Orders 7 and 8</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Oswald:wght@400;500&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root{
+  --s:230px;
+  --orig:#f7c5dd;      /* original faces (pink, as on numbers-magic.com) */
+  --refl:#bfe8f5;      /* water-reflection faces */
+  --ink:#111111;
+  --sh:1.6;            /* sky and water heights (equal) */
+  --lw:1;
+  --faint:rgba(70,60,50,.22);   /* ordinary cell lines inside block squares */              /* line thickness multiplier */
+  --line:#2a2a2a;      /* grid line colour */
+  --gold:#e8c66a;
+  --violet:#a98bff;
+  --bg:#07050E;
+}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,#fbf4e0 0%,#f7ecd0 55%,#f3e4bd 100%);color:#2a2340;font-family:'Share Tech Mono',monospace;}
+header{text-align:center;padding:22px 16px 6px}
+h1{font-family:'Cinzel',serif;color:var(--gold);margin:0;font-size:clamp(22px,3.4vw,38px);letter-spacing:.06em}
+.sub{color:#b9b0d8;margin-top:6px;font-size:14px}
+.wrap{display:grid;grid-template-columns:1fr 370px;gap:18px;max-width:1300px;margin:12px auto;padding:0 16px}
+@media (max-width:950px){.wrap{grid-template-columns:1fr}}
+
+/* ---------- stage ---------- */
+.stage{position:relative;border:1px solid #2a2340;border-radius:14px;overflow:hidden;
+  background:radial-gradient(ellipse at 50% 30%,#1b1433 0%,#0a0716 70%);cursor:grab;user-select:none;touch-action:none}
+.stage:active{cursor:grabbing}
+.scene{position:relative;height:calc(var(--s)*var(--sh));perspective:calc(var(--s)*5);display:flex;align-items:center;justify-content:center}
+.cube{position:relative;width:var(--s);height:var(--s);transform-style:preserve-3d}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.face.active .grid{box-shadow:0 0 calc(var(--s)*.09) var(--gold)}
+.badge{position:absolute;top:4%;left:4%;font:600 calc(var(--s)*.045) 'Share Tech Mono',monospace;
+  background:rgba(0,0,0,.72);color:var(--gold);padding:.15em .4em;border-radius:.3em;pointer-events:none}
+.face.refl .badge{color:#8fe3ff}
+.hidelabels .badge{display:none}
+
+.waterline{height:2px;background:linear-gradient(90deg,transparent,rgba(190,235,255,.5) 18%,rgba(255,238,200,.75) 50%,rgba(190,235,255,.5) 82%,transparent);
+  background-size:200% 100%;animation:shimmer 9s linear infinite;box-shadow:0 0 10px rgba(120,200,255,.35)}
+@keyframes shimmer{to{background-position:-200% 0}}
+.water{position:relative;height:calc(var(--s)*var(--sh));overflow:hidden;
+  background:linear-gradient(#0b2b46 0%,#06192b 55%,#030a14 100%)}
+.rl{position:absolute;inset:0;pointer-events:none}
+.rl .scene{transform:scaleY(-1)}
+/* near layer: crisp, gently rippled, strongest right under the surface */
+.rl-near{filter:url(#ripple) brightness(.88) saturate(.95);opacity:.9;
+  -webkit-mask-image:linear-gradient(to bottom,#000 0%,rgba(0,0,0,.9) 45%,rgba(0,0,0,.55) 80%,rgba(0,0,0,.25) 100%);
+          mask-image:linear-gradient(to bottom,#000 0%,rgba(0,0,0,.9) 45%,rgba(0,0,0,.55) 80%,rgba(0,0,0,.25) 100%)}
+/* deep layer: softer, more distorted, fades into the dark */
+.rl-far{filter:url(#rippleDeep) blur(1.5px) brightness(.72);opacity:.55;
+  -webkit-mask-image:linear-gradient(to bottom,transparent 25%,rgba(0,0,0,.6) 55%,rgba(0,0,0,.6) 85%,transparent 100%);
+          mask-image:linear-gradient(to bottom,transparent 25%,rgba(0,0,0,.6) 55%,rgba(0,0,0,.6) 85%,transparent 100%)}
+.water .tint{position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(rgba(60,140,200,.08) 0%,rgba(10,45,80,.22) 50%,rgba(3,10,20,.5) 100%)}
+.water .glow{position:absolute;left:50%;top:0;width:calc(var(--s)*2.2);height:calc(var(--s)*.4);transform:translate(-50%,-50%);
+  background:radial-gradient(ellipse at center,rgba(232,198,106,.16),rgba(120,200,255,.06) 45%,transparent 70%);pointer-events:none}
+.glints{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;mix-blend-mode:screen}
+.glints path{fill:none;stroke-linecap:round;vector-effect:non-scaling-stroke;animation:glint linear infinite}
+@keyframes glint{to{stroke-dashoffset:-600}}
+.nowater .water,.nowater .waterline{display:none}
+
+/* ---------- grids (shared by cube + cards) ---------- */
+.grid{display:grid;width:100%;height:100%;border:calc(var(--s)*.009*var(--lw)) solid var(--line);background:var(--orig)}
+.refl .grid,.grid.refl{background:var(--refl)}
+.cell{display:flex;align-items:center;justify-content:center;border:calc(var(--s)*.0032*var(--lw)) solid var(--line);
+  font-family:'Oswald',sans-serif;font-weight:500;color:var(--ink);line-height:1}
+/* "1" drawn as a plain bar so it stays a 1 in the water (as in the original figures) */
+.edge{position:absolute;background:linear-gradient(90deg,#7a5f22,#e8c66a 50%,#7a5f22);backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.cell{overflow:hidden;min-width:0;min-height:0}
+.ct{display:inline-flex;align-items:center;white-space:nowrap;transform-origin:center}
+.seg7{height:.8em;width:auto;margin:0 .05em;fill:currentColor;display:block}
+.cell.sg{gap:0}
+.one{display:inline-block;width:.1em;height:.72em;background:currentColor;margin:0 .13em;vertical-align:baseline}
+
+/* ---------- panel ---------- */
+.panel{display:flex;flex-direction:column;gap:12px}
+.box{border:1px solid #2a2340;border-radius:12px;padding:12px 14px;background:#0e0a1c}
+.box h2{font-family:'Cinzel',serif;font-size:15px;color:var(--gold);margin:0 0 10px;letter-spacing:.05em}
+.btns{display:flex;flex-wrap:wrap;gap:6px}
+button{font:13px 'Share Tech Mono',monospace;background:#1c1533;color:#eee;border:1px solid #3d3363;
+  border-radius:7px;padding:6px 9px;cursor:pointer}
+button:hover{border-color:var(--gold);color:var(--gold)}
+button.o{border-left:4px solid var(--orig)}
+button.r{border-left:4px solid var(--refl)}
+button.w{background:#0d3150;border-color:#2c78a8}
+.prow{display:grid;grid-template-columns:88px 1fr 1fr 34px;gap:6px;align-items:center;margin-bottom:6px;font-size:13px}
+.ctl{display:grid;grid-template-columns:120px 1fr 48px;gap:8px;align-items:center;font-size:13px;margin:6px 0}
+.ctl input[type=range]{width:100%}
+.chk{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;margin-top:6px}
+input[type=color]{width:100%;height:26px;border:none;background:none;padding:0}
+#activeInfo{font-size:13px;line-height:1.55}
+#activeInfo .t{color:var(--gold);font-size:14px}
+#activeMini{width:150px;height:150px;margin:8px auto;--s:150px}
+.ok{color:#7ee2a8}.bad{color:#ff8f8f}
+
+/* ---------- pairs section ---------- */
+section.pairs{max-width:1300px;margin:8px auto 30px;padding:0 16px}
+section.pairs h2{font-family:'Cinzel',serif;color:var(--gold);font-size:20px;margin:18px 0 10px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:14px}
+.card{border:1px solid #2a2340;border-radius:12px;padding:12px;background:#0e0a1c}
+.card h3{margin:0 0 8px;font-family:'Cinzel',serif;color:#f1d98f;font-size:15px}
+.duo{display:flex;gap:14px;justify-content:center}
+.duo figure{margin:0;text-align:center;font-size:12px;color:#b9b0d8}
+.mini{--s:120px;width:120px;height:120px;margin:4px auto}
+.lake{margin:10px auto 4px;width:150px}
+.lake .mini{--s:120px}
+.lake .wl{height:2px;margin:3px 0;background:linear-gradient(90deg,transparent,#8fe3ff,transparent)}
+.lake .mir{transform:scaleY(-1);opacity:.85;filter:url(#rippleSoft) brightness(.85);
+  -webkit-mask-image:linear-gradient(to top,#000 0%,rgba(0,0,0,.55) 55%,transparent 100%);
+          mask-image:linear-gradient(to top,#000 0%,rgba(0,0,0,.55) 55%,transparent 100%)}
+.card p{font-size:12.5px;line-height:1.5;margin:8px 0 0;color:#d6d0e6}
+details{margin-top:14px}
+summary{cursor:pointer;color:var(--gold);font-family:'Cinzel',serif}
+.ed{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:10px}
+textarea{width:100%;height:90px;background:#120d24;color:#eee;border:1px solid #3d3363;border-radius:8px;
+  font:14px 'Share Tech Mono',monospace;padding:6px}
+.tabs{display:grid;grid-template-columns:repeat(2,auto);justify-content:center;align-items:center;gap:8px 30px;margin:12px auto 6px;max-width:1000px}
+.tabgroup{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.tablabel{font-family:'Cinzel',serif;color:var(--gold);font-size:13px;font-weight:700;margin-right:2px;white-space:nowrap}
+@media (max-width:760px){.tabs{grid-template-columns:1fr;justify-items:center}}
+.tabs a{font:13px 'Share Tech Mono',monospace;color:#cfc6ee;text-decoration:none;padding:5px 11px;border:1px solid #3d3363;border-radius:20px;background:#140f27}
+.tabs a:hover{border-color:var(--gold);color:var(--gold)}
+.tabs a.on{background:var(--gold);color:#1a1206;border-color:var(--gold);font-weight:600}
+.chips{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:4px 0 6px}
+.chips a{font:13px 'Share Tech Mono',monospace;color:#cfc6ee;text-decoration:none;padding:5px 11px;border:1px solid #3d3363;border-radius:8px;background:#100c20}
+.chips a:hover{border-color:var(--gold);color:var(--gold)}
+.chips a.on{border-color:#8fe3ff;color:#8fe3ff;background:#0d3150}
+footer{text-align:center;color:#6f6790;font-size:12px;padding:10px 0 24px}
+
+/* ---------- light page with coloured cards ---------- */
+h1{color:#4b2e83}
+.sub{color:#5a5275}
+.box{box-shadow:0 3px 12px rgba(90,60,10,.16)}
+.panel .box:nth-child(1){background:#efe9ff;border-color:#cfc3f7}
+.panel .box:nth-child(1) h2{color:#5b3fb5}
+.panel .box:nth-child(2){background:#e6f7ee;border-color:#ade0c4}
+.panel .box:nth-child(2) h2{color:#1f7a4d}
+.panel .box:nth-child(3){background:#fff1e3;border-color:#f3cfa8}
+.panel .box:nth-child(3) h2{color:#b5651d}
+#activeInfo{color:#2a2340}
+#activeInfo .t{color:#1f7a4d}
+button{background:#fff;color:#2a2340;border:1px solid #c9c0e0}
+button:hover{border-color:#c79a2a;color:#9a6b00}
+button.w{background:#dff2fb;border-color:#8cc8e6;color:#0d4d6e}
+.tabs a{background:#fff;color:#3b3355;border-color:#d5cdea}
+.tabs a:hover{border-color:#c79a2a;color:#9a6b00}
+.tabs a.on{background:#e8c66a;color:#1a1206;border-color:#c9a43f}
+.tablabel{color:#9a6b00}
+.chips a{background:#fff;color:#3b3355;border-color:#d5cdea}
+.chips a.on{background:#dff2fb;border-color:#5fb3d9;color:#0d4d6e}
+.stage{border-color:#cfc6e6;box-shadow:0 6px 22px rgba(30,20,60,.28)}
+section.pairs h2{color:#3d2470}
+.cards .card:nth-child(3n+1){background:#e4f1fb;border-color:#a8cde9}
+.cards .card:nth-child(3n+1) h3{color:#1f5f8b}
+.cards .card:nth-child(3n+2){background:#fde9f0;border-color:#f0b3c8}
+.cards .card:nth-child(3n+2) h3{color:#a8325e}
+.cards .card:nth-child(3n){background:#fbf5d6;border-color:#eadb8e}
+.cards .card:nth-child(3n) h3{color:#7d6200}
+.card{box-shadow:0 3px 12px rgba(90,60,10,.16)}
+.card p{color:#2a2340}
+.duo figure{color:#5a5275}
+.ok{color:#1d7a46}.bad{color:#c0392b}
+summary{color:#6b4500}
+textarea{background:#fff;color:#2a2340;border-color:#cfc6e6}
+footer{color:#7a7290}
+
+/* ---------- title & index cards, left stripes, footer ---------- */
+header{padding:18px 16px 4px;max-width:1300px;margin:0 auto;display:grid;gap:12px}
+.hcard{position:relative;border-radius:12px;padding:16px 20px 14px 26px;border:1px solid #e2dbf0;box-shadow:0 3px 12px rgba(90,60,10,.16);overflow:hidden}
+.hcard::before,.box::before,.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:7px}
+.box,.card{position:relative;overflow:hidden;padding-left:22px}
+.titlecard{background:linear-gradient(100deg,#fffaf0,#f3ecff);text-align:center}
+.titlecard::before{background:linear-gradient(#7b4fd6,#e8c66a)}
+.titlecard h1{margin:0}
+.byline{font-family:'Cinzel',serif;font-size:15px;color:#8a5a00;margin-top:6px;letter-spacing:.04em}
+.byline b{color:#4b2e83}
+.indexcard{background:#fffdf6;text-align:center}
+.indexcard::before{background:linear-gradient(#e8a33a,#d8577a)}
+.idxhead{font-family:'Cinzel',serif;font-weight:700;color:#b5651d;font-size:15px;letter-spacing:.08em;text-transform:uppercase;text-align:left;margin-bottom:4px}
+.indexcard .tabs{margin:6px auto 4px}
+.note{font-size:12.5px;color:#7a7290;margin-top:4px}
+.panel .box:nth-child(1)::before{background:#7b4fd6}
+.panel .box:nth-child(2)::before{background:#2fa36b}
+.panel .box:nth-child(3)::before{background:#e08a3a}
+.cards .card:nth-child(3n+1)::before{background:#3a8fd0}
+.cards .card:nth-child(3n+2)::before{background:#d8577a}
+.cards .card:nth-child(3n)::before{background:#d4b02a}
+footer{text-align:center;padding:18px 16px 30px;font-size:13px;color:#3d3355}
+.fname{font-family:'Cinzel',serif;font-weight:700;color:#4b2e83;font-size:16px;margin-bottom:6px}
+.flinks{display:flex;gap:18px;justify-content:center;flex-wrap:wrap}
+.flinks a{color:#14466b;text-decoration:none;border-bottom:1px dotted #14466b}
+.flinks a:hover{color:#9a6b00;border-bottom-color:#9a6b00}
+
+.sectioncard{background:#eefaf8;border-color:#b5e3dc;text-align:center;padding-top:12px;padding-bottom:12px}
+.sectioncard::before{background:linear-gradient(#1aa39a,#3a8fd0)}
+.sechead{font-family:'Cinzel',serif;font-weight:700;color:#137a73;font-size:13px;letter-spacing:.08em;text-transform:uppercase;text-align:left;margin-bottom:2px}
+.sectext{font-size:15px;color:#0f4f4a;line-height:1.5}
+
+.refcard{position:relative;overflow:hidden;max-width:1268px;margin:8px auto 4px;background:#f2f6ff;border:1px solid #c7d4f0;border-radius:12px;padding:14px 20px 14px 28px;box-shadow:0 3px 12px rgba(90,60,10,.16)}
+.refcard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:7px;background:linear-gradient(#3a5bd0,#7b4fd6)}
+.refhead{font-family:'Cinzel',serif;font-weight:700;color:#2c3f94;font-size:17px;margin:0 0 8px;letter-spacing:.04em}
+.reflist{margin:0;list-style:decimal;padding-left:22px;color:#2a2340;font-size:13.5px;line-height:1.6}
+.reflist > li{margin-bottom:6px}
+.sublinks{margin:6px 0 0;padding-left:18px;list-style:disc}
+.sublinks li{margin:2px 0}
+.refcard a{color:#1f5f8b;text-decoration:none;border-bottom:1px dotted #1f5f8b;word-break:break-word}
+.refcard a:hover{color:#9a6b00;border-bottom-color:#9a6b00}
+@media (max-width:1300px){.refcard{margin-left:16px;margin-right:16px}}
+
+/* ---------- recessed 3D gradient cards ---------- */
+.hcard,.box,.card,.refcard{
+  border:1px solid rgba(120,85,20,.28) !important;
+  box-shadow:inset 8px 8px 18px rgba(70,45,0,.32), inset 2px 2px 3px rgba(70,45,0,.25),
+             inset -6px -6px 14px rgba(255,255,255,.9),
+             1px 1px 0 rgba(255,255,255,.85), -1px -1px 0 rgba(120,85,20,.28) !important}
+.titlecard{background:linear-gradient(145deg,#fffaf0 0%,#f3eafe 55%,#e3d3fb 100%)}
+.indexcard{background:linear-gradient(145deg,#fffdf4 0%,#fbf0d6 55%,#f2deb0 100%)}
+.sectioncard{background:linear-gradient(145deg,#f4fdfb 0%,#dff4ef 55%,#c6e9e1 100%)}
+.panel .box:nth-child(1){background:linear-gradient(145deg,#f7f3ff 0%,#e7ddfd 55%,#d5c6f8 100%)}
+.panel .box:nth-child(2){background:linear-gradient(145deg,#f3fcf7 0%,#dcf3e6 55%,#c3e7d2 100%)}
+.panel .box:nth-child(3){background:linear-gradient(145deg,#fff8ef 0%,#fde7cf 55%,#f7d2ac 100%)}
+.cards .card:nth-child(3n+1){background:linear-gradient(145deg,#f1f8fe 0%,#dcebf8 55%,#c4dcf1 100%)}
+.cards .card:nth-child(3n+2){background:linear-gradient(145deg,#fff3f7 0%,#fbdfe9 55%,#f3c7d7 100%)}
+.cards .card:nth-child(3n){background:linear-gradient(145deg,#fffcea 0%,#f9efc2 55%,#efdf98 100%)}
+.refcard{background:linear-gradient(145deg,#f6f9ff 0%,#e3eafb 55%,#cfdaf5 100%)}
+/* stripe sits inside the recess */
+.hcard::before,.box::before,.card::before,.refcard::before{box-shadow:inset -2px 0 3px rgba(0,0,0,.18), inset 2px 2px 3px rgba(0,0,0,.15)}
+/* raised controls stand out against the sunken cards */
+.tabs a,.chips a,button{box-shadow:0 2px 3px rgba(70,45,0,.18), inset 0 1px 0 rgba(255,255,255,.9)}
+.tabs a.on,.chips a.on{box-shadow:inset 1px 1px 3px rgba(70,45,0,.25)}
+button:active{box-shadow:inset 1px 1px 3px rgba(70,45,0,.3)}
+/* the 3D stage as a recessed window */
+.stage{border:1px solid rgba(120,85,20,.35);box-shadow:0 1px 0 rgba(255,255,255,.7), 0 -1px 0 rgba(120,85,20,.15)}
+.stage::after{content:"";position:absolute;inset:0;border-radius:14px;pointer-events:none;z-index:5;
+  box-shadow:inset 6px 8px 22px rgba(0,0,0,.65), inset -3px -4px 12px rgba(255,255,255,.06)}
+/* mini grids inside cards look set into the surface */
+#activeMini .grid,.mini .grid{box-shadow:inset 1px 1px 2px rgba(0,0,0,.15)}
+
+/* striped squares: each vertical stripe its own colour (lighter on the water-reflection side) */
+.cell.st0{background:#ffc98b}
+.cell.st1{background:#a9d6ff}
+.refl .cell.st0,.grid.refl .cell.st0{background:#ffe2c2}
+.refl .cell.st1,.grid.refl .cell.st1{background:#d6ecff}
+
+/* pair card: four images in one row */
+.cards{grid-template-columns:1fr !important}
+.quad{display:grid;grid-template-columns:repeat(4,minmax(0,180px));gap:18px;justify-content:center;align-items:end;margin:6px 0 4px}
+.quad figure{margin:0;text-align:center;font-size:12px;color:#5a5275;container-type:inline-size;position:relative}
+.quad figcaption{min-height:2.6em;line-height:1.3;display:flex;align-items:flex-end;justify-content:center;margin-bottom:4px}
+.quad .mini{--s:100cqw;width:100%;height:auto;aspect-ratio:1;margin:0}
+.quad .qwl{position:absolute;left:-4px;right:-4px;height:3px;bottom:calc(100cqw + 2px);border-radius:2px;
+  background:linear-gradient(90deg,transparent,#4fb3e8 15%,#8fe3ff 50%,#4fb3e8 85%,transparent)}
+.quad .mir{transform:scaleY(-1);opacity:.9;filter:url(#rippleSoft) brightness(.9);
+  -webkit-mask-image:linear-gradient(to top,#000 0%,rgba(0,0,0,.8) 60%,rgba(0,0,0,.45) 100%);
+          mask-image:linear-gradient(to top,#000 0%,rgba(0,0,0,.8) 60%,rgba(0,0,0,.45) 100%)}
+@media (max-width:700px){.quad{grid-template-columns:repeat(2,minmax(0,170px))}}
+
+.ordline{font-family:'Cinzel',serif;font-size:19px;font-weight:700;color:#8a5a00;letter-spacing:.06em;margin-top:2px}
+
+/* index: every example visible */
+.tabs{grid-template-columns:1fr !important;justify-items:center;gap:8px !important;max-width:1250px !important}
+.tabgroup{justify-content:center;row-gap:6px}
+.secgroup{display:inline-flex;align-items:center;gap:3px;padding:3px 5px 3px 3px;border-radius:20px;background:rgba(255,255,255,.45);border:1px solid rgba(160,130,60,.25);margin:0 3px}
+.secgroup.on{background:rgba(232,198,106,.25);border-color:rgba(199,154,42,.6)}
+.tabs a.seclink{padding:4px 10px}
+.tabs a.exlink{min-width:26px;text-align:center;padding:3px 7px;font-size:12px;border-radius:12px}
+.tabs a.exlink.on{background:#dff2fb;border-color:#5fb3d9;color:#0d4d6e;font-weight:700}
+.chips:empty{display:none}
+
+/* gold outer frame on the plates */
+.face .grid{border-color:#d4a72c !important;border-width:calc(var(--s)*.016) !important;
+  box-shadow:inset 0 0 0 1px #8a6a12, 0 0 0 1px #8a6a12}
+.edge{background:linear-gradient(90deg,#8a6a12,#f3d27a 50%,#8a6a12) !important}
+
+/* larger grids in the side panel and pair cards */
+#activeMini{width:100% !important;max-width:340px;height:auto !important;aspect-ratio:1;container-type:inline-size;margin:10px auto !important}
+#activeMini .grid{--s:100cqw}
+.quad{grid-template-columns:repeat(4,minmax(0,1fr)) !important;max-width:1180px;margin:8px auto 6px !important;gap:22px !important}
+.quad figure{font-size:13px}
+@media (max-width:700px){.quad{grid-template-columns:repeat(2,minmax(0,1fr)) !important;gap:14px !important}}
+
+.quad.big{grid-template-columns:repeat(2,minmax(0,1fr)) !important;max-width:1000px;gap:26px 34px !important}
+
+/* the digit 1 drawn as the font's capital I: same height and stroke as 0, 3, 8, and symmetric in water */
+.one{width:auto !important;height:auto !important;background:none !important;margin:0 .045em !important;vertical-align:baseline}
+
+.subline{font-family:'Cinzel',serif;font-size:20px;font-weight:700;color:#5b3fb5;letter-spacing:.08em;margin-top:2px}
+
+.genlink{margin-top:10px;padding-top:8px;border-top:1px dashed rgba(44,63,148,.3);font-size:13.5px;color:#2a2340}
+</style>
+</head>
+<body>
+
+<!-- water filters: horizontal-only displacement (G fixed at 0.5 = no vertical shift) -->
+<svg width="0" height="0" style="position:absolute">
+  <filter id="ripple" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.006 0.055" numOctaves="2" seed="11" result="n">
+      <animate attributeName="baseFrequency" dur="7s" values="0.006 0.055;0.0066 0.063;0.006 0.055" repeatCount="indefinite"/>
+    </feTurbulence>
+    <feColorMatrix in="n" type="matrix" values="1 0 0 0 0  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 1" result="x"/>
+    <feDisplacementMap id="dNear" in="SourceGraphic" in2="x" scale="5" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+  <filter id="rippleDeep" x="-8%" y="-5%" width="116%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.008 0.035" numOctaves="2" seed="4" result="n">
+      <animate attributeName="baseFrequency" dur="9s" values="0.008 0.035;0.009 0.042;0.008 0.035" repeatCount="indefinite"/>
+    </feTurbulence>
+    <feColorMatrix in="n" type="matrix" values="1 0 0 0 0  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 1" result="x"/>
+    <feDisplacementMap id="dDeep" in="SourceGraphic" in2="x" scale="11" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+  <filter id="rippleSoft" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.02 0.09" numOctaves="1" seed="2" result="n">
+      <animate attributeName="baseFrequency" dur="6s" values="0.02 0.09;0.022 0.1;0.02 0.09" repeatCount="indefinite"/>
+    </feTurbulence>
+    <feColorMatrix in="n" type="matrix" values="1 0 0 0 0  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 1" result="x"/>
+    <feDisplacementMap id="dSoft" in="SourceGraphic" in2="x" scale="2.5" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<header>
+  <div class="hcard titlecard">
+    <h1>Water Reflection Magic Squares</h1>
+    <div class="subline">Plate Representations</div>
+    <div class="ordline">Orders 7 and 8</div>
+    <div class="byline">Created by <b>Inder J. Taneja</b></div>
+  </div>
+  <div class="hcard indexcard">
+    <div class="idxhead">Index</div>
+    <nav class="tabs" id="tabs"></nav>
+    <nav class="chips" id="chips"></nav>
+    <div class="sub note">Each plate carries the original on one side and its water reflection on the other</div>
+  </div>
+  <div class="hcard sectioncard">
+    <div class="sechead">Current Section</div>
+    <div class="sectext" id="subTitle"></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div>
+    <div class="stage" id="stage">
+      <div class="scene"><div class="cube" id="cube"></div></div>
+      <div class="waterline"></div>
+      <div class="water">
+        <div class="glow"></div>
+        <div class="rl rl-far"><div class="scene"><div class="cube" id="cube3"></div></div></div>
+        <div class="rl rl-near"><div class="scene"><div class="cube" id="cube2"></div></div></div>
+        <div class="tint"></div>
+        <svg class="glints" id="glints" viewBox="0 0 1000 400" preserveAspectRatio="none"></svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="box">
+      <h2>Faces &amp; Water Flips</h2>
+      <div id="faceBtns"></div>
+      <div class="btns" style="margin-top:8px">
+        <button id="playBtn" style="border-color:#c79a2a;color:#8a5a00;background:#fff6dc;font-weight:600">⏸ Pause</button>
+        <button class="w" id="flipBtn">🌊 Water flip (current face)</button>
+        <button id="prevBtn">◀ Previous</button>
+        <button id="nextBtn">Next ▶</button>
+        <label style="font-size:13px;display:flex;align-items:center;gap:6px">Auto-play
+          <select id="scopeSel" style="background:#fff;color:#2a2340;border:1px solid #c9c0e0;border-radius:6px;padding:4px;font:13px 'Share Tech Mono',monospace">
+            <option value="all">all 44 examples</option><option value="section">this section only</option></select></label>
+        <div id="autoInfo" style="font-size:12px;color:#8d84ad;width:100%"></div>
+      </div>
+    </div>
+
+    <div class="box">
+      <h2>Showing Now</h2>
+      <div id="activeInfo"></div>
+    </div>
+
+    <div class="box">
+      <h2>Controls</h2>
+      <div class="ctl"><span>Play speed</span><input type="range" id="speed" min="0.4" max="2.5" step="0.1" value="1"><span id="speedV">1.0×</span></div>
+      <div class="ctl"><span>Plate size</span><input type="range" id="size" min="140" max="420" value="230"><span id="sizeV">230</span></div>
+      <div class="ctl"><span>Ripple strength</span><input type="range" id="rippleIn" min="0" max="12" step="0.5" value="5"><span id="rippleV">5</span></div>
+      <div class="ctl"><span>Line thickness</span><input type="range" id="lw" min="0.3" max="3" step="0.1" value="1"><span id="lwV">1.0</span></div>
+      <div class="ctl"><span>Line colour</span><input type="color" id="cLine" value="#2a2a2a"><span></span></div>
+      <div class="ctl"><span>Digit style</span><select id="styleSel" style="background:#fff;color:#2a2340;border:1px solid #c9c0e0;border-radius:6px;padding:4px;font:13px 'Share Tech Mono',monospace"><option value="classic">Classic (condensed)</option><option value="seg">Seven-segment</option></select><span></span></div>
+      <div class="ctl"><span>Original colour</span><input type="color" id="cOrig" value="#f7c5dd"><span></span></div>
+      <div class="ctl"><span>Reflection colour</span><input type="color" id="cRefl" value="#bfe8f5"><span></span></div>
+      <div class="ctl"><span>Digit colour</span><input type="color" id="cInk" value="#111111"><span></span></div>
+      <div class="chk">
+        <label><input type="checkbox" id="showWater" checked> Water surface</label>
+        <label><input type="checkbox" id="showLabels" checked> Face labels</label>
+      </div>
+      <div style="font-size:12px;color:#8d84ad;margin-top:8px">Drag the plate to rotate it by hand.</div>
+    </div>
+  </div>
+</div>
+
+<section class="pairs">
+  <h2 id="pairsTitle">The Three Pairs</h2>
+  <div class="cards" id="cards"></div>
+
+  <details>
+    <summary>Edit the original squares of this set (reflections are derived automatically)</summary>
+    <div class="ed" id="editor"></div>
+    <div class="btns" style="margin-top:8px"><button id="applyBtn">Apply</button></div>
+    <div id="edMsg" style="font-size:13px;margin-top:6px"></div>
+  </details>
+</section>
+
+<section class="refcard">
+  <h2 class="refhead">Based on the author's following research works:</h2>
+  <ol class="reflist">
+    <li><span class="refmain">Inder J. Taneja, <i>Upside-Down, Mirror Looking and Water Reflection Magic Squares: Orders 7 to 10</i>, Zenodo, January 07, 2025, pp. 1-171,
+      <a href="https://doi.org/10.5281/zenodo.14607071" target="_blank" rel="noopener">https://doi.org/10.5281/zenodo.14607071</a>.</span>
+      <ul class="sublinks">
+        <li>Site link: <a href="https://numbers-magic.com/?p=12654" target="_blank" rel="noopener">Universal and Upside-Down Magic Squares of Orders 7 to 10 (new site)</a></li>
+        <li>Site link: <a href="https://numbers-magic.com/?p=14213" target="_blank" rel="noopener">Water Reflexive Magic Squares: Order 7 to 10 (new site)</a></li>
+        <li>Site link: <a href="https://inderjtaneja.wordpress.com/2024/09/30/universal-and-upside-down-magic-squares-of-orders-7-to-10/" target="_blank" rel="noopener">Universal and Upside-Down Magic Squares of Orders 7 to 10 (old site)</a></li>
+        <li>Site link: <a href="https://inderjtaneja.wordpress.com/2025/01/11/water-reflexive-magic-squares-order-7-to-10/" target="_blank" rel="noopener">Water Reflexive Magic Squares: Order 7 to 10 (old site)</a></li>
+      </ul>
+    </li>
+    <li><span class="refmain">Inder J. Taneja, Online generator: <a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/generators/water-reflection-magic-squares-generator" target="_blank" rel="noopener">Water-Reflection Magic Squares Generator</a></span></li>
+  </ol>
+</section>
+<footer>
+  <div class="fname">Inder J. Taneja</div>
+  <div class="flinks"><a href="https://numbers-magic.com/" target="_blank" rel="noopener">https://numbers-magic.com/</a>
+  <a href="https://inderjtaneja.wordpress.com/" target="_blank" rel="noopener">https://inderjtaneja.wordpress.com/</a></div>
+</footer>
+
+<script>
+/* =========================================================
+   DATA — the three originals; the water reflection of each is
+   its rows in reverse order. Digits 0, 1, 3, 8 are symmetric
+   about a horizontal axis, so they read the same in water.
+   ========================================================= */
+const SETS = {
+  'o7seg': { tab:'Order 7 · Example 1', shape:'tile', style:'seg', orig:'#fff3a0', refl:'#c4ecf7',
+    sub:'Order 7 · 4-digit cell entries · digits (2,3,5) · pandiagonal · in water 2 ↔ 5', data:[
+    { name:'Example 1', orig:[['3533','3332','3225','2523','2353','5352','5235'],['3223','2553','2352','5335','5233','3532','3325'],['2335','5333','5232','3525','3323','3253','2552'],['5225','3523','3353','3252','2535','2333','5332'],['3352','3235','2533','2332','5325','5223','3553'],['2532','2325','5323','5253','3552','3335','3233'],['5353','5252','3535','3333','3232','2525','2323']] } ]},
+  'o7d4': { tab:'Order 7 · 4-Digit Entries', orig:'#fff3a0', refl:'#c4ecf7',
+    sub:'Order 7 · 4-digit cell entries · digits (1,3,8), (0,3,8), (0,1,3) · pandiagonal', data:[
+    { name:'Example 2', orig:[['1313','1818','3131','3333','3838','8181','8383'],['8138','8381','1383','1813','3118','3331','3833'],['3318','3831','8133','8338','1381','1883','3113'],['1881','3183','3313','3818','8131','8333','1338'],['8331','1333','1838','3181','3383','3813','8118'],['3883','8113','8318','1331','1833','3138','3381'],['3133','3338','3881','8183','8313','1318','1831']] },
+    { name:'Example 3', orig:[['0303','0808','3030','3333','3838','8080','8383'],['8038','8380','0383','0803','3008','3330','3833'],['3308','3830','8033','8338','0380','0883','3003'],['0880','3083','3303','3808','8030','8333','0338'],['8330','0333','0838','3080','3383','3803','8008'],['3883','8003','8308','0330','0833','3038','3380'],['3033','3338','3880','8083','8303','0308','0830']] },
+    { name:'Example 4', orig:[['0101','0303','1010','1313','3030','3131','3333'],['3130','3331','0133','0301','1003','1310','3013'],['1303','3010','3113','3330','0131','0333','1001'],['0331','1033','1301','3003','3110','3313','0130'],['3310','0113','0330','1031','1333','3001','3103'],['3033','3101','3303','0110','0313','1030','1331'],['1013','1330','3031','3133','3301','0103','0310']] } ]},
+  'o7d6': { tab:'Order 7 · 6-Digit Entries', orig:'#fff3a0', refl:'#c4ecf7',
+    sub:'Order 7 · 6-digit cell entries · digits (3,8), (1,3), (0,3) · pandiagonal', data:[
+    { name:'Example 5', orig:[['333333','338338','383383','388388','833833','838838','883883'],['838833','883838','333883','338333','383338','388383','833388'],['388338','833383','838388','883833','333838','338883','383333'],['338838','383883','388333','833338','838383','883388','333833'],['883383','333388','338833','383838','388883','833333','838338'],['833883','838333','883338','333383','338388','383833','388838'],['383388','388833','833838','838883','883333','333338','338383']] },
+    { name:'Example 6', orig:[['113113','131131','133133','311311','313313','331331','333333'],['331313','333331','113333','131113','133131','311133','313311'],['311131','313133','331311','333313','113331','131333','133113'],['131331','133333','311113','313131','331133','333311','113313'],['333133','113311','131313','133331','311333','313113','331131'],['313333','331113','333131','113133','131311','133313','311331'],['133311','311313','313331','331333','333113','113131','131133']] },
+    { name:'Example 7', orig:[['003003','030030','033033','300300','303303','330330','333333'],['330303','333330','003333','030003','033030','300033','303300'],['300030','303033','330300','333303','003330','030333','033003'],['030330','033333','300003','303030','330033','333300','003303'],['333033','003300','030303','033330','300333','303003','330030'],['303333','330003','333030','003033','030300','033303','300330'],['033300','300303','303330','330333','333003','003030','030033']] } ]},
+  'o7nm4c': { tab:'Order 7 · New 4-Digit', orig:'#fff4c4', refl:'#e6f6c6', size:410,
+    sub:'Order 7 · new (generator) · 4-digit entries · (0,1,3,8), (0,1,3), (0,3,8), (1,3,8) · 0, 1, 3, 8 unchanged in water · pandiagonal magic squares', data:[
+    { name:'Example 8', orig:[['8300','1381','3803','1830','0111','0831','8018'],['1811','0131','0818','8000','8381','1303','3830'],['8081','8303','1330','3811','1831','0118','0800'],['3831','1818','0100','0881','8003','8330','1311'],['0803','8030','8311','1331','3818','1800','0181'],['1318','3800','1881','0103','0830','8011','8331'],['0130','0811','8031','8318','1300','3881','1803']] },
+    { name:'Example 9', orig:[['1010','3301','3030','0303','0111','0033','1313'],['0311','0133','0013','1310','1001','3330','3003'],['1301','1030','3303','3011','0333','0113','0010'],['3033','0313','0110','0001','1330','1003','3311'],['0030','1303','1011','3333','3013','0310','0101'],['3313','3010','0301','0130','0003','1311','1033'],['0103','0011','1333','1013','3310','3001','0330']] },
+    { name:'Example 10', orig:[['8080','3308','3030','0303','0888','0033','8383'],['0388','0833','0083','8380','8008','3330','3003'],['8308','8030','3303','3088','0333','0883','0080'],['3033','0383','0880','0008','8330','8003','3388'],['0030','8303','8088','3333','3083','0380','0808'],['3383','3080','0308','0830','0003','8388','8033'],['0803','0088','8333','8083','3380','3008','0330']] },
+    { name:'Example 11', orig:[['8181','3318','3131','1313','1888','1133','8383'],['1388','1833','1183','8381','8118','3331','3113'],['8318','8131','3313','3188','1333','1883','1181'],['3133','1383','1881','1118','8331','8113','3388'],['1131','8313','8188','3333','3183','1381','1818'],['3383','3181','1318','1831','1113','8388','8133'],['1813','1188','8333','8183','3381','3118','1331']] },
+  ]},
+  'o7nm6c': { tab:'Order 7 · New 6-Digit', orig:'#fff4c4', refl:'#e6f6c6', size:430,
+    sub:'Order 7 · new (generator) · 6-digit entries · (0,3), (1,3), (3,8) · 0, 1, 3, 8 unchanged in water · pandiagonal magic squares', data:[
+    { name:'Example 12', orig:[['030003','330300','333333','303033','003330','033303','000030'],['303330','003303','033030','000003','030300','330333','333033'],['000300','030333','330033','333330','303303','003030','033003'],['333303','303030','003003','033300','000333','030033','330330'],['033333','000033','030330','330303','333030','303003','003300'],['330030','333003','303300','003333','033033','000330','030303'],['003033','033330','000303','030030','330003','333300','303333']] },
+    { name:'Example 13', orig:[['131113','331311','333333','313133','113331','133313','111131'],['313331','113313','133131','111113','131311','331333','333133'],['111311','131333','331133','333331','313313','113131','133113'],['333313','313131','113113','133311','111333','131133','331331'],['133333','111133','131331','331313','333131','313113','113311'],['331131','333113','313311','113333','133133','111331','131313'],['113133','133331','111313','131131','331113','333311','313333']] },
+    { name:'Example 14', orig:[['838883','338388','333333','383833','883338','833383','888838'],['383338','883383','833838','888883','838388','338333','333833'],['888388','838333','338833','333338','383383','883838','833883'],['333383','383838','883883','833388','888333','838833','338338'],['833333','888833','838338','338383','333838','383883','883388'],['338838','333883','383388','883333','833833','888338','838383'],['883833','833338','888383','838838','338883','333388','383333']] },
+  ]},
+  'o7nm4s': { tab:'Order 7 · New 4-Digit 7-seg', style:'seg', orig:'#ffe1f0', refl:'#e6f6c6', size:410,
+    sub:'Order 7 · new (generator) · 4-digit entries · (0,2,3,5), (1,2,3,5), (2,3,5,8), (0,2,3,5,8), (0,1,2,3,5), (1,2,3,5,8), (0,1,2,3,5,8), (2,3,5) · in water 2 ↔ 5 · pandiagonal magic squares', data:[
+    { name:'Example 15', orig:[['5300','2352','3503','2530','0222','0532','5025'],['2522','0232','0525','5000','5352','2303','3530'],['5052','5303','2330','3522','2532','0225','0500'],['3532','2525','0200','0552','5003','5330','2322'],['0503','5030','5322','2332','3525','2500','0252'],['2325','3500','2552','0203','0530','5022','5332'],['0230','0522','5032','5325','2300','3552','2503']] },
+    { name:'Example 16', orig:[['5311','2352','3513','2531','1222','1532','5125'],['2522','1232','1525','5111','5352','2313','3531'],['5152','5313','2331','3522','2532','1225','1511'],['3532','2525','1211','1552','5113','5331','2322'],['1513','5131','5322','2332','3525','2511','1252'],['2325','3511','2552','1213','1531','5122','5332'],['1231','1522','5132','5325','2311','3552','2513']] },
+    { name:'Example 17', orig:[['5388','2352','3583','2538','8222','8532','5825'],['2522','8232','8525','5888','5352','2383','3538'],['5852','5383','2338','3522','2532','8225','8588'],['3532','2525','8288','8552','5883','5338','2322'],['8583','5838','5322','2332','3525','2588','8252'],['2325','3588','2552','8283','8538','5822','5332'],['8238','8522','5832','5325','2388','3552','2583']] },
+    { name:'Example 18', orig:[['5535','2383','5252','3855','5833','3082','8858'],['3833','5882','3058','8835','5583','2352','5255'],['8883','5552','2355','5233','3882','5858','3035'],['5282','3858','5835','3083','8852','5555','2333'],['3052','8855','5533','2382','5258','3835','5883'],['2358','5235','3883','5852','3055','8833','5582'],['5855','3033','8882','5558','2335','5283','3852']] },
+    { name:'Example 19', orig:[['5535','2313','5252','3155','5133','3012','1151'],['3133','5112','3051','1135','5513','2352','5255'],['1113','5552','2355','5233','3112','5151','3035'],['5212','3151','5135','3013','1152','5555','2333'],['3052','1155','5533','2312','5251','3135','5113'],['2351','5235','3113','5152','3055','1133','5512'],['5155','3033','1112','5551','2335','5213','3152']] },
+    { name:'Example 20', orig:[['5535','2383','5252','3855','5833','3182','8858'],['3833','5882','3158','8835','5583','2352','5255'],['8883','5552','2355','5233','3882','5858','3135'],['5282','3858','5835','3183','8852','5555','2333'],['3152','8855','5533','2382','5258','3835','5883'],['2358','5235','3883','5852','3155','8833','5582'],['5855','3133','8882','5558','2335','5283','3852']] },
+    { name:'Example 21', orig:[['0123','3335','8085','3218','3511','2002','2830'],['3211','3502','2030','2823','0135','3385','8018'],['2835','0185','3318','8011','3202','3530','2023'],['8002','3230','3523','2035','2885','0118','3311'],['2085','2818','0111','3302','8030','3223','3535'],['3330','8023','3235','3585','2018','2811','0102'],['3518','2011','2802','0130','3323','8035','3285']] },
+    { name:'Example 22', orig:[['5252','3325','3232','2323','2555','2233','5353'],['2355','2533','2253','5352','5225','3332','3223'],['5325','5232','3323','3255','2333','2553','2252'],['3233','2353','2552','2225','5332','5223','3355'],['2232','5323','5255','3333','3253','2352','2525'],['3353','3252','2325','2532','2223','5355','5233'],['2523','2255','5333','5253','3352','3225','2332']] },
+  ]},
+  'o8seg': { tab:'Order 8 · Example 1', shape:'tile', style:'seg', orig:'#ffd6d9', refl:'#c4ecf7', blocks:[2,4],
+    sub:'Order 8 · 4-digit cell entries · digits (2,3,5) · every 2×4 block sums to S · in water 2 ↔ 5', data:[
+    { name:'Example 1', orig:[['2232','3535','5255','2322','2553','5323','5525','3252'],['2552','5325','5523','3253','2222','3555','5235','2332'],['2335','5232','3522','2255','3223','5553','5352','2525'],['3225','5552','5353','2523','2355','5222','3532','2235'],['5223','2353','2252','3525','5535','3232','2522','5355'],['5555','3222','2532','5335','5225','2352','2253','3523'],['3553','2223','2325','5252','5332','2535','3255','5522'],['5322','2555','3235','5532','3552','2225','2323','5253']] } ]},
+  'o8d4': { tab:'Order 8 · 4-Digit Entries', orig:'#ffd6d9', refl:'#c4ecf7', blocks:[2,4],
+    sub:'Order 8 · 4-digit cell entries · digits (1,3,8), (0,3,8), (0,1,3) · every 2×4 block sums to S', data:[
+    { name:'Example 2', orig:[['1388','8111','3831','1138','3118','8881','8383','1813'],['3113','8883','8381','1818','1338','8131','3811','1188'],['1111','3888','8138','1331','1881','8318','8813','3183'],['1883','8313','8818','3181','1131','3838','8188','1311'],['3881','1118','1313','8183','8311','1888','3138','8831'],['8331','1838','3188','8811','3883','1113','1318','8181'],['8118','1381','1183','3813','8888','3111','1831','8338'],['8838','3131','1811','8388','8113','1383','1181','3818']] },
+    { name:'Example 3', orig:[['0388','8000','3830','0038','3008','8880','8383','0803'],['3003','8883','8380','0808','0338','8030','3800','0088'],['0000','3888','8038','0330','0880','8308','8803','3083'],['0883','8303','8808','3080','0030','3838','8088','0300'],['3880','0008','0303','8083','8300','0888','3038','8830'],['8330','0838','3088','8800','3883','0003','0308','8080'],['8008','0380','0083','3803','8888','3000','0830','8338'],['8838','3030','0800','8388','8003','0383','0080','3808']] },
+    { name:'Example 4', orig:[['0131','1300','1110','0011','1003','3113','3030','0301'],['1001','3130','3013','0303','0111','1310','1100','0031'],['0000','1131','1311','0110','0313','3003','3101','1030'],['0330','3001','3103','1013','0010','1111','1331','0100'],['1113','0003','0101','1330','3000','0331','1011','3110'],['3010','0311','1031','3100','1130','0001','0103','1313'],['1303','0113','0030','1101','3131','1000','0310','3011'],['3111','1010','0300','3031','1301','0130','0013','1103']] } ]},
+  'o8d6': { tab:'Order 8 · 6-Digit Entries', orig:'#fff3a0', refl:'#c4ecf7', blocks:[4,4], size:420,
+    sub:'Order 8 · 6-digit cell entries · digits (3,8), (1,3), (0,3) · pandiagonal · four 4×4 magic blocks', data:[
+    { name:'Example 5', orig:[['333333','888833','388388','833888','338333','883833','383388','838888'],['388888','833388','333833','888333','383888','838388','338833','883333'],['833833','388333','888888','333388','838833','383333','883888','338388'],['888388','333888','833333','388833','883388','338888','838333','383833'],['333338','888838','388383','833883','338338','883838','383383','838883'],['388883','833383','333838','888338','383883','838383','338838','883338'],['833838','388338','888883','333383','838838','383338','883883','338383'],['888383','333883','833338','388838','883383','338883','838338','383838']] },
+    { name:'Example 6', orig:[['333333','111133','311311','133111','331333','113133','313311','131111'],['311111','133311','333133','111333','313111','131311','331133','113333'],['133133','311333','111111','333311','131133','313333','113111','331311'],['111311','333111','133333','311133','113311','331111','131333','313133'],['333331','111131','311313','133113','331331','113131','313313','131113'],['311113','133313','333131','111331','313113','131313','331131','113331'],['133131','311331','111113','333313','131131','313331','113113','331313'],['111313','333113','133331','311131','113313','331113','131331','313131']] },
+    { name:'Example 7', orig:[['333333','000033','300300','033000','330333','003033','303300','030000'],['300000','033300','333033','000333','303000','030300','330033','003333'],['033033','300333','000000','333300','030033','303333','003000','330300'],['000300','333000','033333','300033','003300','330000','030333','303033'],['333330','000030','300303','033003','330330','003030','303303','030003'],['300003','033303','333030','000330','303003','030303','330030','003330'],['033030','300330','000003','333303','030030','303330','003003','330303'],['000303','333003','033330','300030','003303','330003','030330','303030']] } ]},
+  'o8nm4c': { tab:'Order 8 · New 4-Digit', orig:'#fff4c4', refl:'#e6f6c6', size:430,
+    sub:'Order 8 · new (generator) · 4-digit entries · (0,1,3,8), (0,1,3), (0,3,8), (1,3,8) · 0, 1, 3, 8 unchanged in water · magic squares', data:[
+    { name:'Example 8', orig:[['8031','1818','1300','0108','0803','8811','3830','8381'],['8881','0830','8311','3803','1808','8000','0118','1331'],['0818','8831','3808','8300','8011','1803','1381','0130'],['1830','8081','0103','1311','8800','0808','8331','3818'],['0111','1303','1881','8030','8318','3831','8808','0800'],['3800','8308','0831','8818','1330','0181','8003','1811'],['8303','3811','8830','0881','0131','1318','1800','8008'],['1308','0100','8018','1831','3881','8330','0811','8803']] },
+    { name:'Example 9', orig:[['1333','0313','3310','0131','0030','3111','3003','1001'],['3101','0003','1011','3030','0331','1310','0113','3333'],['0013','3133','3031','1010','1311','0330','3301','0103'],['0303','1301','0130','3311','3110','0031','1033','3013'],['0111','3330','0301','1303','1013','3033','3131','0010'],['3010','1031','0033','3113','3303','0101','1330','0311'],['1030','3011','3103','0001','0133','3313','0310','1331'],['3331','0110','1313','0333','3001','1003','0011','3130']] },
+    { name:'Example 10', orig:[['8333','0383','3380','0838','0030','3888','3003','8008'],['3808','0003','8088','3030','0338','8380','0883','3333'],['0083','3833','3038','8080','8388','0330','3308','0803'],['0303','8308','0830','3388','3880','0038','8033','3083'],['0888','3330','0308','8303','8083','3033','3838','0080'],['3080','8038','0033','3883','3303','0808','8330','0388'],['8030','3088','3803','0008','0833','3383','0380','8338'],['3338','0880','8383','0333','3008','8003','0088','3830']] },
+    { name:'Example 11', orig:[['8333','1383','3381','1838','1131','3888','3113','8118'],['3818','1113','8188','3131','1338','8381','1883','3333'],['1183','3833','3138','8181','8388','1331','3318','1813'],['1313','8318','1831','3388','3881','1138','8133','3183'],['1888','3331','1318','8313','8183','3133','3838','1181'],['3181','8138','1133','3883','3313','1818','8331','1388'],['8131','3188','3813','1118','1833','3383','1381','8338'],['3338','1881','8383','1333','3118','8113','1188','3831']] },
+  ]},
+  'o8nm6c': { tab:'Order 8 · New 6-Digit', orig:'#fff4c4', refl:'#e6f6c6', size:450,
+    sub:'Order 8 · new (generator) · 6-digit entries · (0,3), (1,3), (3,8) · 0, 1, 3, 8 unchanged in water · magic squares', data:[
+    { name:'Example 12', orig:[['000303','303030','330003','003000','033333','300330','333033','030300'],['300300','033033','030330','333333','303000','000003','003030','330303'],['033030','300303','333000','030003','000330','303333','330300','003033'],['303033','000300','003333','330330','300003','033000','030303','333030'],['003330','330333','303300','000033','030030','333303','300000','033003'],['333003','030000','033303','300030','330033','003300','000333','303330'],['030333','333330','300033','033300','003303','330030','303003','000000'],['330000','003003','000030','303303','333300','030033','033330','300333']] },
+    { name:'Example 13', orig:[['111313','313131','331113','113111','133333','311331','333133','131311'],['311311','133133','131331','333333','313111','111113','113131','331313'],['133131','311313','333111','131113','111331','313333','331311','113133'],['313133','111311','113333','331331','311113','133111','131313','333131'],['113331','331333','313311','111133','131131','333313','311111','133113'],['333113','131111','133313','311131','331133','113311','111333','313331'],['131333','333331','311133','133311','113313','331131','313113','111111'],['331111','113113','111131','313313','333311','131133','133331','311333']] },
+    { name:'Example 14', orig:[['888383','383838','338883','883888','833333','388338','333833','838388'],['388388','833833','838338','333333','383888','888883','883838','338383'],['833838','388383','333888','838883','888338','383333','338388','883833'],['383833','888388','883333','338338','388883','833888','838383','333838'],['883338','338333','383388','888833','838838','333383','388888','833883'],['333883','838888','833383','388838','338833','883388','888333','383338'],['838333','333338','388833','833388','883383','338838','383883','888888'],['338888','883883','888838','383383','333388','838833','833338','388333']] },
+  ]},
+  'o8nm4s': { tab:'Order 8 · New 4-Digit 7-seg', style:'seg', orig:'#ffe1f0', refl:'#e6f6c6', size:430,
+    sub:'Order 8 · new (generator) · 4-digit entries · (0,2,3,5), (1,2,3,5), (2,3,5,8), (0,2,3,5,8), (0,1,2,3,5), (1,2,3,5,8), (0,1,2,3,5,8), (2,3,5) · in water 2 ↔ 5 · magic squares', data:[
+    { name:'Example 15', orig:[['5032','2525','2300','0205','0503','5522','3530','5352'],['5552','0530','5322','3503','2505','5000','0225','2332'],['0525','5532','3505','5300','5022','2503','2352','0230'],['2530','5052','0203','2322','5500','0505','5332','3525'],['0222','2303','2552','5030','5325','3532','5505','0500'],['3500','5305','0532','5525','2330','0252','5003','2522'],['5303','3522','5530','0552','0232','2325','2500','5005'],['2305','0200','5025','2532','3552','5330','0522','5503']] },
+    { name:'Example 16', orig:[['5132','2525','2311','1215','1513','5522','3531','5352'],['5552','1531','5322','3513','2515','5111','1225','2332'],['1525','5532','3515','5311','5122','2513','2352','1231'],['2531','5152','1213','2322','5511','1515','5332','3525'],['1222','2313','2552','5131','5325','3532','5515','1511'],['3511','5315','1532','5525','2331','1252','5113','2522'],['5313','3522','5531','1552','1232','2325','2511','5115'],['2315','1211','5125','2532','3552','5331','1522','5513']] },
+    { name:'Example 17', orig:[['5832','2525','2388','8285','8583','5522','3538','5352'],['5552','8538','5322','3583','2585','5888','8225','2332'],['8525','5532','3585','5388','5822','2583','2352','8238'],['2538','5852','8283','2322','5588','8585','5332','3525'],['8222','2383','2552','5838','5325','3532','5585','8588'],['3588','5385','8532','5525','2338','8252','5883','2522'],['5383','3522','5538','8552','8232','2325','2588','5885'],['2385','8288','5825','2532','3552','5338','8522','5583']] },
+    { name:'Example 18', orig:[['8882','3858','2335','5838','3052','2233','5255','5583'],['2283','3055','5533','5252','3838','8835','5858','2382'],['3058','2282','5238','5535','8833','3852','2383','5855'],['3855','8883','5852','2333','2235','3038','5582','5258'],['5833','2352','3883','8855','5558','5282','2238','3035'],['5235','5538','3082','2258','2355','5883','8852','3833'],['5552','5233','2255','3083','5882','2358','3835','8838'],['2338','5835','8858','3882','5283','5555','3033','2252']] },
+    { name:'Example 19', orig:[['1112','3151','2335','5131','3052','2233','5255','5513'],['2213','3055','5533','5252','3131','1135','5151','2312'],['3051','2212','5231','5535','1133','3152','2313','5155'],['3155','1113','5152','2333','2235','3031','5512','5251'],['5133','2352','3113','1155','5551','5212','2231','3035'],['5235','5531','3012','2251','2355','5113','1152','3133'],['5552','5233','2255','3013','5112','2351','3135','1131'],['2331','5135','1151','3112','5213','5555','3033','2252']] },
+    { name:'Example 20', orig:[['8882','3858','2335','5838','3152','2233','5255','5583'],['2283','3155','5533','5252','3838','8835','5858','2382'],['3158','2282','5238','5535','8833','3852','2383','5855'],['3855','8883','5852','2333','2235','3138','5582','5258'],['5833','2352','3883','8855','5558','5282','2238','3135'],['5235','5538','3182','2258','2355','5883','8852','3833'],['5552','5233','2255','3183','5882','2358','3835','8838'],['2338','5835','8858','3882','5283','5555','3133','2252']] },
+    { name:'Example 21', orig:[['2802','3230','3323','3533','2085','5311','8018','0135'],['5335','2018','0111','8085','3233','2823','3530','3302'],['2030','5302','8033','0123','2811','3285','3335','3518'],['3218','2835','3585','3311','5323','2033','0102','8030'],['3511','3385','3235','2818','0130','8002','5333','2023'],['8023','0133','2002','5330','3318','3535','2885','3211'],['0185','8011','5318','2035','3502','3330','3223','2833'],['3333','3523','2830','3202','8035','0118','2011','5385']] },
+    { name:'Example 22', orig:[['5333','2353','3352','2535','2232','3555','3223','5225'],['3525','2223','5255','3232','2335','5352','2553','3333'],['2253','3533','3235','5252','5355','2332','3325','2523'],['2323','5325','2532','3355','3552','2235','5233','3253'],['2555','3332','2325','5323','5253','3233','3535','2252'],['3252','5235','2233','3553','3323','2525','5332','2355'],['5232','3255','3523','2225','2533','3353','2352','5335'],['3335','2552','5353','2333','3225','5223','2255','3532']] },
+  ]},
+};
+let STYLE='classic', STRIPES=0, BLOCKS=null;
+const cloneSet = k => SETS[k].data.map(d=>({name:d.name, orig:d.orig.map(r=>r.slice())}));
+/* every example becomes its own two-sided plate */
+const EXAMPLES=[]; Object.entries(SETS).forEach(([k,v])=>v.data.forEach((d,i)=>EXAMPLES.push({set:k,idx:i,name:d.name,num:'o'+d.orig.length+'e'+(d.name.match(/\d+/)||['x'])[0]})));
+function exFromHash(){
+  const h=location.hash.slice(1), m=h.match(/^(o\d+e\w+)$/);
+  if(m){ const i=EXAMPLES.findIndex(e=>String(e.num)===m[1]); if(i>=0) return i; }
+  if(SETS[h]) return EXAMPLES.findIndex(e=>e.set===h);
+  return 0;
+}
+let currentEx = exFromHash(), currentSet = EXAMPLES[currentEx].set;
+const PLATE_SIZE = k => { if(SETS[k].size) return SETS[k].size; const d=SETS[k].data[0].orig, n=d.length, L=Math.max(...d.flat().map(c=>c.length));
+  return Math.min(400, 240 + (n-3)*35 + (L>=6?30:L>=4?15:0)); };
+let DATA = cloneSet(currentSet);
+/* Water image of a digit (vertical flip). 0,1,3,8 are unchanged; in seven-segment
+   form 2 and 5 turn into each other (segments top↔bottom, upper↔lower sides). */
+const WATER_MAP = {'0':'0','1':'1','3':'3','8':'8','2':'5','5':'2'};
+const safeDigits = () => STYLE==='seg' ? ['0','1','2','3','5','8'] : ['0','1','3','8'];
+
+/* Each original is opposite its reflection.
+   Placements are chosen so that a 180° flip about the HORIZONTAL screen
+   axis (a "water flip") turns any original into its reflection, upright. */
+const HALF='calc(var(--s) / 2)', TILE_T=0.07, TILE_Z='calc(var(--s) * 0.035)';
+const CUBE_FACES = [
+  { id:'front',  pair:0, refl:false, rot:'rotateX(0deg)',   z:HALF },
+  { id:'back',   pair:0, refl:true,  rot:'rotateX(180deg)', z:HALF },
+  { id:'top',    pair:1, refl:false, rot:'rotateX(90deg)',  z:HALF },
+  { id:'bottom', pair:1, refl:true,  rot:'rotateX(-90deg)', z:HALF },
+  { id:'right',  pair:2, refl:false, rot:'rotateY(90deg)',  z:HALF },
+  { id:'left',   pair:2, refl:true,  rot:'rotateY(90deg) rotateX(180deg)', z:HALF }
+];
+/* two-sided tile: same water-flip geometry as the cube's front/back pair */
+const TILE_FACES = [
+  { id:'front', pair:0, refl:false, rot:'rotateX(0deg)',   z:TILE_Z },
+  { id:'back',  pair:0, refl:true,  rot:'rotateX(180deg)', z:TILE_Z }
+];
+[...CUBE_FACES,...TILE_FACES].forEach(f=>{
+  const P = new DOMMatrix(f.rot);
+  f.view = P.inverse();                                   // cube rotation that brings this face to the front, upright
+  const n = P.transformPoint(new DOMPoint(0,0,1,0));
+  f.normal = [n.x,n.y,n.z];
+});
+let FACES = CUBE_FACES;
+
+const reflect = g => g.slice().reverse().map(r=>r.map(c=>c.split('').map(d=>WATER_MAP[d]??d).join('')));
+const gridOf = f => f.refl ? reflect(DATA[f.pair].orig) : DATA[f.pair].orig;
+
+function analyse(g){
+  const n=g.length, v=g.map(r=>r.map(Number));
+  const rows=v.map(r=>r.reduce((a,b)=>a+b,0));
+  const cols=v[0].map((_,j)=>v.reduce((a,r)=>a+r[j],0));
+  let d1=0,d2=0; for(let i=0;i<n;i++){d1+=v[i][i]; d2+=v[i][n-1-i];}
+  const all=[...rows,...cols], S=all[0], rc=all.every(x=>x===S);
+  let type = rc ? (d1===S&&d2===S ? 'magic' : 'semi-magic') : 'not magic';
+  if(type==='magic'){          // all broken diagonals in both directions
+    let pan=true;
+    for(let k=0;k<n&&pan;k++){ let a=0,b=0; for(let i=0;i<n;i++){ a+=v[i][(i+k)%n]; b+=v[i][(k-i+n)%n]; } if(a!==S||b!==S) pan=false; }
+    if(pan) type='pandiagonal magic';
+  }
+  let stripes=null, Sx=S;
+  if(STRIPES){
+    stripes=[]; for(let c0=0;c0<n;c0+=STRIPES){ let t=0; for(let i=0;i<n;i++) for(let j=c0;j<c0+STRIPES;j++) t+=v[i][j]; stripes.push(t); }
+    const colEq=cols.every(x=>x===cols[0]), stEq=stripes.every(x=>x===stripes[0]);
+    if(type==='not magic' && colEq && stEq && d1===cols[0] && d2===cols[0]){ type='striped (rows differ)'; Sx=cols[0]; }
+  }
+  let blocks=null;
+  if(BLOCKS){ const [bh,bw]=BLOCKS; const bs=[]; let allMagic=true;
+    for(let a=0;a<n;a+=bh) for(let c0=0;c0<n;c0+=bw){ let t=0; for(let i=a;i<a+bh;i++) for(let j=c0;j<c0+bw;j++) t+=v[i][j]; bs.push(t);
+      if(bh===bw){ const s0=v[a].slice(c0,c0+bw).reduce((x,y)=>x+y,0); let ok=true;
+        for(let i=0;i<bh;i++){ if(v[a+i].slice(c0,c0+bw).reduce((x,y)=>x+y,0)!==s0) ok=false; let cs=0; for(let r=0;r<bh;r++) cs+=v[a+r][c0+i]; if(cs!==s0) ok=false; }
+        let e1=0,e2=0; for(let i=0;i<bh;i++){ e1+=v[a+i][c0+i]; e2+=v[a+i][c0+bw-1-i]; } if(e1!==s0||e2!==s0) ok=false;
+        if(!ok) allMagic=false; } }
+    blocks={size:bh+'×'+bw, sums:[...new Set(bs)], magic:bh===bw?allMagic:null, sub:bh===bw?bs[0]/bh:null}; }
+  return {rows,cols,d1,d2,S:Sx,type,stripes,blocks};
+}
+const digitsUsed = g => [...new Set(g.flat().join('').split(''))].sort();
+const waterSafe  = g => digitsUsed(g).every(d=>safeDigits().includes(d));
+
+/* seven-segment glyphs, exactly symmetric about the horizontal mid-line */
+const H=(x0,x1,y)=>`${x0},${y} ${x0+5},${y-5} ${x1-5},${y-5} ${x1},${y} ${x1-5},${y+5} ${x0+5},${y+5}`;
+const V=(x,y0,y1)=>`${x},${y0} ${x+5},${y0+5} ${x+5},${y1-5} ${x},${y1} ${x-5},${y1-5} ${x-5},${y0+5}`;
+const SEGS={a:H(8,52,6),g:H(8,52,50),d:H(8,52,94),f:V(6,8,49),b:V(54,8,49),e:V(6,51,92),c:V(54,51,92)};
+const DIGIT_SEGS={'0':'abcdef','1':'bc','2':'abged','3':'abgcd','4':'fgbc','5':'afgcd','6':'afgedc','7':'abc','8':'abcdefg','9':'abcdfg'};
+const segDigit=d=>`<svg class="seg7" viewBox="${d==='1'?'46 0 16 100':'0 0 60 100'}">${(DIGIT_SEGS[d]||'').split('').map(k=>`<polygon points="${SEGS[k]}"/>`).join('')}</svg>`;
+const cellContent=c=> '<span class="ct">'+(STYLE==='seg' ? c.split('').map(segDigit).join('') : c.replace(/1/g,'<span class="one">I</span>'))+'</span>';
+/* squeeze long numbers horizontally so each fits its cell (like a condensed font) */
+function fitCells(root=document){
+  root.querySelectorAll('.cell .ct').forEach(el=>{
+    el.style.transform='';
+    const avail=el.parentElement.clientWidth*0.9, w=el.offsetWidth;
+    if(avail>0 && w>avail) el.style.transform=`scaleX(${(avail/w).toFixed(3)})`;
+  });
+}
+
+function blockBorder(i,n){
+  if(!BLOCKS) return ';border-color:var(--faint)';   /* order 7: faint cell lines, dark outer frame */
+  const r=Math.floor(i/n), c=i%n, [bh,bw]=BLOCKS, t='calc(var(--s)*.0034*var(--lw))';
+  /* ordinary cell lines faint; block edges in the normal grid-line colour */
+  return ';border-color:var(--faint)'
+    +(c%bw===bw-1 && c<n-1 ? ';border-right-width:'+t+';border-right-color:var(--line)' : '')
+    +(r%bh===bh-1 && r<n-1 ? ';border-bottom-width:'+t+';border-bottom-color:var(--line)' : '');
+}
+function gridHTML(g, extraCls=''){
+  const n=g.length, maxLen=Math.max(...g.flat().map(s=>s.length));
+  const fs = (0.5/n)*Math.min(1, (maxLen>6?5.6:maxLen>4?4.4:2.9)/maxLen);
+  return `<div class="grid ${extraCls}" style="grid-template-columns:repeat(${n},minmax(0,1fr));grid-template-rows:repeat(${n},minmax(0,1fr))">`+
+    g.flat().map((c,i)=>`<div class="cell${STYLE==='seg'?' sg':''}${STRIPES?(Math.floor((i%n)/STRIPES)%2?' st1':' st0'):''}" style="font-size:calc(var(--s)*${fs.toFixed(4)})${blockBorder(i,n)}">${cellContent(c)}</div>`).join('')+`</div>`;
+}
+const faceLabel = f => `${DATA[f.pair].name.replace('Example ','Ex ')} · ${f.refl?'Water':'Original'}`;
+
+function buildCube(el){
+  el.innerHTML = FACES.map(f=>
+    `<div class="face ${f.refl?'refl':'orig'}" data-face="${f.id}"
+          style="transform:${f.rot} translateZ(${f.z})">
+       ${gridHTML(gridOf(f))}<span class="badge">${faceLabel(f)}</span></div>`).join('') + (FACES===TILE_FACES ? tileEdges() : '');
+}
+function tileEdges(){
+  const t=`calc(var(--s) * ${TILE_T})`, off=`calc(50% - var(--s) * ${TILE_T/2})`;
+  return [
+    `top:${off};left:0;width:100%;height:${t};transform:rotateX(90deg) translateZ(${HALF})`,
+    `top:${off};left:0;width:100%;height:${t};transform:rotateX(-90deg) translateZ(${HALF})`,
+    `left:${off};top:0;height:100%;width:${t};transform:rotateY(90deg) translateZ(${HALF})`,
+    `left:${off};top:0;height:100%;width:${t};transform:rotateY(-90deg) translateZ(${HALF})`
+  ].map(st=>`<div class="edge" style="${st}"></div>`).join('');
+}
+
+/* ---------- rotation state ---------- */
+const cube=document.getElementById('cube'), cube2=document.getElementById('cube2'), cube3=document.getElementById('cube3');
+let M = new DOMMatrix().rotateAxisAngleSelf(1,0,0,-22).rotateAxisAngleSelf(0,1,0,28);
+let spinning=true, speed=22, dragging=false, anim=null, queue=[], frameCount=0, activeId=null;
+const SPIN_AXIS=[0.25,1,0.12];
+
+const R = (x,y,z,deg)=> new DOMMatrix().rotateAxisAngleSelf(x,y,z,deg);
+function apply(){ const s=M.toString(); cube.style.transform=s; cube2.style.transform=s; cube3.style.transform=s; }
+
+function orthonormalize(){
+  const c=[[M.m11,M.m12,M.m13],[M.m21,M.m22,M.m23],[M.m31,M.m32,M.m33]];
+  const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2], nrm=a=>{const l=Math.hypot(...a);return a.map(v=>v/l)};
+  const a=nrm(c[0]); let b=c[1].map((v,i)=>v-dot(c[1],a)*a[i]); b=nrm(b);
+  const k=[a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+  M = DOMMatrix.fromFloat64Array(new Float64Array([...a,0,...b,0,...k,0,0,0,0,1]));
+}
+
+/* axis–angle of a rotation matrix, verified against DOMMatrix's own convention */
+function axisAngle(Rm){
+  const r=[[Rm.m11,Rm.m21,Rm.m31],[Rm.m12,Rm.m22,Rm.m32],[Rm.m13,Rm.m23,Rm.m33]];
+  const cos=Math.max(-1,Math.min(1,(r[0][0]+r[1][1]+r[2][2]-1)/2)), ang=Math.acos(cos);
+  if(ang<1e-4) return null;
+  let ax; const s=Math.sin(ang);
+  if(s>1e-3) ax=[r[2][1]-r[1][2], r[0][2]-r[2][0], r[1][0]-r[0][1]].map(v=>v/(2*s));
+  else{
+    let x=Math.sqrt(Math.max(0,(r[0][0]+1)/2)), y=Math.sqrt(Math.max(0,(r[1][1]+1)/2)), z=Math.sqrt(Math.max(0,(r[2][2]+1)/2));
+    const sg=v=>v<0?-1:1;
+    if(x>=y&&x>=z){y*=sg(r[0][1]);z*=sg(r[0][2]);} else if(y>=z){x*=sg(r[0][1]);z*=sg(r[1][2]);} else {x*=sg(r[0][2]);y*=sg(r[1][2]);}
+    ax=[x,y,z];
+  }
+  const deg=ang*180/Math.PI, diff=Q=>Math.abs(Q.m11-Rm.m11)+Math.abs(Q.m12-Rm.m12)+Math.abs(Q.m13-Rm.m13)+
+    Math.abs(Q.m21-Rm.m21)+Math.abs(Q.m22-Rm.m22)+Math.abs(Q.m23-Rm.m23)+Math.abs(Q.m31-Rm.m31)+Math.abs(Q.m32-Rm.m32)+Math.abs(Q.m33-Rm.m33);
+  return diff(R(...ax,deg))<=diff(R(...ax,-deg)) ? {ax,deg} : {ax,deg:-deg};
+}
+
+function startAnim(axis,deg,dur,target){ anim={axis,deg,dur,target,M0:M,t0:null}; }
+function snapTo(f){
+  queue.push(()=>{ const aa=axisAngle(f.view.multiply(M.inverse()));
+    if(!aa){M=f.view;apply();return false;} startAnim(aa.ax,aa.deg,950,f.view); return true; });
+}
+function waterFlip(){
+  queue.push(()=>{ startAnim([1,0,0],180,1500,R(1,0,0,180).multiply(M)); return true; });
+}
+let autoplay=true;
+function setPlayLabel(){ playBtn.textContent = autoplay ? '⏸ Pause' : '▶ Play';
+  const ai=document.getElementById('autoInfo'); if(ai) ai.textContent = autoplay ? 'Playing automatically — press Pause to stop' : 'Paused — press Play to continue'; }
+function pause(){ autoplay=false; spinning=false; queue=[]; setPlayLabel(); }
+
+const ease=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+let last=null;
+function frame(t){
+  const dt = last==null?0:(t-last)/1000; last=t;
+  if(!anim && queue.length){ while(queue.length && !anim){ queue.shift()(); } }
+  if(anim){
+    if(anim.t0==null) anim.t0=t;
+    const p=Math.min(1,(t-anim.t0)/anim.dur);
+    M = R(...anim.axis, anim.deg*ease(p)).multiply(anim.M0);
+    if(p>=1){ if(anim.target) M=anim.target; anim=null; }
+  } else if(spinning && !dragging && speed>0){
+    M = R(...SPIN_AXIS, speed*dt).multiply(M);
+  }
+  if(++frameCount%240===0 && !anim) orthonormalize();
+  apply(); updateActive();
+  requestAnimationFrame(frame);
+}
+
+/* ---------- active face ---------- */
+function updateActive(){
+  let best=null,bz=-2;
+  for(const f of FACES){ const p=M.transformPoint(new DOMPoint(...f.normal,0)); if(p.z>bz){bz=p.z;best=f;} }
+  if(best.id===activeId) return;
+  activeId=best.id;
+  document.querySelectorAll('.face').forEach(el=>el.classList.toggle('active',el.dataset.face===activeId));
+  const g=gridOf(best), a=analyse(g), partner=FACES.find(x=>x.pair===best.pair&&x.refl!==best.refl);
+  document.getElementById('activeInfo').innerHTML=
+    `<div class="t">${DATA[best.pair].name} — ${best.refl?'Water reflection':'Original'}</div>
+     <div style="color:#8d84ad">${best.id} face · opposite: ${partner.id} (${partner.refl?'water reflection':'original'})</div>
+     <div id="activeMini" class="${best.refl?'refl':''}">${gridHTML(g)}</div>
+     Rows: ${a.rows.join(', ')}<br>Columns: ${a.cols.join(', ')}<br>Diagonals: ${a.d1}, ${a.d2}<br>${a.blocks?`<span style="color:#8a4b00">${a.blocks.size} blocks: ${a.blocks.sums.length===1?'all '+a.blocks.sums[0]:a.blocks.sums.join(', ')}${a.blocks.magic?' · each magic':''}</span><br>`:''}${a.stripes?`<span style="color:#8a4b00">Vertical ${best.refl?'':''}${g.length}×${STRIPES} stripes: ${a.stripes.join(', ')}</span><br>`:''}
+     <span class="${a.type==='not magic'?'bad':'ok'}">${a.type}${a.type!=='not magic'?' · S = '+a.S:''}</span>`;
+  fitCells(document.getElementById('activeInfo'));
+}
+
+/* ---------- UI ---------- */
+const playBtn=document.getElementById('playBtn');
+function buildButtons(){
+  document.getElementById('faceBtns').innerHTML = DATA.map((d,p)=>{
+    const o=FACES.find(f=>f.pair===p&&!f.refl), r=FACES.find(f=>f.pair===p&&f.refl);
+    return `<div class="prow"><span>${d.name}</span>
+      <button class="o" data-snap="${o.id}">Original</button>
+      <button class="r" data-snap="${r.id}">Water</button>
+      <button class="w" data-pair="${p}" title="Show original, then flip to its water reflection">🌊</button></div>`;
+  }).join('');
+  document.querySelectorAll('[data-snap]').forEach(b=>b.onclick=()=>{pause();queue=[];snapTo(FACES.find(f=>f.id===b.dataset.snap));});
+  document.querySelectorAll('[data-pair]').forEach(b=>b.onclick=()=>{pause();queue=[];
+    snapTo(FACES.find(f=>f.pair===+b.dataset.pair&&!f.refl)); waterFlip();});
+}
+playBtn.onclick=()=>{ if(autoplay){ pause(); anim=null; } else { autoplay=true; spinning=false; queue=[]; anim=null; setPlayLabel(); autoCycle(); } };
+document.getElementById('flipBtn').onclick=()=>{ pause(); waterFlip(); };
+
+const speedEl=document.getElementById('speed'), sizeEl=document.getElementById('size');
+speedEl.oninput=()=>{document.getElementById('speedV').textContent=(+speedEl.value).toFixed(1)+'×';};
+sizeEl.oninput=()=>{document.documentElement.style.setProperty('--s',sizeEl.value+'px');document.getElementById('sizeV').textContent=sizeEl.value;fitCells();};
+[['cOrig','--orig'],['cRefl','--refl'],['cInk','--ink']].forEach(([id,v])=>
+  document.getElementById(id).oninput=e=>document.documentElement.style.setProperty(v,e.target.value));
+document.getElementById('styleSel').onchange=e=>{ STYLE=e.target.value; rebuild(); };
+const lwEl=document.getElementById('lw');
+lwEl.oninput=()=>{document.documentElement.style.setProperty('--lw',lwEl.value);document.getElementById('lwV').textContent=(+lwEl.value).toFixed(1);fitCells();};
+document.getElementById('cLine').oninput=e=>document.documentElement.style.setProperty('--line',e.target.value);
+const ripEl=document.getElementById('rippleIn');
+ripEl.oninput=()=>{ const v=+ripEl.value; document.getElementById('rippleV').textContent=v;
+  document.getElementById('dNear').setAttribute('scale',v);
+  document.getElementById('dDeep').setAttribute('scale',v*2.2);
+  document.getElementById('dSoft').setAttribute('scale',v*0.5); };
+
+/* surface glints: thin broken wave-lines, spaced wider toward the viewer (perspective) */
+(function buildGlints(){
+  const svg=document.getElementById('glints'), N=16; let html='';
+  for(let i=0;i<N;i++){
+    const t=(i+0.6)/N, y=400*Math.pow(t,1.55), amp=1.5+t*4, k=0.006+Math.random()*0.006, ph=Math.random()*6.28;
+    let d=`M -20 ${y.toFixed(1)}`;
+    for(let x=0;x<=1040;x+=20) d+=` L ${x} ${(y+amp*Math.sin(k*x+ph)).toFixed(1)}`;
+    const dash=`${(10+Math.random()*40).toFixed(0)} ${(60+Math.random()*160).toFixed(0)} ${(4+Math.random()*14).toFixed(0)} ${(80+Math.random()*200).toFixed(0)}`;
+    const op=(0.28-0.16*t).toFixed(2), w=(0.6+t*1.4).toFixed(2), dur=(9+Math.random()*10).toFixed(1);
+    const dir=Math.random()<0.5?'normal':'reverse';
+    html+=`<path d="${d}" stroke="rgba(205,238,255,${op})" stroke-width="${w}" stroke-dasharray="${dash}" style="animation-duration:${dur}s;animation-direction:${dir}"/>`;
+  }
+  svg.innerHTML=html;
+})();
+
+document.getElementById('showWater').onchange=e=>{document.body.classList.toggle('nowater',!e.target.checked);fitCells();};
+if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>fitCells());
+document.getElementById('showLabels').onchange=e=>document.body.classList.toggle('hidelabels',!e.target.checked);
+
+/* drag to rotate */
+const stage=document.getElementById('stage'); let px,py;
+stage.addEventListener('pointerdown',e=>{dragging=true;anim=null;pause();px=e.clientX;py=e.clientY;stage.setPointerCapture(e.pointerId);});
+stage.addEventListener('pointermove',e=>{ if(!dragging)return;
+  const dx=e.clientX-px, dy=e.clientY-py; px=e.clientX; py=e.clientY;
+  M = R(0,1,0,dx*0.45).multiply(R(1,0,0,-dy*0.45)).multiply(M); });
+['pointerup','pointercancel'].forEach(ev=>stage.addEventListener(ev,()=>dragging=false));
+
+/* ---------- pair cards ---------- */
+function buildCards(){
+  document.getElementById('cards').innerHTML = DATA.map(d=>{
+    const g=d.orig, w=reflect(g), a=analyse(g), b=analyse(w), safe=waterSafe(g);
+    return `<div class="card">
+      <h3>${d.name} — digits (${digitsUsed(g).join(', ')})</h3>
+      <div class="${g.length>=7?'big':''} quad">
+        <figure><figcaption>Original</figcaption><div class="mini">${gridHTML(g)}</div></figure>
+        <figure><figcaption>Water reflection<br>(rows reversed)</figcaption><div class="mini">${gridHTML(w,'refl')}</div></figure>
+        <figure><figcaption>Original<br>above the water</figcaption><div class="mini">${gridHTML(g)}</div></figure>
+        <figure><figcaption>Its image in the water<br>(true mirror)</figcaption><div class="qwl"></div><div class="mini mir">${gridHTML(g,'refl')}</div></figure>
+      </div>
+      <p>Original: rows ${a.rows.join(', ')} · columns ${a.cols.join(', ')} · diagonals ${a.d1}, ${a.d2}
+        → <span class="${a.type==='not magic'?'bad':'ok'}">${a.type}${a.type!=='not magic'?', S = '+a.S:''}</span><br>
+        Reflection: rows ${b.rows.join(', ')} · columns ${b.cols.join(', ')} · diagonals ${b.d1}, ${b.d2}
+        → <span class="${b.type==='not magic'?'bad':'ok'}">${b.type}${b.type!=='not magic'?', S = '+b.S:''}</span><br>
+        ${a.blocks?`<span style="color:#8a4b00">${a.blocks.size} blocks — original: ${a.blocks.sums.length===1?'every block sums to '+a.blocks.sums[0]:'sums '+a.blocks.sums.join(', ')}${a.blocks.magic?' · each block is a magic square, S = '+a.blocks.sub:''} · reflection: ${b.blocks.sums.length===1?'every block sums to '+b.blocks.sums[0]:'sums '+b.blocks.sums.join(', ')}${b.blocks.magic?' (each magic)':''}</span><br>`:''}
+        ${a.stripes?`<span style="color:#8a4b00">Vertical ${g.length}×${STRIPES} stripes — original: ${a.stripes.join(', ')} · reflection: ${b.stripes.join(', ')}</span><br>`:''}
+        ${b.type.startsWith('striped')?`<span style="color:#5a3d8a">In water the 2 ↔ 5 swap changes the row sums, but the columns, both diagonals and the ${g.length}×${STRIPES} stripes keep their equal sums.</span><br>`:''}
+        ${safe ? `<span class="ok">✓ All digits are water-symmetric (${STYLE==='seg'?'0, 1, 3, 8 unchanged; 2 ↔ 5':'0, 1, 3, 8'}): the mirrored image reads exactly as the reflection square.</span>`
+               : '<span class="bad">⚠ Some digits are not symmetric about a horizontal axis — the water image will not read as numbers.</span>'}</p>
+    </div>`;}).join('');
+}
+
+/* ---------- editor ---------- */
+function buildEditor(){
+  document.getElementById('editor').innerHTML = DATA.map((d,i)=>
+    `<div><div style="font-size:13px;margin-bottom:4px">${d.name}</div>
+     <textarea id="ta${i}">${d.orig.map(r=>r.join(' ')).join('\n')}</textarea></div>`).join('');
+}
+document.getElementById('applyBtn').onclick=()=>{
+  const msg=document.getElementById('edMsg'), next=[]; const warn=[];
+  for(let i=0;i<DATA.length;i++){
+    const rows=document.getElementById('ta'+i).value.trim().split(/\n+/).map(l=>l.trim().split(/[\s,;]+/).filter(Boolean));
+    const n=rows.length;
+    if(n<3||rows.some(r=>r.length!==n)||rows.flat().some(c=>!/^\d+$/.test(c))){
+      msg.innerHTML=`<span class="bad">${DATA[i].name}: enter an n×n block of whole numbers (one row per line).</span>`; return; }
+    next.push({name:DATA[i].name, orig:rows});
+    if(!waterSafe(rows)) warn.push(DATA[i].name);
+  }
+  DATA=next; rebuild();
+  msg.innerHTML = warn.length ? `<span class="bad">Applied. Not water-symmetric: ${warn.join(', ')}.</span>` : '<span class="ok">Applied.</span>';
+};
+
+function rebuild(){ buildCube(cube); buildCube(cube2); buildCube(cube3); buildButtons(); buildCards(); activeId=null; fitCells(); }
+/* section links grouped by order, laid out in two compact rows */
+const shortTab=v=>v.tab.replace(/^Order \d+ · /,'').replace(/ Entries$/,'').replace(/ Cell$/,'').replace('Example ','Ex ');
+function tabsHTML(k){
+  const groups={};
+  Object.entries(SETS).forEach(([key,v])=>{ const n=v.data[0].orig.length; (groups[n]=groups[n]||[]).push([key,v]); });
+  const cur=EXAMPLES[currentEx];
+  return Object.entries(groups).map(([n,list])=>`<div class="tabgroup"><span class="tablabel">Order ${n}</span>`+
+    list.map(([key,v])=>`<span class="secgroup${key===k?' on':''}"><a href="#${key}" class="seclink${key===k?' on':''}">${shortTab(v)}</a>`+
+      EXAMPLES.filter(e=>e.set===key).map(e=>`<a href="#${e.num}" class="exlink${cur&&e.num===cur.num?' on':''}">${(e.name.match(/\d+/)||[e.name.split(' ')[0]])[0]}</a>`).join('')+
+    `</span>`).join('')+`</div>`).join('');
+}
+function loadExample(ei, keepQueue=false){
+  currentEx=ei; const E=EXAMPLES[ei], k=E.set; currentSet=k;
+  const d=SETS[k].data[E.idx]; DATA=[{name:d.name, orig:d.orig.map(r=>r.slice())}];
+  FACES = TILE_FACES;
+  document.getElementById('pairsTitle').textContent='The Pair';
+  const sz=Math.round(Math.min(PLATE_SIZE(k), document.querySelector('.mirrorpane') ? (innerWidth-40)/3.3 : innerWidth-70)); sizeEl.value=sz; document.getElementById('sizeV').textContent=sz;
+  document.documentElement.style.setProperty('--s',sz+'px');
+  STRIPES=SETS[k].stripes||0; BLOCKS=SETS[k].blocks||null;
+  STYLE=SETS[k].style||'classic'; document.getElementById('styleSel').value=STYLE;
+  const co=SETS[k].orig||'#f7c5dd', cr=SETS[k].refl||'#bfe8f5', rs=document.documentElement.style;
+  rs.setProperty('--orig',co); rs.setProperty('--refl',cr);
+  document.getElementById('cOrig').value=co; document.getElementById('cRefl').value=cr;
+  document.getElementById('subTitle').textContent=SETS[k].sub.replace(/ · a two-sided tile[^·]*/,' ').replace(/\s+·/g,' ·').replace(/\s+$/,'');
+  document.getElementById('tabs').innerHTML=tabsHTML(k);
+  document.getElementById('chips').innerHTML='';
+  document.getElementById('edMsg').textContent='';
+  if(!keepQueue){ queue=[]; anim=null; }
+  if(!keepQueue && autoplay) autoCycle();
+  if(location.hash!=='#'+E.num) history.replaceState(null,'','#'+E.num);
+  rebuild(); buildEditor();
+}
+window.addEventListener('hashchange',()=>{ if(!location.hash.slice(1)) return; const ei=exFromHash(); if(ei!==currentEx) loadExample(ei); });
+const step=dir=>loadExample((currentEx+dir+EXAMPLES.length)%EXAMPLES.length);
+document.getElementById('prevBtn').onclick=()=>step(-1);
+document.getElementById('nextBtn').onclick=()=>step(1);
+const hold=ms=>queue.push(()=>{anim={axis:[1,0,0],deg:0,dur:ms,M0:M,t0:null};return true;});
+/* automatic run: original → water flip → full turn showing both sides → next plate, looping */
+function nextIndex(){
+  if(document.getElementById('scopeSel').value==='section'){
+    const list=EXAMPLES.map((e,i)=>i).filter(i=>EXAMPLES[i].set===currentSet);
+    return list[(list.indexOf(currentEx)+1)%list.length];
+  }
+  return (currentEx+1)%EXAMPLES.length;
+}
+function autoCycle(){
+  const f=()=>Math.max(0.4,+speedEl.value);
+  snapTo(TILE_FACES[0]);
+  queue.push(()=>{anim={axis:[1,0,0],deg:0,dur:1600/f(),M0:M,t0:null};return true;});
+  queue.push(()=>{ startAnim([1,0,0],180,1500/f(),R(1,0,0,180).multiply(M)); return true; });
+  queue.push(()=>{anim={axis:[1,0,0],deg:0,dur:1900/f(),M0:M,t0:null};return true;});
+  queue.push(()=>{ startAnim([0,1,0],360,2800/f(),R(0,1,0,360).multiply(M)); return true; });
+  queue.push(()=>{ if(autoplay){ loadExample(nextIndex(),true); autoCycle(); } return false; });
+}
+spinning=false; setPlayLabel(); loadExample(currentEx); apply(); requestAnimationFrame(frame);
+</script>
+</body>
+</html>

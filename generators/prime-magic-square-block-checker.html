@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prime Magic Block Checker - Professional Hierarchical Edition</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<style>
+body{font-family:Arial,sans-serif;background:#f2f2f2;margin:20px;}
+.container{max-width:1500px;margin:auto;background:white;padding:20px;border-radius:10px;box-shadow:0 0 10px rgba(0,0,0,0.12);}
+h1{text-align:center;margin-bottom:6px;}.creator{text-align:center;font-weight:bold;margin-bottom:20px;}
+textarea{width:100%;height:250px;font-size:15px;box-sizing:border-box;}
+button{padding:10px 20px;margin-top:10px;margin-right:10px;border:none;border-radius:5px;background:#007bff;color:white;cursor:pointer;}
+button:hover{background:#0056b3;}.summary{margin-top:25px;background:#fafafa;border-radius:8px;padding:15px;border:1px solid #ccc;}
+.good{color:green;font-weight:bold;}.bad{color:red;font-weight:bold;}.orange{color:#cc7a00;font-weight:bold;}.muted{color:#555;}
+.notice{margin-top:10px;color:#444;font-size:14px;}.controls{margin-top:12px;display:flex;gap:18px;align-items:center;flex-wrap:wrap;}
+select,input[type="number"],input[type="text"]{padding:6px;border-radius:5px;border:1px solid #aaa;}
+.table-container{max-height:900px;max-width:100%;overflow:auto;border:1px solid #aaa;margin-top:15px;background:white;}
+table{border-collapse:collapse;margin-top:15px;width:100%;} .table-container table{margin-top:0;width:auto;min-width:100%;}
+td,th{border:1px solid #aaa;padding:4px;text-align:center;font-size:13px;} th{background:#eee;position:sticky;top:0;z-index:2;}
+.table-container td{white-space:nowrap;}.duplicate{background:#ff9999;}.nonprime{background:#ffe680;}.both{background:#cc0000;color:white;}
+.failBlock{outline:3px solid #cc0000;outline-offset:-3px;background:#fff0f0!important;}.semiBlock{outline:3px solid #cc7a00;outline-offset:-3px;}
+.blockTitle{margin-top:20px;border-top:1px solid #ddd;padding-top:12px;}.pill{display:inline-block;padding:2px 8px;border-radius:12px;background:#eee;margin:2px;font-size:12px;}
+.passpill{background:#d9f2d9;color:green;font-weight:bold;}.failpill{background:#ffd6d6;color:#b00000;font-weight:bold;}.warnpill{background:#fff0c2;color:#9a6500;font-weight:bold;}
+.report-actions{margin-top:10px;}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Prime Magic Block Checker - Professional Hierarchical Edition</h1>
+<div class="creator">Created by Inder J. Taneja</div>
+<p>Checks prime magic squares in separate structural modes and creates publication-style Excel matrices with optional block, sub-block, and sub-sub-block borders.</p>
+<textarea id="input" placeholder="Paste matrix entries here. Use spaces, tabs, commas, or semicolons. Separate multiple matrices by a blank line."></textarea><br>
+<input type="file" id="fileInput" accept=".txt,.csv,.xlsx"><br>
+<button onclick="processText()">Check Pasted Matrix</button>
+<button onclick="processFile()">Check Uploaded File</button>
+<button onclick="downloadTxtReport()">Download TXT Report</button>
+<button onclick="downloadExcelReport()">Download Excel Report with Selected Matrix Colors</button>
+<button onclick="clearAll()">Clear</button>
+<div class="controls">
+<label><input type="checkbox" id="renderTable" checked> Render Matrix Table</label>
+<label>Display table up to:
+<select id="displayLimit"><option value="100">100×100</option><option value="200">200×200</option><option value="500" selected>500×500</option><option value="1000">1000×1000</option><option value="unlimited">Unlimited</option></select></label>
+</div>
+<div class="controls">
+<label><input type="checkbox" id="checkInternalBlocks" checked> Check Internal Blocks</label>
+<label>Internal block orders: <input type="text" id="internalBlockOrders" value="4" style="width:180px;" title="Examples: 4 or 2,4,11,22 or Auto"></label>
+<label>Show block table rows:
+<select id="blockRowLimit"><option value="25">25</option><option value="50" selected>50</option><option value="100">100</option><option value="500">500</option><option value="all">All</option></select></label>
+<label><input type="checkbox" id="checkInternalConcentric" checked> Check each internal block as concentric</label>
+<label>Internal concentric minimum: <input type="text" id="internalConcentricMinOrder" value="Auto" style="width:90px;" title="Auto means 4 for even blocks and 3 for odd blocks. Use 2 if you also want 2×2 checked."></label>
+<label>Step: <input type="number" id="internalConcentricStep" value="2" min="1" style="width:65px;"></label>
+</div>
+
+<div class="controls">
+<label><input type="checkbox" id="checkConcentric" checked> Check Whole-Square Concentric Magic Squares</label>
+<label>Minimum concentric order: <input type="text" id="concentricMinOrder" value="Auto" style="width:90px;" title="Auto, 2, 3, 4, etc."></label>
+<label>Concentric step: <input type="number" id="concentricStep" value="2" min="1" style="width:70px;" title="Usually 2 for concentric borders."></label>
+</div>
+<div class="controls" style="background:#fff4cc;border:1px solid #d6b656;padding:10px;border-radius:7px;">
+<label style="flex:1;min-width:420px;"><strong>Excel matrix title/details:</strong><br>
+<input type="text" id="matrixTitle" value="PRIME MAGIC SQUARE" style="width:96%;margin-top:5px;" placeholder="Write the title or details of the matrix"></label>
+<label><input type="checkbox" id="publicationMode" checked> Title row and separator before matrix</label>
+</div>
+<div class="controls" style="background:#eef6ff;border:1px solid #9dc3e6;padding:10px;border-radius:7px;">
+<label><strong>Excel main-matrix coloring:</strong>
+<select id="matrixColorMode" style="min-width:300px;">
+<option value="wholeConcentric">Whole square is concentric</option>
+<option value="blocks" selected>Whole square is divided into blocks</option>
+<option value="blockConcentric">Blocks are internally concentric</option>
+<option value="blocksSubblocks">Whole square is divided into blocks and sub-blocks</option>
+<option value="hierarchical">Whole square is divided into blocks, sub-blocks and sub-sub-blocks</option>
+<option value="innerRegionBlocks">External border + centered internal part divided into blocks</option>
+<option value="blocksInnerRegion">Blocks, each with its own border + internal blocks (nested)</option>
+<option value="plain">Plain matrix with cell borders</option>
+</select></label>
+<label>Main block order: <input type="text" id="matrixColorBlockOrder" value="Auto" style="width:90px;" title="Examples: 20 for a square divided into 20×20 blocks; 10 for 40×40; 8 for 32×32."></label>
+<label>Sub-block order: <input type="text" id="matrixColorSubBlockOrder" value="5" style="width:90px;" title="Examples: inside a 20×20 block use 4, 5, or 10."></label>
+<label style="margin-left:0.5rem;" title="For 'Blocks and sub-blocks' mode: color each sub-block as a 1-cell border ring plus one solid color for the entire interior (e.g. a 5×5 sub-block becomes a border ring + one solid 3×3 center), instead of one flat color for the whole sub-block."><input type="checkbox" id="subBlockInnerSolid"> Sub-block: separate inner region (border vs. solid center)</label>
+<label>Sub-sub-block order (optional): <input type="text" id="matrixColorSubSubBlockOrder" value="" style="width:90px;" title="Example: 20 → 10 → 5. Leave blank when not used."></label>
+<label>Centered internal order: <input type="text" id="matrixInnerRegionOrder" value="8" style="width:90px;" title="Example: for order 10, enter 8. For order 14, enter 12."></label>
+<label>Blocks inside internal part: <input type="text" id="matrixInnerRegionBlockOrder" value="4" style="width:90px;" title="Example: internal 8 divided into 4×4 blocks; internal 12 divided into 3×3 or 4×4 blocks."></label>
+</div>
+<div class="notice"><strong>The coloring modes are separate.</strong> Whole-square concentric mode adds no block separators. Block mode adds no whole-square concentric rings. Block-concentric mode colors concentric rings only inside each selected block; thick colored lines separate neighboring concentric blocks, while internal ring borders remain thin. Blocks-and-sub-blocks mode uses two independent sizes; check "Sub-block: separate inner region" to color each sub-block as a 1-cell border ring plus one solid interior color instead of one flat color — for example, main blocks of order 20 divided into a 4×4 grid of 5×5 sub-blocks, each 5×5 shown as a border ring around one solid 3×3 center; or order 18 into 3×3 of 6×6, each 6×6 as a border ring around a solid 4×4 center. Hierarchical mode adds an optional third level, for example 20×20 → 10×10 → 5×5. The external-border mode first separates a centered internal square, then divides only that internal square into blocks; for example 10 → inner 8 → 4×4, or 14 → inner 12 → 3×3/4×4, or 19 → inner 15 → 3×3/5×5. The nested "blocks with their own border" mode applies that same border-then-blocks idea to EACH block individually — for example, main blocks of order 10, each with a 1-cell border around its own centered 2×2-of-4×4 region (set Main block order=10, Centered internal order=8, Blocks inside internal part=4). Examples: 40×40 divided into 10×10 blocks; 32×32 divided into 8×8 or 4×4 blocks. The Excel block and sub-block settings are now checked independently of the Internal block orders field.</div>
+<div id="output"></div>
+</div>
+<script>
+const primeCache = new Map();
+let lastReport = [];
+let lastMatrixSheets = [];
+
+function isPrime(n){
+    if(!Number.isInteger(n)) return false;
+    if(primeCache.has(n)) return primeCache.get(n);
+    if(n < 2){ primeCache.set(n,false); return false; }
+    if(n === 2){ primeCache.set(n,true); return true; }
+    if(n % 2 === 0){ primeCache.set(n,false); return false; }
+    const limit = Math.floor(Math.sqrt(n));
+    for(let i=3;i<=limit;i+=2){ if(n % i === 0){ primeCache.set(n,false); return false; } }
+    primeCache.set(n,true); return true;
+}
+function htmlEscape(s){ return String(s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[m])); }
+function parseBlocks(text){
+    const rawBlocks = text.split(/\n\s*\n/); const blocks=[];
+    rawBlocks.forEach(block=>{
+        const rows=block.trim().split(/\n+/); const matrix=[];
+        rows.forEach(row=>{
+            const nums=row.trim().split(/[\s,;]+/).filter(x=>x.length>0).map(Number);
+            if(nums.length>0) matrix.push(nums);
+        });
+        if(matrix.length>0) blocks.push(matrix);
+    });
+    return blocks;
+}
+function validateMatrix(matrix){
+    if(matrix.length===0) return 'Empty matrix.';
+    const n=matrix.length;
+    for(let r=0;r<n;r++){
+        if(matrix[r].length!==n) return `Matrix is not square. Row ${r+1} has ${matrix[r].length} entries but expected ${n}.`;
+        for(let c=0;c<n;c++) if(!Number.isFinite(matrix[r][c])) return `Invalid number at row ${r+1}, column ${c+1}.`;
+    }
+    return '';
+}
+function processText(){ const text=document.getElementById('input').value.trim(); if(!text){alert('Paste matrix blocks.');return;} analyzeBlocks(parseBlocks(text)); }
+function processFile(){
+    const file=document.getElementById('fileInput').files[0]; if(!file){alert('Choose a file.');return;}
+    const reader=new FileReader();
+    reader.onload=function(e){
+        if(file.name.toLowerCase().endsWith('.xlsx')){
+            const data=new Uint8Array(e.target.result); const wb=XLSX.read(data,{type:'array'}); const sheet=wb.Sheets[wb.SheetNames[0]];
+            const rows=XLSX.utils.sheet_to_json(sheet,{header:1}); let text='';
+            rows.forEach(r=>{ text += (r.length===0 ? '\n' : r.join(' ')+'\n'); }); analyzeBlocks(parseBlocks(text));
+        }else analyzeBlocks(parseBlocks(e.target.result));
+    };
+    if(file.name.toLowerCase().endsWith('.xlsx')) reader.readAsArrayBuffer(file); else reader.readAsText(file);
+}
+function analyzeSquare(matrix){
+    const n=matrix.length; let allPrime=true, duplicates=false; const seen=new Set(); const counts={};
+    const rowSums=[]; const colSums=new Array(n).fill(0); let diag1=0, diag2=0;
+    for(let r=0;r<n;r++){
+        let rowSum=0;
+        for(let c=0;c<n;c++){
+            const val=matrix[r][c]; rowSum+=val; colSums[c]+=val; if(r===c) diag1+=val; if(r+c===n-1) diag2+=val;
+            if(!isPrime(val)) allPrime=false; if(seen.has(val)) duplicates=true; else seen.add(val); counts[val]=(counts[val]||0)+1;
+        }
+        rowSums.push(rowSum);
+    }
+    const target=rowSums[0]; const rowsOk=rowSums.every(v=>v===target); const colsOk=colSums.every(v=>v===target);
+    const semiMagic=rowsOk&&colsOk; const magic=semiMagic&&diag1===target&&diag2===target;
+    return {n,allPrime,duplicates,counts,rowSums,colSums,diag1,diag2,target,rowsOk,colsOk,semiMagic,magic};
+}
+function analyzeSubSquare(matrix,r0,c0,k){
+    let allPrime=true, duplicates=false; const seen=new Set(); const rowSums=[]; const colSums=new Array(k).fill(0); let diag1=0,diag2=0;
+    for(let r=0;r<k;r++){
+        let rowSum=0;
+        for(let c=0;c<k;c++){
+            const val=matrix[r0+r][c0+c]; rowSum+=val; colSums[c]+=val; if(r===c) diag1+=val; if(r+c===k-1) diag2+=val;
+            if(!isPrime(val)) allPrime=false; if(seen.has(val)) duplicates=true; else seen.add(val);
+        }
+        rowSums.push(rowSum);
+    }
+    const target=rowSums[0]; const rowsOk=rowSums.every(v=>v===target); const colsOk=colSums.every(v=>v===target);
+    const semiMagic=rowsOk&&colsOk; const magic=semiMagic&&diag1===target&&diag2===target; const primeMagicDistinct=magic&&allPrime&&!duplicates;
+    return {target,rowSums,colSums,diag1,diag2,rowsOk,colsOk,semiMagic,magic,allPrime,duplicates,primeMagicDistinct};
+}
+function getBlockOrders(n){
+    const raw=document.getElementById('internalBlockOrders').value.trim();
+    if(!raw) return [];
+    if(raw.toLowerCase()==='auto'){
+        const divs=[]; for(let d=2;d<=n;d++) if(n%d===0) divs.push(d); return divs;
+    }
+    return [...new Set(raw.split(/[\s,;]+/).map(Number).filter(x=>Number.isInteger(x)&&x>=2))].sort((a,b)=>a-b);
+}
+function statusMark(ok){return ok?'✔':'✘';}
+function getInternalConcentricSettings(k){
+    const enabled = document.getElementById('checkInternalConcentric') ? document.getElementById('checkInternalConcentric').checked : false;
+    const stepRaw = Number(document.getElementById('internalConcentricStep') ? document.getElementById('internalConcentricStep').value : 2);
+    const step = Number.isInteger(stepRaw) && stepRaw >= 1 ? stepRaw : 2;
+    const raw = (document.getElementById('internalConcentricMinOrder') ? document.getElementById('internalConcentricMinOrder').value : 'Auto').trim();
+    let minOrder;
+    if(!raw || raw.toLowerCase()==='auto') minOrder = (k % 2 === 0 ? 4 : 3);
+    else minOrder = Number(raw);
+    if(!Number.isInteger(minOrder) || minOrder < 1) minOrder = (k % 2 === 0 ? 4 : 3);
+    return {enabled, step, minOrder};
+}
+function analyzeConcentricSubSquare(matrix,r0,c0,k,settings){
+    const info={enabled:settings.enabled, total:0, passed:0, failed:0, allPass:false, firstFailed:null, rows:[]};
+    if(!settings.enabled){ info.allPass=true; return info; }
+    for(let size=k; size>=settings.minOrder; size-=settings.step){
+        const diff=k-size;
+        if(diff<0 || diff%2!==0) continue;
+        const rr=r0+diff/2, cc=c0+diff/2;
+        const chk=analyzeSubSquare(matrix,rr,cc,size);
+        const ok=chk.magic && chk.allPrime && !chk.duplicates;
+        const reasons=[];
+        if(!chk.allPrime) reasons.push('Non-prime');
+        if(chk.duplicates) reasons.push('Duplicate');
+        if(!chk.magic) reasons.push(chk.semiMagic?'Semi-magic only':'Not magic');
+        const rec={order:size, rows:`${rr+1}-${rr+size}`, cols:`${cc+1}-${cc+size}`, ok, magic:chk.magic, prime:chk.allPrime, distinct:!chk.duplicates, semiMagic:chk.semiMagic, sum:chk.target, diag1:chk.diag1, diag2:chk.diag2, reason:reasons.join(', ')||'OK'};
+        info.rows.push(rec); info.total++; if(ok) info.passed++; else { info.failed++; if(!info.firstFailed) info.firstFailed=rec; }
+    }
+    info.allPass = info.total>0 && info.passed===info.total;
+    return info;
+}
+function analyzeInternalBlocks(matrix,k,limitChoice){
+    const n=matrix.length; const concSettings=getInternalConcentricSettings(k);
+    const info={blockOrder:k,valid:false,message:'',blocks:[],failedBlocks:[],frequency:new Map(),totalBlocks:0,primeBlocks:0,distinctBlocks:0,magicBlocks:0,semiMagicBlocks:0,concentricBlocks:0,concentricChecked:concSettings.enabled,failedCount:0,equalSums:false,expectedSum:null};
+    if(!Number.isInteger(k)||k<2){info.message='Internal block order must be at least 2.';return info;}
+    if(n%k!==0){info.message=`Order ${n}×${n} cannot be divided exactly into ${k}×${k} blocks.`;return info;}
+    info.valid=true; const per=n/k; info.totalBlocks=per*per; let idx=0;
+    for(let br=0;br<per;br++) for(let bc=0;bc<per;bc++){
+        idx++; const r0=br*k,c0=bc*k; const chk=analyzeSubSquare(matrix,r0,c0,k);
+        const conc = analyzeConcentricSubSquare(matrix,r0,c0,k,concSettings);
+        info.frequency.set(chk.target,(info.frequency.get(chk.target)||0)+1);
+        if(chk.allPrime) info.primeBlocks++; if(!chk.duplicates) info.distinctBlocks++; if(chk.magic) info.magicBlocks++; if(chk.semiMagic) info.semiMagicBlocks++; if(!concSettings.enabled || conc.allPass) info.concentricBlocks++;
+        const reasons=[]; if(!chk.allPrime) reasons.push('Non-prime'); if(chk.duplicates) reasons.push('Duplicate'); if(!chk.magic) reasons.push(chk.semiMagic?'Semi-magic only':'Not magic'); if(concSettings.enabled && !conc.allPass) reasons.push(`Not concentric: first failed ${conc.firstFailed ? conc.firstFailed.order+'×'+conc.firstFailed.order : 'inner order'}`);
+        const rec={index:idx,rowBlock:br+1,colBlock:bc+1,r0,c0,rows:`${r0+1}-${r0+k}`,cols:`${c0+1}-${c0+k}`,order:`${k}×${k}`,prime:chk.allPrime,distinct:!chk.duplicates,semiMagic:chk.semiMagic,magic:chk.magic,concentric:(!concSettings.enabled || conc.allPass),concentricPassed:conc.passed,concentricTotal:conc.total,concentricFirstFailed:conc.firstFailed ? `${conc.firstFailed.order}×${conc.firstFailed.order}` : '',concentricDetails:conc.rows,sum:chk.target,diag1:chk.diag1,diag2:chk.diag2,difference:null,reasons:reasons.join(', ')||'OK',rowSums:chk.rowSums.join(', '),colSums:chk.colSums.join(', ')};
+        info.blocks.push(rec); if(!chk.primeMagicDistinct || (concSettings.enabled && !conc.allPass)) info.failedBlocks.push(rec);
+    }
+    const freqSorted=[...info.frequency.entries()].sort((a,b)=>b[1]-a[1] || a[0]-b[0]);
+    info.expectedSum = freqSorted.length ? freqSorted[0][0] : null;
+    info.equalSums = info.frequency.size===1;
+    info.blocks.forEach(b=>b.difference = b.sum - info.expectedSum);
+    info.failedBlocks.forEach(b=>b.difference = b.sum - info.expectedSum);
+    info.failedCount=info.totalBlocks-info.magicBlocks;
+    return info;
+}
+function renderFrequencyTable(info){
+    let html='<h4>Block Sum Frequency</h4><div class="table-container"><table><tr><th>Block Sum</th><th>Frequency</th></tr>';
+    [...info.frequency.entries()].sort((a,b)=>b[1]-a[1] || a[0]-b[0]).forEach(([sum,f])=>{html+=`<tr><td>${sum}</td><td>${f}</td></tr>`;});
+    html+='</table></div>'; return html;
+}
+function renderBlockAnalysisTable(info,blockRowLimit){
+    const lim=blockRowLimit==='all'?Infinity:Number(blockRowLimit); const rows=info.blocks.slice(0,lim);
+    let html='<h4>Internal Block Analysis Table</h4>';
+    if(info.blocks.length>rows.length) html+=`<p class="orange">Showing first ${rows.length} of ${info.blocks.length} blocks. Choose "All" to display every block.</p>`;
+    html+='<div class="table-container"><table><tr><th>Block #</th><th>Position</th><th>Rows</th><th>Columns</th><th>Order</th><th>Prime</th><th>Distinct</th><th>Semi-Magic</th><th>Magic</th><th>Concentric</th><th>Concentric Orders</th><th>Magic Sum</th><th>D1</th><th>D2</th><th>Difference</th><th>Reason</th></tr>';
+    rows.forEach(b=>{
+        const cls=b.magic&&b.prime&&b.distinct?'good':(b.semiMagic?'orange':'bad');
+        html+=`<tr><td>${b.index}</td><td>(${b.rowBlock}, ${b.colBlock})</td><td>${b.rows}</td><td>${b.cols}</td><td>${b.order}</td><td>${statusMark(b.prime)}</td><td>${statusMark(b.distinct)}</td><td>${statusMark(b.semiMagic)}</td><td class="${cls}">${statusMark(b.magic&&b.prime&&b.distinct)}</td><td class="${b.concentric?'good':'bad'}">${statusMark(b.concentric)}</td><td>${b.concentricTotal ? b.concentricPassed + '/' + b.concentricTotal : '-'}</td><td>${b.sum}</td><td>${b.diag1}</td><td>${b.diag2}</td><td>${b.difference}</td><td>${htmlEscape(b.reasons)}</td></tr>`;
+    });
+    html+='</table></div>'; return html;
+}
+function renderFailedBlocks(info){
+    if(info.failedBlocks.length===0) return '<p class="good">✔ No failed internal blocks.</p>';
+    let html='<h4>Failed / Problem Blocks</h4><div class="table-container"><table><tr><th>Block #</th><th>Position</th><th>Rows</th><th>Columns</th><th>Sum</th><th>D1</th><th>D2</th><th>Difference from Expected</th><th>Concentric</th><th>Reason</th></tr>';
+    info.failedBlocks.forEach(b=>{html+=`<tr><td>${b.index}</td><td>(${b.rowBlock}, ${b.colBlock})</td><td>${b.rows}</td><td>${b.cols}</td><td>${b.sum}</td><td>${b.diag1}</td><td>${b.diag2}</td><td>${b.difference}</td><td>${b.concentricTotal ? b.concentricPassed + '/' + b.concentricTotal : '-'}</td><td>${htmlEscape(b.reasons)}</td></tr>`;});
+    html+='</table></div>'; return html;
+}
+function renderInternalReport(info,blockRowLimit){
+    let html=`<div class="blockTitle"><h3>Internal Block Analysis: ${info.blockOrder}×${info.blockOrder}</h3>`;
+    if(!info.valid){ html+=`<p class="bad">✘ ${htmlEscape(info.message)}</p></div>`; return html; }
+    html+=`<p><span class="pill">Total Blocks: ${info.totalBlocks}</span> <span class="pill">Prime Blocks: ${info.primeBlocks}</span> <span class="pill">Distinct Blocks: ${info.distinctBlocks}</span> <span class="pill">Magic Blocks: ${info.magicBlocks}</span> <span class="pill">Semi-Magic Blocks: ${info.semiMagicBlocks}</span>${info.concentricChecked ? ` <span class="pill">Concentric Blocks: ${info.concentricBlocks}</span>` : ''}</p>`;
+    html+= info.magicBlocks===info.totalBlocks && info.primeBlocks===info.totalBlocks && info.distinctBlocks===info.totalBlocks && (!info.concentricChecked || info.concentricBlocks===info.totalBlocks) ? '<p class="good">✔ EVERY INTERNAL BLOCK IS A DISTINCT PRIME MAGIC SQUARE' + (info.concentricChecked ? ' AND CONCENTRIC' : '') + '</p>' : '<p class="bad">✘ SOME INTERNAL BLOCKS FAILED</p>';
+    html+= info.equalSums ? `<p class="good">✔ ALL INTERNAL BLOCKS HAVE EQUAL MAGIC SUM: ${info.expectedSum}</p>` : `<p class="orange">⚠ INTERNAL BLOCK SUMS ARE NOT EQUAL. Most frequent / expected sum: ${info.expectedSum}</p>`;
+    html+=renderFrequencyTable(info); html+=renderFailedBlocks(info); html+=renderBlockAnalysisTable(info,blockRowLimit); html+='</div>'; return html;
+}
+function getConcentricSettings(n){
+    const enabled=document.getElementById('checkConcentric').checked;
+    const stepRaw=Number(document.getElementById('concentricStep').value);
+    const step=Number.isInteger(stepRaw)&&stepRaw>=1?stepRaw:2;
+    const raw=document.getElementById('concentricMinOrder').value.trim();
+    let minOrder;
+    if(!raw || raw.toLowerCase()==='auto') minOrder = (n%2===0 ? 2 : 3);
+    else minOrder = Number(raw);
+    if(!Number.isInteger(minOrder) || minOrder<1) minOrder = (n%2===0 ? 2 : 3);
+    return {enabled,step,minOrder};
+}
+function analyzeConcentricSquares(matrix){
+    const n=matrix.length; const settings=getConcentricSettings(n);
+    const info={valid:false,message:'',rows:[],total:0,primeCount:0,distinctCount:0,magicCount:0,semiMagicCount:0,allMagic:false,allPrimeDistinctMagic:false};
+    if(!settings.enabled){ info.message='Concentric checking disabled.'; return info; }
+    if(settings.step<1){ info.message='Concentric step must be at least 1.'; return info; }
+    let idx=0;
+    for(let k=n;k>=settings.minOrder;k-=settings.step){
+        const diff=n-k;
+        if(diff<0 || diff%2!==0) continue;
+        const r0=diff/2, c0=diff/2;
+        if(r0<0 || c0<0 || r0+k>n || c0+k>n) continue;
+        idx++;
+        const chk=analyzeSubSquare(matrix,r0,c0,k);
+        const reasons=[];
+        if(!chk.allPrime) reasons.push('Non-prime');
+        if(chk.duplicates) reasons.push('Duplicate');
+        if(!chk.magic) reasons.push(chk.semiMagic?'Semi-magic only':'Not magic');
+        const rec={index:idx,order:k,removed:(n-k)/2,rows:`${r0+1}-${r0+k}`,cols:`${c0+1}-${c0+k}`,prime:chk.allPrime,distinct:!chk.duplicates,semiMagic:chk.semiMagic,magic:chk.magic,sum:chk.target,diag1:chk.diag1,diag2:chk.diag2,rowSums:chk.rowSums.join(', '),colSums:chk.colSums.join(', '),reasons:reasons.join(', ')||'OK'};
+        info.rows.push(rec);
+        if(chk.allPrime) info.primeCount++;
+        if(!chk.duplicates) info.distinctCount++;
+        if(chk.magic) info.magicCount++;
+        if(chk.semiMagic) info.semiMagicCount++;
+    }
+    info.valid=true; info.total=info.rows.length;
+    info.allMagic=info.total>0 && info.magicCount===info.total;
+    info.allPrimeDistinctMagic=info.total>0 && info.magicCount===info.total && info.primeCount===info.total && info.distinctCount===info.total;
+    if(info.total===0){ info.valid=false; info.message='No concentric orders matched these settings. Try Auto minimum order and step 2.'; }
+    return info;
+}
+function renderConcentricReport(info){
+    let html='<div class="blockTitle"><h3>Concentric Magic Square Analysis</h3>';
+    if(!info.valid){ html+=`<p class="orange">${htmlEscape(info.message)}</p></div>`; return html; }
+    html+=`<p><span class="pill">Concentric Orders: ${info.total}</span> <span class="pill">Prime: ${info.primeCount}</span> <span class="pill">Distinct: ${info.distinctCount}</span> <span class="pill">Magic: ${info.magicCount}</span> <span class="pill">Semi-Magic: ${info.semiMagicCount}</span></p>`;
+    html+= info.allPrimeDistinctMagic ? '<p class="good">✔ EVERY CONCENTRIC INNER SQUARE IS A DISTINCT PRIME MAGIC SQUARE</p>' : '<p class="bad">✘ SOME CONCENTRIC INNER SQUARES FAILED</p>';
+    html+='<div class="table-container"><table><tr><th>#</th><th>Order</th><th>Border Layers Removed</th><th>Rows</th><th>Columns</th><th>Prime</th><th>Distinct</th><th>Semi-Magic</th><th>Magic</th><th>Magic Sum</th><th>D1</th><th>D2</th><th>Reason</th></tr>';
+    info.rows.forEach(b=>{
+        const cls=b.magic&&b.prime&&b.distinct?'good':(b.semiMagic?'orange':'bad');
+        html+=`<tr><td>${b.index}</td><td>${b.order}×${b.order}</td><td>${b.removed}</td><td>${b.rows}</td><td>${b.cols}</td><td>${statusMark(b.prime)}</td><td>${statusMark(b.distinct)}</td><td>${statusMark(b.semiMagic)}</td><td class="${cls}">${statusMark(b.magic&&b.prime&&b.distinct)}</td><td>${b.sum}</td><td>${b.diag1}</td><td>${b.diag2}</td><td>${htmlEscape(b.reasons)}</td></tr>`;
+    });
+    html+='</table></div>';
+    const failed=info.rows.filter(x=>!(x.magic&&x.prime&&x.distinct));
+    if(failed.length){
+        html+='<h4>Failed Concentric Orders</h4><div class="table-container"><table><tr><th>Order</th><th>Rows</th><th>Columns</th><th>Sum</th><th>D1</th><th>D2</th><th>Reason</th></tr>';
+        failed.forEach(b=>{ html+=`<tr><td>${b.order}×${b.order}</td><td>${b.rows}</td><td>${b.cols}</td><td>${b.sum}</td><td>${b.diag1}</td><td>${b.diag2}</td><td>${htmlEscape(b.reasons)}</td></tr>`; });
+        html+='</table></div>';
+    }
+    html+='</div>'; return html;
+}
+function renderMatrix(matrix,counts,internalInfos){
+    const badCells=new Set(), semiCells=new Set();
+    internalInfos.forEach(info=>{ if(!info.valid) return; info.blocks.forEach(b=>{ if(!(b.magic&&b.prime&&b.distinct&&b.concentric)){ for(let r=b.r0;r<b.r0+info.blockOrder;r++) for(let c=b.c0;c<b.c0+info.blockOrder;c++) badCells.add(r+','+c); } else if(b.semiMagic&&!b.magic){ for(let r=b.r0;r<b.r0+info.blockOrder;r++) for(let c=b.c0;c<b.c0+info.blockOrder;c++) semiCells.add(r+','+c); } }); });
+    let html='<div class="table-container"><table>';
+    matrix.forEach((row,r)=>{ html+='<tr>'; row.forEach((v,c)=>{ let cls=''; if(counts[v]>1&&!isPrime(v)) cls='both'; else if(counts[v]>1) cls='duplicate'; else if(!isPrime(v)) cls='nonprime'; if(badCells.has(r+','+c)) cls+=(cls?' ':'')+'failBlock'; else if(semiCells.has(r+','+c)) cls+=(cls?' ':'')+'semiBlock'; html+=`<td class="${cls}">${v}</td>`; }); html+='</tr>'; });
+    html+='</table></div>'; return html;
+}
+function analyzeBlocks(blocks){
+    const output=document.getElementById('output'); output.innerHTML=''; lastReport=[]; lastMatrixSheets=[];
+    const renderTable=document.getElementById('renderTable').checked; const limitChoice=document.getElementById('displayLimit').value; const displayLimit=limitChoice==='unlimited'?Infinity:Number(limitChoice);
+    const checkInternal=document.getElementById('checkInternalBlocks').checked; const blockRowLimit=document.getElementById('blockRowLimit').value; const checkConcentric=document.getElementById('checkConcentric').checked;
+    blocks.forEach((matrix,index)=>{
+        const err=validateMatrix(matrix); if(err){ output.innerHTML += `<div class="summary"><h2>Block ${index+1}</h2><p class="bad">${htmlEscape(err)}</p></div>`; return; }
+        const start=performance.now(); const main=analyzeSquare(matrix); const n=main.n; let internalInfos=[];
+        if(checkInternal){ const orders=getBlockOrders(n); internalInfos=orders.map(k=>analyzeInternalBlocks(matrix,k,blockRowLimit)); }
+        const concentricInfo = checkConcentric ? analyzeConcentricSquares(matrix) : {valid:false,message:'Concentric checking disabled.',rows:[],total:0};
+        const elapsed=((performance.now()-start)/1000).toFixed(2);
+        let html=`<div class="summary"><h2>Matrix ${index+1}</h2><p><strong>Order:</strong> ${n}×${n}</p>`;
+        html += main.allPrime?'<p class="good">✔ ALL NUMBERS ARE PRIME</p>':'<p class="bad">✘ SOME NUMBERS ARE NOT PRIME</p>';
+        html += !main.duplicates?'<p class="good">✔ ALL NUMBERS ARE DISTINCT</p>':'<p class="bad">✘ DUPLICATE NUMBERS FOUND</p>';
+        html += main.magic?'<p class="good">✔ TRUE MAGIC SQUARE</p>':(main.semiMagic?'<p class="orange">✔ SEMI-MAGIC SQUARE</p>':'<p class="bad">✘ NOT MAGIC</p>');
+        html += `<p><strong>Magic Sum:</strong> ${main.target}</p><p><strong>Diagonal Sums:</strong> ${main.diag1}, ${main.diag2}</p><p><strong>Processing Time:</strong> ${elapsed} seconds</p>`;
+        internalInfos.forEach(info=>{ html+=renderInternalReport(info,blockRowLimit); });
+        html += renderConcentricReport(concentricInfo);
+        if(renderTable && n<=displayLimit) html+=renderMatrix(matrix,main.counts,internalInfos);
+        if(renderTable && n>displayLimit) html+=`<p class="orange">Matrix table not displayed because order ${n}×${n} is above the selected display limit. Verification was still completed.</p>`;
+        html+='</div>'; output.innerHTML+=html;
+        buildReport(index+1,matrix,main,internalInfos,concentricInfo,elapsed);
+    });
+}
+function buildReport(matrixNo,matrix,main,internalInfos,concentricInfo,elapsed){
+    lastReport.push(`MATRIX ${matrixNo}`); lastReport.push(`Order: ${main.n}x${main.n}`); lastReport.push(`All prime: ${main.allPrime?'YES':'NO'}`); lastReport.push(`All distinct: ${!main.duplicates?'YES':'NO'}`); lastReport.push(`Magic: ${main.magic?'YES':main.semiMagic?'SEMI-MAGIC':'NO'}`); lastReport.push(`Magic Sum: ${main.target}`); lastReport.push(`Diagonal Sums: ${main.diag1}, ${main.diag2}`); lastReport.push(`Processing Time: ${elapsed} seconds`); lastReport.push('');
+    lastMatrixSheets.push({name:`Matrix_${matrixNo}`,data:matrix,type:'matrix',concentricInfo:concentricInfo,internalInfos:internalInfos});
+    internalInfos.forEach(info=>{
+        lastReport.push(`Internal Block Order: ${info.blockOrder}x${info.blockOrder}`);
+        if(!info.valid){ lastReport.push(`Invalid: ${info.message}`); lastReport.push(''); return; }
+        lastReport.push(`Total Blocks: ${info.totalBlocks}`); lastReport.push(`Prime Blocks: ${info.primeBlocks}`); lastReport.push(`Distinct Blocks: ${info.distinctBlocks}`); lastReport.push(`Magic Blocks: ${info.magicBlocks}`); lastReport.push(`Semi-Magic Blocks: ${info.semiMagicBlocks}`); if(info.concentricChecked) lastReport.push(`Concentric Blocks: ${info.concentricBlocks}`); lastReport.push(`Equal Block Sums: ${info.equalSums?'YES':'NO'}`); lastReport.push(`Expected Sum: ${info.expectedSum}`);
+        lastReport.push('Block Sum Frequency:'); [...info.frequency.entries()].sort((a,b)=>b[1]-a[1]||a[0]-b[0]).forEach(([s,f])=>lastReport.push(`${s}\t${f}`));
+        lastReport.push('Block#\tPosition\tRows\tColumns\tPrime\tDistinct\tSemiMagic\tMagic\tConcentric\tConcentricPassed\tSum\tD1\tD2\tDifference\tReason');
+        info.blocks.forEach(b=>lastReport.push(`${b.index}\t(${b.rowBlock},${b.colBlock})\t${b.rows}\t${b.cols}\t${b.prime?'YES':'NO'}\t${b.distinct?'YES':'NO'}\t${b.semiMagic?'YES':'NO'}\t${b.magic?'YES':'NO'}\t${b.concentric?'YES':'NO'}\t${b.concentricTotal ? b.concentricPassed + '/' + b.concentricTotal : '-'}\t${b.sum}\t${b.diag1}\t${b.diag2}\t${b.difference}\t${b.reasons}`));
+        lastReport.push('');
+        lastMatrixSheets.push({name:`M${matrixNo}_Blocks_${info.blockOrder}`,data:[['Block #','Position','Rows','Columns','Prime','Distinct','Semi-Magic','Magic','Concentric','Concentric Passed','Sum','D1','D2','Difference','Reason'],...info.blocks.map(b=>[b.index,`(${b.rowBlock},${b.colBlock})`,b.rows,b.cols,b.prime?'YES':'NO',b.distinct?'YES':'NO',b.semiMagic?'YES':'NO',b.magic?'YES':'NO',b.concentric?'YES':'NO',b.concentricTotal ? b.concentricPassed + '/' + b.concentricTotal : '-',b.sum,b.diag1,b.diag2,b.difference,b.reasons])]});
+        lastMatrixSheets.push({name:`M${matrixNo}_Freq_${info.blockOrder}`,data:[['Block Sum','Frequency'],...[...info.frequency.entries()].sort((a,b)=>b[1]-a[1]||a[0]-b[0]) ]});
+    });
+    if(concentricInfo && concentricInfo.valid){
+        lastReport.push('Concentric Magic Square Analysis');
+        lastReport.push(`Total Concentric Orders: ${concentricInfo.total}`);
+        lastReport.push(`Prime Orders: ${concentricInfo.primeCount}`);
+        lastReport.push(`Distinct Orders: ${concentricInfo.distinctCount}`);
+        lastReport.push(`Magic Orders: ${concentricInfo.magicCount}`);
+        lastReport.push('Order\tRows\tColumns\tPrime\tDistinct\tSemiMagic\tMagic\tSum\tD1\tD2\tReason');
+        concentricInfo.rows.forEach(b=>lastReport.push(`${b.order}x${b.order}\t${b.rows}\t${b.cols}\t${b.prime?'YES':'NO'}\t${b.distinct?'YES':'NO'}\t${b.semiMagic?'YES':'NO'}\t${b.magic?'YES':'NO'}\t${b.sum}\t${b.diag1}\t${b.diag2}\t${b.reasons}`));
+        lastReport.push('');
+        lastMatrixSheets.push({name:`M${matrixNo}_Concentric`,data:[['Order','Rows','Columns','Prime','Distinct','Semi-Magic','Magic','Sum','D1','D2','Reason'],...concentricInfo.rows.map(b=>[`${b.order}x${b.order}`,b.rows,b.cols,b.prime?'YES':'NO',b.distinct?'YES':'NO',b.semiMagic?'YES':'NO',b.magic?'YES':'NO',b.sum,b.diag1,b.diag2,b.reasons])]});
+    } else if(concentricInfo) {
+        lastReport.push(`Concentric Analysis: ${concentricInfo.message || 'Not run'}`);
+        lastReport.push('');
+    }
+}
+function downloadTxtReport(){
+    if(lastReport.length===0){ alert('Run a check first.'); return; }
+    const blob=new Blob([lastReport.join('\n')],{type:'text/plain'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='Prime-Magic-Block-Checker-Report.txt'; a.click(); URL.revokeObjectURL(a.href);
+}
+function excelBorder(){
+    const side={style:'thin',color:{rgb:'7F8C8D'}};
+    return {top:side,bottom:side,left:side,right:side};
+}
+function applySheetBorders(ws,range){
+    if(!range) return;
+    const r=XLSX.utils.decode_range(range);
+    for(let R=r.s.r;R<=r.e.r;R++){
+        for(let C=r.s.c;C<=r.e.c;C++){
+            const addr=XLSX.utils.encode_cell({r:R,c:C});
+            if(!ws[addr]) ws[addr]={t:'s',v:''};
+            ws[addr].s=ws[addr].s||{};
+            ws[addr].s.border=excelBorder();
+            ws[addr].s.alignment={horizontal:'center',vertical:'center',wrapText:true};
+        }
+    }
+}
+function styleHeaderRow(ws,columnCount){
+    for(let C=0;C<columnCount;C++){
+        const addr=XLSX.utils.encode_cell({r:0,c:C});
+        if(!ws[addr]) continue;
+        ws[addr].s={
+            font:{bold:true,color:{rgb:'FFFFFF'},sz:11},
+            fill:{fgColor:{rgb:'1F4E78'}},
+            alignment:{horizontal:'center',vertical:'center',wrapText:true},
+            border:excelBorder()
+        };
+    }
+}
+function statusStyle(value){
+    const v=String(value||'').toUpperCase();
+    if(v==='YES' || v==='PASS' || v==='OK') return {fill:{fgColor:{rgb:'C6EFCE'}},font:{color:{rgb:'006100'},bold:true}};
+    if(v==='NO' || v==='FAIL') return {fill:{fgColor:{rgb:'FFC7CE'}},font:{color:{rgb:'9C0006'},bold:true}};
+    if(v.indexOf('SEMI')>=0) return {fill:{fgColor:{rgb:'FFEB9C'}},font:{color:{rgb:'9C6500'},bold:true}};
+    return {};
+}
+function styleConcentricSheet(ws,data){
+    const range=ws['!ref'];
+    applySheetBorders(ws,range);
+    styleHeaderRow(ws,data[0].length);
+    ws['!rows']=[{hpt:28}];
+    ws['!cols']=[
+        {wch:12},{wch:14},{wch:14},{wch:11},{wch:11},{wch:13},{wch:11},
+        {wch:18},{wch:18},{wch:18},{wch:34}
+    ];
+    const statusCols=[3,4,5,6];
+    for(let R=1;R<data.length;R++){
+        const rowOk=String(data[R][6]||'').toUpperCase()==='YES' &&
+                    String(data[R][3]||'').toUpperCase()==='YES' &&
+                    String(data[R][4]||'').toUpperCase()==='YES';
+        for(const C of statusCols){
+            const addr=XLSX.utils.encode_cell({r:R,c:C});
+            if(!ws[addr]) continue;
+            ws[addr].s={...(ws[addr].s||{}),...statusStyle(ws[addr].v),border:excelBorder(),alignment:{horizontal:'center',vertical:'center'}};
+        }
+        const orderAddr=XLSX.utils.encode_cell({r:R,c:0});
+        if(ws[orderAddr]) ws[orderAddr].s={...(ws[orderAddr].s||{}),font:{bold:true,color:{rgb:rowOk?'006100':'9C0006'}},fill:{fgColor:{rgb:rowOk?'E2F0D9':'FCE4D6'}},border:excelBorder(),alignment:{horizontal:'center'}};
+        const reasonAddr=XLSX.utils.encode_cell({r:R,c:10});
+        if(ws[reasonAddr]) ws[reasonAddr].s={...(ws[reasonAddr].s||{}),fill:{fgColor:{rgb:rowOk?'E2F0D9':'FCE4D6'}},border:excelBorder(),alignment:{horizontal:'left',vertical:'center',wrapText:true}};
+    }
+    ws['!autofilter']={ref:XLSX.utils.encode_range({r:0,c:0},{r:data.length-1,c:data[0].length-1})};
+    ws['!freeze']={xSplit:0,ySplit:1,topLeftCell:'A2',activePane:'bottomLeft',state:'frozen'};
+}
+function styleGeneralSheet(ws,data,name){
+    applySheetBorders(ws,ws['!ref']);
+    if(data.length && Array.isArray(data[0])) styleHeaderRow(ws,data[0].length);
+    const maxCols=data.reduce((m,r)=>Math.max(m,r.length),0);
+    ws['!cols']=Array.from({length:maxCols},(_,c)=>({wch:Math.min(32,Math.max(10,...data.slice(0,250).map(r=>String(r[c]??'').length+2)))}));
+    if(name.indexOf('_Blocks_')>=0){
+        const statusHeaders=['Prime','Distinct','Semi-Magic','Magic','Concentric'];
+        const header=data[0]||[];
+        const statusCols=statusHeaders.map(h=>header.indexOf(h)).filter(c=>c>=0);
+        for(let R=1;R<data.length;R++) for(const C of statusCols){
+            const addr=XLSX.utils.encode_cell({r:R,c:C});
+            if(ws[addr]) ws[addr].s={...(ws[addr].s||{}),...statusStyle(ws[addr].v),border:excelBorder(),alignment:{horizontal:'center',vertical:'center'}};
+        }
+    }
+}
+
+function mergeCellStyle(cell, extra){
+    cell.s=cell.s||{};
+    if(extra.fill) cell.s.fill=extra.fill;
+    if(extra.font) cell.s.font={...(cell.s.font||{}),...extra.font};
+    if(extra.alignment) cell.s.alignment={...(cell.s.alignment||{}),...extra.alignment};
+    if(extra.border) cell.s.border={...(cell.s.border||{}),...extra.border};
+}
+function getMatrixColorSettings(internalInfos){
+    const mode=(document.getElementById('matrixColorMode')||{}).value || 'plain';
+    const raw=((document.getElementById('matrixColorBlockOrder')||{}).value || 'Auto').trim();
+    const subRaw=((document.getElementById('matrixColorSubBlockOrder')||{}).value || '').trim();
+    const subSubRaw=((document.getElementById('matrixColorSubSubBlockOrder')||{}).value || '').trim();
+    const innerRaw=((document.getElementById('matrixInnerRegionOrder')||{}).value || '').trim();
+    const innerBlockRaw=((document.getElementById('matrixInnerRegionBlockOrder')||{}).value || '').trim();
+    const subBlockInnerSolid=!!(document.getElementById('subBlockInnerSolid')||{}).checked;
+    let blockOrder=null;
+    let subBlockOrder=null;
+    let subSubBlockOrder=null;
+    let innerRegionOrder=null;
+    let innerRegionBlockOrder=null;
+    if(raw.toLowerCase()!=='auto'){
+        const v=Number(raw);
+        if(Number.isInteger(v) && v>=2) blockOrder=v;
+    }
+    if(blockOrder===null && Array.isArray(internalInfos)){
+        const first=internalInfos.find(x=>x && x.valid && Number.isInteger(x.blockOrder));
+        if(first) blockOrder=first.blockOrder;
+    }
+    if(subRaw){
+        const v=Number(subRaw);
+        if(Number.isInteger(v) && v>=2) subBlockOrder=v;
+    }
+    if(subSubRaw){
+        const v=Number(subSubRaw);
+        if(Number.isInteger(v) && v>=2) subSubBlockOrder=v;
+    }
+    if(innerRaw){
+        const v=Number(innerRaw);
+        if(Number.isInteger(v) && v>=1) innerRegionOrder=v;
+    }
+    if(innerBlockRaw){
+        const v=Number(innerBlockRaw);
+        if(Number.isInteger(v) && v>=1) innerRegionBlockOrder=v;
+    }
+    return {mode,blockOrder,subBlockOrder,subSubBlockOrder,innerRegionOrder,innerRegionBlockOrder,subBlockInnerSolid};
+}
+
+function selectedBlockInfo(internalInfos,k){
+    if(!Array.isArray(internalInfos) || !Number.isInteger(k)) return null;
+    return internalInfos.find(x=>x && x.valid && x.blockOrder===k) || null;
+}
+
+function styleMainMatrixByMode(ws,data,concentricInfo,internalInfos){
+    const n=data.length;
+    if(!n) return;
+    if(!ws['!merges']) ws['!merges']=[];
+    const settings=getMatrixColorSettings(internalInfos);
+    const mode=settings.mode;
+    const k=settings.blockOrder;
+    const sk=settings.subBlockOrder;
+    const ssk=settings.subSubBlockOrder;
+    const ik=settings.innerRegionOrder;
+    const ibk=settings.innerRegionBlockOrder;
+    const subBlockInnerSolid=settings.subBlockInnerSolid;
+    const blockInfo=selectedBlockInfo(internalInfos,k) || (Number.isInteger(k) && k>=2 && n%k===0 ? analyzeInternalBlocks(data,k,'all') : null);
+    const subBlockInfo=selectedBlockInfo(internalInfos,sk) || (Number.isInteger(sk) && sk>=2 && n%sk===0 ? analyzeInternalBlocks(data,sk,'all') : null);
+    const subSubBlockInfo=selectedBlockInfo(internalInfos,ssk) || (Number.isInteger(ssk) && ssk>=2 && n%ssk===0 ? analyzeInternalBlocks(data,ssk,'all') : null);
+    const publication=!!((document.getElementById('publicationMode')||{}).checked);
+    const matrixStartRow=publication ? 2 : 0;
+    const title=((document.getElementById('matrixTitle')||{}).value || 'PRIME MAGIC SQUARE').trim();
+    const fullMagic=analyzeSquare(data);
+    const structureText = mode==='wholeConcentric' ? 'Structure: Whole-square concentric' :
+        mode==='blocks' ? `Structure: Blocks ${k||'-'}×${k||'-'}` :
+        mode==='blockConcentric' ? `Structure: Blocks ${k||'-'}×${k||'-'}, each block internally concentric` :
+        mode==='blocksSubblocks' ? `Structure: ${k||'-'}×${k||'-'} blocks → ${sk||'-'}×${sk||'-'} sub-blocks${subBlockInnerSolid?' (inner region as one color)':''}` :
+        mode==='hierarchical' ? `Structure: ${k||'-'}×${k||'-'} blocks → ${sk||'-'}×${sk||'-'} sub-blocks → ${ssk||'-'}×${ssk||'-'} sub-sub-blocks` :
+        mode==='innerRegionBlocks' ? `Structure: External border → centered internal ${ik||'-'}×${ik||'-'} → ${ibk||'-'}×${ibk||'-'} blocks` :
+        mode==='blocksInnerRegion' ? `Structure: ${k||'-'}×${k||'-'} blocks, each with its own border → internal ${ik||'-'}×${ik||'-'} → ${ibk||'-'}×${ibk||'-'} blocks` : 'Structure: Plain matrix';
+    if(publication){
+        // Row 1 shows the user-supplied title (left blank if they cleared the field),
+        // so the user can still retype/edit it directly in Excel afterward.
+        const separator={style:'thick',color:{rgb:'1F4E78'}};
+        for(let c=0;c<n;c++){
+            const addr=XLSX.utils.encode_cell({r:0,c});
+            ws[addr]={t:'s',v:c===0?title:'',s:{
+                fill:{patternType:'solid',fgColor:{rgb:'FFFFFF'}},
+                font:{name:'Arial',sz:12,bold:true,color:{rgb:'1F1F1F'}},
+                alignment:{horizontal:'left',vertical:'center'},
+                border:{bottom:separator}
+            }};
+        }
+        if(n>1) ws['!merges'].push({s:{r:0,c:0},e:{r:0,c:Math.min(n-1,11)}});
+        // Row 2 is a small blank spacer. The matrix begins on Row 3.
+    }
+
+    const ringPalette=['D9EAF7','E2F0D9','FFF2CC','FCE4D6','E4DFEC','DDEBF7','E2EFDA','F4CCCC','D9D2E9','CFE2F3'];
+    const blockPalette=['DDEBF7','E2F0D9','FFF2CC','FCE4D6'];
+    const thin={style:'thin',color:{rgb:'B7B7B7'}};
+    const medium={style:'medium',color:{rgb:'44546A'}};
+    const thick={style:'thick',color:{rgb:'1F1F1F'}};
+
+    let wholeBoundaries=[];
+    if(mode==='wholeConcentric'){
+        if(concentricInfo && concentricInfo.valid && Array.isArray(concentricInfo.rows)){
+            for(const row of concentricInfo.rows){
+                const q=Number(row.order);
+                if(Number.isInteger(q) && q>0 && q<=n && (n-q)%2===0){
+                    wholeBoundaries.push({offset:(n-q)/2,size:q,magic:!!row.magic});
+                }
+            }
+        }
+        if(!wholeBoundaries.length){
+            for(let offset=0;offset<Math.ceil(n/2);offset++) wholeBoundaries.push({offset,size:n-2*offset,magic:true});
+        }
+    }
+
+    for(let r=0;r<n;r++){
+        for(let c=0;c<n;c++){
+            const addr=XLSX.utils.encode_cell({r:r+matrixStartRow,c});
+            if(!ws[addr]) ws[addr]={t:'n',v:data[r][c]};
+            const border={top:thin,bottom:thin,left:thin,right:thin};
+            let fillColor='FFFFFF';
+            let bold=false;
+
+            if(mode==='wholeConcentric'){
+                const depth=Math.min(r,c,n-1-r,n-1-c);
+                fillColor=ringPalette[depth%ringPalette.length];
+                for(const b of wholeBoundaries){
+                    const o=b.offset,e=o+b.size-1;
+                    if(r===o && c>=o && c<=e) border.top=medium;
+                    if(r===e && c>=o && c<=e) border.bottom=medium;
+                    if(c===o && r>=o && r<=e) border.left=medium;
+                    if(c===e && r>=o && r<=e) border.right=medium;
+                    if(depth===o) bold=true;
+                }
+            } else if(mode==='innerRegionBlocks' && Number.isInteger(ik) && ik>=1 && ik<n && (n-ik)%2===0 && Number.isInteger(ibk) && ibk>=1 && ik%ibk===0){
+                const offset=(n-ik)/2;
+                const end=offset+ik-1;
+                const inside=(r>=offset && r<=end && c>=offset && c<=end);
+                if(!inside){
+                    const borderDepth=Math.min(r,c,n-1-r,n-1-c);
+                    fillColor=ringPalette[borderDepth%ringPalette.length];
+                    const outer={style:'medium',color:{rgb:'44546A'}};
+                    if(r===0) border.top=outer;
+                    if(r===n-1) border.bottom=outer;
+                    if(c===0) border.left=outer;
+                    if(c===n-1) border.right=outer;
+                    const innerSep={style:'thick',color:{rgb:'1F4E78'}};
+                    if(r===offset-1 && c>=offset-1 && c<=end+1) border.bottom=innerSep;
+                    if(r===end+1 && c>=offset-1 && c<=end+1) border.top=innerSep;
+                    if(c===offset-1 && r>=offset-1 && r<=end+1) border.right=innerSep;
+                    if(c===end+1 && r>=offset-1 && r<=end+1) border.left=innerSep;
+                } else {
+                    const lr=r-offset, lc=c-offset;
+                    const br=Math.floor(lr/ibk), bc=Math.floor(lc/ibk);
+                    fillColor=blockPalette[(br+bc)%blockPalette.length];
+                    const blockLine={style:'medium',color:{rgb:'548235'}};
+                    if(lr%ibk===0) border.top=blockLine;
+                    if(lr%ibk===ibk-1) border.bottom=blockLine;
+                    if(lc%ibk===0) border.left=blockLine;
+                    if(lc%ibk===ibk-1) border.right=blockLine;
+                    const internalOuter={style:'thick',color:{rgb:'1F4E78'}};
+                    if(lr===0) border.top=internalOuter;
+                    if(lr===ik-1) border.bottom=internalOuter;
+                    if(lc===0) border.left=internalOuter;
+                    if(lc===ik-1) border.right=internalOuter;
+                    bold=(lr%ibk===0 || lr%ibk===ibk-1 || lc%ibk===0 || lc%ibk===ibk-1);
+                }
+            } else if(mode==='blocksInnerRegion' && Number.isInteger(k) && k>=2 && n%k===0 && Number.isInteger(ik) && ik>=1 && ik<k && (k-ik)%2===0 && Number.isInteger(ibk) && ibk>=1 && ik%ibk===0){
+                // Same border+blocks idea as innerRegionBlocks, but applied INSIDE each
+                // k×k tile rather than to the whole matrix — e.g. blocks of order 10,
+                // each with its own 1-cell border around a centered 2×2-of-4×4 region.
+                const br=Math.floor(r/k), bc=Math.floor(c/k);
+                const lr=r%k, lc=c%k;
+                const offset=(k-ik)/2;
+                const end=offset+ik-1;
+                const inside=(lr>=offset && lr<=end && lc>=offset && lc<=end);
+
+                let blockPassed=true;
+                if(blockInfo && Array.isArray(blockInfo.blocks)){
+                    const idx=br*(n/k)+bc;
+                    const blk=blockInfo.blocks[idx];
+                    if(blk) blockPassed=!!(blk.magic && blk.prime && blk.distinct);
+                }
+                const outerLine={style:'thick',color:{rgb:blockPassed?'385723':'C00000'}};
+
+                if(!inside){
+                    const borderDepth=Math.min(lr,lc,k-1-lr,k-1-lc);
+                    fillColor=ringPalette[borderDepth%ringPalette.length];
+                    const innerSep={style:'thick',color:{rgb:'1F4E78'}};
+                    if(lr===offset-1 && lc>=offset-1 && lc<=end+1) border.bottom=innerSep;
+                    if(lr===end+1 && lc>=offset-1 && lc<=end+1) border.top=innerSep;
+                    if(lc===offset-1 && lr>=offset-1 && lr<=end+1) border.right=innerSep;
+                    if(lc===end+1 && lr>=offset-1 && lr<=end+1) border.left=innerSep;
+                } else {
+                    const ilr=lr-offset, ilc=lc-offset;
+                    const ibr=Math.floor(ilr/ibk), ibc=Math.floor(ilc/ibk);
+                    fillColor=blockPalette[(ibr+ibc)%blockPalette.length];
+                    const blockLine={style:'medium',color:{rgb:'548235'}};
+                    if(ilr%ibk===0) border.top=blockLine;
+                    if(ilr%ibk===ibk-1) border.bottom=blockLine;
+                    if(ilc%ibk===0) border.left=blockLine;
+                    if(ilc%ibk===ibk-1) border.right=blockLine;
+                    const internalOuter={style:'thick',color:{rgb:'1F4E78'}};
+                    if(ilr===0) border.top=internalOuter;
+                    if(ilr===ik-1) border.bottom=internalOuter;
+                    if(ilc===0) border.left=internalOuter;
+                    if(ilc===ik-1) border.right=internalOuter;
+                    bold=(ilr%ibk===0 || ilr%ibk===ibk-1 || ilc%ibk===0 || ilc%ibk===ibk-1);
+                }
+                // Outer tile boundary (pass/fail colored, like 'blocks' mode) always wins at tile edges.
+                if(lr===0) border.top=outerLine;
+                if(lr===k-1) border.bottom=outerLine;
+                if(lc===0) border.left=outerLine;
+                if(lc===k-1) border.right=outerLine;
+            } else if(mode==='hierarchical' && Number.isInteger(k) && k>=2 && n%k===0 && Number.isInteger(sk) && sk>=2 && k%sk===0 && Number.isInteger(ssk) && ssk>=2 && sk%ssk===0){
+                const br=Math.floor(r/k), bc=Math.floor(c/k);
+                const lr=r%k, lc=c%k;
+                const slr=lr%sk, slc=lc%sk;
+                const sslr=lr%ssk, sslc=lc%ssk;
+                const sbr=Math.floor(lr/sk), sbc=Math.floor(lc/sk);
+                const ssbr=Math.floor(lr/ssk), ssbc=Math.floor(lc/ssk);
+                const palettes=[
+                    ['DDEBF7','BDD7EE','9DC3E6','EAF3F8'],
+                    ['E2F0D9','C6E0B4','A9D18E','EDF5E8'],
+                    ['FFF2CC','FFE699','FFD966','FFF8E5'],
+                    ['FCE4D6','F8CBAD','F4B183','FDF0E8']
+                ];
+                fillColor=palettes[(br+bc)%palettes.length][(sbr+sbc+ssbr+ssbc)%4];
+                let outerPassed=true, subPassed=true, subSubPassed=true;
+                if(blockInfo && Array.isArray(blockInfo.blocks)){
+                    const idx=br*(n/k)+bc; const blk=blockInfo.blocks[idx];
+                    if(blk) outerPassed=!!(blk.magic && blk.prime && blk.distinct);
+                }
+                if(subBlockInfo && Array.isArray(subBlockInfo.blocks)){
+                    const idx=Math.floor(r/sk)*(n/sk)+Math.floor(c/sk); const blk=subBlockInfo.blocks[idx];
+                    if(blk) subPassed=!!(blk.magic && blk.prime && blk.distinct);
+                }
+                if(subSubBlockInfo && Array.isArray(subSubBlockInfo.blocks)){
+                    const idx=Math.floor(r/ssk)*(n/ssk)+Math.floor(c/ssk); const blk=subSubBlockInfo.blocks[idx];
+                    if(blk) subSubPassed=!!(blk.magic && blk.prime && blk.distinct);
+                }
+                const outerLine={style:'thick',color:{rgb:outerPassed?'385723':'C00000'}};
+                const subLine={style:'medium',color:{rgb:subPassed?'4472C4':'ED7D31'}};
+                const subSubLine={style:'thin',color:{rgb:subSubPassed?'7030A0':'C00000'}};
+                if(sslr===0) border.top=subSubLine;
+                if(sslr===ssk-1) border.bottom=subSubLine;
+                if(sslc===0) border.left=subSubLine;
+                if(sslc===ssk-1) border.right=subSubLine;
+                if(slr===0) border.top=subLine;
+                if(slr===sk-1) border.bottom=subLine;
+                if(slc===0) border.left=subLine;
+                if(slc===sk-1) border.right=subLine;
+                if(lr===0) border.top=outerLine;
+                if(lr===k-1) border.bottom=outerLine;
+                if(lc===0) border.left=outerLine;
+                if(lc===k-1) border.right=outerLine;
+                bold=(sslr===0 || sslr===ssk-1 || sslc===0 || sslc===ssk-1);
+            } else if(mode==='blocksSubblocks' && Number.isInteger(k) && k>=2 && n%k===0 && Number.isInteger(sk) && sk>=2 && k%sk===0){
+                const br=Math.floor(r/k), bc=Math.floor(c/k);
+                const lr=r%k, lc=c%k;
+                const sbr=Math.floor(lr/sk), sbc=Math.floor(lc/sk);
+                const slr=lr%sk, slc=lc%sk;
+
+                const outerIndex=(br+bc)%blockPalette.length;
+                const nestedPalette=[
+                    ['DDEBF7','BDD7EE'],
+                    ['E2F0D9','C6E0B4'],
+                    ['FFF2CC','FFE699'],
+                    ['FCE4D6','F8CBAD']
+                ];
+
+                if(subBlockInnerSolid && sk>=3){
+                    // 2-tone: a 1-cell border ring around each sub-block, and the
+                    // whole remaining interior in a single second color (not full
+                    // concentric rings — just border vs. inner, e.g. 5x5 -> a 1-cell
+                    // border plus one solid 3x3 center). The external border uses
+                    // the darker shade and the nested 3x3/4x4 center the lighter shade.
+                    const isBorder=(slr===0 || slr===sk-1 || slc===0 || slc===sk-1);
+                    fillColor=nestedPalette[outerIndex][isBorder?1:0];
+                } else {
+                    const innerIndex=(sbr+sbc)%2;
+                    fillColor=nestedPalette[outerIndex][innerIndex];
+                }
+
+                let outerPassed=true;
+                if(blockInfo && Array.isArray(blockInfo.blocks)){
+                    const idx=br*(n/k)+bc;
+                    const blk=blockInfo.blocks[idx];
+                    if(blk) outerPassed=!!(blk.magic && blk.prime && blk.distinct);
+                }
+                let subPassed=true;
+                if(subBlockInfo && Array.isArray(subBlockInfo.blocks)){
+                    const globalSubRow=Math.floor(r/sk), globalSubCol=Math.floor(c/sk);
+                    const idx=globalSubRow*(n/sk)+globalSubCol;
+                    const blk=subBlockInfo.blocks[idx];
+                    if(blk) subPassed=!!(blk.magic && blk.prime && blk.distinct);
+                }
+
+                const outerLine={style:'thick',color:{rgb:outerPassed?'385723':'C00000'}};
+                const subLine={style:'medium',color:{rgb:subPassed?'70AD47':'ED7D31'}};
+
+                if(subBlockInnerSolid && sk>=3){
+                    // Separator between the border ring and the solid interior.
+                    const innerSep={style:'thin',color:{rgb:'7F8C8D'}};
+                    if(slr===1 && slc>=1 && slc<=sk-2) border.top=innerSep;
+                    if(slr===sk-2 && slc>=1 && slc<=sk-2) border.bottom=innerSep;
+                    if(slc===1 && slr>=1 && slr<=sk-2) border.left=innerSep;
+                    if(slc===sk-2 && slr>=1 && slr<=sk-2) border.right=innerSep;
+                }
+
+                // Sub-block boundaries.
+                if(slr===0) border.top=subLine;
+                if(slr===sk-1) border.bottom=subLine;
+                if(slc===0) border.left=subLine;
+                if(slc===sk-1) border.right=subLine;
+
+                // Main block boundaries override sub-block boundaries.
+                if(lr===0) border.top=outerLine;
+                if(lr===k-1) border.bottom=outerLine;
+                if(lc===0) border.left=outerLine;
+                if(lc===k-1) border.right=outerLine;
+
+                bold=(slr===0 || slr===sk-1 || slc===0 || slc===sk-1);
+            } else if((mode==='blocks' || mode==='blockConcentric') && Number.isInteger(k) && k>=2 && n%k===0){
+                const br=Math.floor(r/k), bc=Math.floor(c/k);
+                const lr=r%k, lc=c%k;
+                if(mode==='blocks'){
+                    fillColor=blockPalette[(br+bc)%blockPalette.length];
+                } else {
+                    const localDepth=Math.min(lr,lc,k-1-lr,k-1-lc);
+                    const shift=(br+bc)%2;
+                    fillColor=ringPalette[(localDepth+shift)%ringPalette.length];
+                    bold=(lr===localDepth || lc===localDepth || lr===k-1-localDepth || lc===k-1-localDepth);
+                }
+                let passed=true;
+                if(blockInfo && Array.isArray(blockInfo.blocks)){
+                    const idx=br*(n/k)+bc;
+                    const blk=blockInfo.blocks[idx];
+                    if(blk) passed=!!(blk.magic && blk.prime && blk.distinct && (mode!=='blockConcentric' || blk.concentric));
+                }
+                // Boundaries between separate blocks/concentric units must be
+                // visually stronger than the internal concentric-ring borders.
+                const blockLine={style:'thick',color:{rgb:passed?'385723':'C00000'}};
+                if(lr===0) border.top=blockLine;
+                if(lr===k-1) border.bottom=blockLine;
+                if(lc===0) border.left=blockLine;
+                if(lc===k-1) border.right=blockLine;
+
+                if(mode==='blockConcentric'){
+                    // Keep all internal concentric boundaries thin. This makes the
+                    // separation between one concentric block and the next clear,
+                    // just as main blocks are clearer than their sub-blocks.
+                    const ringLine={style:'thin',color:{rgb:'7F8C8D'}};
+                    for(let d=1;d<Math.ceil(k/2);d++){
+                        const e=k-1-d;
+                        if(lr===d && lc>=d && lc<=e) border.top=ringLine;
+                        if(lr===e && lc>=d && lc<=e) border.bottom=ringLine;
+                        if(lc===d && lr>=d && lr<=e) border.left=ringLine;
+                        if(lc===e && lr>=d && lr<=e) border.right=ringLine;
+                    }
+                    // Reapply the thick outer boundary last so it always overrides
+                    // any ring line at the edge of the concentric block.
+                    if(lr===0) border.top=blockLine;
+                    if(lr===k-1) border.bottom=blockLine;
+                    if(lc===0) border.left=blockLine;
+                    if(lc===k-1) border.right=blockLine;
+                }
+            }
+
+            mergeCellStyle(ws[addr],{
+                fill:{patternType:'solid',fgColor:{rgb:fillColor}},
+                font:{name:'Arial',sz:10,bold},
+                alignment:{horizontal:'center',vertical:'center'},
+                border
+            });
+        }
+    }
+    if(publication){
+        const footerRow=matrixStartRow+n+1;
+        const footerText=`Verification: Prime ${fullMagic.allPrime?'PASS':'FAIL'} • Distinct ${!fullMagic.duplicates?'PASS':'FAIL'} • Magic ${fullMagic.magic?'PASS':'FAIL'} • Generated by Prime Magic Block Checker • Created by Inder J. Taneja`;
+        const footerSpan=Math.max(1,Math.min(n,12));
+        for(let c=0;c<footerSpan;c++){
+            const addr=XLSX.utils.encode_cell({r:footerRow,c});
+            ws[addr]={t:'s',v:c===0?footerText:'',s:{fill:{patternType:'solid',fgColor:{rgb:'E2F0D9'}},font:{name:'Arial',sz:10,bold:true,color:{rgb:'385723'}},alignment:{horizontal:'left',vertical:'center',wrapText:true,indent:1},border:{top:medium,bottom:medium,left:c===0?medium:thin,right:c===footerSpan-1?medium:thin}}};
+        }
+        if(footerSpan>1) ws['!merges'].push({s:{r:footerRow,c:0},e:{r:footerRow,c:footerSpan-1}});
+    }
+    const lastRow=publication ? matrixStartRow+n+1 : matrixStartRow+n-1;
+    ws['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:lastRow,c:n-1}});
+    const sample=data.slice(0,Math.min(n,100)).flat();
+    const maxLen=Math.max(4,...sample.map(v=>String(v??'').length));
+    ws['!cols']=Array.from({length:n},()=>({wch:Math.min(16,Math.max(7,maxLen+1))}));
+    ws['!rows']=publication ? [{hpt:30},{hpt:8},...Array.from({length:n},()=>({hpt:20})),{hpt:8},{hpt:28}] : Array.from({length:n},()=>({hpt:20}));
+    ws['!freeze']={xSplit:1,ySplit:matrixStartRow,topLeftCell:XLSX.utils.encode_cell({r:matrixStartRow,c:1}),activePane:'bottomRight',state:'frozen'};
+    ws['!sheetViews']=[{showGridLines:false}];
+}
+function downloadExcelReport(){
+    if(lastMatrixSheets.length===0){ alert('Run a check first.'); return; }
+    const settings=getMatrixColorSettings(lastMatrixSheets[0] ? lastMatrixSheets[0].internalInfos : []);
+    if(settings.mode==='innerRegionBlocks'){
+        const n=lastMatrixSheets[0] && lastMatrixSheets[0].data ? lastMatrixSheets[0].data.length : 0;
+        if(!Number.isInteger(settings.innerRegionOrder) || settings.innerRegionOrder<1 || settings.innerRegionOrder>=n || (n-settings.innerRegionOrder)%2!==0){
+            alert('The centered internal order must be smaller than the full order and leave an equal-width border on every side. Examples: 10 → 8, 14 → 12, 17 → 15, or 19 → 15.');
+            return;
+        }
+        if(!Number.isInteger(settings.innerRegionBlockOrder) || settings.innerRegionBlockOrder<1 || settings.innerRegionOrder%settings.innerRegionBlockOrder!==0){
+            alert('The internal block order must divide the centered internal order exactly. Examples: inner 8 → 4; inner 12 → 3 or 4; inner 15 → 3 or 5.');
+            return;
+        }
+    }
+    if(settings.mode==='blocksInnerRegion'){
+        const n=lastMatrixSheets[0] && lastMatrixSheets[0].data ? lastMatrixSheets[0].data.length : 0;
+        if(!Number.isInteger(settings.blockOrder) || settings.blockOrder<2 || n%settings.blockOrder!==0){
+            alert('The main block order must divide the complete matrix order exactly.');
+            return;
+        }
+        const k=settings.blockOrder;
+        if(!Number.isInteger(settings.innerRegionOrder) || settings.innerRegionOrder<1 || settings.innerRegionOrder>=k || (k-settings.innerRegionOrder)%2!==0){
+            alert('The centered internal order must be smaller than the block order and leave an equal-width border on every side within each block. Example: block 10 → inner 8.');
+            return;
+        }
+        if(!Number.isInteger(settings.innerRegionBlockOrder) || settings.innerRegionBlockOrder<1 || settings.innerRegionOrder%settings.innerRegionBlockOrder!==0){
+            alert('The internal block order must divide the centered internal order exactly. Example: inner 8 → 4 (a 2×2 arrangement).');
+            return;
+        }
+    }
+    if(settings.mode==='blocksSubblocks' || settings.mode==='hierarchical'){
+        const n=lastMatrixSheets[0] && lastMatrixSheets[0].data ? lastMatrixSheets[0].data.length : 0;
+        if(!Number.isInteger(settings.blockOrder) || settings.blockOrder<2 || n%settings.blockOrder!==0){
+            alert('The main block order must divide the complete matrix order exactly.');
+            return;
+        }
+        if(!Number.isInteger(settings.subBlockOrder) || settings.subBlockOrder<2 || settings.blockOrder%settings.subBlockOrder!==0){
+            alert('The sub-block order must divide the main block order exactly. Example: block 20 with sub-block 4, 5, or 10.');
+            return;
+        }
+        if(settings.mode==='hierarchical' && (!Number.isInteger(settings.subSubBlockOrder) || settings.subSubBlockOrder<2 || settings.subBlockOrder%settings.subSubBlockOrder!==0)){
+            alert('In hierarchical mode, the sub-sub-block order must divide the sub-block order exactly. Example: 20 → 10 → 5.');
+            return;
+        }
+    }
+    const wb=XLSX.utils.book_new();
+    lastMatrixSheets.forEach(s=>{
+        const name=s.name.substring(0,31);
+        const ws=s.type==='matrix' ? XLSX.utils.aoa_to_sheet([]) : XLSX.utils.aoa_to_sheet(s.data);
+        if(s.type==='matrix') styleMainMatrixByMode(ws,s.data,s.concentricInfo,s.internalInfos);
+        else if(name.indexOf('_Concentric')>=0) styleConcentricSheet(ws,s.data);
+        else styleGeneralSheet(ws,s.data,name);
+        XLSX.utils.book_append_sheet(wb,ws,name);
+    });
+    XLSX.writeFile(wb,'Prime-Magic-Block-Checker-Professional-Internal-Separator-Header-Fixed.xlsx',{cellStyles:true});
+}
+function clearAll(){ document.getElementById('input').value=''; document.getElementById('fileInput').value=''; document.getElementById('output').innerHTML=''; lastReport=[]; lastMatrixSheets=[]; }
+</script>
+</body>
+</html>

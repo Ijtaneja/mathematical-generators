@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Six 8×8 Magic Cubes</title>
+<style>@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=Share+Tech+Mono&display=swap');
+:root{--bg:#06080a;--gold:#c9a84c;--gold-light:#f0d080;--gold-dim:#7a6030;--glow:rgba(201,168,76,0.35);}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--gold-light);font-family:'Share Tech Mono',monospace;min-height:100vh;display:flex;flex-direction:column;align-items:center;background-image:radial-gradient(ellipse at 20% 10%,rgba(180,140,40,0.06) 0%,transparent 55%),radial-gradient(ellipse at 80% 90%,rgba(40,80,180,0.05) 0%,transparent 55%);}
+header{text-align:center;padding:32px 20px 24px;width:100%;border-bottom:1px solid rgba(201,168,76,0.2);}
+header h1{font-family:'Cinzel',serif;font-size:clamp(1.1rem,3vw,2rem);font-weight:900;letter-spacing:0.12em;color:var(--gold-light);text-shadow:0 0 40px var(--glow),0 2px 6px #000;}
+header p{font-size:0.65rem;color:var(--gold-dim);letter-spacing:0.22em;margin-top:8px;text-transform:uppercase;}
+.cubes-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0;width:100%;max-width:1400px;padding:20px;}
+.cube-panel{display:flex;flex-direction:column;align-items:center;padding:16px 10px 20px;border:1px solid rgba(201,168,76,0.12);position:relative;}
+.cube-panel-title{font-family:'Cinzel',serif;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:4px;text-align:center;}
+.cube-panel-sub{font-size:0.52rem;color:var(--gold-dim);letter-spacing:0.1em;margin-bottom:10px;text-align:center;}
+.cube-num-badge{position:absolute;top:10px;left:12px;font-family:'Cinzel',serif;font-size:0.7rem;font-weight:900;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:3px;color:#fff;}
+.scene{perspective:900px;width:280px;height:280px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.cube{width:200px;height:200px;position:relative;transform-style:preserve-3d;}
+.face{position:absolute;width:200px;height:200px;backface-visibility:visible;border:2px solid #111;outline:1.5px solid var(--gold);outline-offset:-1px;box-shadow:0 0 16px rgba(201,168,76,0.15),inset 0 0 12px rgba(0,0,0,0.3);overflow:hidden;}
+.face-front{transform:translateZ(100px);}.face-back{transform:rotateY(180deg) translateZ(100px);}.face-left{transform:rotateY(-90deg) translateZ(100px);}.face-right{transform:rotateY(90deg) translateZ(100px);}.face-top{transform:rotateX(90deg) translateZ(100px);}.face-bottom{transform:rotateX(-90deg) translateZ(100px);}
+.grid{display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);width:100%;height:100%;border:1.5px solid #111;box-sizing:border-box;}
+.cell{display:flex;align-items:center;justify-content:center;font-family:'Share Tech Mono',monospace;font-size:7px;font-weight:bold;color:#000;border:0.2px solid rgba(0,0,0,0.12);line-height:1;}
+.q1{background:#fff9c4;}.q2{background:#fce87a;}.q3{background:#f5d949;}.q4{background:#e8c620;}
+.z-outer{background:#e8724a;}.z-mid{background:#f5b080;}.z-inner{background:#fff9c4;}
+.s-dark{background:#1a78c2;color:#fff;}.s-light{background:#60bfee;}
+.v-dark{background:#d94060;}.v-mid{background:#f090a0;}.v-light{background:#fcd8dc;}
+.cy-dark{background:#d94060;}.cy-mid{background:#f090a0;}.cy-inner{background:#fffde8;}
+.z-c-inner{background:#f5f080;}.z-l1{background:#50b8e0;}.z-e1{background:#a8dff5;}.z-l2{background:#40c070;}.z-e2{background:#a0e8b8;}
+.b-r{border-right:1.8px solid rgba(0,0,0,0.5)!important;}.b-b{border-bottom:1.8px solid rgba(0,0,0,0.5)!important;}.b-l{border-left:1.8px solid rgba(0,0,0,0.5)!important;}.b-t{border-top:1.8px solid rgba(0,0,0,0.5)!important;}
+.face-lbl{position:absolute;bottom:2px;right:3px;font-family:'Cinzel',serif;font-size:6px;color:rgba(201,168,76,0.4);pointer-events:none;}</style>
+</head>
+<body>
+<header>
+  <h1>Six 8×8 Magic Cubes</h1>
+  <p style="font-family:Cinzel,serif;font-size:0.78rem;color:var(--gold);letter-spacing:0.14em;margin-top:6px;">Created by Inder J. Taneja</p>
+  <p>Numbers 1–384 · Magic Constant 1,540 · Six Structural Types</p>
+  <div class="font-ctrl" style="margin-top:12px;"><label>Cell Font</label><input type="range" id="gFont" min="4" max="14" value="7" step="1"><span class="fval" id="fVal">7px</span></div>
+</header>
+<div class="cubes-grid" id="cubesGrid"></div>
+<script>
+const DEFS=[{"title":"Pandiagonal Magic Cube","sub":"4×4 equal quadrant sub-squares","color":"#d4a830","faces":[[[7,380,1,382,15,372,9,374],[2,381,8,379,10,373,16,371],[384,3,378,5,376,11,370,13],[377,6,383,4,369,14,375,12],[23,364,17,366,31,356,25,358],[18,365,24,363,26,357,32,355],[368,19,362,21,360,27,354,29],[361,22,367,20,353,30,359,28]],[[39,348,33,350,47,340,41,342],[34,349,40,347,42,341,48,339],[352,35,346,37,344,43,338,45],[345,38,351,36,337,46,343,44],[55,332,49,334,63,324,57,326],[50,333,56,331,58,325,64,323],[336,51,330,53,328,59,322,61],[329,54,335,52,321,62,327,60]],[[71,316,65,318,79,308,73,310],[66,317,72,315,74,309,80,307],[320,67,314,69,312,75,306,77],[313,70,319,68,305,78,311,76],[87,300,81,302,95,292,89,294],[82,301,88,299,90,293,96,291],[304,83,298,85,296,91,290,93],[297,86,303,84,289,94,295,92]],[[103,284,97,286,111,276,105,278],[98,285,104,283,106,277,112,275],[288,99,282,101,280,107,274,109],[281,102,287,100,273,110,279,108],[119,268,113,270,127,260,121,262],[114,269,120,267,122,261,128,259],[272,115,266,117,264,123,258,125],[265,118,271,116,257,126,263,124]],[[135,252,129,254,143,244,137,246],[130,253,136,251,138,245,144,243],[256,131,250,133,248,139,242,141],[249,134,255,132,241,142,247,140],[151,236,145,238,159,228,153,230],[146,237,152,235,154,229,160,227],[240,147,234,149,232,155,226,157],[233,150,239,148,225,158,231,156]],[[167,220,161,222,175,212,169,214],[162,221,168,219,170,213,176,211],[224,163,218,165,216,171,210,173],[217,166,223,164,209,174,215,172],[183,204,177,206,191,196,185,198],[178,205,184,203,186,197,192,195],[208,179,202,181,200,187,194,189],[201,182,207,180,193,190,199,188]]]},{"title":"Double-Bordered Magic Cube","sub":"Outer ring · Middle ring · Inner 4×4","color":"#c04060","faces":[[[8,2,382,384,371,13,373,7],[5,366,364,17,370,18,20,380],[6,16,31,356,25,358,369,379],[11,22,26,357,32,355,363,374],[381,24,360,27,354,29,361,4],[376,362,353,30,359,28,23,9],[375,365,21,368,15,367,19,10],[378,383,3,1,14,372,12,377]],[[40,34,350,352,339,45,341,39],[37,334,332,49,338,50,52,348],[38,48,63,324,57,326,337,347],[43,54,58,325,64,323,331,342],[349,56,328,59,322,61,329,36],[344,330,321,62,327,60,55,41],[343,333,53,336,47,335,51,42],[346,351,35,33,46,340,44,345]],[[72,66,318,320,307,77,309,71],[69,302,300,81,306,82,84,316],[70,80,95,292,89,294,305,315],[75,86,90,293,96,291,299,310],[317,88,296,91,290,93,297,68],[312,298,289,94,295,92,87,73],[311,301,85,304,79,303,83,74],[314,319,67,65,78,308,76,313]],[[104,98,286,288,275,109,277,103],[101,270,268,113,274,114,116,284],[102,112,127,260,121,262,273,283],[107,118,122,261,128,259,267,278],[285,120,264,123,258,125,265,100],[280,266,257,126,263,124,119,105],[279,269,117,272,111,271,115,106],[282,287,99,97,110,276,108,281]],[[136,130,254,256,243,141,245,135],[133,238,236,145,242,146,148,252],[134,144,159,228,153,230,241,251],[139,150,154,229,160,227,235,246],[253,152,232,155,226,157,233,132],[248,234,225,158,231,156,151,137],[247,237,149,240,143,239,147,138],[250,255,131,129,142,244,140,249]],[[168,162,222,224,211,173,213,167],[165,206,204,177,210,178,180,220],[166,176,191,196,185,198,209,219],[171,182,186,197,192,195,203,214],[221,184,200,187,194,189,201,164],[216,202,193,190,199,188,183,169],[215,205,181,208,175,207,179,170],[218,223,163,161,174,212,172,217]]]},{"title":"2×4 Horizontal Strip Cube","sub":"Checkerboard of equal-sum 2×4 blocks","color":"#1a78c2","faces":[[[12,374,375,9,8,378,379,5],[373,11,10,376,377,7,6,380],[1,383,382,4,13,371,370,16],[384,2,3,381,372,14,15,369],[25,359,358,28,24,362,363,21],[360,26,27,357,361,23,22,364],[20,366,367,17,29,355,354,32],[365,19,18,368,356,30,31,353]],[[44,342,343,41,40,346,347,37],[341,43,42,344,345,39,38,348],[33,351,350,36,45,339,338,48],[352,34,35,349,340,46,47,337],[57,327,326,60,56,330,331,53],[328,58,59,325,329,55,54,332],[52,334,335,49,61,323,322,64],[333,51,50,336,324,62,63,321]],[[76,310,311,73,72,314,315,69],[309,75,74,312,313,71,70,316],[65,319,318,68,77,307,306,80],[320,66,67,317,308,78,79,305],[89,295,294,92,88,298,299,85],[296,90,91,293,297,87,86,300],[84,302,303,81,93,291,290,96],[301,83,82,304,292,94,95,289]],[[108,278,279,105,104,282,283,101],[277,107,106,280,281,103,102,284],[97,287,286,100,109,275,274,112],[288,98,99,285,276,110,111,273],[121,263,262,124,120,266,267,117],[264,122,123,261,265,119,118,268],[116,270,271,113,125,259,258,128],[269,115,114,272,260,126,127,257]],[[140,246,247,137,136,250,251,133],[245,139,138,248,249,135,134,252],[129,255,254,132,141,243,242,144],[256,130,131,253,244,142,143,241],[153,231,230,156,152,234,235,149],[232,154,155,229,233,151,150,236],[148,238,239,145,157,227,226,160],[237,147,146,240,228,158,159,225]],[[172,214,215,169,168,218,219,165],[213,171,170,216,217,167,166,220],[161,223,222,164,173,211,210,176],[224,162,163,221,212,174,175,209],[185,199,198,188,184,202,203,181],[200,186,187,197,201,183,182,204],[180,206,207,177,189,195,194,192],[205,179,178,208,196,190,191,193]]]},{"title":"Vertical Strip Magic Cube","sub":"4×2 vertical strips — 3-zone structure","color":"#b84020","faces":[[[8,377,17,20,367,366,9,376],[1,384,368,365,18,19,16,369],[383,2,25,360,29,356,11,374],[381,4,359,26,355,30,372,13],[380,5,358,27,354,31,373,12],[378,7,28,357,32,353,14,371],[6,379,21,24,363,362,375,10],[3,382,364,361,22,23,370,15]],[[40,345,49,52,335,334,41,344],[33,352,336,333,50,51,48,337],[351,34,57,328,61,324,43,342],[349,36,327,58,323,62,340,45],[348,37,326,59,322,63,341,44],[346,39,60,325,64,321,46,339],[38,347,53,56,331,330,343,42],[35,350,332,329,54,55,338,47]],[[72,313,81,84,303,302,73,312],[65,320,304,301,82,83,80,305],[319,66,89,296,93,292,75,310],[317,68,295,90,291,94,308,77],[316,69,294,91,290,95,309,76],[314,71,92,293,96,289,78,307],[70,315,85,88,299,298,311,74],[67,318,300,297,86,87,306,79]],[[104,281,113,116,271,270,105,280],[97,288,272,269,114,115,112,273],[287,98,121,264,125,260,107,278],[285,100,263,122,259,126,276,109],[284,101,262,123,258,127,277,108],[282,103,124,261,128,257,110,275],[102,283,117,120,267,266,279,106],[99,286,268,265,118,119,274,111]],[[136,249,145,148,239,238,137,248],[129,256,240,237,146,147,144,241],[255,130,153,232,157,228,139,246],[253,132,231,154,227,158,244,141],[252,133,230,155,226,159,245,140],[250,135,156,229,160,225,142,243],[134,251,149,152,235,234,247,138],[131,254,236,233,150,151,242,143]],[[168,217,177,180,207,206,169,216],[161,224,208,205,178,179,176,209],[223,162,185,200,189,196,171,214],[221,164,199,186,195,190,212,173],[220,165,198,187,194,191,213,172],[218,167,188,197,192,193,174,211],[166,219,181,184,203,202,215,170],[163,222,204,201,182,183,210,175]]]},{"title":"Cyclic Border Magic Cube","sub":"Four 2×6 L-strips · Inner 4×4","color":"#7030a0","faces":[[[12,377,376,4,2,384,366,19],[373,8,9,381,383,1,367,18],[14,371,31,356,25,358,379,6],[370,15,26,357,32,355,5,380],[368,17,360,27,354,29,16,369],[382,3,353,30,359,28,22,363],[11,374,365,364,24,23,372,7],[10,375,20,21,361,362,13,378]],[[44,345,344,36,34,352,334,51],[341,40,41,349,351,33,335,50],[46,339,63,324,57,326,347,38],[338,47,58,325,64,323,37,348],[336,49,328,59,322,61,48,337],[350,35,321,62,327,60,54,331],[43,342,333,332,56,55,340,39],[42,343,52,53,329,330,45,346]],[[76,313,312,68,66,320,302,83],[309,72,73,317,319,65,303,82],[78,307,95,292,89,294,315,70],[306,79,90,293,96,291,69,316],[304,81,296,91,290,93,80,305],[318,67,289,94,295,92,86,299],[75,310,301,300,88,87,308,71],[74,311,84,85,297,298,77,314]],[[108,281,280,100,98,288,270,115],[277,104,105,285,287,97,271,114],[110,275,127,260,121,262,283,102],[274,111,122,261,128,259,101,284],[272,113,264,123,258,125,112,273],[286,99,257,126,263,124,118,267],[107,278,269,268,120,119,276,103],[106,279,116,117,265,266,109,282]],[[140,249,248,132,130,256,238,147],[245,136,137,253,255,129,239,146],[142,243,159,228,153,230,251,134],[242,143,154,229,160,227,133,252],[240,145,232,155,226,157,144,241],[254,131,225,158,231,156,150,235],[139,246,237,236,152,151,244,135],[138,247,148,149,233,234,141,250]],[[172,217,216,164,162,224,206,179],[213,168,169,221,223,161,207,178],[174,211,191,196,185,198,219,166],[210,175,186,197,192,195,165,220],[208,177,200,187,194,189,176,209],[222,163,193,190,199,188,182,203],[171,214,205,204,184,183,212,167],[170,215,180,181,201,202,173,218]]]},{"title":"Corner-Type Magic Cube","sub":"Inner 4×4 corner · Two nested L-borders","color":"#2a7a4a","faces":[[[372,384,11,376,378,12,2,5],[13,1,374,9,7,373,380,383],[22,362,24,16,366,365,381,4],[363,23,361,369,20,19,6,379],[358,355,29,28,370,15,371,14],[25,32,354,359,364,21,382,3],[356,357,27,30,17,368,8,377],[31,26,360,353,18,367,10,375]],[[311,74,303,82,289,296,90,95],[313,72,304,81,94,91,293,292],[67,318,85,300,295,290,96,89],[78,307,79,306,92,93,291,294],[315,70,83,84,305,297,87,299],[68,317,301,302,80,88,298,86],[319,316,309,71,73,310,65,77],[69,66,76,314,312,75,320,308]],[[133,255,132,251,142,131,249,247],[130,252,253,134,243,254,136,138],[140,245,237,147,143,149,240,239],[250,135,238,148,242,236,145,146],[248,137,144,241,156,231,158,225],[139,246,152,233,157,226,155,232],[256,129,234,151,227,160,229,154],[244,141,150,235,230,153,228,159]],[[212,224,171,216,218,172,162,165],[173,161,214,169,167,213,220,223],[182,202,184,176,206,205,221,164],[203,183,201,209,180,179,166,219],[198,195,189,188,210,175,211,174],[185,192,194,199,204,181,222,163],[196,197,187,190,177,208,168,217],[191,186,200,193,178,207,170,215]],[[279,106,271,114,257,264,122,127],[281,104,272,113,126,123,261,260],[99,286,117,268,263,258,128,121],[110,275,111,274,124,125,259,262],[283,102,115,116,273,265,119,267],[100,285,269,270,112,120,266,118],[287,284,277,103,105,278,97,109],[101,98,108,282,280,107,288,276]],[[159,228,153,230,235,150,141,244],[154,229,160,227,151,234,129,256],[232,155,226,157,233,152,246,139],[225,158,231,156,241,144,137,248],[146,145,236,242,148,238,135,250],[239,240,149,143,147,237,245,140],[138,136,254,243,134,253,252,130],[247,249,131,142,251,132,255,133]]]}];
+function getCellClass(ci,r,c,fi){
+  if(ci===0){const top=r<4,left=c<4;if(top&&left)return'q1';if(top&&!left)return'q2';if(!top&&left)return'q3';return'q4';}
+  if(ci===1){if(r===0||r===7||c===0||c===7)return'z-outer';if(r===1||r===6||c===1||c===6)return'z-mid';return'z-inner';}
+  if(ci===2){const rb=Math.floor(r/2),cb=Math.floor(c/4);return(rb+cb)%2===0?'s-dark':'s-light';}
+  if(ci===3){if(c<=1||c>=6)return'v-dark';if(r<=1||r>=6)return'v-light';return'v-mid';}
+  if(ci===4){if(r>=2&&r<=5&&c>=2&&c<=5)return'cy-inner';if(r<=1&&c<=5)return'cy-dark';if(c>=6&&r<=5)return'cy-mid';if(r>=6&&c>=2)return'cy-dark';return'cy-mid';}
+  if(ci===5){
+    const FC={0:'TR',1:'BR',2:'TL',3:'BL',4:'BR',5:'BL'},k=FC[fi]||'TL';
+    if(k==='TL'){if(r<=3&&c<=3)return'z-c-inner';if(r>=6&&c>=6)return'z-e2';if(r>=6||c>=6)return'z-l2';if(r>=4&&c>=4)return'z-e1';return'z-l1';}
+    if(k==='TR'){if(r<=3&&c>=4)return'z-c-inner';if(r>=6&&c<=1)return'z-e2';if(r>=6||c<=1)return'z-l2';if(r>=4&&c<=3)return'z-e1';return'z-l1';}
+    if(k==='BR'){if(r>=4&&c>=4)return'z-c-inner';if(r<=1&&c<=1)return'z-e2';if(r<=1||c<=1)return'z-l2';if(r<=3&&c<=3)return'z-e1';return'z-l1';}
+    if(r>=4&&c<=3)return'z-c-inner';if(r<=1&&c>=6)return'z-e2';if(r<=1||c>=6)return'z-l2';if(r<=3&&c>=4)return'z-e1';return'z-l1';
+  }
+  return'';
+}
+function getBorders(ci,r,c,fi){
+  if(ci===3){let b='';if(c===1)b+=' b-r';if(c===2)b+=' b-l';if(c===5)b+=' b-r';if(c===6)b+=' b-l';return b;}
+  if(ci===5){
+    const FC={0:'TR',1:'BR',2:'TL',3:'BL',4:'BR',5:'BL'};
+    const getZ=(rr,cc)=>{const k=FC[fi]||'TL';if(k==='TL'){if(rr<=3&&cc<=3)return'I';if(rr>=6&&cc>=6)return'E2';if(rr>=6||cc>=6)return'L2';if(rr>=4&&cc>=4)return'E1';return'L1';}if(k==='TR'){if(rr<=3&&cc>=4)return'I';if(rr>=6&&cc<=1)return'E2';if(rr>=6||cc<=1)return'L2';if(rr>=4&&cc<=3)return'E1';return'L1';}if(k==='BR'){if(rr>=4&&cc>=4)return'I';if(rr<=1&&cc<=1)return'E2';if(rr<=1||cc<=1)return'L2';if(rr<=3&&cc<=3)return'E1';return'L1';}if(rr>=4&&cc<=3)return'I';if(rr<=1&&cc>=6)return'E2';if(rr<=1||cc>=6)return'L2';if(rr<=3&&cc>=4)return'E1';return'L1';};
+    const z=getZ(r,c);let b='';if(c<7&&getZ(r,c+1)!==z)b+=' b-r';if(r<7&&getZ(r+1,c)!==z)b+=' b-b';if(c>0&&getZ(r,c-1)!==z)b+=' b-l';if(r>0&&getZ(r-1,c)!==z)b+=' b-t';return b;
+  }
+  return'';
+}
+const FC=['face-front','face-back','face-right','face-left','face-top','face-bottom'];
+const gridEl=document.getElementById('cubesGrid');
+const cubeEls=[];
+DEFS.forEach((def,ci)=>{
+  const panel=document.createElement('div'); panel.className='cube-panel';
+  const badge=document.createElement('div'); badge.className='cube-num-badge'; badge.textContent=ci+1; badge.style.background=def.color; panel.appendChild(badge);
+  const ttl=document.createElement('div'); ttl.className='cube-panel-title'; ttl.style.color=def.color; ttl.textContent=def.title; panel.appendChild(ttl);
+  const sub=document.createElement('div'); sub.className='cube-panel-sub'; sub.textContent=def.sub; panel.appendChild(sub);
+  const scene=document.createElement('div'); scene.className='scene';
+  const cubeEl=document.createElement('div'); cubeEl.className='cube'; cubeEl.style.transform='rotateX(-25deg) rotateY('+(35+ci*5)+'deg)';
+  def.faces.forEach((faceData,fi)=>{
+    const faceDiv=document.createElement('div'); faceDiv.className='face '+FC[fi]; faceDiv.style.outlineColor=def.color;
+    const g=document.createElement('div'); g.className='grid';
+    for(let r=0;r<8;r++) for(let c=0;c<8;c++){
+      const cell=document.createElement('div');
+      const cls=getCellClass(ci,r,c,fi); const brd=getBorders(ci,r,c,fi);
+      cell.className='cell '+cls+brd; cell.textContent=faceData[r][c]; g.appendChild(cell);
+    }
+    const lbl=document.createElement('div'); lbl.className='face-lbl'; lbl.textContent='F'+(fi+1);
+    faceDiv.appendChild(g); faceDiv.appendChild(lbl); cubeEl.appendChild(faceDiv);
+  });
+  scene.appendChild(cubeEl); panel.appendChild(scene); gridEl.appendChild(panel);
+  let rY=35+ci*5;
+  cubeEls.push({setRY:v=>rY=v,rY:()=>rY,apply:()=>{cubeEl.style.transform='rotateX(-25deg) rotateY('+rY+'deg)';}});
+});
+(function loop(){cubeEls.forEach(c=>{c.setRY(c.rY()+0.28);c.apply();});requestAnimationFrame(loop);})();
+document.getElementById("gFont").addEventListener("input",function(){document.getElementById("fVal").textContent=this.value+"px";document.querySelectorAll(".cell").forEach(c=>c.style.fontSize=this.value+"px");});</script>
+</body>
+</html>

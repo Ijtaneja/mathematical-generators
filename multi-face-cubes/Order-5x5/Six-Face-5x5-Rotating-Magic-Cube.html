@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rotating Six-Face 5×5 Magic Cube — Inder J. Taneja</title>
+<style>
+:root{color-scheme:dark;font-family:Inter,Segoe UI,Arial,sans-serif;--ink:#eef8ff;--soft:#bbd6ec;--gold:#ffe6aa}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 24% 19%,#1d5782,#102d51 54%,#0a1c36);color:var(--ink);min-height:100vh}
+main{max-width:1620px;margin:auto;padding:28px 32px 20px}header{text-align:center;margin-bottom:18px}h1{font-size:clamp(26px,3.1vw,46px);margin:0 0 8px;color:var(--gold);letter-spacing:.015em}header p{margin:0;color:var(--soft);font-size:clamp(14px,1.5vw,19px)}
+.layout{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(500px,.92fr);gap:19px;align-items:stretch}.panel{background:linear-gradient(145deg,#14365cdd,#102943ed);border:1px solid #6b97b5;border-radius:23px;box-shadow:0 16px 35px #030e2280;overflow:hidden}.viewer{position:relative;min-height:650px}.viewer canvas{display:block;width:100%;height:610px;touch-action:none}.cube-hint{position:absolute;top:21px;left:24px;background:#102944d9;border:1px solid #86aecb;border-radius:12px;padding:9px 15px;color:#e9f8ff;pointer-events:none;font-weight:700}.cube-hint span{color:#ffe6aa}.controls{display:flex;align-items:center;justify-content:center;gap:13px;flex-wrap:wrap;padding:0 12px 20px}button{font:inherit;cursor:pointer}#play{background:linear-gradient(135deg,#f6d995,#e8b75d);border:0;border-radius:12px;padding:9px 18px;color:#172b43;font-weight:800;min-width:100px}#play:focus-visible,.card:focus-visible{outline:3px solid white;outline-offset:3px}.controls label{color:#dceefb;display:flex;gap:8px;align-items:center;font-size:14px}.controls input{accent-color:#ffdc91;width:125px}.controls select{background:#1d4c72;color:white;border:1px solid #8cb8d3;border-radius:8px;padding:7px 9px}
+.gallery{padding:17px}.gallery h2{font-size:22px;margin:2px 0 5px;color:#fff0bc}.gallery>p{font-size:14px;margin:0 0 13px;color:#c4daec}.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.card{border:2px solid #7293aa;border-radius:15px;background:#183750;padding:8px 9px 10px;color:white;text-align:left;transition:transform .2s,border-color .2s,box-shadow .2s}.card:hover{transform:translateY(-2px)}.card:has(.cell.match){border-color:#ffe7a2}.cell.match{outline:3px solid #fff9d5;outline-offset:-3px;box-shadow:0 0 18px 5px #ffeb88;z-index:1;color:#071d35;background:#ffe99b!important;transform:scale(1.08)}.card-head{display:flex;justify-content:space-between;align-items:center;gap:4px;font-weight:800;font-size:13px;margin-bottom:7px}.badge{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#fff1c2;color:#152b42;font-size:16px}.sum{font-weight:600;color:#dceafa;font-size:11px}.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;aspect-ratio:1;max-width:173px;margin:0 auto}.cell{display:grid;place-items:center;min-width:0;min-height:0;border:1px solid #ffffffb0;border-radius:3px;font-size:clamp(11px,1.04vw,17px);font-weight:850;font-variant-numeric:tabular-nums;color:#132338;text-shadow:0 1px #fff9}.card-foot{text-align:center;font-size:11px;color:#e2eefb;margin-top:7px}.note{margin:14px 5px 2px;color:#cee2f0;line-height:1.4;font-size:13px}footer{text-align:center;margin:19px auto 3px;color:#c2dded;font-size:13px;line-height:1.7}a{color:#bce6ff}
+@media(max-width:1130px){.layout{grid-template-columns:1fr}.viewer{min-height:0}.viewer canvas{height:510px}.grid{max-width:160px}.gallery{max-width:800px;margin:auto}}@media(max-width:610px){main{padding:17px 10px}.viewer canvas{height:420px}.cards{gap:6px}.gallery{padding:10px}.card{padding:5px}.card-head{font-size:10px}.sum{font-size:9px}.badge{width:23px;height:23px}.grid{gap:1px}.cell{font-size:clamp(9px,2.7vw,14px)}.card-foot{font-size:9px}.cube-hint{font-size:11px;left:10px;top:10px}}
+.grid{border:4px solid #090f18;box-shadow:0 0 0 1px #cfe2ee66}
+</style>
+</head>
+<body><main>
+<header><h1>Rotating Magic Cube · Six-Face 5×5 Magic Squares</h1><p>Six complete magic squares on the cube · follow a highlighted number from the cube to the identical number at right</p></header>
+<div class="layout"><section class="panel viewer" aria-label="Rotating magic cube with six numbered faces"><canvas id="cube" aria-label="Animated six-face cube with a different complete 5 by 5 magic square on each face"></canvas><div class="cube-hint" id="hint" aria-live="polite">Matching number: <span>1</span></div><div class="controls"><label>Construction <select id="typeSelect"><option value="0">Pandiagonal</option><option value="1">Concentric</option><option value="2">Cornered</option><option value="3">Cyclic-Border</option><option value="4">Semi-Striped</option></select></label><button id="play" type="button">Pause rotation</button><label>Rotation speed <input id="speed" type="range" min="5" max="100" value="36" aria-label="Rotation speed"></label></div></section>
+<section class="panel gallery"><h2>All six faces · numbers 1–150</h2><p>The highlighted number matches the same number on the cube. White cell lines and black construction borders show the selected type.</p><div class="cards" id="cards"></div><p class="note">Each face is a 5×5 magic square. Their magic sums are 365, 370, 375, 380, 385, and 390. The six squares use every integer from 1 through 150 exactly once.</p></section></div>
+<footer>Created by <strong>Inder J. Taneja</strong><br><a href="https://numbers-magic.com/">numbers-magic.com</a> · <a href="https://inderjtaneja.wordpress.com/">inderjtaneja.wordpress.com</a> · <a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/">taneja-mathematical-generators.ijtaneja.chatgpt.site</a><br>Magic square source: <a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/generators/multi-magic-square-generator-orders-3-12">Multiple Faces Magic Squares Generator · Orders 3–12</a></footer>
+</main>
+<script>
+'use strict';
+const variants=[{"name":"Pandiagonal","shade":"uniform","base":[[1,7,13,19,25],[18,24,5,6,12],[10,11,17,23,4],[22,3,9,15,16],[14,20,21,2,8]]},{"name":"Concentric","shade":"order5_concentric","base":[[22,25,5,7,6],[2,12,17,10,24],[3,11,13,15,23],[18,16,9,14,8],[20,1,21,19,4]]},{"name":"Cornered","shade":"order5_cornered","base":[[16,11,12,23,3],[9,13,17,25,1],[14,15,10,7,19],[5,6,22,8,24],[21,20,4,2,18]]},{"name":"Cyclic-Border","shade":"order5_cyclic_border","base":[[10,24,5,12,14],[16,2,21,20,6],[1,25,13,7,19],[23,3,17,18,4],[15,11,9,8,22]]},{"name":"Semi-Striped","shade":"order5_semi_striped","base":[[23,2,14,4,22],[3,12,24,19,7],[13,25,1,16,10],[21,18,11,9,6],[5,8,15,17,20]]}];
+let currentType=0,faces=[];
+function makeFaces(){return Array.from({length:6},(_,k)=>variants[currentType].base.map(row=>row.map(v=>6*(v-1)+k+1)))}
+faces=makeFaces();
+const palettes=[['#f8dfab','#b98235'],['#acebd7','#268e7b'],['#b8dafb','#4681bd'],['#f8cde1','#bc6591'],['#d4c5f8','#8064b9'],['#ffd4ad','#bb7954']];
+const definitions=[
+ {name:'Front',corners:[[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]],normal:[0,0,1]},
+ {name:'Right',corners:[[1,-1,1],[1,-1,-1],[1,1,-1],[1,1,1]],normal:[1,0,0]},
+ {name:'Back',corners:[[1,-1,-1],[-1,-1,-1],[-1,1,-1],[1,1,-1]],normal:[0,0,-1]},
+ {name:'Left',corners:[[-1,-1,-1],[-1,-1,1],[-1,1,1],[-1,1,-1]],normal:[-1,0,0]},
+ {name:'Top',corners:[[-1,-1,-1],[1,-1,-1],[1,-1,1],[-1,-1,1]],normal:[0,-1,0]},
+ {name:'Bottom',corners:[[-1,1,1],[1,1,1],[1,1,-1],[-1,1,-1]],normal:[0,1,0]}
+];
+const canvas=document.getElementById('cube'),ctx=canvas.getContext('2d'),cards=document.getElementById('cards'),hint=document.querySelector('#hint span');
+let yaw=0,pitch=-20*Math.PI/180,playing=true,last=0,selected=-1,turnTarget=null,active=-1,hoverValue=null,pinnedValue=null,focusValue=null,hitRegions=[],currentTime=0;
+const speed=document.getElementById('speed'),play=document.getElementById('play');
+function mixHex(a,b,t){let u=a.slice(1).match(/../g).map(h=>parseInt(h,16)),v=b.slice(1).match(/../g).map(h=>parseInt(h,16));return '#'+u.map((x,i)=>Math.round(x*(1-t)+v[i]*t).toString(16).padStart(2,'0')).join('')}
+function regionAt(r,c){
+ const shade=variants[currentType].shade;
+ if(shade==='order5_concentric')return r>=1&&r<=3&&c>=1&&c<=3?'core':'outer';
+ if(shade==='order5_cornered')return r<3&&c<3?'core':r>=3&&c>=3?'corner':'band';
+ if(shade==='order5_cyclic_border'){
+  if(r===2&&c===2)return 'core';
+  const horiz=(r<=1&&c<=2)||(r>=3&&c>=2);
+  return horiz?'horiz':'vert';
+ }
+ if(shade==='order5_semi_striped')return r<3?(c<3?'core':'side'):'band';
+ return 'plain';
+}
+function regionTone(face,r,c){
+ const tag=regionAt(r,c),base=palettes[face],fractions={plain:.38,outer:.18,core:.79,corner:.60,band:.29,horiz:.52,vert:.22,side:.53};
+ return mixHex(base[1],base[0],fractions[tag]??.38);
+}
+function boundaryAfter(r,c,axis){return axis==='right'?c<4&&regionAt(r,c)!==regionAt(r,c+1):r<4&&regionAt(r,c)!==regionAt(r+1,c)}
+function buildCards(){cards.replaceChildren();faces.forEach((sq,i)=>{const b=document.createElement('button');b.className='card';b.type='button';b.setAttribute('aria-label',`Turn to face ${i+1}, magic sum ${faces[i][0].reduce((a,b)=>a+b,0)}`);b.innerHTML=`<div class="card-head"><span><span class="badge">${i+1}</span> FACE ${String(i+1).padStart(2,'0')}</span><span class="sum">Σ ${faces[i][0].reduce((a,b)=>a+b,0)}</span></div><div class="grid"></div><div class="card-foot">${variants[currentType].name.toUpperCase()} · ${definitions[i].name.toUpperCase()}</div>`;const g=b.querySelector('.grid');sq.flat().forEach(v=>{const c=document.createElement('div');c.className='cell';c.textContent=v;c.dataset.value=v;c.setAttribute('role','button');c.setAttribute('tabindex','0');c.setAttribute('aria-label',`Match number ${v} on the cube`);c.addEventListener('mouseenter',()=>{hoverValue=v});c.addEventListener('mouseleave',()=>{hoverValue=null});c.addEventListener('click',e=>{e.stopPropagation();pinnedValue=v;turnTo(i)});c.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pinnedValue=v;turnTo(i)}});const position=g.childElementCount,r=Math.floor(position/5),col=position%5,tone=regionTone(i,r,col);c.style.background=`linear-gradient(135deg,#ffffff,${tone} 65%)`;if(boundaryAfter(r,col,'right'))c.style.borderRight='4px solid #090f18';if(boundaryAfter(r,col,'bottom'))c.style.borderBottom='4px solid #090f18';g.appendChild(c)});cards.appendChild(b)})}
+buildCards();
+document.getElementById('typeSelect').addEventListener('change',e=>{currentType=Number(e.target.value);faces=makeFaces();hoverValue=null;pinnedValue=null;focusValue=null;buildCards()});
+function turnTo(i){selected=i;playing=false;play.textContent='Resume rotation';const targets=[[0,-.48],[-Math.PI/2,-.48],[Math.PI,-.48],[Math.PI/2,-.48],[0,-1.1],[0,Math.PI/2]];let [y,p]=targets[i];y+=Math.round((yaw-y)/(2*Math.PI))*2*Math.PI;turnTarget={yaw:y,pitch:p}}
+play.addEventListener('click',()=>{playing=!playing;turnTarget=null;selected=-1;play.textContent=playing?'Pause rotation':'Resume rotation';if(playing)pinnedValue=null});
+function rotate(v){let [x,y,z]=v,cy=Math.cos(yaw),sy=Math.sin(yaw);[x,z]=[x*cy+z*sy,-x*sy+z*cy];let cp=Math.cos(pitch),sp=Math.sin(pitch);return [x,y*cp-z*sp,y*sp+z*cp]}
+function resize(){const bounds=canvas.getBoundingClientRect(),dpr=Math.min(window.devicePixelRatio||1,2);const w=Math.max(10,Math.round(bounds.width)),h=Math.max(10,Math.round(bounds.height));if(canvas.width!==Math.round(w*dpr)||canvas.height!==Math.round(h*dpr)){canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr)}ctx.setTransform(dpr,0,0,dpr,0,0);return [w,h]}
+function project(v,w,h){const r=rotate(v),perspective=3.9/(3.9-r[2]);const unit=Math.min(w*.265,h*.30);return {x:w*.5+r[0]*unit*perspective,y:h*.515+r[1]*unit*perspective,z:r[2]}}
+function bilinear(q,u,v){return{x:q[0].x*(1-u)*(1-v)+q[1].x*u*(1-v)+q[2].x*u*v+q[3].x*(1-u)*v,y:q[0].y*(1-u)*(1-v)+q[1].y*u*(1-v)+q[2].y*u*v+q[3].y*(1-u)*v}}
+function polygon(p){ctx.beginPath();ctx.moveTo(p[0].x,p[0].y);for(let i=1;i<p.length;i++)ctx.lineTo(p[i].x,p[i].y);ctx.closePath()}
+function renderFace(item){const {i,q,light}=item;ctx.save();polygon(q);ctx.fillStyle='#10243c';ctx.fill();ctx.lineWidth=4.5;ctx.strokeStyle='#090f18';ctx.stroke();const inset=0;for(let row=0;row<5;row++)for(let col=0;col<5;col++){
+ const p=[bilinear(q,(col+inset)/5,(row+inset)/5),bilinear(q,(col+1-inset)/5,(row+inset)/5),bilinear(q,(col+1-inset)/5,(row+1-inset)/5),bilinear(q,(col+inset)/5,(row+1-inset)/5)];polygon(p);hitRegions.push({points:p,value:faces[i][row][col]});
+ const grad=ctx.createLinearGradient(p[0].x,p[0].y,p[2].x,p[2].y),tone=regionTone(i,row,col);
+ grad.addColorStop(0,'#ffffff');grad.addColorStop(.55,tone);grad.addColorStop(1,mixHex(tone,'#16354d',.25));ctx.fillStyle=grad;ctx.fill();if(faces[i][row][col]===focusValue){ctx.save();polygon(p);ctx.lineWidth=5;ctx.strokeStyle='#fff0a4';ctx.shadowColor='#ffed94';ctx.shadowBlur=25;ctx.stroke();ctx.restore()}const c=bilinear(q,(col+.5)/5,(row+.5)/5),width=Math.hypot(p[1].x-p[0].x,p[1].y-p[0].y),height=Math.hypot(p[3].x-p[0].x,p[3].y-p[0].y);ctx.font=`800 ${Math.max(10,Math.min(29,Math.min(width,height)*.40))}px Segoe UI,Arial,sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#10233a';ctx.fillText(faces[i][row][col],c.x,c.y+1)}
+ ctx.save();ctx.lineWidth=3.1;ctx.strokeStyle='#ffffff';ctx.shadowColor='#ffffff88';ctx.shadowBlur=3;for(let line=1;line<5;line++){let a=bilinear(q,line/5,0),b=bilinear(q,line/5,1);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();a=bilinear(q,0,line/5);b=bilinear(q,1,line/5);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}ctx.save();ctx.strokeStyle='#090f18';ctx.lineWidth=5;ctx.shadowColor='#ffffffaa';ctx.shadowBlur=2;for(let rr=0;rr<5;rr++)for(let cc=0;cc<5;cc++){if(boundaryAfter(rr,cc,'right')){const a=bilinear(q,(cc+1)/5,rr/5),b=bilinear(q,(cc+1)/5,(rr+1)/5);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}if(boundaryAfter(rr,cc,'bottom')){const a=bilinear(q,cc/5,(rr+1)/5),b=bilinear(q,(cc+1)/5,(rr+1)/5);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}}ctx.restore();polygon(q);ctx.strokeStyle='#090f18';ctx.lineWidth=5;ctx.shadowColor='#ffffff88';ctx.shadowBlur=2;ctx.stroke();ctx.restore();ctx.restore()}
+function draw(){const [w,h]=resize();ctx.clearRect(0,0,w,h);const glow=ctx.createRadialGradient(w*.5,h*.49,8,w*.5,h*.49,Math.max(w,h)*.57);glow.addColorStop(0,'#4587ac66');glow.addColorStop(1,'#13315300');ctx.fillStyle=glow;ctx.fillRect(0,0,w,h);
+ const visibles=definitions.map((f,i)=>{const normal=rotate(f.normal),q=f.corners.map(v=>project(v,w,h));return{i,q,light:normal[2],depth:q.reduce((s,p)=>s+p.z,0)/4}}).filter(f=>f.light>.01).sort((a,b)=>a.depth-b.depth);
+ const facing=visibles.reduce((best,f)=>!best||f.light>best.light?f:best,null);const index=turnTarget?selected:(facing?.i??0);const auto=faces[index].flat()[Math.floor(currentTime/1350)%25];const nextValue=hoverValue??pinnedValue??auto;if(nextValue!==focusValue){focusValue=nextValue;hint.textContent=String(focusValue);document.querySelectorAll('.cell.match').forEach(c=>c.classList.remove('match'));document.querySelector(`.cell[data-value=\"${focusValue}\"]`)?.classList.add('match')}hitRegions=[];visibles.forEach(renderFace)}
+// Match the established cube's 18-second turn and its changing X tilt.
+function referenceTilt(angle){
+ const phase=((angle/(Math.PI*2))%1+1)%1;
+ const degrees=[-20,-30,20,30,-20],segment=Math.floor(phase*4);
+ const fraction=phase*4-segment;
+ return (degrees[segment]*(1-fraction)+degrees[segment+1]*fraction)*Math.PI/180;
+}
+function animate(t){currentTime=t;let dt=last?Math.min((t-last)/1000,.06):0;last=t;if(turnTarget){let dy=turnTarget.yaw-yaw,dp=turnTarget.pitch-pitch;yaw+=dy*Math.min(1,dt*5.5);pitch+=dp*Math.min(1,dt*5.5);if(Math.abs(dy)+Math.abs(dp)<.004){yaw=turnTarget.yaw;pitch=turnTarget.pitch;turnTarget=null}}else if(playing){yaw+=dt*(Math.PI*2/18)*(Number(speed.value)/36);pitch=referenceTilt(yaw)}draw();requestAnimationFrame(animate)}requestAnimationFrame(animate);
+canvas.addEventListener('pointermove',e=>{const rect=canvas.getBoundingClientRect(),x=e.clientX-rect.left,y=e.clientY-rect.top;hoverValue=null;for(let i=hitRegions.length-1;i>=0;i--){const p=hitRegions[i].points;ctx.beginPath();ctx.moveTo(p[0].x,p[0].y);for(let j=1;j<4;j++)ctx.lineTo(p[j].x,p[j].y);ctx.closePath();if(ctx.isPointInPath(x,y)){hoverValue=hitRegions[i].value;break}}canvas.style.cursor=hoverValue==null?'default':'pointer'});canvas.addEventListener('pointerleave',()=>{hoverValue=null});canvas.addEventListener('click',()=>{if(hoverValue!=null){pinnedValue=hoverValue;playing=false;play.textContent='Resume rotation'}});
+</script></body></html>

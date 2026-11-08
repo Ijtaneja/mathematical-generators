@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Water Reflection Plates: Orders 9 and 10</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Oswald:wght@400;500&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root{
+  --s:230px;
+  --orig:#f7c5dd;      /* original faces (pink, as on numbers-magic.com) */
+  --refl:#bfe8f5;      /* water-reflection faces */
+  --ink:#111111;
+  --sh:1.6;            /* sky and water heights (equal) */
+  --lw:1;
+  --faint:rgba(70,60,50,.22);   /* ordinary cell lines inside block squares */              /* line thickness multiplier */
+  --line:#2a2a2a;      /* grid line colour */
+  --gold:#e8c66a;
+  --violet:#a98bff;
+  --bg:#07050E;
+}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,#fbf4e0 0%,#f7ecd0 55%,#f3e4bd 100%);color:#2a2340;font-family:'Share Tech Mono',monospace;}
+header{text-align:center;padding:22px 16px 6px}
+h1{font-family:'Cinzel',serif;color:var(--gold);margin:0;font-size:clamp(22px,3.4vw,38px);letter-spacing:.06em}
+.sub{color:#b9b0d8;margin-top:6px;font-size:14px}
+.wrap{display:grid;grid-template-columns:1fr 370px;gap:18px;max-width:1300px;margin:12px auto;padding:0 16px}
+@media (max-width:950px){.wrap{grid-template-columns:1fr}}
+
+/* ---------- stage ---------- */
+.stage{position:relative;border:1px solid #2a2340;border-radius:14px;overflow:hidden;
+  background:radial-gradient(ellipse at 50% 30%,#1b1433 0%,#0a0716 70%);cursor:grab;user-select:none;touch-action:none}
+.stage:active{cursor:grabbing}
+.scene{position:relative;height:calc(var(--s)*var(--sh));perspective:calc(var(--s)*5);display:flex;align-items:center;justify-content:center}
+.cube{position:relative;width:var(--s);height:var(--s);transform-style:preserve-3d}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.face.active .grid{box-shadow:0 0 calc(var(--s)*.09) var(--gold)}
+.badge{position:absolute;top:4%;left:4%;font:600 calc(var(--s)*.045) 'Share Tech Mono',monospace;
+  background:rgba(0,0,0,.72);color:var(--gold);padding:.15em .4em;border-radius:.3em;pointer-events:none}
+.face.refl .badge{color:#8fe3ff}
+.hidelabels .badge{display:none}
+
+.waterline{height:2px;background:linear-gradient(90deg,transparent,rgba(190,235,255,.5) 18%,rgba(255,238,200,.75) 50%,rgba(190,235,255,.5) 82%,transparent);
+  background-size:200% 100%;animation:shimmer 9s linear infinite;box-shadow:0 0 10px rgba(120,200,255,.35)}
+@keyframes shimmer{to{background-position:-200% 0}}
+.water{position:relative;height:calc(var(--s)*var(--sh));overflow:hidden;
+  background:linear-gradient(#0b2b46 0%,#06192b 55%,#030a14 100%)}
+.rl{position:absolute;inset:0;pointer-events:none}
+.rl .scene{transform:scaleY(-1)}
+/* near layer: crisp, gently rippled, strongest right under the surface */
+.rl-near{filter:url(#ripple) brightness(.88) saturate(.95);opacity:.9;
+  -webkit-mask-image:linear-gradient(to bottom,#000 0%,rgba(0,0,0,.9) 45%,rgba(0,0,0,.55) 80%,rgba(0,0,0,.25) 100%);
+          mask-image:linear-gradient(to bottom,#000 0%,rgba(0,0,0,.9) 45%,rgba(0,0,0,.55) 80%,rgba(0,0,0,.25) 100%)}
+/* deep layer: softer, more distorted, fades into the dark */
+.rl-far{filter:url(#rippleDeep) blur(1.5px) brightness(.72);opacity:.55;
+  -webkit-mask-image:linear-gradient(to bottom,transparent 25%,rgba(0,0,0,.6) 55%,rgba(0,0,0,.6) 85%,transparent 100%);
+          mask-image:linear-gradient(to bottom,transparent 25%,rgba(0,0,0,.6) 55%,rgba(0,0,0,.6) 85%,transparent 100%)}
+.water .tint{position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(rgba(60,140,200,.08) 0%,rgba(10,45,80,.22) 50%,rgba(3,10,20,.5) 100%)}
+.water .glow{position:absolute;left:50%;top:0;width:calc(var(--s)*2.2);height:calc(var(--s)*.4);transform:translate(-50%,-50%);
+  background:radial-gradient(ellipse at center,rgba(232,198,106,.16),rgba(120,200,255,.06) 45%,transparent 70%);pointer-events:none}
+.glints{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;mix-blend-mode:screen}
+.glints path{fill:none;stroke-linecap:round;vector-effect:non-scaling-stroke;animation:glint linear infinite}
+@keyframes glint{to{stroke-dashoffset:-600}}
+.nowater .water,.nowater .waterline{display:none}
+
+/* ---------- grids (shared by cube + cards) ---------- */
+.grid{display:grid;width:100%;height:100%;border:calc(var(--s)*.009*var(--lw)) solid var(--line);background:var(--orig)}
+.refl .grid,.grid.refl{background:var(--refl)}
+.cell{display:flex;align-items:center;justify-content:center;border:calc(var(--s)*.0032*var(--lw)) solid var(--line);
+  font-family:'Oswald',sans-serif;font-weight:500;color:var(--ink);line-height:1}
+/* "1" drawn as a plain bar so it stays a 1 in the water (as in the original figures) */
+.edge{position:absolute;background:linear-gradient(90deg,#7a5f22,#e8c66a 50%,#7a5f22);backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.cell{overflow:hidden;min-width:0;min-height:0}
+.ct{display:inline-flex;align-items:center;white-space:nowrap;transform-origin:center}
+.seg7{height:.8em;width:auto;margin:0 .05em;fill:currentColor;display:block}
+.cell.sg{gap:0}
+.one{display:inline-block;width:.1em;height:.72em;background:currentColor;margin:0 .13em;vertical-align:baseline}
+
+/* ---------- panel ---------- */
+.panel{display:flex;flex-direction:column;gap:12px}
+.box{border:1px solid #2a2340;border-radius:12px;padding:12px 14px;background:#0e0a1c}
+.box h2{font-family:'Cinzel',serif;font-size:15px;color:var(--gold);margin:0 0 10px;letter-spacing:.05em}
+.btns{display:flex;flex-wrap:wrap;gap:6px}
+button{font:13px 'Share Tech Mono',monospace;background:#1c1533;color:#eee;border:1px solid #3d3363;
+  border-radius:7px;padding:6px 9px;cursor:pointer}
+button:hover{border-color:var(--gold);color:var(--gold)}
+button.o{border-left:4px solid var(--orig)}
+button.r{border-left:4px solid var(--refl)}
+button.w{background:#0d3150;border-color:#2c78a8}
+.prow{display:grid;grid-template-columns:88px 1fr 1fr 34px;gap:6px;align-items:center;margin-bottom:6px;font-size:13px}
+.ctl{display:grid;grid-template-columns:120px 1fr 48px;gap:8px;align-items:center;font-size:13px;margin:6px 0}
+.ctl input[type=range]{width:100%}
+.chk{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;margin-top:6px}
+input[type=color]{width:100%;height:26px;border:none;background:none;padding:0}
+#activeInfo{font-size:13px;line-height:1.55}
+#activeInfo .t{color:var(--gold);font-size:14px}
+#activeMini{width:150px;height:150px;margin:8px auto;--s:150px}
+.ok{color:#7ee2a8}.bad{color:#ff8f8f}
+
+/* ---------- pairs section ---------- */
+section.pairs{max-width:1300px;margin:8px auto 30px;padding:0 16px}
+section.pairs h2{font-family:'Cinzel',serif;color:var(--gold);font-size:20px;margin:18px 0 10px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:14px}
+.card{border:1px solid #2a2340;border-radius:12px;padding:12px;background:#0e0a1c}
+.card h3{margin:0 0 8px;font-family:'Cinzel',serif;color:#f1d98f;font-size:15px}
+.duo{display:flex;gap:14px;justify-content:center}
+.duo figure{margin:0;text-align:center;font-size:12px;color:#b9b0d8}
+.mini{--s:120px;width:120px;height:120px;margin:4px auto}
+.lake{margin:10px auto 4px;width:150px}
+.lake .mini{--s:120px}
+.lake .wl{height:2px;margin:3px 0;background:linear-gradient(90deg,transparent,#8fe3ff,transparent)}
+.lake .mir{transform:scaleY(-1);opacity:.85;filter:url(#rippleSoft) brightness(.85);
+  -webkit-mask-image:linear-gradient(to top,#000 0%,rgba(0,0,0,.55) 55%,transparent 100%);
+          mask-image:linear-gradient(to top,#000 0%,rgba(0,0,0,.55) 55%,transparent 100%)}
+.card p{font-size:12.5px;line-height:1.5;margin:8px 0 0;color:#d6d0e6}
+details{margin-top:14px}
+summary{cursor:pointer;color:var(--gold);font-family:'Cinzel',serif}
+.ed{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:10px}
+textarea{width:100%;height:90px;background:#120d24;color:#eee;border:1px solid #3d3363;border-radius:8px;
+  font:14px 'Share Tech Mono',monospace;padding:6px}
+.tabs{display:grid;grid-template-columns:repeat(2,auto);justify-content:center;align-items:center;gap:8px 30px;margin:12px auto 6px;max-width:1000px}
+.tabgroup{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.tablabel{font-family:'Cinzel',serif;color:var(--gold);font-size:13px;font-weight:700;margin-right:2px;white-space:nowrap}
+@media (max-width:760px){.tabs{grid-template-columns:1fr;justify-items:center}}
+.tabs a{font:13px 'Share Tech Mono',monospace;color:#cfc6ee;text-decoration:none;padding:5px 11px;border:1px solid #3d3363;border-radius:20px;background:#140f27}
+.tabs a:hover{border-color:var(--gold);color:var(--gold)}
+.tabs a.on{background:var(--gold);color:#1a1206;border-color:var(--gold);font-weight:600}
+.chips{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:4px 0 6px}
+.chips a{font:13px 'Share Tech Mono',monospace;color:#cfc6ee;text-decoration:none;padding:5px 11px;border:1px solid #3d3363;border-radius:8px;background:#100c20}
+.chips a:hover{border-color:var(--gold);color:var(--gold)}
+.chips a.on{border-color:#8fe3ff;color:#8fe3ff;background:#0d3150}
+footer{text-align:center;color:#6f6790;font-size:12px;padding:10px 0 24px}
+
+/* ---------- light page with coloured cards ---------- */
+h1{color:#4b2e83}
+.sub{color:#5a5275}
+.box{box-shadow:0 3px 12px rgba(90,60,10,.16)}
+.panel .box:nth-child(1){background:#efe9ff;border-color:#cfc3f7}
+.panel .box:nth-child(1) h2{color:#5b3fb5}
+.panel .box:nth-child(2){background:#e6f7ee;border-color:#ade0c4}
+.panel .box:nth-child(2) h2{color:#1f7a4d}
+.panel .box:nth-child(3){background:#fff1e3;border-color:#f3cfa8}
+.panel .box:nth-child(3) h2{color:#b5651d}
+#activeInfo{color:#2a2340}
+#activeInfo .t{color:#1f7a4d}
+button{background:#fff;color:#2a2340;border:1px solid #c9c0e0}
+button:hover{border-color:#c79a2a;color:#9a6b00}
+button.w{background:#dff2fb;border-color:#8cc8e6;color:#0d4d6e}
+.tabs a{background:#fff;color:#3b3355;border-color:#d5cdea}
+.tabs a:hover{border-color:#c79a2a;color:#9a6b00}
+.tabs a.on{background:#e8c66a;color:#1a1206;border-color:#c9a43f}
+.tablabel{color:#9a6b00}
+.chips a{background:#fff;color:#3b3355;border-color:#d5cdea}
+.chips a.on{background:#dff2fb;border-color:#5fb3d9;color:#0d4d6e}
+.stage{border-color:#cfc6e6;box-shadow:0 6px 22px rgba(30,20,60,.28)}
+section.pairs h2{color:#3d2470}
+.cards .card:nth-child(3n+1){background:#e4f1fb;border-color:#a8cde9}
+.cards .card:nth-child(3n+1) h3{color:#1f5f8b}
+.cards .card:nth-child(3n+2){background:#fde9f0;border-color:#f0b3c8}
+.cards .card:nth-child(3n+2) h3{color:#a8325e}
+.cards .card:nth-child(3n){background:#fbf5d6;border-color:#eadb8e}
+.cards .card:nth-child(3n) h3{color:#7d6200}
+.card{box-shadow:0 3px 12px rgba(90,60,10,.16)}
+.card p{color:#2a2340}
+.duo figure{color:#5a5275}
+.ok{color:#1d7a46}.bad{color:#c0392b}
+summary{color:#6b4500}
+textarea{background:#fff;color:#2a2340;border-color:#cfc6e6}
+footer{color:#7a7290}
+
+/* ---------- title & index cards, left stripes, footer ---------- */
+header{padding:18px 16px 4px;max-width:1300px;margin:0 auto;display:grid;gap:12px}
+.hcard{position:relative;border-radius:12px;padding:16px 20px 14px 26px;border:1px solid #e2dbf0;box-shadow:0 3px 12px rgba(90,60,10,.16);overflow:hidden}
+.hcard::before,.box::before,.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:7px}
+.box,.card{position:relative;overflow:hidden;padding-left:22px}
+.titlecard{background:linear-gradient(100deg,#fffaf0,#f3ecff);text-align:center}
+.titlecard::before{background:linear-gradient(#7b4fd6,#e8c66a)}
+.titlecard h1{margin:0}
+.byline{font-family:'Cinzel',serif;font-size:15px;color:#8a5a00;margin-top:6px;letter-spacing:.04em}
+.byline b{color:#4b2e83}
+.indexcard{background:#fffdf6;text-align:center}
+.indexcard::before{background:linear-gradient(#e8a33a,#d8577a)}
+.idxhead{font-family:'Cinzel',serif;font-weight:700;color:#b5651d;font-size:15px;letter-spacing:.08em;text-transform:uppercase;text-align:left;margin-bottom:4px}
+.indexcard .tabs{margin:6px auto 4px}
+.note{font-size:12.5px;color:#7a7290;margin-top:4px}
+.panel .box:nth-child(1)::before{background:#7b4fd6}
+.panel .box:nth-child(2)::before{background:#2fa36b}
+.panel .box:nth-child(3)::before{background:#e08a3a}
+.cards .card:nth-child(3n+1)::before{background:#3a8fd0}
+.cards .card:nth-child(3n+2)::before{background:#d8577a}
+.cards .card:nth-child(3n)::before{background:#d4b02a}
+footer{text-align:center;padding:18px 16px 30px;font-size:13px;color:#3d3355}
+.fname{font-family:'Cinzel',serif;font-weight:700;color:#4b2e83;font-size:16px;margin-bottom:6px}
+.flinks{display:flex;gap:18px;justify-content:center;flex-wrap:wrap}
+.flinks a{color:#14466b;text-decoration:none;border-bottom:1px dotted #14466b}
+.flinks a:hover{color:#9a6b00;border-bottom-color:#9a6b00}
+
+.sectioncard{background:#eefaf8;border-color:#b5e3dc;text-align:center;padding-top:12px;padding-bottom:12px}
+.sectioncard::before{background:linear-gradient(#1aa39a,#3a8fd0)}
+.sechead{font-family:'Cinzel',serif;font-weight:700;color:#137a73;font-size:13px;letter-spacing:.08em;text-transform:uppercase;text-align:left;margin-bottom:2px}
+.sectext{font-size:15px;color:#0f4f4a;line-height:1.5}
+
+.refcard{position:relative;overflow:hidden;max-width:1268px;margin:8px auto 4px;background:#f2f6ff;border:1px solid #c7d4f0;border-radius:12px;padding:14px 20px 14px 28px;box-shadow:0 3px 12px rgba(90,60,10,.16)}
+.refcard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:7px;background:linear-gradient(#3a5bd0,#7b4fd6)}
+.refhead{font-family:'Cinzel',serif;font-weight:700;color:#2c3f94;font-size:17px;margin:0 0 8px;letter-spacing:.04em}
+.reflist{margin:0;list-style:decimal;padding-left:22px;color:#2a2340;font-size:13.5px;line-height:1.6}
+.reflist > li{margin-bottom:6px}
+.sublinks{margin:6px 0 0;padding-left:18px;list-style:disc}
+.sublinks li{margin:2px 0}
+.refcard a{color:#1f5f8b;text-decoration:none;border-bottom:1px dotted #1f5f8b;word-break:break-word}
+.refcard a:hover{color:#9a6b00;border-bottom-color:#9a6b00}
+@media (max-width:1300px){.refcard{margin-left:16px;margin-right:16px}}
+
+/* ---------- recessed 3D gradient cards ---------- */
+.hcard,.box,.card,.refcard{
+  border:1px solid rgba(120,85,20,.28) !important;
+  box-shadow:inset 8px 8px 18px rgba(70,45,0,.32), inset 2px 2px 3px rgba(70,45,0,.25),
+             inset -6px -6px 14px rgba(255,255,255,.9),
+             1px 1px 0 rgba(255,255,255,.85), -1px -1px 0 rgba(120,85,20,.28) !important}
+.titlecard{background:linear-gradient(145deg,#fffaf0 0%,#f3eafe 55%,#e3d3fb 100%)}
+.indexcard{background:linear-gradient(145deg,#fffdf4 0%,#fbf0d6 55%,#f2deb0 100%)}
+.sectioncard{background:linear-gradient(145deg,#f4fdfb 0%,#dff4ef 55%,#c6e9e1 100%)}
+.panel .box:nth-child(1){background:linear-gradient(145deg,#f7f3ff 0%,#e7ddfd 55%,#d5c6f8 100%)}
+.panel .box:nth-child(2){background:linear-gradient(145deg,#f3fcf7 0%,#dcf3e6 55%,#c3e7d2 100%)}
+.panel .box:nth-child(3){background:linear-gradient(145deg,#fff8ef 0%,#fde7cf 55%,#f7d2ac 100%)}
+.cards .card:nth-child(3n+1){background:linear-gradient(145deg,#f1f8fe 0%,#dcebf8 55%,#c4dcf1 100%)}
+.cards .card:nth-child(3n+2){background:linear-gradient(145deg,#fff3f7 0%,#fbdfe9 55%,#f3c7d7 100%)}
+.cards .card:nth-child(3n){background:linear-gradient(145deg,#fffcea 0%,#f9efc2 55%,#efdf98 100%)}
+.refcard{background:linear-gradient(145deg,#f6f9ff 0%,#e3eafb 55%,#cfdaf5 100%)}
+/* stripe sits inside the recess */
+.hcard::before,.box::before,.card::before,.refcard::before{box-shadow:inset -2px 0 3px rgba(0,0,0,.18), inset 2px 2px 3px rgba(0,0,0,.15)}
+/* raised controls stand out against the sunken cards */
+.tabs a,.chips a,button{box-shadow:0 2px 3px rgba(70,45,0,.18), inset 0 1px 0 rgba(255,255,255,.9)}
+.tabs a.on,.chips a.on{box-shadow:inset 1px 1px 3px rgba(70,45,0,.25)}
+button:active{box-shadow:inset 1px 1px 3px rgba(70,45,0,.3)}
+/* the 3D stage as a recessed window */
+.stage{border:1px solid rgba(120,85,20,.35);box-shadow:0 1px 0 rgba(255,255,255,.7), 0 -1px 0 rgba(120,85,20,.15)}
+.stage::after{content:"";position:absolute;inset:0;border-radius:14px;pointer-events:none;z-index:5;
+  box-shadow:inset 6px 8px 22px rgba(0,0,0,.65), inset -3px -4px 12px rgba(255,255,255,.06)}
+/* mini grids inside cards look set into the surface */
+#activeMini .grid,.mini .grid{box-shadow:inset 1px 1px 2px rgba(0,0,0,.15)}
+
+/* striped squares: each vertical stripe its own colour (lighter on the water-reflection side) */
+.cell.st0{background:#ffc98b}
+.cell.st1{background:#a9d6ff}
+.refl .cell.st0,.grid.refl .cell.st0{background:#ffe2c2}
+.refl .cell.st1,.grid.refl .cell.st1{background:#d6ecff}
+
+/* pair card: four images in one row */
+.cards{grid-template-columns:1fr !important}
+.quad{display:grid;grid-template-columns:repeat(4,minmax(0,180px));gap:18px;justify-content:center;align-items:end;margin:6px 0 4px}
+.quad figure{margin:0;text-align:center;font-size:12px;color:#5a5275;container-type:inline-size;position:relative}
+.quad figcaption{min-height:2.6em;line-height:1.3;display:flex;align-items:flex-end;justify-content:center;margin-bottom:4px}
+.quad .mini{--s:100cqw;width:100%;height:auto;aspect-ratio:1;margin:0}
+.quad .qwl{position:absolute;left:-4px;right:-4px;height:3px;bottom:calc(100cqw + 2px);border-radius:2px;
+  background:linear-gradient(90deg,transparent,#4fb3e8 15%,#8fe3ff 50%,#4fb3e8 85%,transparent)}
+.quad .mir{transform:scaleY(-1);opacity:.9;filter:url(#rippleSoft) brightness(.9);
+  -webkit-mask-image:linear-gradient(to top,#000 0%,rgba(0,0,0,.8) 60%,rgba(0,0,0,.45) 100%);
+          mask-image:linear-gradient(to top,#000 0%,rgba(0,0,0,.8) 60%,rgba(0,0,0,.45) 100%)}
+@media (max-width:700px){.quad{grid-template-columns:repeat(2,minmax(0,170px))}}
+
+.ordline{font-family:'Cinzel',serif;font-size:19px;font-weight:700;color:#8a5a00;letter-spacing:.06em;margin-top:2px}
+
+/* index: every example visible */
+.tabs{grid-template-columns:1fr !important;justify-items:center;gap:8px !important;max-width:1250px !important}
+.tabgroup{justify-content:center;row-gap:6px}
+.secgroup{display:inline-flex;align-items:center;gap:3px;padding:3px 5px 3px 3px;border-radius:20px;background:rgba(255,255,255,.45);border:1px solid rgba(160,130,60,.25);margin:0 3px}
+.secgroup.on{background:rgba(232,198,106,.25);border-color:rgba(199,154,42,.6)}
+.tabs a.seclink{padding:4px 10px}
+.tabs a.exlink{min-width:26px;text-align:center;padding:3px 7px;font-size:12px;border-radius:12px}
+.tabs a.exlink.on{background:#dff2fb;border-color:#5fb3d9;color:#0d4d6e;font-weight:700}
+.chips:empty{display:none}
+
+/* gold outer frame on the plates */
+.face .grid{border-color:#d4a72c !important;border-width:calc(var(--s)*.016) !important;
+  box-shadow:inset 0 0 0 1px #8a6a12, 0 0 0 1px #8a6a12}
+.edge{background:linear-gradient(90deg,#8a6a12,#f3d27a 50%,#8a6a12) !important}
+
+/* larger grids in the side panel and pair cards */
+#activeMini{width:100% !important;max-width:340px;height:auto !important;aspect-ratio:1;container-type:inline-size;margin:10px auto !important}
+#activeMini .grid{--s:100cqw}
+.quad{grid-template-columns:repeat(4,minmax(0,1fr)) !important;max-width:1180px;margin:8px auto 6px !important;gap:22px !important}
+.quad figure{font-size:13px}
+@media (max-width:700px){.quad{grid-template-columns:repeat(2,minmax(0,1fr)) !important;gap:14px !important}}
+
+.quad.big{grid-template-columns:repeat(2,minmax(0,1fr)) !important;max-width:1000px;gap:26px 34px !important}
+
+/* the digit 1 drawn as the font's capital I: same height and stroke as 0, 3, 8, and symmetric in water */
+.one{width:auto !important;height:auto !important;background:none !important;margin:0 .045em !important;vertical-align:baseline}
+
+.subline{font-family:'Cinzel',serif;font-size:20px;font-weight:700;color:#5b3fb5;letter-spacing:.08em;margin-top:2px}
+
+.genlink{margin-top:10px;padding-top:8px;border-top:1px dashed rgba(44,63,148,.3);font-size:13.5px;color:#2a2340}
+</style>
+</head>
+<body>
+
+<!-- water filters: horizontal-only displacement (G fixed at 0.5 = no vertical shift) -->
+<svg width="0" height="0" style="position:absolute">
+  <filter id="ripple" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.006 0.055" numOctaves="2" seed="11" result="n">
+      <animate attributeName="baseFrequency" dur="7s" values="0.006 0.055;0.0066 0.063;0.006 0.055" repeatCount="indefinite"/>
+    </feTurbulence>
+    <feColorMatrix in="n" type="matrix" values="1 0 0 0 0  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 1" result="x"/>
+    <feDisplacementMap id="dNear" in="SourceGraphic" in2="x" scale="5" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+  <filter id="rippleDeep" x="-8%" y="-5%" width="116%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.008 0.035" numOctaves="2" seed="4" result="n">
+      <animate attributeName="baseFrequency" dur="9s" values="0.008 0.035;0.009 0.042;0.008 0.035" repeatCount="indefinite"/>
+    </feTurbulence>
+    <feColorMatrix in="n" type="matrix" values="1 0 0 0 0  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 1" result="x"/>
+    <feDisplacementMap id="dDeep" in="SourceGraphic" in2="x" scale="11" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+  <filter id="rippleSoft" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.02 0.09" numOctaves="1" seed="2" result="n">
+      <animate attributeName="baseFrequency" dur="6s" values="0.02 0.09;0.022 0.1;0.02 0.09" repeatCount="indefinite"/>
+    </feTurbulence>
+    <feColorMatrix in="n" type="matrix" values="1 0 0 0 0  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 1" result="x"/>
+    <feDisplacementMap id="dSoft" in="SourceGraphic" in2="x" scale="2.5" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<header>
+  <div class="hcard titlecard">
+    <h1>Water Reflection Magic Squares</h1>
+    <div class="subline">Plate Representations</div>
+    <div class="ordline">Orders 9 and 10</div>
+    <div class="byline">Created by <b>Inder J. Taneja</b></div>
+  </div>
+  <div class="hcard indexcard">
+    <div class="idxhead">Index</div>
+    <nav class="tabs" id="tabs"></nav>
+    <nav class="chips" id="chips"></nav>
+    <div class="sub note">Each plate carries the original on one side and its water reflection on the other</div>
+  </div>
+  <div class="hcard sectioncard">
+    <div class="sechead">Current Section</div>
+    <div class="sectext" id="subTitle"></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div>
+    <div class="stage" id="stage">
+      <div class="scene"><div class="cube" id="cube"></div></div>
+      <div class="waterline"></div>
+      <div class="water">
+        <div class="glow"></div>
+        <div class="rl rl-far"><div class="scene"><div class="cube" id="cube3"></div></div></div>
+        <div class="rl rl-near"><div class="scene"><div class="cube" id="cube2"></div></div></div>
+        <div class="tint"></div>
+        <svg class="glints" id="glints" viewBox="0 0 1000 400" preserveAspectRatio="none"></svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="box">
+      <h2>Faces &amp; Water Flips</h2>
+      <div id="faceBtns"></div>
+      <div class="btns" style="margin-top:8px">
+        <button id="playBtn" style="border-color:#c79a2a;color:#8a5a00;background:#fff6dc;font-weight:600">⏸ Pause</button>
+        <button class="w" id="flipBtn">🌊 Water flip (current face)</button>
+        <button id="prevBtn">◀ Previous</button>
+        <button id="nextBtn">Next ▶</button>
+        <label style="font-size:13px;display:flex;align-items:center;gap:6px">Auto-play
+          <select id="scopeSel" style="background:#fff;color:#2a2340;border:1px solid #c9c0e0;border-radius:6px;padding:4px;font:13px 'Share Tech Mono',monospace">
+            <option value="all">all 55 examples</option><option value="section">this section only</option></select></label>
+        <div id="autoInfo" style="font-size:12px;color:#8d84ad;width:100%"></div>
+      </div>
+    </div>
+
+    <div class="box">
+      <h2>Showing Now</h2>
+      <div id="activeInfo"></div>
+    </div>
+
+    <div class="box">
+      <h2>Controls</h2>
+      <div class="ctl"><span>Play speed</span><input type="range" id="speed" min="0.4" max="2.5" step="0.1" value="1"><span id="speedV">1.0×</span></div>
+      <div class="ctl"><span>Plate size</span><input type="range" id="size" min="140" max="600" value="230"><span id="sizeV">230</span></div>
+      <div class="ctl"><span>Ripple strength</span><input type="range" id="rippleIn" min="0" max="12" step="0.5" value="5"><span id="rippleV">5</span></div>
+      <div class="ctl"><span>Line thickness</span><input type="range" id="lw" min="0.3" max="3" step="0.1" value="1"><span id="lwV">1.0</span></div>
+      <div class="ctl"><span>Line colour</span><input type="color" id="cLine" value="#2a2a2a"><span></span></div>
+      <div class="ctl"><span>Digit style</span><select id="styleSel" style="background:#fff;color:#2a2340;border:1px solid #c9c0e0;border-radius:6px;padding:4px;font:13px 'Share Tech Mono',monospace"><option value="classic">Classic (condensed)</option><option value="seg">Seven-segment</option></select><span></span></div>
+      <div class="ctl"><span>Original colour</span><input type="color" id="cOrig" value="#f7c5dd"><span></span></div>
+      <div class="ctl"><span>Reflection colour</span><input type="color" id="cRefl" value="#bfe8f5"><span></span></div>
+      <div class="ctl"><span>Digit colour</span><input type="color" id="cInk" value="#111111"><span></span></div>
+      <div class="chk">
+        <label><input type="checkbox" id="showWater" checked> Water surface</label>
+        <label><input type="checkbox" id="showLabels" checked> Face labels</label>
+      </div>
+      <div style="font-size:12px;color:#8d84ad;margin-top:8px">Drag the plate to rotate it by hand.</div>
+    </div>
+  </div>
+</div>
+
+<section class="pairs">
+  <h2 id="pairsTitle">The Three Pairs</h2>
+  <div class="cards" id="cards"></div>
+
+  <details>
+    <summary>Edit the original squares of this set (reflections are derived automatically)</summary>
+    <div class="ed" id="editor"></div>
+    <div class="btns" style="margin-top:8px"><button id="applyBtn">Apply</button></div>
+    <div id="edMsg" style="font-size:13px;margin-top:6px"></div>
+  </details>
+</section>
+
+<section class="refcard">
+  <h2 class="refhead">Based on the author's following research works:</h2>
+  <ol class="reflist">
+    <li><span class="refmain">Inder J. Taneja, <i>Upside-Down, Mirror Looking and Water Reflection Magic Squares: Orders 7 to 10</i>, Zenodo, January 07, 2025, pp. 1-171,
+      <a href="https://doi.org/10.5281/zenodo.14607071" target="_blank" rel="noopener">https://doi.org/10.5281/zenodo.14607071</a>.</span>
+      <ul class="sublinks">
+        <li>Site link: <a href="https://numbers-magic.com/?p=12654" target="_blank" rel="noopener">Universal and Upside-Down Magic Squares of Orders 7 to 10 (new site)</a></li>
+        <li>Site link: <a href="https://numbers-magic.com/?p=14213" target="_blank" rel="noopener">Water Reflexive Magic Squares: Order 7 to 10 (new site)</a></li>
+        <li>Site link: <a href="https://inderjtaneja.wordpress.com/2024/09/30/universal-and-upside-down-magic-squares-of-orders-7-to-10/" target="_blank" rel="noopener">Universal and Upside-Down Magic Squares of Orders 7 to 10 (old site)</a></li>
+        <li>Site link: <a href="https://inderjtaneja.wordpress.com/2025/01/11/water-reflexive-magic-squares-order-7-to-10/" target="_blank" rel="noopener">Water Reflexive Magic Squares: Order 7 to 10 (old site)</a></li>
+      </ul>
+    </li>
+    <li><span class="refmain">Inder J. Taneja, Online generator: <a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/generators/water-reflection-magic-squares-generator" target="_blank" rel="noopener">Water-Reflection Magic Squares Generator</a></span></li>
+  </ol>
+</section>
+<footer>
+  <div class="fname">Inder J. Taneja</div>
+  <div class="flinks"><a href="https://numbers-magic.com/" target="_blank" rel="noopener">https://numbers-magic.com/</a>
+  <a href="https://inderjtaneja.wordpress.com/" target="_blank" rel="noopener">https://inderjtaneja.wordpress.com/</a></div>
+</footer>
+
+<script>
+/* =========================================================
+   DATA — the three originals; the water reflection of each is
+   its rows in reverse order. Digits 0, 1, 3, 8 are symmetric
+   about a horizontal axis, so they read the same in water.
+   ========================================================= */
+const SETS = {
+  'o9seg': { tab:'Order 9 · 4-Digit (2,3,5)', style:'seg', orig:'#b4f5a0', refl:'#c4ecf7', blocks:[3,3], size:430,
+    sub:'Order 9 · 4-digit cell entries · digits (2,3,5) · every 3×3 block sums to S · in water 2 ↔ 5', data:[
+    { name:'Example 1', col:'#b4f5a0', orig:[['2222','2355','2533','3253','3332','3525','5235','5323','5552'],['3235','3323','3552','5222','5355','5533','2253','2332','2525'],['5253','5332','5525','2235','2323','2552','3222','3355','3533'],['2555','2233','2322','3532','3225','3353','5523','5252','5335'],['3523','3252','3335','5555','5233','5322','2532','2225','2353'],['5532','5225','5353','2523','2252','2335','3555','3233','3322'],['2333','2522','2255','3325','3553','3232','5352','5535','5223'],['3352','3535','3223','5333','5522','5255','2325','2553','2232'],['5325','5553','5232','2352','2535','2223','3333','3522','3255']] },
+    { name:'Example 2', col:'#ffc9e3', orig:[['3252','5335','2523','3233','5322','2555','3225','5353','2532'],['5323','2552','3235','5355','2533','3222','5332','2525','3253'],['2535','3223','5352','2522','3255','5333','2553','3232','5325'],['5552','2235','3323','5533','2222','3355','5525','2253','3332'],['2223','3352','5535','2255','3333','5522','2232','3325','5553'],['3335','5523','2252','3322','5555','2233','3353','5532','2225'],['2352','3535','5223','2333','3522','5255','2325','3553','5232'],['3523','5252','2335','3555','5233','2322','3532','5225','2353'],['5235','2323','3552','5222','2355','3533','5253','2332','3525']] } ]},
+  'o9d4': { tab:'Order 9 · 4-Digit Entries', orig:'#b4f5a0', refl:'#c4ecf7', blocks:[3,3], size:430,
+    sub:'Order 9 · 4-digit cell entries · digits (0,1,3), (0,3,8), (1,3,8) · every 3×3 block sums to S', data:[
+    { name:'Example 3', col:'#b4f5a0', orig:[['0000','0133','0311','1031','1110','1303','3013','3101','3330'],['1013','1101','1330','3000','3133','3311','0031','0110','0303'],['3031','3110','3303','0013','0101','0330','1000','1133','1311'],['0333','0011','0100','1310','1003','1131','3301','3030','3113'],['1301','1030','1113','3333','3011','3100','0310','0003','0131'],['3310','3003','3131','0301','0030','0113','1333','1011','1100'],['0111','0300','0033','1103','1331','1010','3130','3313','3001'],['1130','1313','1001','3111','3300','3033','0103','0331','0010'],['3103','3331','3010','0130','0313','0001','1111','1300','1033']] },
+    { name:'Example 4', col:'#ffc9e3', orig:[['0310','3131','1003','0333','3100','1011','0301','3113','1030'],['1031','0303','3110','1000','0311','3133','1013','0330','3101'],['3103','1010','0331','3111','1033','0300','3130','1001','0313'],['1110','0031','3303','1133','0000','3311','1101','0013','3330'],['3331','1103','0010','3300','1111','0033','3313','1130','0001'],['0003','3310','1131','0011','3333','1100','0030','3301','1113'],['3010','1331','0103','3033','1300','0111','3001','1313','0130'],['0131','3003','1310','0100','3011','1333','0113','3030','1301'],['1303','0110','3031','1311','0133','3000','1330','0101','3013']] },
+    { name:'Example 5', col:'#b4f5a0', orig:[['0000','0388','0833','3083','3330','3808','8038','8303','8880'],['3038','3303','3880','8000','8388','8833','0083','0330','0808'],['8083','8330','8808','0038','0303','0880','3000','3388','3833'],['0888','0033','0300','3830','3008','3383','8803','8080','8338'],['3803','3080','3338','8888','8033','8300','0830','0008','0383'],['8830','8008','8383','0803','0080','0338','3888','3033','3300'],['0333','0800','0088','3308','3883','3030','8380','8838','8003'],['3380','3838','3003','8333','8800','8088','0308','0883','0030'],['8308','8883','8030','0380','0838','0003','3333','3800','3088']] },
+    { name:'Example 6', col:'#ffc9e3', orig:[['0830','8383','3008','0888','8300','3033','0803','8338','3080'],['3083','0808','8330','3000','0833','8388','3038','0880','8303'],['8308','3030','0883','8333','3088','0800','8380','3003','0838'],['3330','0083','8808','3388','0000','8833','3303','0038','8880'],['8883','3308','0030','8800','3333','0088','8838','3380','0003'],['0008','8830','3383','0033','8888','3300','0080','8803','3338'],['8030','3883','0308','8088','3800','0333','8003','3838','0380'],['0383','8008','3830','0300','8033','3888','0338','8080','3803'],['3808','0330','8083','3833','0388','8000','3880','0303','8038']] },
+    { name:'Example 7', col:'#b4f5a0', orig:[['1111','1388','1833','3183','3331','3818','8138','8313','8881'],['3138','3313','3881','8111','8388','8833','1183','1331','1818'],['8183','8331','8818','1138','1313','1881','3111','3388','3833'],['1888','1133','1311','3831','3118','3383','8813','8181','8338'],['3813','3181','3338','8888','8133','8311','1831','1118','1383'],['8831','8118','8383','1813','1181','1338','3888','3133','3311'],['1333','1811','1188','3318','3883','3131','8381','8838','8113'],['3381','3838','3113','8333','8811','8188','1318','1883','1131'],['8318','8883','8131','1381','1838','1113','3333','3811','3188']] },
+    { name:'Example 8', col:'#ffc9e3', orig:[['1831','8383','3118','1888','8311','3133','1813','8338','3181'],['3183','1818','8331','3111','1833','8388','3138','1881','8313'],['8318','3131','1883','8333','3188','1811','8381','3113','1838'],['3331','1183','8818','3388','1111','8833','3313','1138','8881'],['8883','3318','1131','8811','3333','1188','8838','3381','1113'],['1118','8831','3383','1133','8888','3311','1181','8813','3338'],['8131','3883','1318','8188','3811','1333','8113','3838','1381'],['1383','8118','3831','1311','8133','3888','1338','8181','3813'],['3818','1331','8183','3833','1388','8111','3881','1313','8138']] } ]},
+  'o9d8': { tab:'Order 9 · 8-Digit Entries', orig:'#b4f5a0', refl:'#c4ecf7', blocks:[3,3], size:520,
+    sub:'Order 9 · 8-digit cell entries · digits (0,3), (1,3), (3,8) · every 3×3 block sums to S', data:[
+    { name:'Example 9', col:'#b4f5a0', orig:[['03030303','03303333','03333030','30033330','30303003','30330333','33033033','33300330','33333303'],['30033033','30300330','30333303','33030303','33303333','33333030','03033330','03303003','03330333'],['33033330','33303003','33330333','03033033','03300330','03333303','30030303','30303333','30333030'],['03333333','03033030','03300303','30333003','30030333','30303330','33330330','33033303','33303033'],['30330330','30033303','30303033','33333333','33033030','33300303','03333003','03030333','03303330'],['33333003','33030333','33303330','03330330','03033303','03303033','30333333','30033030','30300303'],['03303030','03330303','03033333','30300333','30333330','30033003','33303303','33333033','33030330'],['30303303','30333033','30030330','33303030','33330303','33033333','03300333','03333330','03033003'],['33300333','33333330','33033003','03303303','03333033','03030330','30303030','30330303','30033333']] },
+    { name:'Example 10', col:'#ffc9e3', orig:[['03333003','33303330','30030333','03333333','33300303','30033030','03330330','33303033','30033303'],['30033330','03330333','33303003','30030303','03333030','33303333','30033033','03333303','33300330'],['33300333','30033003','03333330','33303030','30033333','03330303','33303303','30030330','03333033'],['30303003','03033330','33330333','30303333','03030303','33333030','30300330','03033033','33333303'],['33333330','30300333','03033003','33330303','30303030','03033333','33333033','30303303','03030330'],['03030333','33333003','30303330','03033030','33333333','30300303','03033303','33330330','30303033'],['33033003','30333330','03300333','33033333','30330303','03303030','33030330','30333033','03303303'],['03303330','33030333','30333003','03300303','33033030','30333333','03303033','33033303','30330330'],['30330333','03303003','33033330','30333030','03303333','33030303','30333303','03300330','33033033']] },
+    { name:'Example 11', col:'#b4f5a0', orig:[['13131313','13313333','13333131','31133331','31313113','31331333','33133133','33311331','33333313'],['31133133','31311331','31333313','33131313','33313333','33333131','13133331','13313113','13331333'],['33133331','33313113','33331333','13133133','13311331','13333313','31131313','31313333','31333131'],['13333333','13133131','13311313','31333113','31131333','31313331','33331331','33133313','33313133'],['31331331','31133313','31313133','33333333','33133131','33311313','13333113','13131333','13313331'],['33333113','33131333','33313331','13331331','13133313','13313133','31333333','31133131','31311313'],['13313131','13331313','13133333','31311333','31333331','31133113','33313313','33333133','33131331'],['31313313','31333133','31131331','33313131','33331313','33133333','13311333','13333331','13133113'],['33311333','33333331','33133113','13313313','13333133','13131331','31313131','31331313','31133333']] },
+    { name:'Example 12', col:'#ffc9e3', orig:[['13333113','33313331','31131333','13333333','33311313','31133131','13331331','33313133','31133313'],['31133331','13331333','33313113','31131313','13333131','33313333','31133133','13333313','33311331'],['33311333','31133113','13333331','33313131','31133333','13331313','33313313','31131331','13333133'],['31313113','13133331','33331333','31313333','13131313','33333131','31311331','13133133','33333313'],['33333331','31311333','13133113','33331313','31313131','13133333','33333133','31313313','13131331'],['13131333','33333113','31313331','13133131','33333333','31311313','13133313','33331331','31313133'],['33133113','31333331','13311333','33133333','31331313','13313131','33131331','31333133','13313313'],['13313331','33131333','31333113','13311313','33133131','31333333','13313133','33133313','31331331'],['31331333','13313113','33133331','31333131','13313333','33131313','31333313','13311331','33133133']] },
+    { name:'Example 13', col:'#b4f5a0', orig:[['33333333','33388383','33833838','38338338','38383833','38833383','83333883','83383338','83838333'],['38333883','38383338','38838333','83333333','83388383','83833838','33338338','33383833','33833383'],['83338338','83383833','83833383','33333883','33383338','33838333','38333333','38388383','38833838'],['33838383','33333838','33383333','38833833','38333383','38388338','83833338','83338333','83383883'],['38833338','38338333','38383883','83838383','83333838','83383333','33833833','33333383','33388338'],['83833833','83333383','83388338','33833338','33338333','33383883','38838383','38333838','38383333'],['33383838','33833333','33338383','38383383','38838338','38333833','83388333','83833883','83333338'],['38388333','38833883','38333338','83383838','83833333','83338383','33383383','33838338','33333833'],['83383383','83838338','83333833','33388333','33833883','33333338','38383838','38833333','38338383']] },
+    { name:'Example 14', col:'#ffc9e3', orig:[['33833833','83388338','38333383','33838383','83383333','38333838','33833338','83383883','38338333'],['38338338','33833383','83383833','38333333','33833838','83388383','38333883','33838333','83383338'],['83383383','38333833','33838338','83383838','38338383','33833333','83388333','38333338','33833883'],['38383833','33338338','83833383','38388383','33333333','83833838','38383338','33333883','83838333'],['83838338','38383383','33333833','83833333','38383838','33338383','83833883','38388333','33333338'],['33333383','83833833','38388338','33333838','83838383','38383333','33338333','83833338','38383883'],['83333833','38838338','33383383','83338383','38833333','33383838','83333338','38833883','33388333'],['33388338','83333383','38833833','33383333','83333838','38838383','33383883','83338333','38833338'],['38833383','33383833','83338338','38833838','33388383','83333333','38838333','33383338','83333883']] } ]},
+  'o9nm4c': { tab:'Order 9 · New 4-Digit', orig:'#fff4c4', refl:'#e6f6c6', size:450,
+    sub:'Order 9 · new (generator) · 4-digit entries · (0,1,3,8), (0,1,3), (0,3,8), (1,3,8) · 0, 1, 3, 8 unchanged in water · magic squares', data:[
+    { name:'Example 15', orig:[['1830','0031','0118','8008','0833','8303','8881','3800','1311'],['8811','0808','1331','1818','3830','0100','8003','0081','8333'],['0008','8300','8803','3881','0131','1811','0830','1333','8018'],['1300','8011','0030','0133','1803','3808','8331','8818','0881'],['3831','1303','1881','0800','8318','8030','0033','0111','8808'],['8033','3818','8308','8831','0011','1381','1800','0803','0130'],['0818','0181','8000','0003','1308','8833','3811','8330','1831'],['8381','1833','0811','1330','8800','0018','0108','8031','3803'],['0103','8830','3833','8311','8081','0831','1318','1808','0000']] },
+    { name:'Example 16', orig:[['0303','1133','0113','1331','0000','1030','3101','3010','3311'],['3111','0031','3333','0313','3003','0110','1330','1101','1000'],['1131','1010','3130','3001','0133','0311','0003','3300','1313'],['3310','1311','1103','0100','0330','3031','1033','3113','0001'],['3033','3330','0301','0010','1013','1303','1100','0111','3131'],['1300','3013','1031','3133','1111','3301','0310','0030','0103'],['0013','0101','1310','1130','3331','3100','3011','1003','0333'],['1001','0300','0011','3303','3110','1113','0131','1333','3030'],['0130','3103','3000','1011','1301','0033','3313','0331','1110']] },
+    { name:'Example 17', orig:[['0303','8833','0883','8338','0000','8030','3808','3080','3388'],['3888','0038','3333','0383','3003','0880','8330','8808','8000'],['8838','8080','3830','3008','0833','0388','0003','3300','8383'],['3380','8388','8803','0800','0330','3038','8033','3883','0008'],['3033','3330','0308','0080','8083','8303','8800','0888','3838'],['8300','3083','8038','3833','8888','3308','0380','0030','0803'],['0083','0808','8380','8830','3338','3800','3088','8003','0333'],['8008','0300','0088','3303','3880','8883','0838','8333','3030'],['0830','3803','3000','8088','8308','0033','3383','0338','8880']] },
+    { name:'Example 18', orig:[['1313','8833','1883','8338','1111','8131','3818','3181','3388'],['3888','1138','3333','1383','3113','1881','8331','8818','8111'],['8838','8181','3831','3118','1833','1388','1113','3311','8383'],['3381','8388','8813','1811','1331','3138','8133','3883','1118'],['3133','3331','1318','1181','8183','8313','8811','1888','3838'],['8311','3183','8138','3833','8888','3318','1381','1131','1813'],['1183','1818','8381','8831','3338','3811','3188','8113','1333'],['8118','1311','1188','3313','3881','8883','1838','8333','3131'],['1831','3813','3111','8188','8318','1133','3383','1338','8881']] },
+  ]},
+  'o9nm8c': { tab:'Order 9 · New 8-Digit', orig:'#fff4c4', refl:'#e6f6c6', size:490,
+    sub:'Order 9 · new (generator) · 8-digit entries · (0,3), (1,3), (3,8) · 0, 1, 3, 8 unchanged in water · magic squares', data:[
+    { name:'Example 19', orig:[['03333000','00003003','00030333','33000033','00333030','33300030','33333303','30330000','03300303'],['33330303','00330033','03303003','03330333','30333000','00030000','33000030','00003303','33303030'],['00000033','33300000','33330030','30333303','00033003','03330303','00333000','03303030','33000333'],['03300000','33000303','00003000','00033030','03330030','30330033','33303003','33330333','00333303'],['30333003','03300030','03333303','00330000','33300333','33003000','00003030','00030303','33330033'],['33003030','30330333','33300033','33333003','00000303','03303303','03330000','00330030','00033000'],['00330333','00033303','33000000','00000030','03300033','33333030','30330303','33303000','03333003'],['33303303','03333030','00330303','03303000','33330000','00000333','00030033','33003003','30330030'],['00030030','33333000','30333030','33300303','33003303','00333003','03300333','03330033','00000000']] },
+    { name:'Example 20', orig:[['13333111','11113113','11131333','33111133','11333131','33311131','33333313','31331111','13311313'],['33331313','11331133','13313113','13331333','31333111','11131111','33111131','11113313','33313131'],['11111133','33311111','33331131','31333313','11133113','13331313','11333111','13313131','33111333'],['13311111','33111313','11113111','11133131','13331131','31331133','33313113','33331333','11333313'],['31333113','13311131','13333313','11331111','33311333','33113111','11113131','11131313','33331133'],['33113131','31331333','33311133','33333113','11111313','13313313','13331111','11331131','11133111'],['11331333','11133313','33111111','11111131','13311133','33333131','31331313','33313111','13333113'],['33313313','13333131','11331313','13313111','33331111','11111333','11131133','33113113','31331131'],['11131131','33333111','31333131','33311313','33113313','11333113','13311333','13331133','11111111']] },
+    { name:'Example 21', orig:[['83333888','88883883','88838333','33888833','88333838','33388838','33333383','38338888','83388383'],['33338383','88338833','83383883','83338333','38333888','88838888','33888838','88883383','33383838'],['88888833','33388888','33338838','38333383','88833883','83338383','88333888','83383838','33888333'],['83388888','33888383','88883888','88833838','83338838','38338833','33383883','33338333','88333383'],['38333883','83388838','83333383','88338888','33388333','33883888','88883838','88838383','33338833'],['33883838','38338333','33388833','33333883','88888383','83383383','83338888','88338838','88833888'],['88338333','88833383','33888888','88888838','83388833','33333838','38338383','33383888','83333883'],['33383383','83333838','88338383','83383888','33338888','88888333','88838833','33883883','38338838'],['88838838','33333888','38333838','33388383','33883383','88333883','83388333','83338833','88888888']] },
+  ]},
+  'o9nm4s': { tab:'Order 9 · New 4-Digit 7-seg', style:'seg', orig:'#ffe1f0', refl:'#e6f6c6', size:450,
+    sub:'Order 9 · new (generator) · 4-digit entries · (0,2,3,5), (1,2,3,5), (2,3,5,8), (0,2,3,5,8), (0,1,2,3,5), (1,2,3,5,8), (0,1,2,3,5,8), (2,3,5) · in water 2 ↔ 5 · magic squares', data:[
+    { name:'Example 22', orig:[['2530','0032','0225','5005','0533','5303','5552','3500','2322'],['5522','0505','2332','2525','3530','0200','5003','0052','5333'],['0005','5300','5503','3552','0232','2522','0530','2333','5025'],['2300','5022','0030','0233','2503','3505','5332','5525','0552'],['3532','2303','2552','0500','5325','5030','0033','0222','5505'],['5033','3525','5305','5532','0022','2352','2500','0503','0230'],['0525','0252','5000','0003','2305','5533','3522','5330','2532'],['5352','2533','0522','2330','5500','0025','0205','5032','3503'],['0203','5530','3533','5322','5052','0532','2325','2505','0000']] },
+    { name:'Example 23', orig:[['2531','1132','1225','5115','1533','5313','5552','3511','2322'],['5522','1515','2332','2525','3531','1211','5113','1152','5333'],['1115','5311','5513','3552','1232','2522','1531','2333','5125'],['2311','5122','1131','1233','2513','3515','5332','5525','1552'],['3532','2313','2552','1511','5325','5131','1133','1222','5515'],['5133','3525','5315','5532','1122','2352','2511','1513','1231'],['1525','1252','5111','1113','2315','5533','3522','5331','2532'],['5352','2533','1522','2331','5511','1125','1215','5132','3513'],['1213','5531','3533','5322','5152','1532','2325','2515','1111']] },
+    { name:'Example 24', orig:[['2538','8832','8225','5885','8533','5383','5552','3588','2322'],['5522','8585','2332','2525','3538','8288','5883','8852','5333'],['8885','5388','5583','3552','8232','2522','8538','2333','5825'],['2388','5822','8838','8233','2583','3585','5332','5525','8552'],['3532','2383','2552','8588','5325','5838','8833','8222','5585'],['5833','3525','5385','5532','8822','2352','2588','8583','8238'],['8525','8252','5888','8883','2385','5533','3522','5338','2532'],['5352','2533','8522','2338','5588','8825','8285','5832','3583'],['8283','5538','3533','5322','5852','8532','2325','2585','8888']] },
+    { name:'Example 25', orig:[['3855','0382','5858','8838','3088','5552','2283','5235','2333'],['2233','3038','2382','3858','5255','5835','8852','0383','5588'],['0338','5535','2252','5283','5882','3833','3055','2388','8858'],['2335','8833','0355','5888','3852','5238','5582','2258','3083'],['5282','2352','3883','3035','5558','8855','0388','5833','2238'],['8888','5258','5538','2282','0333','2383','3835','3052','5855'],['3058','5883','8835','0352','2338','2288','5233','5555','3882'],['5583','3888','3033','2355','2235','0358','5838','8882','5252'],['5852','2255','5288','5533','8883','3082','2358','3838','0335']] },
+    { name:'Example 26', orig:[['3155','0312','5151','1131','3011','5552','2213','5235','2333'],['2233','3031','2312','3151','5255','5135','1152','0313','5511'],['0331','5535','2252','5213','5112','3133','3055','2311','1151'],['2335','1133','0355','5111','3152','5231','5512','2251','3013'],['5212','2352','3113','3035','5551','1155','0311','5133','2231'],['1111','5251','5531','2212','0333','2313','3135','3052','5155'],['3051','5113','1135','0352','2331','2211','5233','5555','3112'],['5513','3111','3033','2355','2235','0351','5131','1112','5252'],['5152','2255','5211','5533','1113','3012','2351','3131','0335']] },
+    { name:'Example 27', orig:[['3855','1382','5858','8838','3188','5552','2283','5235','2333'],['2233','3138','2382','3858','5255','5835','8852','1383','5588'],['1338','5535','2252','5283','5882','3833','3155','2388','8858'],['2335','8833','1355','5888','3852','5238','5582','2258','3183'],['5282','2352','3883','3135','5558','8855','1388','5833','2238'],['8888','5258','5538','2282','1333','2383','3835','3152','5855'],['3158','5883','8835','1352','2338','2288','5233','5555','3882'],['5583','3888','3133','2355','2235','1358','5838','8882','5252'],['5852','2255','5288','5533','8883','3182','2358','3838','1335']] },
+    { name:'Example 28', orig:[['3218','0502','3530','2833','2083','0185','5335','8023','3311'],['5311','2033','3302','3230','8018','3523','2885','0535','0183'],['0533','0123','5385','8035','3502','3211','2018','3383','2830'],['3323','2811','0518','3583','3285','8033','0102','5330','2035'],['8002','3385','3235','2023','0130','2818','0583','3511','5333'],['2883','8030','0133','5302','0511','3335','3223','2085','3518'],['2030','3535','2823','0585','3333','5383','8011','0118','3202'],['0135','3283','2011','3318','5323','0530','3533','2802','8085'],['3585','5318','8083','0111','2835','2002','3330','3233','0523']] },
+    { name:'Example 29', orig:[['2323','5533','2553','5335','2222','5232','3525','3252','3355'],['3555','2235','3333','2353','3223','2552','5332','5525','5222'],['5535','5252','3532','3225','2533','2355','2223','3322','5353'],['3352','5355','5523','2522','2332','3235','5233','3553','2225'],['3233','3332','2325','2252','5253','5323','5522','2555','3535'],['5322','3253','5235','3533','5555','3325','2352','2232','2523'],['2253','2525','5352','5532','3335','3522','3255','5223','2333'],['5225','2322','2255','3323','3552','5553','2535','5333','3232'],['2532','3523','3222','5255','5325','2233','3353','2335','5552']] },
+  ]},
+  'o10d4': { tab:'Order 10 · 4-Digit (0,1,3,8)', orig:'#8ef3f3', refl:'#e6f6c6', size:440,
+    sub:'Order 10 · 4-digit cell entries · digits (0,1,3,8)', data:[
+    { name:'Example 1', orig:[['1111','8131','8833','1318','0088','8313','3138','3300','1883','3881'],['3318','1313','3181','1188','3831','8811','0083','1838','8300','8133'],['8100','0038','1818','3811','8881','3383','8333','1331','1113','3188'],['0033','8883','1100','3131','1811','1381','3313','3888','8138','8318'],['3183','8311','1338','8800','3333','8188','1131','0081','3818','1813'],['1388','1800','8113','8381','1183','3838','8818','3133','0031','3311'],['8331','3388','3883','1833','1300','0018','8181','8813','3111','1138'],['3813','1181','0011','3338','8118','3100','1888','8383','1333','8831'],['1881','3118','3331','0013','8338','1133','3800','8111','8888','1383'],['8838','3833','8388','8183','3113','1831','1311','1118','3381','0000']] } ]},
+  'o10seg': { tab:'Order 10 · 4-Digit 7-seg', style:'seg', orig:'#8ef3f3', refl:'#e6f6c6', size:440,
+    sub:'Order 10 · 4-digit cell entries · digits (0,2,3,5), (1,2,3,5), (2,3,5,8) · in water 2 ↔ 5', data:[
+    { name:'Example 2', orig:[['2222','5232','5533','2325','0055','5323','3235','3300','2553','3552'],['3325','2323','3252','2255','3532','5522','0053','2535','5300','5233'],['5200','0035','2525','3522','5552','3353','5333','2332','2223','3255'],['0033','5553','2200','3232','2522','2352','3323','3555','5235','5325'],['3253','5322','2335','5500','3333','5255','2232','0052','3525','2523'],['2355','2500','5223','5352','2253','3535','5525','3233','0032','3322'],['5332','3355','3553','2533','2300','0025','5252','5523','3222','2235'],['3523','2252','0022','3335','5225','3200','2555','5353','2333','5532'],['2552','3225','3332','0023','5335','2233','3500','5222','5555','2353'],['5535','3533','5355','5253','3223','2532','2322','2225','3352','0000']] },
+    { name:'Example 3', orig:[['2222','5232','5533','2325','1155','5323','3235','3311','2553','3552'],['3325','2323','3252','2255','3532','5522','1153','2535','5311','5233'],['5211','1135','2525','3522','5552','3353','5333','2332','2223','3255'],['1133','5553','2211','3232','2522','2352','3323','3555','5235','5325'],['3253','5322','2335','5511','3333','5255','2232','1152','3525','2523'],['2355','2511','5223','5352','2253','3535','5525','3233','1132','3322'],['5332','3355','3553','2533','2311','1125','5252','5523','3222','2235'],['3523','2252','1122','3335','5225','3211','2555','5353','2333','5532'],['2552','3225','3332','1123','5335','2233','3511','5222','5555','2353'],['5535','3533','5355','5253','3223','2532','2322','2225','3352','1111']] },
+    { name:'Example 4', orig:[['2222','5232','5533','2325','8855','5323','3235','3388','2553','3552'],['3325','2323','3252','2255','3532','5522','8853','2535','5388','5233'],['5288','8835','2525','3522','5552','3353','5333','2332','2223','3255'],['8833','5553','2288','3232','2522','2352','3323','3555','5235','5325'],['3253','5322','2335','5588','3333','5255','2232','8852','3525','2523'],['2355','2588','5223','5352','2253','3535','5525','3233','8832','3322'],['5332','3355','3553','2533','2388','8825','5252','5523','3222','2235'],['3523','2252','8822','3335','5225','3288','2555','5353','2333','5532'],['2552','3225','3332','8823','5335','2233','3588','5222','5555','2353'],['5535','3533','5355','5253','3223','2532','2322','2225','3352','8888']] } ]},
+  'o10d6': { tab:'Order 10 · 6-Digit Entries', orig:'#8ef3f3', refl:'#e6f6c6', size:500,
+    sub:'Order 10 · 6-digit cell entries · digits (0,1,3), (0,3,8), (1,3,8)', data:[
+    { name:'Example 5', orig:[['000000','100011','110301','001013','111110','103001','011310','301111','013103','310100'],['301013','001001','011100','000110','310011','110000','111103','013310','103111','100301'],['100111','111310','013013','310000','110100','301103','103301','001011','000001','011110'],['111301','110103','000111','011011','013000','001100','301001','310110','100310','103013'],['011103','103000','001310','110111','301301','100110','000011','111100','310013','013001'],['001110','013111','100001','103100','000103','310310','110013','011301','111011','301000'],['103011','301110','310103','013301','001111','111013','100100','110001','011000','000310'],['310001','000100','111000','301310','100013','011111','013110','103103','001301','110011'],['013100','011013','301011','111001','103310','000301','310111','100000','110110','001103'],['110310','310301','103110','100103','011001','013011','001000','000013','301100','111111']] },
+    { name:'Example 6', orig:[['000000','800088','880308','008083','888880','803008','088380','308888','083803','380800'],['308083','008008','088800','000880','380088','880000','888803','083380','803888','800308'],['800888','888380','083083','380000','880800','308803','803308','008088','000008','088880'],['888308','880803','000888','088088','083000','008800','308008','380880','800380','803083'],['088803','803000','008380','880888','308308','800880','000088','888800','380083','083008'],['008880','083888','800008','803800','000803','380380','880083','088308','888088','308000'],['803088','308880','380803','083308','008888','888083','800800','880008','088000','000380'],['380008','000800','888000','308380','800083','088888','083880','803803','008308','880088'],['083800','088083','308088','888008','803380','000308','380888','800000','880880','008803'],['880380','380308','803880','800803','088008','083088','008000','000083','308800','888888']] },
+    { name:'Example 7', orig:[['111111','811188','881318','118183','888881','813118','188381','318888','183813','381811'],['318183','118118','188811','111881','381188','881111','888813','183381','813888','811318'],['811888','888381','183183','381111','881811','318813','813318','118188','111118','188881'],['888318','881813','111888','188188','183111','118811','318118','381881','811381','813183'],['188813','813111','118381','881888','318318','811881','111188','888811','381183','183118'],['118881','183888','811118','813811','111813','381381','881183','188318','888188','318111'],['813188','318881','381813','183318','118888','888183','811811','881118','188111','111381'],['381118','111811','888111','318381','811183','188888','183881','813813','118318','881188'],['183811','188183','318188','888118','813381','111318','381888','811111','881881','118813'],['881381','381318','813881','811813','188118','183188','118111','111183','318811','888888']] } ]},
+  'o10seg6': { tab:'Order 10 · 6-Digit 7-seg', style:'seg', orig:'#8ef3f3', refl:'#e6f6c6', size:520,
+    sub:'Order 10 · 6-digit cell entries · digits (2,3,5) · in water 2 ↔ 5', data:[
+    { name:'Example 8', orig:[['222222','522255','552325','225253','555552','523225','255352','325555','253523','352522'],['325253','225225','255522','222552','352255','552222','555523','253352','523555','522325'],['522555','555352','253253','352222','552522','325523','523325','225255','222225','255552'],['555325','552523','222555','255255','253222','225522','325225','352552','522352','523253'],['255523','523222','225352','552555','325325','522552','222255','555522','352253','253225'],['225552','253555','522225','523522','222523','352352','552253','255325','555255','325222'],['523255','325552','352523','253325','225555','555253','522522','552225','255222','222352'],['352225','222522','555222','325352','522253','255555','253552','523523','225325','552255'],['253522','255253','325255','555225','523352','222325','352555','522222','552552','225523'],['552352','352325','523552','522523','255225','253255','225222','222253','325522','555555']] } ]},
+  'o10d8': { tab:'Order 10 · 8-Digit Entries', orig:'#8ef3f3', refl:'#e6f6c6', size:540,
+    sub:'Order 10 · 8-digit cell entries · digits (1,3), (0,3), (3,8)', data:[
+    { name:'Example 9', orig:[['11111111','31331333','33313113','13131331','33333331','33131313','13333131','31133333','13313313','31313133'],['31131331','13131313','13333133','11113331','31311333','33311111','33333313','13313131','33133333','31333113'],['31333333','33333131','13311331','31311111','33313133','31133313','33133113','13131333','11111313','13333331'],['33333113','33313313','11113333','13331333','13311111','13133133','31131313','31313331','31333131','33131331'],['13333313','33131111','13133131','33313333','31133113','31333331','11111333','33333133','31311331','13311313'],['13133331','13313333','31331313','33133133','11113313','31313131','33311331','13333113','33331333','31131111'],['33131333','31133331','31313313','13313113','13133333','33331331','31333133','33311313','13331111','11113131'],['31311313','11113133','33331111','31133131','31331331','13333333','13313331','33133313','13133113','33311333'],['13313133','13331331','31131333','33331313','33133131','11113113','31313333','31331111','33313331','13133313'],['33313131','31313113','33133331','31333313','13331313','13311333','13131111','11111331','31133133','33333333']] },
+    { name:'Example 10', orig:[['00000000','30330333','33303003','03030330','33333330','33030303','03333030','30033333','03303303','30303033'],['30030330','03030303','03333033','00003330','30300333','33300000','33333303','03303030','33033333','30333003'],['30333333','33333030','03300330','30300000','33303033','30033303','33033003','03030333','00000303','03333330'],['33333003','33303303','00003333','03330333','03300000','03033033','30030303','30303330','30333030','33030330'],['03333303','33030000','03033030','33303333','30033003','30333330','00000333','33333033','30300330','03300303'],['03033330','03303333','30330303','33033033','00003303','30303030','33300330','03333003','33330333','30030000'],['33030333','30033330','30303303','03303003','03033333','33330330','30333033','33300303','03330000','00003030'],['30300303','00003033','33330000','30033030','30330330','03333333','03303330','33033303','03033003','33300333'],['03303033','03330330','30030333','33330303','33033030','00003003','30303333','30330000','33303330','03033303'],['33303030','30303003','33033330','30333303','03330303','03300333','03030000','00000330','30033033','33333333']] },
+    { name:'Example 11', orig:[['88888888','38338333','33383883','83838338','33333338','33838383','83333838','38833333','83383383','38383833'],['38838338','83838383','83333833','88883338','38388333','33388888','33333383','83383838','33833333','38333883'],['38333333','33333838','83388338','38388888','33383833','38833383','33833883','83838333','88888383','83333338'],['33333883','33383383','88883333','83338333','83388888','83833833','38838383','38383338','38333838','33838338'],['83333383','33838888','83833838','33383333','38833883','38333338','88888333','33333833','38388338','83388383'],['83833338','83383333','38338383','33833833','88883383','38383838','33388338','83333883','33338333','38838888'],['33838333','38833338','38383383','83383883','83833333','33338338','38333833','33388383','83338888','88883838'],['38388383','88883833','33338888','38833838','38338338','83333333','83383338','33833383','83833883','33388333'],['83383833','83338338','38838333','33338383','33833838','88883883','38383333','38338888','33383338','83833383'],['33383838','38383883','33833338','38333383','83338383','83388333','83838888','88888338','38833833','33333333']] } ]},
+  'o10nm6c': { tab:'Order 10 · New 6-Digit', orig:'#fff4c4', refl:'#e6f6c6', size:490,
+    sub:'Order 10 · new (generator) · 6-digit entries · (0,1,3,8), (0,1,3), (0,3,8), (1,3,8) · 0, 1, 3, 8 unchanged in water · magic squares', data:[
+    { name:'Example 12', orig:[['180033','831833','018113','083031','801113','831811','180011','018111','801131','083033'],['803013','088111','831131','181811','010033','088133','803011','831133','010031','181813'],['081113','013033','801813','830031','188131','013031','081111','801831','188113','830013'],['838131','800031','183011','011133','081813','800013','838133','183013','081811','011131'],['011811','181133','080013','808113','833031','181111','011831','080033','833013','808131'],['803031','088113','831113','181833','010013','088131','803033','831111','010011','181831'],['180031','831831','018131','083011','801133','831813','180013','018133','801111','083013'],['081133','013011','801833','830011','188111','013013','081131','801811','188133','830033'],['011813','181113','080031','808133','833011','181131','011833','080011','833033','808111'],['838111','800011','183031','011113','081831','800033','838113','183033','081833','011111']] },
+    { name:'Example 13', orig:[['031010','101310','010130','000311','131130','101331','031031','010131','131111','000310'],['130330','000131','101111','031331','011010','000110','130331','101110','011011','031330'],['001130','010310','131330','101011','030111','010311','001131','131311','030130','101030'],['100111','131011','030331','011110','001330','131030','100110','030330','001331','011111'],['011331','031110','001030','130130','100311','031131','011311','001010','100330','130111'],['130311','000130','101130','031310','011030','000111','130310','101131','011031','031311'],['031011','101311','010111','000331','131110','101330','031030','010110','131131','000330'],['001110','010331','131310','101031','030131','010330','001111','131331','030110','101010'],['011330','031130','001011','130110','100331','031111','011310','001031','100310','130131'],['100131','131031','030311','011130','001311','131010','100130','030310','001310','011131']] },
+    { name:'Example 14', orig:[['038080','808380','080830','000388','838830','808338','038038','080838','838888','000380'],['830330','000838','808888','038338','088080','000880','830338','808880','088088','038330'],['008830','080380','838330','808088','030888','080388','008838','838388','030830','808030'],['800888','838088','030338','088880','008330','838030','800880','030330','008338','088888'],['088338','038880','008030','830830','800388','038838','088388','008080','800330','830888'],['830388','000830','808830','038380','088030','000888','830380','808838','088038','038388'],['038088','808388','080888','000338','838880','808330','038030','080880','838838','000330'],['008880','080338','838380','808038','030838','080330','008888','838338','030880','808080'],['088330','038830','008088','830880','800338','038888','088380','008038','800380','830838'],['800838','838038','030388','088830','008388','838080','800830','030380','008380','088838']] },
+    { name:'Example 15', orig:[['138181','818381','181831','111388','838831','818338','138138','181838','838888','111381'],['831331','111838','818888','138338','188181','111881','831338','818881','188188','138331'],['118831','181381','838331','818188','131888','181388','118838','838388','131831','818131'],['811888','838188','131338','188881','118331','838131','811881','131331','118338','188888'],['188338','138881','118131','831831','811388','138838','188388','118181','811331','831888'],['831388','111831','818831','138381','188131','111888','831381','818838','188138','138388'],['138188','818388','181888','111338','838881','818331','138131','181881','838838','111331'],['118881','181338','838381','818138','131838','181331','118888','838338','131881','818181'],['188331','138831','118188','831881','811338','138888','188381','118138','811381','831838'],['811838','838138','131388','188831','118388','838181','811831','131381','118381','188838']] },
+  ]},
+  'o10nm8c': { tab:'Order 10 · New 8-Digit', orig:'#fff4c4', refl:'#e6f6c6', size:510,
+    sub:'Order 10 · new (generator) · 8-digit entries · (0,3), (1,3), (3,8) · 0, 1, 3, 8 unchanged in water · magic squares', data:[
+    { name:'Example 16', orig:[['30300303','03003003','00330033','03303300','00033033','03003030','30300330','00330030','00033000','03303303'],['00003333','03330030','03033000','30303030','00300303','03330003','00003330','03033003','00300300','30303033'],['03333033','00303303','00003033','03000300','30330000','00303300','03333030','00003000','30330033','03000333'],['03030000','00000300','30303330','00333003','03303033','00000333','03030003','30303333','03303030','00333000'],['00303030','30333003','03300333','00030033','03003300','30333030','00303000','03300303','03003333','00030000'],['00003300','03330033','03033033','30303003','00300333','03330000','00003303','03033030','00300330','30303000'],['30300300','03003000','00330000','03303330','00033003','03003033','30300333','00330003','00033030','03303333'],['03333003','00303330','00003003','03000330','30330030','00303333','03333000','00003030','30330003','03000303'],['00303033','30333033','03300300','00030003','03003330','30333000','00303003','03300330','03003303','00030030'],['03030030','00000330','30303300','00333033','03303000','00000303','03030033','30303303','03303003','00333030']] },
+    { name:'Example 17', orig:[['31311313','13113113','11331133','13313311','11133133','13113131','31311331','11331131','11133111','13313313'],['11113333','13331131','13133111','31313131','11311313','13331113','11113331','13133113','11311311','31313133'],['13333133','11313313','11113133','13111311','31331111','11313311','13333131','11113111','31331133','13111333'],['13131111','11111311','31313331','11333113','13313133','11111333','13131113','31313333','13313131','11333111'],['11313131','31333113','13311333','11131133','13113311','31333131','11313111','13311313','13113333','11131111'],['11113311','13331133','13133133','31313113','11311333','13331111','11113313','13133131','11311331','31313111'],['31311311','13113111','11331111','13313331','11133113','13113133','31311333','11331113','11133131','13313333'],['13333113','11313331','11113113','13111331','31331131','11313333','13333111','11113131','31331113','13111313'],['11313133','31333133','13311311','11131113','13113331','31333111','11313113','13311331','13113313','11131131'],['13131131','11111331','31313311','11333133','13313111','11111313','13131133','31313313','13313113','11333131']] },
+    { name:'Example 18', orig:[['38388383','83883883','88338833','83383388','88833833','83883838','38388338','88338838','88833888','83383383'],['88883333','83338838','83833888','38383838','88388383','83338883','88883338','83833883','88388388','38383833'],['83333833','88383383','88883833','83888388','38338888','88383388','83333838','88883888','38338833','83888333'],['83838888','88888388','38383338','88333883','83383833','88888333','83838883','38383333','83383838','88333888'],['88383838','38333883','83388333','88838833','83883388','38333838','88383888','83388383','83883333','88838888'],['88883388','83338833','83833833','38383883','88388333','83338888','88883383','83833838','88388338','38383888'],['38388388','83883888','88338888','83383338','88833883','83883833','38388333','88338883','88833838','83383333'],['83333883','88383338','88883883','83888338','38338838','88383333','83333888','88883838','38338883','83888383'],['88383833','38333833','83388388','88838883','83883338','38333888','88383883','83388338','83883383','88838838'],['83838838','88888338','38383388','88333833','83383888','88888383','83838833','38383383','83383883','88333838']] },
+  ]},
+  'o10nm6s': { tab:'Order 10 · New 6-Digit 7-seg', style:'seg', orig:'#ffe1f0', refl:'#e6f6c6', size:490,
+    sub:'Order 10 · new (generator) · 6-digit entries · (0,2,3,5), (1,2,3,5), (2,3,5,8), (2,3,5) · in water 2 ↔ 5 · magic squares', data:[
+    { name:'Example 19', orig:[['250033','532533','025223','053032','502223','532522','250022','025222','502232','053033'],['503023','055222','532232','252522','020033','055233','503022','532233','020032','252523'],['052223','023033','502523','530032','255232','023032','052222','502532','255223','530023'],['535232','500032','253022','022233','052523','500023','535233','253023','052522','022232'],['022522','252233','050023','505223','533032','252222','022532','050033','533023','505232'],['503032','055223','532223','252533','020023','055232','503033','532222','020022','252532'],['250032','532532','025232','053022','502233','532523','250023','025233','502222','053023'],['052233','023022','502533','530022','255222','023023','052232','502522','255233','530033'],['022523','252223','050032','505233','533022','252232','022533','050022','533033','505222'],['535222','500022','253032','022223','052532','500033','535223','253033','052533','022222']] },
+    { name:'Example 20', orig:[['251133','532533','125223','153132','512223','532522','251122','125222','512232','153133'],['513123','155222','532232','252522','121133','155233','513122','532233','121132','252523'],['152223','123133','512523','531132','255232','123132','152222','512532','255223','531123'],['535232','511132','253122','122233','152523','511123','535233','253123','152522','122232'],['122522','252233','151123','515223','533132','252222','122532','151133','533123','515232'],['513132','155223','532223','252533','121123','155232','513133','532222','121122','252532'],['251132','532532','125232','153122','512233','532523','251123','125233','512222','153123'],['152233','123122','512533','531122','255222','123123','152232','512522','255233','531133'],['122523','252223','151132','515233','533122','252232','122533','151122','533133','515222'],['535222','511122','253132','122223','152532','511133','535223','253133','152533','122222']] },
+    { name:'Example 21', orig:[['258833','532533','825223','853832','582223','532522','258822','825222','582232','853833'],['583823','855222','532232','252522','828833','855233','583822','532233','828832','252523'],['852223','823833','582523','538832','255232','823832','852222','582532','255223','538823'],['535232','588832','253822','822233','852523','588823','535233','253823','852522','822232'],['822522','252233','858823','585223','533832','252222','822532','858833','533823','585232'],['583832','855223','532223','252533','828823','855232','583833','532222','828822','252532'],['258832','532532','825232','853822','582233','532523','258823','825233','582222','853823'],['852233','823822','582533','538822','255222','823823','852232','582522','255233','538833'],['822523','252223','858832','585233','533822','252232','822533','858822','533833','585222'],['535222','588822','253832','822223','852532','588833','535223','253833','852533','822222']] },
+    { name:'Example 22', orig:[['235252','525352','252532','222355','535532','525335','235235','252535','535555','222352'],['532332','222535','525555','235335','255252','222552','532335','525552','255255','235332'],['225532','252352','535332','525255','232555','252355','225535','535355','232532','525232'],['522555','535255','232335','255552','225332','535232','522552','232332','225335','255555'],['255335','235552','225232','532532','522355','235535','255355','225252','522332','532555'],['532355','222532','525532','235352','255232','222555','532352','525535','255235','235355'],['235255','525355','252555','222335','535552','525332','235232','252552','535535','222332'],['225552','252335','535352','525235','232535','252332','225555','535335','232552','525252'],['255332','235532','225255','532552','522335','235555','255352','225235','522352','532535'],['522535','535235','232355','255532','225355','535252','522532','232352','225352','255535']] },
+  ]},
+  'o10nm4s': { tab:'Order 10 · New 4-Digit 7-seg', style:'seg', orig:'#ffe1f0', refl:'#e6f6c6', size:470,
+    sub:'Order 10 · new (generator) · 4-digit entries · (0,2,3,5,8), (0,1,2,3,5), (1,2,3,5,8), (0,1,2,3,5,8) · in water 2 ↔ 5 · magic squares', data:[
+    { name:'Example 23', orig:[['3083','0583','5323','8880','2223','0520','3020','5320','2280','8883'],['2823','8320','0280','3520','5083','8383','2820','0283','5080','3523'],['8223','5883','2523','0080','3380','5880','8220','2580','3323','0023'],['0380','2080','3820','5283','8523','2023','0383','3823','8520','5280'],['5520','3283','8023','2323','0880','3220','5580','8083','0823','2380'],['2880','8323','0223','3583','5023','8380','2883','0220','5020','3580'],['3080','0580','5380','8820','2283','0523','3023','5383','2220','8823'],['8283','5820','2583','0020','3320','5823','8280','2520','3383','0083'],['5523','3223','8080','2383','0820','3280','5583','8020','0883','2320'],['0320','2020','3880','5223','8580','2083','0323','3883','8583','5220']] },
+    { name:'Example 24', orig:[['3013','0513','5323','1110','2223','0520','3020','5320','2210','1113'],['2123','1320','0210','3520','5013','1313','2120','0213','5010','3523'],['1223','5113','2523','0010','3310','5110','1220','2510','3323','0023'],['0310','2010','3120','5213','1523','2023','0313','3123','1520','5210'],['5520','3213','1023','2323','0110','3220','5510','1013','0123','2310'],['2110','1323','0223','3513','5023','1310','2113','0220','5020','3510'],['3010','0510','5310','1120','2213','0523','3023','5313','2220','1123'],['1213','5120','2513','0020','3320','5123','1210','2520','3313','0013'],['5523','3223','1010','2313','0120','3210','5513','1020','0113','2320'],['0320','2020','3110','5223','1510','2013','0323','3113','1513','5220']] },
+    { name:'Example 25', orig:[['3183','1583','5323','8881','2223','1521','3121','5321','2281','8883'],['2823','8321','1281','3521','5183','8383','2821','1283','5181','3523'],['8223','5883','2523','1181','3381','5881','8221','2581','3323','1123'],['1381','2181','3821','5283','8523','2123','1383','3823','8521','5281'],['5521','3283','8123','2323','1881','3221','5581','8183','1823','2381'],['2881','8323','1223','3583','5123','8381','2883','1221','5121','3581'],['3181','1581','5381','8821','2283','1523','3123','5383','2221','8823'],['8283','5821','2583','1121','3321','5823','8281','2521','3383','1183'],['5523','3223','8181','2383','1821','3281','5583','8121','1883','2321'],['1321','2121','3881','5223','8581','2183','1323','3883','8583','5221']] },
+    { name:'Example 26', orig:[['5350','1850','2120','8555','0020','1825','5325','2125','0055','8550'],['0520','8125','1055','5825','2350','8150','0525','1050','2355','5820'],['8020','2550','0820','1355','5155','2555','8025','0855','5120','1320'],['1155','0355','5525','2050','8820','0320','1150','5520','8825','2055'],['2825','5050','8320','0120','1555','5025','2855','8350','1520','0155'],['0555','8120','1020','5850','2320','8155','0550','1025','2325','5855'],['5355','1855','2155','8525','0050','1820','5320','2150','0025','8520'],['8050','2525','0850','1325','5125','2520','8055','0825','5150','1350'],['2820','5020','8355','0150','1525','5055','2850','8325','1550','0125'],['1125','0325','5555','2020','8855','0350','1120','5550','8850','2025']] },
+  ]},
+};
+let STYLE='classic', STRIPES=0, BLOCKS=null;
+const cloneSet = k => SETS[k].data.map(d=>({name:d.name, orig:d.orig.map(r=>r.slice())}));
+/* every example becomes its own two-sided plate */
+const EXAMPLES=[]; Object.entries(SETS).forEach(([k,v])=>v.data.forEach((d,i)=>EXAMPLES.push({set:k,idx:i,name:d.name,num:'o'+d.orig.length+'e'+(d.name.match(/\d+/)||['x'])[0]})));
+function exFromHash(){
+  const h=location.hash.slice(1), m=h.match(/^(o\d+e\w+)$/);
+  if(m){ const i=EXAMPLES.findIndex(e=>String(e.num)===m[1]); if(i>=0) return i; }
+  if(SETS[h]) return EXAMPLES.findIndex(e=>e.set===h);
+  return 0;
+}
+let currentEx = exFromHash(), currentSet = EXAMPLES[currentEx].set;
+const PLATE_SIZE = k => { if(SETS[k].size) return SETS[k].size; const d=SETS[k].data[0].orig, n=d.length, L=Math.max(...d.flat().map(c=>c.length));
+  return Math.min(400, 240 + (n-3)*35 + (L>=6?30:L>=4?15:0)); };
+let DATA = cloneSet(currentSet);
+/* Water image of a digit (vertical flip). 0,1,3,8 are unchanged; in seven-segment
+   form 2 and 5 turn into each other (segments top↔bottom, upper↔lower sides). */
+const WATER_MAP = {'0':'0','1':'1','3':'3','8':'8','2':'5','5':'2'};
+const safeDigits = () => STYLE==='seg' ? ['0','1','2','3','5','8'] : ['0','1','3','8'];
+
+/* Each original is opposite its reflection.
+   Placements are chosen so that a 180° flip about the HORIZONTAL screen
+   axis (a "water flip") turns any original into its reflection, upright. */
+const HALF='calc(var(--s) / 2)', TILE_T=0.07, TILE_Z='calc(var(--s) * 0.035)';
+const CUBE_FACES = [
+  { id:'front',  pair:0, refl:false, rot:'rotateX(0deg)',   z:HALF },
+  { id:'back',   pair:0, refl:true,  rot:'rotateX(180deg)', z:HALF },
+  { id:'top',    pair:1, refl:false, rot:'rotateX(90deg)',  z:HALF },
+  { id:'bottom', pair:1, refl:true,  rot:'rotateX(-90deg)', z:HALF },
+  { id:'right',  pair:2, refl:false, rot:'rotateY(90deg)',  z:HALF },
+  { id:'left',   pair:2, refl:true,  rot:'rotateY(90deg) rotateX(180deg)', z:HALF }
+];
+/* two-sided tile: same water-flip geometry as the cube's front/back pair */
+const TILE_FACES = [
+  { id:'front', pair:0, refl:false, rot:'rotateX(0deg)',   z:TILE_Z },
+  { id:'back',  pair:0, refl:true,  rot:'rotateX(180deg)', z:TILE_Z }
+];
+[...CUBE_FACES,...TILE_FACES].forEach(f=>{
+  const P = new DOMMatrix(f.rot);
+  f.view = P.inverse();                                   // cube rotation that brings this face to the front, upright
+  const n = P.transformPoint(new DOMPoint(0,0,1,0));
+  f.normal = [n.x,n.y,n.z];
+});
+let FACES = CUBE_FACES;
+
+const reflect = g => g.slice().reverse().map(r=>r.map(c=>c.split('').map(d=>WATER_MAP[d]??d).join('')));
+const gridOf = f => f.refl ? reflect(DATA[f.pair].orig) : DATA[f.pair].orig;
+
+function analyse(g){
+  const n=g.length, v=g.map(r=>r.map(Number));
+  const rows=v.map(r=>r.reduce((a,b)=>a+b,0));
+  const cols=v[0].map((_,j)=>v.reduce((a,r)=>a+r[j],0));
+  let d1=0,d2=0; for(let i=0;i<n;i++){d1+=v[i][i]; d2+=v[i][n-1-i];}
+  const all=[...rows,...cols], S=all[0], rc=all.every(x=>x===S);
+  let type = rc ? (d1===S&&d2===S ? 'magic' : 'semi-magic') : 'not magic';
+  if(type==='magic'){          // all broken diagonals in both directions
+    let pan=true;
+    for(let k=0;k<n&&pan;k++){ let a=0,b=0; for(let i=0;i<n;i++){ a+=v[i][(i+k)%n]; b+=v[i][(k-i+n)%n]; } if(a!==S||b!==S) pan=false; }
+    if(pan) type='pandiagonal magic';
+  }
+  let stripes=null, Sx=S;
+  if(STRIPES){
+    stripes=[]; for(let c0=0;c0<n;c0+=STRIPES){ let t=0; for(let i=0;i<n;i++) for(let j=c0;j<c0+STRIPES;j++) t+=v[i][j]; stripes.push(t); }
+    const colEq=cols.every(x=>x===cols[0]), stEq=stripes.every(x=>x===stripes[0]);
+    if(type==='not magic' && colEq && stEq && d1===cols[0] && d2===cols[0]){ type='striped (rows differ)'; Sx=cols[0]; }
+  }
+  let blocks=null;
+  if(BLOCKS){ const [bh,bw]=BLOCKS; const bs=[]; let allMagic=true;
+    for(let a=0;a<n;a+=bh) for(let c0=0;c0<n;c0+=bw){ let t=0; for(let i=a;i<a+bh;i++) for(let j=c0;j<c0+bw;j++) t+=v[i][j]; bs.push(t);
+      if(bh===bw){ const s0=v[a].slice(c0,c0+bw).reduce((x,y)=>x+y,0); let ok=true;
+        for(let i=0;i<bh;i++){ if(v[a+i].slice(c0,c0+bw).reduce((x,y)=>x+y,0)!==s0) ok=false; let cs=0; for(let r=0;r<bh;r++) cs+=v[a+r][c0+i]; if(cs!==s0) ok=false; }
+        let e1=0,e2=0; for(let i=0;i<bh;i++){ e1+=v[a+i][c0+i]; e2+=v[a+i][c0+bw-1-i]; } if(e1!==s0||e2!==s0) ok=false;
+        if(!ok) allMagic=false; } }
+    blocks={size:bh+'×'+bw, sums:[...new Set(bs)], magic:bh===bw?allMagic:null, sub:bh===bw?bs[0]/bh:null}; }
+  return {rows,cols,d1,d2,S:Sx,type,stripes,blocks};
+}
+const digitsUsed = g => [...new Set(g.flat().join('').split(''))].sort();
+const waterSafe  = g => digitsUsed(g).every(d=>safeDigits().includes(d));
+
+/* seven-segment glyphs, exactly symmetric about the horizontal mid-line */
+const H=(x0,x1,y)=>`${x0},${y} ${x0+5},${y-5} ${x1-5},${y-5} ${x1},${y} ${x1-5},${y+5} ${x0+5},${y+5}`;
+const V=(x,y0,y1)=>`${x},${y0} ${x+5},${y0+5} ${x+5},${y1-5} ${x},${y1} ${x-5},${y1-5} ${x-5},${y0+5}`;
+const SEGS={a:H(8,52,6),g:H(8,52,50),d:H(8,52,94),f:V(6,8,49),b:V(54,8,49),e:V(6,51,92),c:V(54,51,92)};
+const DIGIT_SEGS={'0':'abcdef','1':'bc','2':'abged','3':'abgcd','4':'fgbc','5':'afgcd','6':'afgedc','7':'abc','8':'abcdefg','9':'abcdfg'};
+const segDigit=d=>`<svg class="seg7" viewBox="${d==='1'?'46 0 16 100':'0 0 60 100'}">${(DIGIT_SEGS[d]||'').split('').map(k=>`<polygon points="${SEGS[k]}"/>`).join('')}</svg>`;
+const cellContent=c=> '<span class="ct">'+(STYLE==='seg' ? c.split('').map(segDigit).join('') : c.replace(/1/g,'<span class="one">I</span>'))+'</span>';
+/* squeeze long numbers horizontally so each fits its cell (like a condensed font) */
+function fitCells(root=document){
+  root.querySelectorAll('.cell .ct').forEach(el=>{
+    el.style.transform='';
+    const avail=el.parentElement.clientWidth*0.9, w=el.offsetWidth;
+    if(avail>0 && w>avail) el.style.transform=`scaleX(${(avail/w).toFixed(3)})`;
+  });
+}
+
+function blockBorder(i,n){
+  if(!BLOCKS) return ';border-color:var(--faint)';   /* order 7: faint cell lines, dark outer frame */
+  const r=Math.floor(i/n), c=i%n, [bh,bw]=BLOCKS, t='calc(var(--s)*.0034*var(--lw))';
+  /* ordinary cell lines faint; block edges in the normal grid-line colour */
+  return ';border-color:var(--faint)'
+    +(c%bw===bw-1 && c<n-1 ? ';border-right-width:'+t+';border-right-color:var(--line)' : '')
+    +(r%bh===bh-1 && r<n-1 ? ';border-bottom-width:'+t+';border-bottom-color:var(--line)' : '');
+}
+function gridHTML(g, extraCls=''){
+  const n=g.length, maxLen=Math.max(...g.flat().map(s=>s.length));
+  const fs = (0.5/n)*Math.min(1, (maxLen>6?5.6:maxLen>4?4.4:2.9)/maxLen);
+  return `<div class="grid ${extraCls}" style="grid-template-columns:repeat(${n},minmax(0,1fr));grid-template-rows:repeat(${n},minmax(0,1fr))">`+
+    g.flat().map((c,i)=>`<div class="cell${STYLE==='seg'?' sg':''}${STRIPES?(Math.floor((i%n)/STRIPES)%2?' st1':' st0'):''}" style="font-size:calc(var(--s)*${fs.toFixed(4)})${blockBorder(i,n)}">${cellContent(c)}</div>`).join('')+`</div>`;
+}
+const faceLabel = f => `${DATA[f.pair].name.replace('Example ','Ex ')} · ${f.refl?'Water':'Original'}`;
+
+function buildCube(el){
+  el.innerHTML = FACES.map(f=>
+    `<div class="face ${f.refl?'refl':'orig'}" data-face="${f.id}"
+          style="transform:${f.rot} translateZ(${f.z})">
+       ${gridHTML(gridOf(f))}<span class="badge">${faceLabel(f)}</span></div>`).join('') + (FACES===TILE_FACES ? tileEdges() : '');
+}
+function tileEdges(){
+  const t=`calc(var(--s) * ${TILE_T})`, off=`calc(50% - var(--s) * ${TILE_T/2})`;
+  return [
+    `top:${off};left:0;width:100%;height:${t};transform:rotateX(90deg) translateZ(${HALF})`,
+    `top:${off};left:0;width:100%;height:${t};transform:rotateX(-90deg) translateZ(${HALF})`,
+    `left:${off};top:0;height:100%;width:${t};transform:rotateY(90deg) translateZ(${HALF})`,
+    `left:${off};top:0;height:100%;width:${t};transform:rotateY(-90deg) translateZ(${HALF})`
+  ].map(st=>`<div class="edge" style="${st}"></div>`).join('');
+}
+
+/* ---------- rotation state ---------- */
+const cube=document.getElementById('cube'), cube2=document.getElementById('cube2'), cube3=document.getElementById('cube3');
+let M = new DOMMatrix().rotateAxisAngleSelf(1,0,0,-22).rotateAxisAngleSelf(0,1,0,28);
+let spinning=true, speed=22, dragging=false, anim=null, queue=[], frameCount=0, activeId=null;
+const SPIN_AXIS=[0.25,1,0.12];
+
+const R = (x,y,z,deg)=> new DOMMatrix().rotateAxisAngleSelf(x,y,z,deg);
+function apply(){ const s=M.toString(); cube.style.transform=s; cube2.style.transform=s; cube3.style.transform=s; }
+
+function orthonormalize(){
+  const c=[[M.m11,M.m12,M.m13],[M.m21,M.m22,M.m23],[M.m31,M.m32,M.m33]];
+  const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2], nrm=a=>{const l=Math.hypot(...a);return a.map(v=>v/l)};
+  const a=nrm(c[0]); let b=c[1].map((v,i)=>v-dot(c[1],a)*a[i]); b=nrm(b);
+  const k=[a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+  M = DOMMatrix.fromFloat64Array(new Float64Array([...a,0,...b,0,...k,0,0,0,0,1]));
+}
+
+/* axis–angle of a rotation matrix, verified against DOMMatrix's own convention */
+function axisAngle(Rm){
+  const r=[[Rm.m11,Rm.m21,Rm.m31],[Rm.m12,Rm.m22,Rm.m32],[Rm.m13,Rm.m23,Rm.m33]];
+  const cos=Math.max(-1,Math.min(1,(r[0][0]+r[1][1]+r[2][2]-1)/2)), ang=Math.acos(cos);
+  if(ang<1e-4) return null;
+  let ax; const s=Math.sin(ang);
+  if(s>1e-3) ax=[r[2][1]-r[1][2], r[0][2]-r[2][0], r[1][0]-r[0][1]].map(v=>v/(2*s));
+  else{
+    let x=Math.sqrt(Math.max(0,(r[0][0]+1)/2)), y=Math.sqrt(Math.max(0,(r[1][1]+1)/2)), z=Math.sqrt(Math.max(0,(r[2][2]+1)/2));
+    const sg=v=>v<0?-1:1;
+    if(x>=y&&x>=z){y*=sg(r[0][1]);z*=sg(r[0][2]);} else if(y>=z){x*=sg(r[0][1]);z*=sg(r[1][2]);} else {x*=sg(r[0][2]);y*=sg(r[1][2]);}
+    ax=[x,y,z];
+  }
+  const deg=ang*180/Math.PI, diff=Q=>Math.abs(Q.m11-Rm.m11)+Math.abs(Q.m12-Rm.m12)+Math.abs(Q.m13-Rm.m13)+
+    Math.abs(Q.m21-Rm.m21)+Math.abs(Q.m22-Rm.m22)+Math.abs(Q.m23-Rm.m23)+Math.abs(Q.m31-Rm.m31)+Math.abs(Q.m32-Rm.m32)+Math.abs(Q.m33-Rm.m33);
+  return diff(R(...ax,deg))<=diff(R(...ax,-deg)) ? {ax,deg} : {ax,deg:-deg};
+}
+
+function startAnim(axis,deg,dur,target){ anim={axis,deg,dur,target,M0:M,t0:null}; }
+function snapTo(f){
+  queue.push(()=>{ const aa=axisAngle(f.view.multiply(M.inverse()));
+    if(!aa){M=f.view;apply();return false;} startAnim(aa.ax,aa.deg,950,f.view); return true; });
+}
+function waterFlip(){
+  queue.push(()=>{ startAnim([1,0,0],180,1500,R(1,0,0,180).multiply(M)); return true; });
+}
+let autoplay=true;
+function setPlayLabel(){ playBtn.textContent = autoplay ? '⏸ Pause' : '▶ Play';
+  const ai=document.getElementById('autoInfo'); if(ai) ai.textContent = autoplay ? 'Playing automatically — press Pause to stop' : 'Paused — press Play to continue'; }
+function pause(){ autoplay=false; spinning=false; queue=[]; setPlayLabel(); }
+
+const ease=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+let last=null;
+function frame(t){
+  const dt = last==null?0:(t-last)/1000; last=t;
+  if(!anim && queue.length){ while(queue.length && !anim){ queue.shift()(); } }
+  if(anim){
+    if(anim.t0==null) anim.t0=t;
+    const p=Math.min(1,(t-anim.t0)/anim.dur);
+    M = R(...anim.axis, anim.deg*ease(p)).multiply(anim.M0);
+    if(p>=1){ if(anim.target) M=anim.target; anim=null; }
+  } else if(spinning && !dragging && speed>0){
+    M = R(...SPIN_AXIS, speed*dt).multiply(M);
+  }
+  if(++frameCount%240===0 && !anim) orthonormalize();
+  apply(); updateActive();
+  requestAnimationFrame(frame);
+}
+
+/* ---------- active face ---------- */
+function updateActive(){
+  let best=null,bz=-2;
+  for(const f of FACES){ const p=M.transformPoint(new DOMPoint(...f.normal,0)); if(p.z>bz){bz=p.z;best=f;} }
+  if(best.id===activeId) return;
+  activeId=best.id;
+  document.querySelectorAll('.face').forEach(el=>el.classList.toggle('active',el.dataset.face===activeId));
+  const g=gridOf(best), a=analyse(g), partner=FACES.find(x=>x.pair===best.pair&&x.refl!==best.refl);
+  document.getElementById('activeInfo').innerHTML=
+    `<div class="t">${DATA[best.pair].name} — ${best.refl?'Water reflection':'Original'}</div>
+     <div style="color:#8d84ad">${best.id} face · opposite: ${partner.id} (${partner.refl?'water reflection':'original'})</div>
+     <div id="activeMini" class="${best.refl?'refl':''}">${gridHTML(g)}</div>
+     Rows: ${a.rows.join(', ')}<br>Columns: ${a.cols.join(', ')}<br>Diagonals: ${a.d1}, ${a.d2}<br>${a.blocks?`<span style="color:#8a4b00">${a.blocks.size} blocks: ${a.blocks.sums.length===1?'all '+a.blocks.sums[0]:a.blocks.sums.join(', ')}${a.blocks.magic?' · each magic':''}</span><br>`:''}${a.stripes?`<span style="color:#8a4b00">Vertical ${best.refl?'':''}${g.length}×${STRIPES} stripes: ${a.stripes.join(', ')}</span><br>`:''}
+     <span class="${a.type==='not magic'?'bad':'ok'}">${a.type}${a.type!=='not magic'?' · S = '+a.S:''}</span>`;
+  fitCells(document.getElementById('activeInfo'));
+}
+
+/* ---------- UI ---------- */
+const playBtn=document.getElementById('playBtn');
+function buildButtons(){
+  document.getElementById('faceBtns').innerHTML = DATA.map((d,p)=>{
+    const o=FACES.find(f=>f.pair===p&&!f.refl), r=FACES.find(f=>f.pair===p&&f.refl);
+    return `<div class="prow"><span>${d.name}</span>
+      <button class="o" data-snap="${o.id}">Original</button>
+      <button class="r" data-snap="${r.id}">Water</button>
+      <button class="w" data-pair="${p}" title="Show original, then flip to its water reflection">🌊</button></div>`;
+  }).join('');
+  document.querySelectorAll('[data-snap]').forEach(b=>b.onclick=()=>{pause();queue=[];snapTo(FACES.find(f=>f.id===b.dataset.snap));});
+  document.querySelectorAll('[data-pair]').forEach(b=>b.onclick=()=>{pause();queue=[];
+    snapTo(FACES.find(f=>f.pair===+b.dataset.pair&&!f.refl)); waterFlip();});
+}
+playBtn.onclick=()=>{ if(autoplay){ pause(); anim=null; } else { autoplay=true; spinning=false; queue=[]; anim=null; setPlayLabel(); autoCycle(); } };
+document.getElementById('flipBtn').onclick=()=>{ pause(); waterFlip(); };
+
+const speedEl=document.getElementById('speed'), sizeEl=document.getElementById('size');
+speedEl.oninput=()=>{document.getElementById('speedV').textContent=(+speedEl.value).toFixed(1)+'×';};
+sizeEl.oninput=()=>{document.documentElement.style.setProperty('--s',sizeEl.value+'px');document.getElementById('sizeV').textContent=sizeEl.value;fitCells();};
+[['cOrig','--orig'],['cRefl','--refl'],['cInk','--ink']].forEach(([id,v])=>
+  document.getElementById(id).oninput=e=>document.documentElement.style.setProperty(v,e.target.value));
+document.getElementById('styleSel').onchange=e=>{ STYLE=e.target.value; rebuild(); };
+const lwEl=document.getElementById('lw');
+lwEl.oninput=()=>{document.documentElement.style.setProperty('--lw',lwEl.value);document.getElementById('lwV').textContent=(+lwEl.value).toFixed(1);fitCells();};
+document.getElementById('cLine').oninput=e=>document.documentElement.style.setProperty('--line',e.target.value);
+const ripEl=document.getElementById('rippleIn');
+ripEl.oninput=()=>{ const v=+ripEl.value; document.getElementById('rippleV').textContent=v;
+  document.getElementById('dNear').setAttribute('scale',v);
+  document.getElementById('dDeep').setAttribute('scale',v*2.2);
+  document.getElementById('dSoft').setAttribute('scale',v*0.5); };
+
+/* surface glints: thin broken wave-lines, spaced wider toward the viewer (perspective) */
+(function buildGlints(){
+  const svg=document.getElementById('glints'), N=16; let html='';
+  for(let i=0;i<N;i++){
+    const t=(i+0.6)/N, y=400*Math.pow(t,1.55), amp=1.5+t*4, k=0.006+Math.random()*0.006, ph=Math.random()*6.28;
+    let d=`M -20 ${y.toFixed(1)}`;
+    for(let x=0;x<=1040;x+=20) d+=` L ${x} ${(y+amp*Math.sin(k*x+ph)).toFixed(1)}`;
+    const dash=`${(10+Math.random()*40).toFixed(0)} ${(60+Math.random()*160).toFixed(0)} ${(4+Math.random()*14).toFixed(0)} ${(80+Math.random()*200).toFixed(0)}`;
+    const op=(0.28-0.16*t).toFixed(2), w=(0.6+t*1.4).toFixed(2), dur=(9+Math.random()*10).toFixed(1);
+    const dir=Math.random()<0.5?'normal':'reverse';
+    html+=`<path d="${d}" stroke="rgba(205,238,255,${op})" stroke-width="${w}" stroke-dasharray="${dash}" style="animation-duration:${dur}s;animation-direction:${dir}"/>`;
+  }
+  svg.innerHTML=html;
+})();
+
+document.getElementById('showWater').onchange=e=>{document.body.classList.toggle('nowater',!e.target.checked);fitCells();};
+if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>fitCells());
+document.getElementById('showLabels').onchange=e=>document.body.classList.toggle('hidelabels',!e.target.checked);
+
+/* drag to rotate */
+const stage=document.getElementById('stage'); let px,py;
+stage.addEventListener('pointerdown',e=>{dragging=true;anim=null;pause();px=e.clientX;py=e.clientY;stage.setPointerCapture(e.pointerId);});
+stage.addEventListener('pointermove',e=>{ if(!dragging)return;
+  const dx=e.clientX-px, dy=e.clientY-py; px=e.clientX; py=e.clientY;
+  M = R(0,1,0,dx*0.45).multiply(R(1,0,0,-dy*0.45)).multiply(M); });
+['pointerup','pointercancel'].forEach(ev=>stage.addEventListener(ev,()=>dragging=false));
+
+/* ---------- pair cards ---------- */
+function buildCards(){
+  document.getElementById('cards').innerHTML = DATA.map(d=>{
+    const g=d.orig, w=reflect(g), a=analyse(g), b=analyse(w), safe=waterSafe(g);
+    return `<div class="card">
+      <h3>${d.name} — digits (${digitsUsed(g).join(', ')})</h3>
+      <div class="${g.length>=7?'big':''} quad">
+        <figure><figcaption>Original</figcaption><div class="mini">${gridHTML(g)}</div></figure>
+        <figure><figcaption>Water reflection<br>(rows reversed)</figcaption><div class="mini">${gridHTML(w,'refl')}</div></figure>
+        <figure><figcaption>Original<br>above the water</figcaption><div class="mini">${gridHTML(g)}</div></figure>
+        <figure><figcaption>Its image in the water<br>(true mirror)</figcaption><div class="qwl"></div><div class="mini mir">${gridHTML(g,'refl')}</div></figure>
+      </div>
+      <p>Original: rows ${a.rows.join(', ')} · columns ${a.cols.join(', ')} · diagonals ${a.d1}, ${a.d2}
+        → <span class="${a.type==='not magic'?'bad':'ok'}">${a.type}${a.type!=='not magic'?', S = '+a.S:''}</span><br>
+        Reflection: rows ${b.rows.join(', ')} · columns ${b.cols.join(', ')} · diagonals ${b.d1}, ${b.d2}
+        → <span class="${b.type==='not magic'?'bad':'ok'}">${b.type}${b.type!=='not magic'?', S = '+b.S:''}</span><br>
+        ${a.blocks?`<span style="color:#8a4b00">${a.blocks.size} blocks — original: ${a.blocks.sums.length===1?'every block sums to '+a.blocks.sums[0]:'sums '+a.blocks.sums.join(', ')}${a.blocks.magic?' · each block is a magic square, S = '+a.blocks.sub:''} · reflection: ${b.blocks.sums.length===1?'every block sums to '+b.blocks.sums[0]:'sums '+b.blocks.sums.join(', ')}${b.blocks.magic?' (each magic)':''}</span><br>`:''}
+        ${a.stripes?`<span style="color:#8a4b00">Vertical ${g.length}×${STRIPES} stripes — original: ${a.stripes.join(', ')} · reflection: ${b.stripes.join(', ')}</span><br>`:''}
+        ${b.type.startsWith('striped')?`<span style="color:#5a3d8a">In water the 2 ↔ 5 swap changes the row sums, but the columns, both diagonals and the ${g.length}×${STRIPES} stripes keep their equal sums.</span><br>`:''}
+        ${safe ? `<span class="ok">✓ All digits are water-symmetric (${STYLE==='seg'?'0, 1, 3, 8 unchanged; 2 ↔ 5':'0, 1, 3, 8'}): the mirrored image reads exactly as the reflection square.</span>`
+               : '<span class="bad">⚠ Some digits are not symmetric about a horizontal axis — the water image will not read as numbers.</span>'}</p>
+    </div>`;}).join('');
+}
+
+/* ---------- editor ---------- */
+function buildEditor(){
+  document.getElementById('editor').innerHTML = DATA.map((d,i)=>
+    `<div><div style="font-size:13px;margin-bottom:4px">${d.name}</div>
+     <textarea id="ta${i}">${d.orig.map(r=>r.join(' ')).join('\n')}</textarea></div>`).join('');
+}
+document.getElementById('applyBtn').onclick=()=>{
+  const msg=document.getElementById('edMsg'), next=[]; const warn=[];
+  for(let i=0;i<DATA.length;i++){
+    const rows=document.getElementById('ta'+i).value.trim().split(/\n+/).map(l=>l.trim().split(/[\s,;]+/).filter(Boolean));
+    const n=rows.length;
+    if(n<3||rows.some(r=>r.length!==n)||rows.flat().some(c=>!/^\d+$/.test(c))){
+      msg.innerHTML=`<span class="bad">${DATA[i].name}: enter an n×n block of whole numbers (one row per line).</span>`; return; }
+    next.push({name:DATA[i].name, orig:rows});
+    if(!waterSafe(rows)) warn.push(DATA[i].name);
+  }
+  DATA=next; rebuild();
+  msg.innerHTML = warn.length ? `<span class="bad">Applied. Not water-symmetric: ${warn.join(', ')}.</span>` : '<span class="ok">Applied.</span>';
+};
+
+function rebuild(){ buildCube(cube); buildCube(cube2); buildCube(cube3); buildButtons(); buildCards(); activeId=null; fitCells(); }
+/* section links grouped by order, laid out in two compact rows */
+const shortTab=v=>v.tab.replace(/^Order \d+ · /,'').replace(/ Entries$/,'').replace(/ Cell$/,'').replace('Example ','Ex ');
+function tabsHTML(k){
+  const groups={};
+  Object.entries(SETS).forEach(([key,v])=>{ const n=v.data[0].orig.length; (groups[n]=groups[n]||[]).push([key,v]); });
+  const cur=EXAMPLES[currentEx];
+  return Object.entries(groups).map(([n,list])=>`<div class="tabgroup"><span class="tablabel">Order ${n}</span>`+
+    list.map(([key,v])=>`<span class="secgroup${key===k?' on':''}"><a href="#${key}" class="seclink${key===k?' on':''}">${shortTab(v)}</a>`+
+      EXAMPLES.filter(e=>e.set===key).map(e=>`<a href="#${e.num}" class="exlink${cur&&e.num===cur.num?' on':''}">${(e.name.match(/\d+/)||[e.name.split(' ')[0]])[0]}</a>`).join('')+
+    `</span>`).join('')+`</div>`).join('');
+}
+function loadExample(ei, keepQueue=false){
+  currentEx=ei; const E=EXAMPLES[ei], k=E.set; currentSet=k;
+  const d=SETS[k].data[E.idx]; DATA=[{name:d.name, orig:d.orig.map(r=>r.slice())}];
+  FACES = TILE_FACES;
+  document.getElementById('pairsTitle').textContent='The Pair';
+  const sz=Math.round(Math.min(PLATE_SIZE(k), document.querySelector('.mirrorpane') ? (innerWidth-40)/3.3 : innerWidth-70)); sizeEl.value=sz; document.getElementById('sizeV').textContent=sz;
+  document.documentElement.style.setProperty('--s',sz+'px');
+  STRIPES=SETS[k].stripes||0; BLOCKS=SETS[k].blocks||null;
+  STYLE=SETS[k].style||'classic'; document.getElementById('styleSel').value=STYLE;
+  const co=(SETS[k].data[E.idx].col)||SETS[k].orig||'#f7c5dd', cr=SETS[k].refl||'#bfe8f5', rs=document.documentElement.style;
+  rs.setProperty('--orig',co); rs.setProperty('--refl',cr);
+  document.getElementById('cOrig').value=co; document.getElementById('cRefl').value=cr;
+  document.getElementById('subTitle').textContent=SETS[k].sub.replace(/ · a two-sided tile[^·]*/,' ').replace(/\s+·/g,' ·').replace(/\s+$/,'');
+  document.getElementById('tabs').innerHTML=tabsHTML(k);
+  document.getElementById('chips').innerHTML='';
+  document.getElementById('edMsg').textContent='';
+  if(!keepQueue){ queue=[]; anim=null; }
+  if(!keepQueue && autoplay) autoCycle();
+  if(location.hash!=='#'+E.num) history.replaceState(null,'','#'+E.num);
+  rebuild(); buildEditor();
+}
+window.addEventListener('hashchange',()=>{ if(!location.hash.slice(1)) return; const ei=exFromHash(); if(ei!==currentEx) loadExample(ei); });
+const step=dir=>loadExample((currentEx+dir+EXAMPLES.length)%EXAMPLES.length);
+document.getElementById('prevBtn').onclick=()=>step(-1);
+document.getElementById('nextBtn').onclick=()=>step(1);
+const hold=ms=>queue.push(()=>{anim={axis:[1,0,0],deg:0,dur:ms,M0:M,t0:null};return true;});
+/* automatic run: original → water flip → full turn showing both sides → next plate, looping */
+function nextIndex(){
+  if(document.getElementById('scopeSel').value==='section'){
+    const list=EXAMPLES.map((e,i)=>i).filter(i=>EXAMPLES[i].set===currentSet);
+    return list[(list.indexOf(currentEx)+1)%list.length];
+  }
+  return (currentEx+1)%EXAMPLES.length;
+}
+function autoCycle(){
+  const f=()=>Math.max(0.4,+speedEl.value);
+  snapTo(TILE_FACES[0]);
+  queue.push(()=>{anim={axis:[1,0,0],deg:0,dur:1600/f(),M0:M,t0:null};return true;});
+  queue.push(()=>{ startAnim([1,0,0],180,1500/f(),R(1,0,0,180).multiply(M)); return true; });
+  queue.push(()=>{anim={axis:[1,0,0],deg:0,dur:1900/f(),M0:M,t0:null};return true;});
+  queue.push(()=>{ startAnim([0,1,0],360,2800/f(),R(0,1,0,360).multiply(M)); return true; });
+  queue.push(()=>{ if(autoplay){ loadExample(nextIndex(),true); autoCycle(); } return false; });
+}
+spinning=false; setPlayLabel(); loadExample(currentEx); apply(); requestAnimationFrame(frame);
+</script>
+</body>
+</html>

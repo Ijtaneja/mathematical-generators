@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Closed Magic Star Generator — Inder J. Taneja</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eaf3e4; --card:#f6f2ff; --border:#d6cdf0; --border-strong:#b7a8e0;
+    --text:#2b2a33; --text-muted:#6c6a72; --accent:#3d3384; --accent-dark:#2a2260;
+    --gold:#b8860b; --gold-light:#f7ecd2; --copper:#c9762e; --copper-light:#f7e3cf;
+    --outer-fill:#eeecfb; --outer-stroke:#4a3f9e; --outer-text:#2a2260;
+    --inner-fill:#fdf2da; --inner-stroke:#a06c07; --inner-text:#6e4c05;
+    --edge-fill:#fbe8d4; --edge-stroke:#a85f1c; --edge-text:#7a4413;
+    --line-star:#7f6fd6; --line-ring:#c99a2e;
+    --ok:#0f6e56; --warn:#993c1d;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; padding:0 16px 64px; background:var(--bg); color:var(--text);
+    font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  }
+  .hero{
+    max-width:960px; margin:0 auto 24px; padding:38px 34px 30px;
+    background:linear-gradient(135deg, var(--accent-dark) 0%, var(--accent) 62%, #6a5bc4 100%);
+    border-radius:0 0 18px 18px; color:#fff; position:relative; overflow:hidden;
+  }
+  .hero .star-glyph{position:absolute; right:26px; top:50%; transform:translateY(-50%); opacity:.16;}
+  .hero h1{
+    font-family:"Playfair Display",Georgia,serif; font-weight:700; font-size:32px;
+    margin:0 0 8px; letter-spacing:.2px;
+  }
+  .hero .eyebrow{
+    font-size:11.5px; letter-spacing:2px; text-transform:uppercase; color:var(--gold-light);
+    font-weight:600; margin:0 0 10px;
+  }
+  .subtitle{color:#e7e3f6; font-size:14.5px; margin:0; max-width:680px; line-height:1.55;}
+  .wrap{max-width:960px; margin:0 auto;}
+  .card{
+    background:var(--card); border:1px solid var(--border); border-radius:12px;
+    padding:20px 22px; margin-bottom:20px; border-left:5px solid var(--accent);
+    box-shadow:0 1px 3px rgba(61,51,132,.08);
+  }
+  .card h2{font-size:15px; font-weight:600; margin:0 0 14px; color:var(--text);}
+  .row{display:flex; flex-wrap:wrap; gap:16px 24px; align-items:flex-end;}
+  .field{display:flex; flex-direction:column; gap:5px;}
+  .field label{font-size:12.5px; color:var(--text-muted); font-weight:600;}
+  .field input[type=number]{
+    width:100px; padding:7px 9px; border:1px solid var(--border-strong); border-radius:7px;
+    font-size:14px; background:#fbf9ff; color:var(--text);
+  }
+  .field select{
+    padding:7px 9px; border:1px solid var(--border-strong); border-radius:7px;
+    font-size:14px; background:#fbf9ff; color:var(--text);
+  }
+  .field.checkbox{flex-direction:row; align-items:center; gap:7px; padding-bottom:7px;}
+  .field.checkbox label{font-weight:400; font-size:13.5px; color:var(--text);}
+  button{
+    border:none; border-radius:7px; padding:9px 18px; font-size:14px; font-weight:600;
+    cursor:pointer; transition:opacity .15s;
+  }
+  button.primary{background:var(--accent); color:#fff;}
+  button.primary:hover{opacity:.9;}
+  button.secondary{background:#efece2; color:var(--text);}
+  button.secondary:hover{opacity:.85;}
+  button:disabled{opacity:.45; cursor:not-allowed;}
+  .status{
+    display:flex; flex-wrap:wrap; gap:14px 26px; font-size:13px; color:var(--text-muted);
+    margin-top:16px; padding-top:14px; border-top:1px solid var(--border);
+  }
+  .status b{color:var(--text); font-weight:600;}
+  .status .ok{color:var(--ok); font-weight:600;}
+  .status .warn{color:var(--warn); font-weight:600;}
+  .note{font-size:12.5px; color:var(--text-muted); margin-top:10px; line-height:1.55;}
+  .tabs{display:flex; gap:22px; margin-bottom:18px; border-bottom:1px solid var(--border);}
+  .tab-btn{
+    background:none; border:none; padding:8px 2px 10px; font-size:14px; font-weight:600;
+    color:var(--text-muted); cursor:pointer; border-bottom:2px solid transparent; border-radius:0;
+  }
+  .tab-btn.active{color:var(--accent); border-bottom-color:var(--accent);}
+  .nav{display:flex; align-items:center; gap:14px; margin-bottom:14px;}
+  .nav span{font-size:13.5px; color:var(--text-muted); min-width:140px; text-align:center;}
+  svg{display:block; margin:0 auto; max-width:100%; height:auto;}
+  #diagramArea{background:linear-gradient(180deg, #fbf9ff 0%, #f3eeff 100%); border-radius:10px; padding:12px 6px 6px;}
+  .empty{text-align:center; color:var(--text-muted); font-size:14px; padding:60px 20px;}
+  .sol-table-wrap{max-height:360px; overflow-y:auto; margin-top:12px; border:1px solid var(--border); border-radius:8px;}
+  table.sol-table{width:100%; border-collapse:collapse; font-size:12px;}
+  table.sol-table th, table.sol-table td{padding:6px 8px; border-bottom:1px solid var(--border); text-align:left;}
+  table.sol-table th{color:var(--text-muted); font-weight:600; background:var(--bg); position:sticky; top:0;}
+  table.sol-table tr:last-child td{border-bottom:none;}
+  table.lines-table{width:100%; border-collapse:collapse; font-size:12.5px;}
+  table.lines-table th, table.lines-table td{padding:6px 8px; border-bottom:1px solid var(--border); text-align:left;}
+  table.lines-table th{color:var(--outer-stroke); font-weight:700; background:var(--gold-light);}
+  table.lines-table tr:nth-child(even) td{background:#faf8ff;}
+  table.lines-table tr:last-child td{border-bottom:none;}
+  table.lines-table td.sum{font-weight:700; color:var(--accent-dark);}
+  button.link-btn{background:none; border:none; color:var(--accent); font-weight:600; font-size:12.5px; cursor:pointer; padding:2px 6px;}
+  .legend{display:flex; gap:18px; flex-wrap:wrap; font-size:12.5px; color:var(--text-muted); margin-top:10px;}
+  .split{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:6px;}
+  @media(max-width:640px){ .split{grid-template-columns:1fr;} }
+  .numlist{font-size:13px; color:var(--text); line-height:1.9; margin-top:14px; padding-top:12px; border-top:1px solid var(--border);}
+  .numlist b{color:var(--accent-dark); font-weight:600;}
+  .legend span{display:inline-flex; align-items:center; gap:6px;}
+  .swatch{width:12px; height:12px; border-radius:50%; display:inline-block;}
+  footer{
+    max-width:960px; margin:8px auto 0; text-align:center; padding:18px 10px 0;
+    color:var(--text-muted); font-size:12.5px; border-top:1px solid var(--border);
+  }
+  footer .credit{font-weight:600; color:var(--text);}
+  footer a{color:var(--accent); text-decoration:none;}
+  footer a:hover{text-decoration:underline;}
+</style>
+</head>
+<body>
+<div class="hero">
+  <svg class="star-glyph" width="160" height="160" viewBox="0 0 100 100"><path fill="#fff" d="M50 4 L61 37 L96 37 L67 58 L78 92 L50 71 L22 92 L33 58 L4 37 L39 37 Z"/></svg>
+  <p class="eyebrow">Recreational mathematics</p>
+  <h1>Closed Magic Star Generator</h1>
+  <p class="subtitle">A magic star with its outer polygon closed into a magic ring: n outer points, n inner crossings, and 2n new edge points — 4n numbers in all. Every star line and every ring side sums correctly.</p>
+</div>
+
+<div class="wrap">
+  <div class="card">
+    <h2>Generate a figure</h2>
+    <div class="row">
+      <div class="field">
+        <label for="orderInput">Order n (points)</label>
+        <input type="number" id="orderInput" value="6" min="5" max="12" step="1">
+      </div>
+      <div class="field">
+        <label for="modeSelect">Constant mode</label>
+        <select id="modeSelect">
+          <option value="unified">Unified (star = ring)</option>
+          <option value="two">Two-constant (star ≠ ring)</option>
+        </select>
+      </div>
+      <div class="field">
+        <button class="primary" id="quickBtn">Generate figure</button>
+      </div>
+    </div>
+    <div class="status" id="quickStatus">
+      <span>Points: <b id="quickPoints">24</b></span>
+      <span>Magic constant: <b id="quickConstant">\u2014</b></span>
+      <span id="quickState"></span>
+    </div>
+    <p class="note">Orders 5&ndash;12 (Unified mode) are pre-verified and load instantly &mdash; no search needed, just like the plain magic star generator. Other orders or Two-constant mode fall back to a live search below.</p>
+  </div>
+
+  <div class="card">
+    <div class="tabs">
+      <button class="tab-btn active" id="tabDiagramBtn">Diagram</button>
+      <button class="tab-btn" id="tabAllBtn">All solutions</button>
+    </div>
+
+    <div id="tabDiagram" class="tab-panel">
+      <div class="nav">
+        <button class="secondary" id="prevBtn" disabled>&larr; Prev</button>
+        <span id="navLabel">No solutions yet</span>
+        <button class="secondary" id="nextBtn" disabled>Next &rarr;</button>
+      </div>
+      <div id="diagramArea"><div class="empty">Generate a figure above, or search all solutions in the other tab.</div></div>
+      <div class="legend">
+        <span><i class="swatch" style="background:var(--outer-stroke)"></i> Outer points (shared)</span>
+        <span><i class="swatch" style="background:var(--inner-stroke)"></i> Inner crossings (star only)</span>
+        <span><i class="swatch" style="background:var(--edge-stroke)"></i> Edge points (ring only)</span>
+      </div>
+      <div id="solutionNumbersArea"></div>
+      <div class="split">
+        <div>
+          <h2 style="margin-top:18px;">Star lines</h2>
+          <div id="starTableArea"></div>
+        </div>
+        <div>
+          <h2 style="margin-top:18px;">Ring sides</h2>
+          <div id="ringTableArea"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tabAll" class="tab-panel" style="display:none;">
+      <div class="row">
+        <div class="field">
+          <label for="allTimeInput">Time budget (seconds)</label>
+          <input type="number" id="allTimeInput" value="20" min="1" step="1">
+        </div>
+        <div class="field checkbox">
+          <input type="checkbox" id="allNoLimitBox">
+          <label for="allNoLimitBox">No time limit</label>
+        </div>
+        <div class="field">
+          <label for="capInput">Max solutions to keep</label>
+          <input type="number" id="capInput" value="100" min="1" step="1">
+        </div>
+        <div class="field">
+          <button class="primary" id="allBtn">Find all solutions</button>
+        </div>
+        <div class="field">
+          <button class="secondary" id="allStopBtn" disabled>Stop</button>
+        </div>
+        <div class="field">
+          <button class="secondary" id="downloadBtn" disabled>Download all (.txt)</button>
+        </div>
+      </div>
+      <div class="status" id="allStatus">
+        <span>Constants tried: <b id="constantsTriedCount">0</b></span>
+        <span>Nodes explored: <b id="allNodesExplored">0</b></span>
+        <span>Elapsed: <b id="allElapsed">0.0s</b></span>
+        <span>Solutions found: <b id="allSolutionCount">0</b></span>
+        <span id="allState"></span>
+      </div>
+      <p class="note">Scans multiple valid magic-constant candidates (derived from the number-theory constraints) and collects solutions from each until the time budget or cap is reached.</p>
+      <div id="solutionsTableWrap"><div class="empty">No solutions found yet.</div></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Created by: <span class="credit">Inder J. Taneja</span><br>
+  <a href="https://numbers-magic.com" target="_blank" rel="noopener">numbers-magic.com</a> &middot;
+  <a href="https://inderjtaneja.wordpress.com/" target="_blank" rel="noopener">inderjtaneja.wordpress.com</a> &middot;
+  <a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/" target="_blank" rel="noopener">taneja-mathematical-generators.ijtaneja.chatgpt.site</a>
+</footer>
+
+<script>
+let stopFlag = false;
+let running = false;
+let solutions = [];       // each entry: {assignment, Mstar, Mring}
+let currentIdx = -1;
+let currentN = 6;
+let currentMode = 'unified';
+
+// Pre-verified solutions (orders 5-12, Unified mode) — every line and side
+// re-checked by direct arithmetic before being embedded here. Loading from
+// this cache is instant, the same way the plain magic star generator is
+// instant: no live search needed for the common case.
+const CACHE = {"5":{"M":32,"solutions":[[1,5,2,3,4,16,8,18,10,13,9,17,6,19,7,20,11,14,12,15],[1,5,2,3,4,16,8,18,10,13,9,17,6,19,7,20,11,14,15,12],[1,5,2,3,4,16,8,18,10,13,9,17,6,19,7,20,14,11,12,15],[1,5,2,3,4,16,8,18,10,13,9,17,6,19,7,20,14,11,15,12],[1,5,2,3,4,16,8,18,10,13,9,17,6,19,12,15,11,14,7,20],[1,5,2,3,4,16,8,18,10,13,9,17,6,19,12,15,11,14,20,7],[1,5,2,3,4,16,8,18,10,13,9,17,6,19,12,15,14,11,7,20],[1,5,2,3,4,16,8,18,10,13,9,17,6,19,12,15,14,11,20,7],[1,5,2,3,4,16,8,18,10,13,9,17,6,19,15,12,11,14,7,20],[1,5,2,3,4,16,8,18,10,13,9,17,6,19,15,12,11,14,20,7]]},"6":{"M":40,"solutions":[[1,3,2,5,12,7,24,8,18,10,17,13,16,20,14,21,11,22,4,19,6,15,9,23],[1,3,2,5,12,7,24,8,18,10,17,13,16,20,14,21,11,22,4,19,6,15,23,9],[1,3,2,5,12,7,24,8,18,10,17,13,16,20,14,21,11,22,4,19,15,6,9,23],[1,3,2,5,12,7,24,8,18,10,17,13,16,20,14,21,11,22,4,19,15,6,23,9],[1,3,2,5,12,7,24,8,18,10,17,13,16,20,14,21,11,22,19,4,6,15,9,23],[1,3,2,5,12,7,24,8,18,10,17,13,16,20,14,21,11,22,19,4,6,15,23,9],[1,3,2,5,12,7,24,8,18,10,17,13,16,20,14,21,11,22,19,4,15,6,9,23],[1,3,2,5,12,7,24,8,18,10,17,13,16,20,14,21,11,22,19,4,15,6,23,9],[1,3,2,5,12,7,24,8,18,10,17,13,16,20,14,21,22,11,4,19,6,15,9,23],[1,3,2,5,12,7,24,8,18,10,17,13,16,20,14,21,22,11,4,19,6,15,23,9]]},"7":{"M":44,"solutions":[[1,5,2,4,6,3,7,27,8,28,9,22,18,14,12,26,13,24,17,21,11,23,10,25,15,19,16,20],[1,5,2,4,6,3,7,27,8,28,9,22,18,14,12,26,13,24,17,21,11,23,10,25,15,19,20,16],[1,5,2,4,6,3,7,27,8,28,9,22,18,14,12,26,13,24,17,21,11,23,10,25,19,15,16,20],[1,5,2,4,6,3,7,27,8,28,9,22,18,14,12,26,13,24,17,21,11,23,10,25,19,15,20,16],[1,5,2,4,6,3,7,27,8,28,9,22,18,14,12,26,13,24,17,21,11,23,25,10,15,19,16,20],[1,5,2,4,6,3,7,27,8,28,9,22,18,14,12,26,13,24,17,21,11,23,25,10,15,19,20,16],[1,5,2,4,6,3,7,27,8,28,9,22,18,14,12,26,13,24,17,21,11,23,25,10,19,15,16,20],[1,5,2,4,6,3,7,27,8,28,9,22,18,14,12,26,13,24,17,21,11,23,25,10,19,15,20,16],[1,5,2,4,6,3,7,27,8,28,9,22,18,14,12,26,13,24,17,21,15,19,10,25,11,23,16,20],[1,5,2,4,6,3,7,27,8,28,9,22,18,14,12,26,13,24,17,21,15,19,10,25,11,23,20,16]]},"8":{"M":50,"solutions":[[1,3,2,4,7,6,8,5,32,11,30,10,25,14,27,15,17,29,22,23,13,31,19,20,9,28,12,24,16,21,18,26],[1,3,2,4,7,6,8,5,32,11,30,10,25,14,27,15,17,29,22,23,13,31,19,20,9,28,12,24,16,21,26,18],[1,3,2,4,7,6,8,5,32,11,30,10,25,14,27,15,17,29,22,23,13,31,19,20,9,28,12,24,21,16,18,26],[1,3,2,4,7,6,8,5,32,11,30,10,25,14,27,15,17,29,22,23,13,31,19,20,9,28,12,24,21,16,26,18],[1,3,2,4,7,6,8,5,32,11,30,10,25,14,27,15,17,29,22,23,13,31,19,20,9,28,24,12,16,21,18,26],[1,3,2,4,7,6,8,5,32,11,30,10,25,14,27,15,17,29,22,23,13,31,19,20,9,28,24,12,16,21,26,18],[1,3,2,4,7,6,8,5,32,11,30,10,25,14,27,15,17,29,22,23,13,31,19,20,9,28,24,12,21,16,18,26],[1,3,2,4,7,6,8,5,32,11,30,10,25,14,27,15,17,29,22,23,13,31,19,20,9,28,24,12,21,16,26,18],[1,3,2,4,7,6,8,5,32,11,30,10,25,14,27,15,17,29,22,23,13,31,19,20,16,21,12,24,9,28,18,26],[1,3,2,4,7,6,8,5,32,11,30,10,25,14,27,15,17,29,22,23,13,31,19,20,16,21,12,24,9,28,26,18]]},"9":{"M":56,"solutions":[[1,3,2,4,7,6,8,5,9,36,13,34,12,29,16,23,27,17,19,33,20,31,24,26,15,30,18,25,10,32,21,22,14,28,11,35],[1,3,2,4,7,6,8,5,9,36,13,34,12,29,16,23,27,17,19,33,20,31,24,26,15,30,18,25,10,32,21,22,14,28,35,11],[1,3,2,4,7,6,8,5,9,36,13,34,12,29,16,23,27,17,19,33,20,31,24,26,15,30,18,25,10,32,21,22,28,14,11,35],[1,3,2,4,7,6,8,5,9,36,13,34,12,29,16,23,27,17,19,33,20,31,24,26,15,30,18,25,10,32,21,22,28,14,35,11],[1,3,2,4,7,6,8,5,9,36,13,34,12,29,16,23,27,17,19,33,20,31,24,26,15,30,18,25,10,32,22,21,14,28,11,35],[1,3,2,4,7,6,8,5,9,36,13,34,12,29,16,23,27,17,19,33,20,31,24,26,15,30,18,25,10,32,22,21,14,28,35,11],[1,3,2,4,7,6,8,5,9,36,13,34,12,29,16,23,27,17,19,33,20,31,24,26,15,30,18,25,10,32,22,21,28,14,11,35],[1,3,2,4,7,6,8,5,9,36,13,34,12,29,16,23,27,17,19,33,20,31,24,26,15,30,18,25,10,32,22,21,28,14,35,11],[1,3,2,4,7,6,8,5,9,36,13,34,12,29,16,23,27,17,19,33,20,31,24,26,15,30,18,25,14,28,21,22,10,32,11,35],[1,3,2,4,7,6,8,5,9,36,13,34,12,29,16,23,27,17,19,33,20,31,24,26,15,30,18,25,14,28,21,22,10,32,35,11]]},"10":{"M":64,"solutions":[[1,3,2,4,6,5,7,13,19,10,40,17,39,16,35,11,27,14,30,21,23,37,28,31,22,36,25,29,15,38,18,34,12,32,8,24,9,26,20,33],[1,3,2,4,6,5,7,13,19,10,40,17,39,16,35,11,27,14,30,21,23,37,28,31,22,36,25,29,15,38,18,34,12,32,8,24,9,26,33,20],[1,3,2,4,6,5,7,13,19,10,40,17,39,16,35,11,27,14,30,21,23,37,28,31,22,36,25,29,15,38,18,34,12,32,8,24,26,9,20,33],[1,3,2,4,6,5,7,13,19,10,40,17,39,16,35,11,27,14,30,21,23,37,28,31,22,36,25,29,15,38,18,34,12,32,8,24,26,9,33,20],[1,3,2,4,6,5,7,13,19,10,40,17,39,16,35,11,27,14,30,21,23,37,28,31,22,36,25,29,15,38,18,34,12,32,24,8,9,26,20,33],[1,3,2,4,6,5,7,13,19,10,40,17,39,16,35,11,27,14,30,21,23,37,28,31,22,36,25,29,15,38,18,34,12,32,24,8,9,26,33,20],[1,3,2,4,6,5,7,13,19,10,40,17,39,16,35,11,27,14,30,21,23,37,28,31,22,36,25,29,15,38,18,34,12,32,24,8,26,9,20,33],[1,3,2,4,6,5,7,13,19,10,40,17,39,16,35,11,27,14,30,21,23,37,28,31,22,36,25,29,15,38,18,34,12,32,24,8,26,9,33,20],[1,3,2,4,6,5,7,13,19,10,40,17,39,16,35,11,27,14,30,21,23,37,28,31,22,36,25,29,15,38,18,34,32,12,8,24,9,26,20,33],[1,3,2,4,6,5,7,13,19,10,40,17,39,16,35,11,27,14,30,21,23,37,28,31,22,36,25,29,15,38,18,34,32,12,8,24,9,26,33,20]]},"11":{"M":72,"solutions":[[1,3,2,4,6,5,7,18,24,15,14,44,21,43,20,39,10,31,8,26,30,25,32,36,27,40,28,38,29,33,19,42,23,37,12,35,13,17,11,22,9,34,16,41],[1,3,2,4,6,5,7,18,24,15,14,44,21,43,20,39,10,31,8,26,30,25,32,36,27,40,28,38,29,33,19,42,23,37,12,35,13,17,11,22,9,34,41,16],[1,3,2,4,6,5,7,18,24,15,14,44,21,43,20,39,10,31,8,26,30,25,32,36,27,40,28,38,29,33,19,42,23,37,12,35,13,17,11,22,34,9,16,41],[1,3,2,4,6,5,7,18,24,15,14,44,21,43,20,39,10,31,8,26,30,25,32,36,27,40,28,38,29,33,19,42,23,37,12,35,13,17,11,22,34,9,41,16],[1,3,2,4,6,5,7,18,24,15,14,44,21,43,20,39,10,31,8,26,30,25,32,36,27,40,28,38,29,33,19,42,23,37,12,35,13,17,22,11,9,34,16,41],[1,3,2,4,6,5,7,18,24,15,14,44,21,43,20,39,10,31,8,26,30,25,32,36,27,40,28,38,29,33,19,42,23,37,12,35,13,17,22,11,9,34,41,16],[1,3,2,4,6,5,7,18,24,15,14,44,21,43,20,39,10,31,8,26,30,25,32,36,27,40,28,38,29,33,19,42,23,37,12,35,13,17,22,11,34,9,16,41],[1,3,2,4,6,5,7,18,24,15,14,44,21,43,20,39,10,31,8,26,30,25,32,36,27,40,28,38,29,33,19,42,23,37,12,35,13,17,22,11,34,9,41,16],[1,3,2,4,6,5,7,18,24,15,14,44,21,43,20,39,10,31,8,26,30,25,32,36,27,40,28,38,29,33,19,42,23,37,12,35,17,13,11,22,9,34,16,41],[1,3,2,4,6,5,7,18,24,15,14,44,21,43,20,39,10,31,8,26,30,25,32,36,27,40,28,38,29,33,19,42,23,37,12,35,17,13,11,22,9,34,41,16]]},"12":{"M":76,"solutions":[[1,3,2,4,6,5,7,9,8,12,24,15,48,21,47,20,43,19,42,13,31,18,33,25,26,46,35,36,30,40,32,34,28,37,23,41,16,44,14,45,17,39,11,29,10,27,22,38],[1,3,2,4,6,5,7,9,8,12,24,15,48,21,47,20,43,19,42,13,31,18,33,25,26,46,35,36,30,40,32,34,28,37,23,41,16,44,14,45,17,39,11,29,10,27,38,22],[1,3,2,4,6,5,7,9,8,12,24,15,48,21,47,20,43,19,42,13,31,18,33,25,26,46,35,36,30,40,32,34,28,37,23,41,16,44,14,45,17,39,11,29,27,10,22,38],[1,3,2,4,6,5,7,9,8,12,24,15,48,21,47,20,43,19,42,13,31,18,33,25,26,46,35,36,30,40,32,34,28,37,23,41,16,44,14,45,17,39,11,29,27,10,38,22],[1,3,2,4,6,5,7,9,8,12,24,15,48,21,47,20,43,19,42,13,31,18,33,25,26,46,35,36,30,40,32,34,28,37,23,41,16,44,14,45,17,39,29,11,10,27,22,38],[1,3,2,4,6,5,7,9,8,12,24,15,48,21,47,20,43,19,42,13,31,18,33,25,26,46,35,36,30,40,32,34,28,37,23,41,16,44,14,45,17,39,29,11,10,27,38,22],[1,3,2,4,6,5,7,9,8,12,24,15,48,21,47,20,43,19,42,13,31,18,33,25,26,46,35,36,30,40,32,34,28,37,23,41,16,44,14,45,17,39,29,11,27,10,22,38],[1,3,2,4,6,5,7,9,8,12,24,15,48,21,47,20,43,19,42,13,31,18,33,25,26,46,35,36,30,40,32,34,28,37,23,41,16,44,14,45,17,39,29,11,27,10,38,22],[1,3,2,4,6,5,7,9,8,12,24,15,48,21,47,20,43,19,42,13,31,18,33,25,26,46,35,36,30,40,32,34,28,37,23,41,16,44,14,45,39,17,11,29,10,27,22,38],[1,3,2,4,6,5,7,9,8,12,24,15,48,21,47,20,43,19,42,13,31,18,33,25,26,46,35,36,30,40,32,34,28,37,23,41,16,44,14,45,39,17,11,29,10,27,38,22]]}};
+
+function lineSegIntersect(p1,p2,p3,p4){
+  const d1x=p2.x-p1.x, d1y=p2.y-p1.y, d2x=p4.x-p3.x, d2y=p4.y-p3.y;
+  const denom = d1x*d2y - d1y*d2x;
+  if (Math.abs(denom) < 1e-9) return null;
+  const t = ((p3.x-p1.x)*d2y - (p3.y-p1.y)*d2x) / denom;
+  const u = ((p3.x-p1.x)*d1y - (p3.y-p1.y)*d1x) / denom;
+  if (t > 1e-6 && t < 1-1e-6 && u > 1e-6 && u < 1-1e-6){
+    return {x: p1.x + t*d1x, y: p1.y + t*d1y};
+  }
+  return null;
+}
+
+// Full geometry + line/side index structure for a closed magic star of order n.
+// Point index layout: 0..n-1 = outer, n..2n-1 = inner, 2n..4n-1 = edge (2 per side: side k -> 2n+2k, 2n+2k+1)
+function computeGeometry(n, Rout){
+  const outer = [];
+  for (let i=0;i<n;i++){
+    const ang = (90 - i*360/n) * Math.PI/180;
+    outer.push({x:Rout*Math.cos(ang), y:Rout*Math.sin(ang)});
+  }
+  const chords = [];
+  for (let i=0;i<n;i++) chords.push([i, (i+2)%n]);
+  const inner = new Array(n).fill(null);
+  for (let k=0;k<n;k++){
+    const a = chords[k], b = chords[(k+1)%n];
+    inner[k] = lineSegIntersect(outer[a[0]], outer[a[1]], outer[b[0]], outer[b[1]]);
+  }
+  const starLines = [];
+  for (let k=0;k<n;k++) starLines.push([k, (k+2)%n, n+((k-1+n)%n), n+k]);
+
+  const edge = [];
+  const ringSides = [];
+  for (let k=0;k<n;k++){
+    const p0 = outer[k], p1 = outer[(k+1)%n];
+    const e0 = {x: p0.x + (p1.x-p0.x)/3, y: p0.y + (p1.y-p0.y)/3};
+    const e1 = {x: p0.x + (p1.x-p0.x)*2/3, y: p0.y + (p1.y-p0.y)*2/3};
+    edge.push(e0, e1);
+    const idx0 = 2*n + 2*k, idx1 = 2*n + 2*k + 1;
+    ringSides.push([k, idx0, idx1, (k+1)%n]);
+  }
+  return {outer, inner, edge, starLines, ringSides};
+}
+
+function pointCoord(geom, n, idx){
+  if (idx < n) return geom.outer[idx];
+  if (idx < 2*n) return geom.inner[idx-n];
+  return geom.edge[idx-2*n];
+}
+
+// Candidate unified M values (integer + achievable-sum checks from the double-counting argument).
+function unifiedCandidates(n){
+  const res = [];
+  const minS = n*(n+1)/2, maxS = n*(7*n+1)/2;
+  for (let M=1; M<=16*n; M++){
+    const num = n*(3*M - 16*n - 4);
+    if (num % 4 !== 0) continue;
+    const Souter = num/4;
+    if (Souter>=minS && Souter<=maxS) res.push(M);
+  }
+  return res;
+}
+
+// Candidate (Mstar, Mring) pairs for two-constant mode.
+function twoConstantCandidates(n, limit){
+  const res = [];
+  const minS = n*(n+1)/2, maxS = n*(7*n+1)/2;
+  const minEdge = n*(2*n+1), maxEdge = n*(6*n+1);
+  outer:
+  for (let Mstar = n; Mstar <= 16*n; Mstar++){
+    if ((n*Mstar) % 2 !== 0) continue;
+    for (let Mring = n; Mring <= 16*n; Mring++){
+      const num = n*(Mstar + 2*Mring - 4*(4*n+1));
+      if (num % 4 !== 0) continue;
+      const Souter = num/4;
+      if (Souter < minS || Souter > maxS) continue;
+      const Sinner = n*Mstar/2 - Souter;
+      if (Sinner < minS || Sinner > maxS) continue;
+      const Sedge = n*Mring - 2*Souter;
+      if (Sedge < minEdge || Sedge > maxEdge) continue;
+      res.push([Mstar, Mring]);
+      if (res.length >= limit) break outer;
+    }
+  }
+  return res;
+}
+
+// Forced-propagation + most-constrained-line backtracking solver for a fixed (Mstar, Mring) pair.
+function solveGenerator(n, Mstar, Mring, deadline, cap){
+  const N = 4*n;
+  const geom = computeGeometry(n, 1);
+  const lines = [];
+  geom.starLines.forEach(L => lines.push({pts:L, M:Mstar}));
+  geom.ringSides.forEach(L => lines.push({pts:L, M:Mring}));
+  const assignment = new Array(N).fill(null);
+  const used = new Array(N+1).fill(false);
+  const found = [];
+  let nodes = 0;
+
+  // Outer points belong to 4 lines at once (2 star + 2 ring), so a single
+  // assignment can simultaneously complete more than one line. Forced-value
+  // propagation only checks the one line it was triggered by, so any other
+  // line finished as a side effect must be validated explicitly here —
+  // otherwise an inconsistent (but undetected) assignment can slip through.
+  function completedLinesOk(){
+    for (const L of lines){
+      let uc = 0, sum = 0;
+      for (const p of L.pts){ if (assignment[p] === null) uc++; else sum += assignment[p]; }
+      if (uc === 0 && sum !== L.M) return false;
+    }
+    return true;
+  }
+
+  function* rec(){
+    if (found.length >= cap) return;
+    if (stopFlag) return;
+    let allAssigned = true;
+    let forcedLine = null, forcedPos = -1, forcedSum = 0, forcedM = 0;
+    let bestCount = 99, bestMissing = null;
+    for (const L of lines){
+      let unassignedCount = 0, sum = 0, missing = [];
+      for (const p of L.pts){
+        if (assignment[p] === null){ unassignedCount++; missing.push(p); }
+        else sum += assignment[p];
+      }
+      if (unassignedCount > 0) allAssigned = false;
+      if (unassignedCount === 1 && forcedLine === null){ forcedLine = L; forcedPos = missing[0]; forcedSum = sum; forcedM = L.M; }
+      else if (unassignedCount > 1 && unassignedCount < bestCount){ bestCount = unassignedCount; bestMissing = missing; }
+    }
+    if (allAssigned){ found.push(assignment.slice()); return; }
+    if (forcedLine){
+      const needed = forcedM - forcedSum;
+      nodes++;
+      if (nodes % 3000 === 0) yield 'tick';
+      if (needed >= 1 && needed <= N && !used[needed]){
+        assignment[forcedPos] = needed; used[needed] = true;
+        if (completedLinesOk()) yield* rec();
+        assignment[forcedPos] = null; used[needed] = false;
+      }
+      return;
+    }
+    const p = bestMissing[0];
+    for (let v = 1; v <= N; v++){
+      if (used[v]) continue;
+      assignment[p] = v; used[v] = true; nodes++;
+      if (completedLinesOk()) yield* rec();
+      assignment[p] = null; used[v] = false;
+      if (nodes % 3000 === 0) yield 'tick';
+      if (found.length >= cap) return;
+      if (stopFlag) return;
+      if (deadline && Date.now() > deadline) return;
+    }
+  }
+
+  return {gen: rec(), found, getNodes: () => nodes};
+}
+
+function el(id){ return document.getElementById(id); }
+
+function switchTab(name){
+  const isDiagram = name === 'diagram';
+  el('tabDiagram').style.display = isDiagram ? 'block' : 'none';
+  el('tabAll').style.display = isDiagram ? 'none' : 'block';
+  el('tabDiagramBtn').classList.toggle('active', isDiagram);
+  el('tabAllBtn').classList.toggle('active', !isDiagram);
+}
+el('tabDiagramBtn').onclick = () => switchTab('diagram');
+el('tabAllBtn').onclick = () => switchTab('all');
+
+// ---------- Quick "Generate figure": scan candidates, stop at first solution ----------
+function runQuick(){
+  const n = parseInt(el('orderInput').value, 10);
+  if (!n || n < 5){ alert('Order n must be 5 or greater.'); return; }
+  const mode = el('modeSelect').value;
+
+  currentN = n; currentMode = mode;
+  stopFlag = false;
+  solutions = []; currentIdx = -1;
+  el('quickPoints').textContent = 4*n;
+  updateNav();
+  switchTab('diagram');
+
+  // Instant path: pre-verified cache, no search at all.
+  if (mode === 'unified' && CACHE[n]){
+    const M = CACHE[n].M;
+    solutions = CACHE[n].solutions.map(a => ({assignment: a, Mstar: M, Mring: M}));
+    currentIdx = 0;
+    el('quickConstant').textContent = M;
+    el('quickState').innerHTML = '<span class="ok">figure ready instantly \u2014 pre-verified</span>';
+    drawSolution();
+    updateNav();
+    return;
+  }
+
+  // Fallback: this order/mode isn't pre-verified, so a live search is
+  // unavoidable. Kept modest and self-contained here; for real control
+  // over time budget, no-limit, and exploring further constants, use the
+  // "All solutions" tab below — same division of labor as the plain
+  // magic star generator (Quick vs. All).
+  const candidates = mode === 'unified'
+    ? unifiedCandidates(n).map(M => [M, M])
+    : twoConstantCandidates(n, 1);
+
+  if (!candidates.length){
+    el('quickConstant').textContent = '\u2014';
+    el('quickState').innerHTML = '<span class="warn">no valid magic-constant candidates for this order/mode</span>';
+    renderEmpty('No solution found. Try a different order.');
+    return;
+  }
+
+  const [Mstar, Mring] = candidates[0];
+  const label = mode === 'unified' ? `${Mstar}` : `${Mstar} / ${Mring}`;
+  el('quickConstant').textContent = label;
+  el('quickState').innerHTML = '<span class="warn">not pre-verified \u2014 searching live (this order/mode may take a while; use "All solutions" for full control)\u2026</span>';
+  renderEmpty('Searching...');
+
+  const FALLBACK_BUDGET_MS = 12000;
+  const deadline = Date.now() + FALLBACK_BUDGET_MS;
+  const search = solveGenerator(n, Mstar, Mring, deadline, 1);
+
+  function stepBatch(){
+    let steps = 0, res;
+    while (steps < 20000){
+      res = search.gen.next();
+      if (res.done) break;
+      steps++;
+      if (res.value === 'tick') break;
+    }
+    if (search.found.length){
+      solutions = search.found.map(a => ({assignment:a, Mstar, Mring}));
+      currentIdx = 0;
+      drawSolution();
+      updateNav();
+      el('quickState').innerHTML = `<span class="ok">figure ready \u2014 M = ${label}</span>`;
+      return;
+    }
+    if (res && res.done){
+      el('quickState').innerHTML = '<span class="warn">this constant has no solution \u2014 try the "All solutions" tab to explore others</span>';
+      renderEmpty('No solution for this magic constant. Try "All solutions" to search other valid constants.');
+    } else if (Date.now() > deadline){
+      el('quickState').innerHTML = '<span class="warn">no quick result \u2014 use the "All solutions" tab for a longer, controllable search</span>';
+      renderEmpty('No solution found in the quick fallback search. Use "All solutions" below for full control over time budget.');
+    } else {
+      setTimeout(stepBatch, 0);
+    }
+  }
+  stepBatch();
+}
+
+el('quickBtn').onclick = runQuick;
+
+// ---------- All solutions: scan candidates, collect across all of them ----------
+async function runAll(){
+  const n = parseInt(el('orderInput').value, 10);
+  if (!n || n < 5){ alert('Order n must be 5 or greater.'); return; }
+  const mode = el('modeSelect').value;
+  const timeSec = parseFloat(el('allTimeInput').value);
+  const noLimit = el('allNoLimitBox').checked;
+  const cap = parseInt(el('capInput').value, 10);
+
+  currentN = n; currentMode = mode;
+  stopFlag = false; running = true;
+  solutions = []; currentIdx = -1;
+  el('allBtn').disabled = true; el('allStopBtn').disabled = false;
+  el('quickBtn').disabled = true;
+  el('downloadBtn').disabled = true;
+  el('constantsTriedCount').textContent = '0';
+  el('allNodesExplored').textContent = '0';
+  el('allElapsed').textContent = '0.0s';
+  el('allSolutionCount').textContent = '0';
+  el('allState').innerHTML = '<span class="warn">searching...</span>';
+  renderTable([]);
+  updateNav();
+  renderEmpty('Searching...');
+
+  const candidates = mode === 'unified'
+    ? unifiedCandidates(n).map(M => [M, M])
+    : twoConstantCandidates(n, 40);
+
+  if (!candidates.length){
+    finishAll('no valid magic-constant candidates for this order/mode');
+    return;
+  }
+
+  const startTime = Date.now();
+  const deadline = noLimit ? null : (startTime + timeSec*1000);
+  const PER_CANDIDATE_MS = 8000; // "All solutions" is more thorough than Quick, but still shouldn't stall on one hard constant
+  let ci = 0;
+  let totalNodes = 0;
+
+  function tryNext(){
+    if (ci >= candidates.length || (deadline && Date.now() > deadline) || stopFlag || solutions.length >= cap){
+      finishAll(stopFlag ? 'stopped by user' : '');
+      return;
+    }
+    el('constantsTriedCount').textContent = ci+1;
+    const [Mstar, Mring] = candidates[ci];
+    const remaining = cap - solutions.length;
+    const candidateDeadline = deadline ? Math.min(deadline, Date.now() + PER_CANDIDATE_MS) : (Date.now() + PER_CANDIDATE_MS);
+    const search = solveGenerator(n, Mstar, Mring, candidateDeadline, Math.min(remaining, 20));
+    stepBatch(search, Mstar, Mring, candidateDeadline);
+  }
+
+  function stepBatch(search, Mstar, Mring, candidateDeadline){
+    let steps = 0, res;
+    while (steps < 20000){
+      res = search.gen.next();
+      if (res.done) break;
+      steps++;
+      if (res.value === 'tick') break;
+    }
+    totalNodes += search.getNodes();
+    el('allNodesExplored').textContent = totalNodes;
+    el('allElapsed').textContent = ((Date.now()-startTime)/1000).toFixed(1)+'s';
+
+    if (search.found.length){
+      const newOnes = search.found.map(a => ({assignment:a, Mstar, Mring}));
+      solutions = solutions.concat(newOnes);
+      el('allSolutionCount').textContent = solutions.length;
+      if (currentIdx === -1){ currentIdx = 0; drawSolution(); }
+      updateNav();
+      renderTable(solutions);
+    }
+    if (res && res.done){
+      ci++;
+      tryNext();
+    } else if (stopFlag || (deadline && Date.now() > deadline) || solutions.length >= cap){
+      finishAll(stopFlag ? 'stopped by user' : '');
+    } else if (Date.now() > candidateDeadline){
+      ci++;
+      tryNext();
+    } else {
+      setTimeout(() => stepBatch(search, Mstar, Mring, candidateDeadline), 0);
+    }
+  }
+
+  tryNext();
+}
+
+function finishAll(msg){
+  running = false;
+  el('allBtn').disabled = false; el('allStopBtn').disabled = true; el('quickBtn').disabled = false;
+  el('downloadBtn').disabled = solutions.length === 0;
+  if (msg) el('allState').innerHTML = `<span class="warn">${msg}</span>`;
+  else if (solutions.length) el('allState').innerHTML = '<span class="ok">search complete</span>';
+  else el('allState').innerHTML = '<span class="warn">no solutions found within budget</span>';
+  if (!solutions.length) renderEmpty('No solutions found within the time budget.');
+}
+
+el('allBtn').onclick = runAll;
+el('allStopBtn').onclick = () => { stopFlag = true; };
+
+function renderTable(sols){
+  const wrap = el('solutionsTableWrap');
+  if (!sols.length){ wrap.innerHTML = '<div class="empty">No solutions found yet.</div>'; return; }
+  const n = currentN;
+  let html = '<div class="sol-table-wrap"><table class="sol-table"><thead><tr><th>#</th><th>M (star / ring)</th><th>Outer</th><th>Inner</th><th>Edge</th><th></th></tr></thead><tbody>';
+  sols.forEach((s, idx) => {
+    const a = s.assignment;
+    const outer = a.slice(0, n).join(', ');
+    const inner = a.slice(n, 2*n).join(', ');
+    const edge = a.slice(2*n).join(', ');
+    const mLabel = s.Mstar === s.Mring ? s.Mstar : `${s.Mstar} / ${s.Mring}`;
+    html += `<tr><td>${idx+1}</td><td>${mLabel}</td><td>${outer}</td><td>${inner}</td><td>${edge}</td><td><button class="link-btn" onclick="viewSolution(${idx})">View</button></td></tr>`;
+  });
+  html += '</tbody></table></div>';
+  wrap.innerHTML = html;
+}
+
+function viewSolution(idx){
+  currentIdx = idx;
+  drawSolution();
+  updateNav();
+  switchTab('diagram');
+}
+
+function updateNav(){
+  const total = solutions.length;
+  el('prevBtn').disabled = total === 0 || currentIdx <= 0;
+  el('nextBtn').disabled = total === 0 || currentIdx >= total-1;
+  el('navLabel').textContent = total === 0 ? 'No solutions yet' : ('Solution '+(currentIdx+1)+' of '+total);
+}
+el('prevBtn').onclick = () => { if (currentIdx>0){ currentIdx--; drawSolution(); updateNav(); } };
+el('nextBtn').onclick = () => { if (currentIdx<solutions.length-1){ currentIdx++; drawSolution(); updateNav(); } };
+
+function renderEmpty(msg){
+  el('diagramArea').innerHTML = '<div class="empty">'+msg+'</div>';
+  el('solutionNumbersArea').innerHTML = '';
+  el('starTableArea').innerHTML = '';
+  el('ringTableArea').innerHTML = '';
+}
+
+function frameDecoration(size){
+  const m = 20, m2 = 32, r1 = 20, r2 = 14, cornerInset = 24;
+  let z='';
+  z+=`<rect x="${m}" y="${m}" width="${size-2*m}" height="${size-2*m}" rx="${r1}" fill="none" stroke="var(--gold)" stroke-width="2.5"/>`;
+  z+=`<rect x="${m2}" y="${m2}" width="${size-2*m2}" height="${size-2*m2}" rx="${r2}" fill="none" stroke="var(--gold)" stroke-width="1.3"/>`;
+  const c0 = m + cornerInset, c1 = size - m - cornerInset;
+  [[c0,c0],[c1,c0],[c0,c1],[c1,c1]].forEach(([cx,cy])=>{
+    z+=`<polygon points="${cx},${cy-11} ${cx+6},${cy} ${cx},${cy+11} ${cx-6},${cy}" fill="none" stroke="var(--gold)" stroke-width="1.5"/>`;
+    z+=`<circle cx="${cx}" cy="${cy}" r="2" fill="var(--gold)"/>`;
+  });
+  return z;
+}
+
+function drawSolution(){
+  const n = currentN;
+  const s = solutions[currentIdx];
+  if (!s) return;
+  const a = s.assignment;
+  // Frame grows with order instead of shrinking the points down to fit a fixed box.
+  const size = Math.min(1180, 860 + Math.max(0, n-8)*26);
+  const W = size, H = size + 62, cx = W/2, cy = size/2;
+  const Rout = Math.min(400, 210 + n*13);
+  const geom = computeGeometry(n, Rout);
+  const outerR = Math.max(11, 22 - n*0.65);
+  const innerR = outerR - 3;
+  const edgeR = outerR - 4;
+  const fs = outerR >= 17 ? 15 : (outerR >= 13 ? 12 : 10);
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img"><title>Closed magic star, order ${n}</title>`;
+  svg += frameDecoration(size);
+
+  geom.ringSides.forEach(L => {
+    const pts = L.map(idx => pointCoord(geom, n, idx));
+    let path = `M ${cx+pts[0].x} ${cy-pts[0].y} `;
+    for (let i=1;i<pts.length;i++) path += `L ${cx+pts[i].x} ${cy-pts[i].y} `;
+    svg += `<path d="${path}" fill="none" stroke="var(--line-ring)" stroke-width="3"/>`;
+  });
+  geom.starLines.forEach(L => {
+    const pts = L.map(idx => pointCoord(geom, n, idx));
+    let path = `M ${cx+pts[0].x} ${cy-pts[0].y} `;
+    for (let i=1;i<pts.length;i++) path += `L ${cx+pts[i].x} ${cy-pts[i].y} `;
+    svg += `<path d="${path}" fill="none" stroke="var(--line-star)" stroke-width="2.5" opacity="0.9"/>`;
+  });
+
+  function badge(pts, label, kind){
+    const mx = cx + pts.reduce((sum,p)=>sum+p.x,0)/pts.length;
+    const my = cy - pts.reduce((sum,p)=>sum+p.y,0)/pts.length;
+    const border = kind === 'star' ? 'var(--outer-stroke)' : 'var(--line-ring)';
+    const fill = kind === 'star' ? '#f1effc' : '#fdf1e0';
+    const text = kind === 'star' ? 'var(--outer-stroke)' : 'var(--edge-text)';
+    svg += `<rect x="${mx-19}" y="${my-12}" width="38" height="24" rx="7" fill="${fill}" stroke="${border}" stroke-width="1.8"/>`;
+    svg += `<text x="${mx}" y="${my+5}" text-anchor="middle" font-size="13" font-weight="700" fill="${text}">${label}</text>`;
+  }
+  geom.starLines.forEach(L => badge(L.map(idx => pointCoord(geom,n,idx)), s.Mstar, 'star'));
+  geom.ringSides.forEach(L => badge(L.map(idx => pointCoord(geom,n,idx)), s.Mring, 'ring'));
+
+  for (let i=0;i<n;i++){
+    const p = geom.outer[i], x = cx+p.x, y = cy-p.y, val = a[i];
+    svg += `<circle cx="${x}" cy="${y}" r="${outerR}" fill="var(--outer-stroke)" stroke="#fff" stroke-width="2"/>`;
+    svg += `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central" font-size="${fs}" font-weight="700" fill="#ffffff">${val}</text>`;
+  }
+  for (let i=0;i<n;i++){
+    const p = geom.inner[i]; if (!p) continue;
+    const x = cx+p.x, y = cy-p.y, val = a[n+i];
+    svg += `<circle cx="${x}" cy="${y}" r="${innerR}" fill="var(--inner-stroke)" stroke="#fff" stroke-width="1.8"/>`;
+    svg += `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central" font-size="${fs-1}" font-weight="700" fill="#ffffff">${val}</text>`;
+  }
+  for (let i=0;i<2*n;i++){
+    const p = geom.edge[i], x = cx+p.x, y = cy-p.y, val = a[2*n+i];
+    svg += `<circle cx="${x}" cy="${y}" r="${edgeR}" fill="var(--edge-stroke)" stroke="#fff" stroke-width="1.8"/>`;
+    svg += `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central" font-size="${fs-2}" font-weight="700" fill="#ffffff">${val}</text>`;
+  }
+
+  const mLabel = s.Mstar === s.Mring ? `every line and side sums to ${s.Mstar}` : `star lines sum to ${s.Mstar}, ring sides sum to ${s.Mring}`;
+  svg += `<text x="${cx}" y="${H-44}" text-anchor="middle" font-size="14" fill="var(--text-muted)">Order ${n} closed magic star &mdash; ${mLabel}</text>`;
+  svg += `<text x="${cx}" y="${H-22}" text-anchor="middle" font-size="12.5" fill="var(--text-muted)">Numbers used: 1 to ${4*n} &mdash; sequential, every integer in that range appears exactly once</text>`;
+  svg += '</svg>';
+  el('diagramArea').innerHTML = svg;
+
+  // Written summary below the figure: the exact numbers, and every line/side spelled out.
+  el('solutionNumbersArea').innerHTML =
+    `<div class="numlist">` +
+    `<div><b>Outer:</b> ${a.slice(0,n).join(', ')}</div>` +
+    `<div><b>Inner:</b> ${a.slice(n,2*n).join(', ')}</div>` +
+    `<div><b>Edge:</b> ${a.slice(2*n).join(', ')}</div>` +
+    `</div>`;
+
+  const geomFlat = computeGeometry(n, 1);
+  let starTable = '<table class="lines-table"><thead><tr><th>Line</th><th>Numbers</th><th>Sum</th></tr></thead><tbody>';
+  geomFlat.starLines.forEach((L, i) => {
+    const vals = L.map(p => a[p]);
+    starTable += `<tr><td>${i+1}</td><td>${vals.join(' + ')}</td><td class="sum">${s.Mstar}</td></tr>`;
+  });
+  starTable += '</tbody></table>';
+  el('starTableArea').innerHTML = starTable;
+
+  let ringTable = '<table class="lines-table"><thead><tr><th>Side</th><th>Numbers</th><th>Sum</th></tr></thead><tbody>';
+  geomFlat.ringSides.forEach((L, i) => {
+    const vals = L.map(p => a[p]);
+    ringTable += `<tr><td>${i+1}</td><td>${vals.join(' + ')}</td><td class="sum">${s.Mring}</td></tr>`;
+  });
+  ringTable += '</tbody></table>';
+  el('ringTableArea').innerHTML = ringTable;
+}
+
+el('downloadBtn').onclick = () => {
+  if (!solutions.length) return;
+  const n = currentN;
+  let txt = `Closed magic star, order ${n} (${4*n} numbers, 1..${4*n})\n`;
+  txt += `Mode: ${currentMode}\n`;
+  txt += `Total solutions in this file: ${solutions.length}\n\n`;
+  const geom = computeGeometry(n, 1);
+  solutions.forEach((s, idx) => {
+    const a = s.assignment;
+    txt += `Solution ${idx+1}  (M_star=${s.Mstar}, M_ring=${s.Mring})\n`;
+    txt += `Outer: ${a.slice(0,n).join(', ')}\n`;
+    txt += `Inner: ${a.slice(n,2*n).join(', ')}\n`;
+    txt += `Edge:  ${a.slice(2*n).join(', ')}\n`;
+    geom.starLines.forEach((L,i) => {
+      const vals = L.map(p=>a[p]);
+      txt += `Star line ${i+1}: ${vals.join(' + ')} = ${s.Mstar}\n`;
+    });
+    geom.ringSides.forEach((L,i) => {
+      const vals = L.map(p=>a[p]);
+      txt += `Ring side ${i+1}: ${vals.join(' + ')} = ${s.Mring}\n`;
+    });
+    txt += '\n';
+  });
+  const blob = new Blob([txt], {type:'text/plain'});
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `closed_magic_star_order_${n}_solutions.txt`;
+  link.click();
+};
+</script>
+</body>
+</html>

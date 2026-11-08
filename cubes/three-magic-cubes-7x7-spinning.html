@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Three 7×7 Magic Cubes</title>
+<style>@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=Share+Tech+Mono&display=swap');
+:root{--bg:#06080a;--gold:#c9a84c;--gold-light:#f0d080;--gold-dim:#7a6030;--glow:rgba(201,168,76,0.35);}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--gold-light);font-family:'Share Tech Mono',monospace;min-height:100vh;display:flex;flex-direction:column;align-items:center;background-image:radial-gradient(ellipse at 20% 10%,rgba(180,140,40,0.06) 0%,transparent 55%),radial-gradient(ellipse at 80% 90%,rgba(40,80,180,0.05) 0%,transparent 55%);}
+header{text-align:center;padding:32px 20px 24px;width:100%;border-bottom:1px solid rgba(201,168,76,0.2);}
+header h1{font-family:'Cinzel',serif;font-size:clamp(1.1rem,3vw,2rem);font-weight:900;letter-spacing:0.12em;color:var(--gold-light);text-shadow:0 0 40px var(--glow),0 2px 6px #000;}
+header p{font-size:0.65rem;color:var(--gold-dim);letter-spacing:0.22em;margin-top:8px;text-transform:uppercase;}
+.cubes-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0;width:100%;max-width:1400px;padding:20px;}
+.cube-panel{display:flex;flex-direction:column;align-items:center;padding:16px 10px 20px;border:1px solid rgba(201,168,76,0.12);position:relative;}
+.cube-panel-title{font-family:'Cinzel',serif;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:4px;text-align:center;}
+.cube-panel-sub{font-size:0.52rem;color:var(--gold-dim);letter-spacing:0.1em;margin-bottom:10px;text-align:center;}
+.cube-num-badge{position:absolute;top:10px;left:12px;font-family:'Cinzel',serif;font-size:0.7rem;font-weight:900;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:3px;color:#fff;}
+.scene{perspective:900px;width:300px;height:300px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.cube{width:210px;height:210px;position:relative;transform-style:preserve-3d;transform:rotateX(-25deg) rotateY(35deg);}
+.face{position:absolute;width:210px;height:210px;backface-visibility:visible;border:2px solid #111;outline:1.5px solid var(--gold);outline-offset:-1px;box-shadow:0 0 16px rgba(201,168,76,0.15),inset 0 0 12px rgba(0,0,0,0.3);overflow:hidden;}
+.face-front{transform:translateZ(105px);}.face-back{transform:rotateY(180deg) translateZ(105px);}.face-left{transform:rotateY(-90deg) translateZ(105px);}.face-right{transform:rotateY(90deg) translateZ(105px);}.face-top{transform:rotateX(90deg) translateZ(105px);}.face-bottom{transform:rotateX(-90deg) translateZ(105px);}
+.grid7{display:grid;grid-template-columns:repeat(7,1fr);grid-template-rows:repeat(7,1fr);width:100%;height:100%;border:1.5px solid #111;box-sizing:border-box;}
+.cell{display:flex;align-items:center;justify-content:center;font-family:'Share Tech Mono',monospace;font-size:7px;font-weight:bold;color:#000;border:0.2px solid rgba(0,0,0,0.12);line-height:1;}
+.cb-dark{background:#ffb3c6;}.cb-lite{background:#ffd6e0;}
+.z2-corner{background:#fdd835;}.z2-rect{background:#66bb6a;}.z2-center{background:#ff9800;}
+.z3-inner{background:#a8d8a8;}.z3-l1{background:#f5f080;}.z3-e1{background:#fdd835;}.z3-l2{background:#ffb87a;}.z3-e2{background:#ff9800;}
+.bdr-r{border-right:1.8px solid rgba(0,0,0,0.5)!important;}.bdr-b{border-bottom:1.8px solid rgba(0,0,0,0.5)!important;}.bdr-l{border-left:1.8px solid rgba(0,0,0,0.5)!important;}.bdr-t{border-top:1.8px solid rgba(0,0,0,0.5)!important;}
+.b-r{border-right:1.8px solid rgba(0,0,0,0.5)!important;}.b-b{border-bottom:1.8px solid rgba(0,0,0,0.5)!important;}.b-l{border-left:1.8px solid rgba(0,0,0,0.5)!important;}.b-t{border-top:1.8px solid rgba(0,0,0,0.5)!important;}
+.face-lbl{position:absolute;bottom:2px;right:3px;font-family:'Cinzel',serif;font-size:6px;color:rgba(201,168,76,0.4);pointer-events:none;}</style>
+</head>
+<body>
+<header>
+  <h1>Three 7×7 Magic Cubes</h1>
+  <p>Numbers 1–294 · Magic Constant 1,030 · Three Structural Types</p>
+</header>
+<div class="cubes-grid" id="cubesGrid"></div>
+<script>
+const f1=[[[1,49,97,145,193,241,289],[235,283,37,43,91,139,187],[133,181,229,277,31,79,85],[73,121,127,175,223,271,25],[265,19,67,115,163,169,217],[205,211,259,13,61,109,157],[103,151,199,247,253,7,55]],[[2,50,98,146,194,242,290],[236,284,38,44,92,140,188],[134,182,230,278,32,80,86],[74,122,128,176,224,272,26],[266,20,68,116,164,170,218],[206,212,260,14,62,110,158],[104,152,200,248,254,8,56]],[[3,51,99,147,195,243,291],[237,285,39,45,93,141,189],[135,183,231,279,33,81,87],[75,123,129,177,225,273,27],[267,21,69,117,165,171,219],[207,213,261,15,63,111,159],[105,153,201,249,255,9,57]],[[4,52,100,148,196,244,292],[238,286,40,46,94,142,190],[136,184,232,280,34,82,88],[76,124,130,178,226,274,28],[268,22,70,118,166,172,220],[208,214,262,16,64,112,160],[106,154,202,250,256,10,58]],[[5,53,101,149,197,245,293],[239,287,41,47,95,143,191],[137,185,233,281,35,83,89],[77,125,131,179,227,275,29],[269,23,71,119,167,173,221],[209,215,263,17,65,113,161],[107,155,203,251,257,11,59]],[[6,54,102,150,198,246,294],[240,288,42,48,96,144,192],[138,186,234,282,36,84,90],[78,126,132,180,228,276,30],[270,24,72,120,168,174,222],[210,216,264,18,66,114,162],[108,156,204,252,258,12,60]]];
+const f2=[[[19,175,259,187,85,73,217],[271,115,31,103,205,49,241],[199,91,151,121,163,97,193],[247,43,157,145,133,277,13],[253,37,127,169,139,229,61],[1,289,283,67,109,211,55],[25,265,7,223,181,79,235]],[[20,176,260,188,86,74,218],[272,116,32,104,206,50,242],[200,92,152,122,164,98,194],[248,44,158,146,134,278,14],[254,38,128,170,140,230,62],[2,290,284,68,110,212,56],[26,266,8,224,182,80,236]],[[21,177,261,189,87,75,219],[273,117,33,105,207,51,243],[201,93,153,123,165,99,195],[249,45,159,147,135,279,15],[255,39,129,171,141,231,63],[3,291,285,69,111,213,57],[27,267,9,225,183,81,237]],[[22,178,262,190,88,76,220],[274,118,34,106,208,52,244],[202,94,154,124,166,100,196],[250,46,160,148,136,280,16],[256,40,130,172,142,232,64],[4,292,286,70,112,214,58],[28,268,10,226,184,82,238]],[[23,179,263,191,89,77,221],[275,119,35,107,209,53,245],[203,95,155,125,167,101,197],[251,47,161,149,137,281,17],[257,41,131,173,143,233,65],[5,293,287,71,113,215,59],[29,269,11,227,185,83,239]],[[24,180,264,192,90,78,222],[276,120,36,108,210,54,246],[204,96,156,126,168,102,198],[252,48,162,150,138,282,18],[258,42,132,174,144,234,66],[6,294,288,72,114,216,60],[30,270,12,228,186,84,240]]];
+const f3=[[[151,121,163,175,115,43,247],[157,145,133,193,97,67,223],[127,169,139,79,211,283,7],[199,187,181,73,85,265,25],[91,103,109,205,217,55,235],[271,289,37,277,31,61,49],[19,1,253,13,259,241,229]],[[152,122,164,176,116,44,248],[158,146,134,194,98,68,224],[128,170,140,80,212,284,8],[200,188,182,74,86,266,26],[92,104,110,206,218,56,236],[272,290,38,278,32,62,50],[20,2,254,14,260,242,230]],[[153,123,165,177,117,45,249],[159,147,135,195,99,69,225],[129,171,141,81,213,285,9],[201,189,183,75,87,267,27],[93,105,111,207,219,57,237],[273,291,39,279,33,63,51],[21,3,255,15,261,243,231]],[[154,124,166,178,118,46,250],[160,148,136,196,100,70,226],[130,172,142,82,214,286,10],[202,190,184,76,88,268,28],[94,106,112,208,220,58,238],[274,292,40,280,34,64,52],[22,4,256,16,262,244,232]],[[155,125,167,179,119,47,251],[161,149,137,197,101,71,227],[131,173,143,83,215,287,11],[203,191,185,77,89,269,29],[95,107,113,209,221,59,239],[275,293,41,281,35,65,53],[23,5,257,17,263,245,233]],[[156,126,168,180,120,48,252],[162,150,138,198,102,72,228],[132,174,144,84,216,288,12],[204,192,186,78,90,270,30],[96,108,114,210,222,60,240],[276,294,42,282,36,66,54],[24,6,258,18,264,246,234]]];
+function c2IsOuter(x){return x<=1||x>=5;}
+function c2Zone(r,c){const ro=c2IsOuter(r),co=c2IsOuter(c);if(ro&&co)return'z2-corner';if(ro||co)return'z2-rect';return'z2-center';}
+function c2Bdr(r,c){let b='';const z=c2Zone(r,c);if(c<6&&c2Zone(r,c+1)!==z)b+=' bdr-r';if(r<6&&c2Zone(r+1,c)!==z)b+=' bdr-b';if(c>0&&c2Zone(r,c-1)!==z)b+=' bdr-l';if(r>0&&c2Zone(r-1,c)!==z)b+=' bdr-t';return b;}
+const C3FC={0:'TR',1:'BR',2:'TL',3:'BL',4:'BR',5:'BL'};
+function c3Zone(r,c,fi){const k=C3FC[fi]||'TL';if(k==='TL'){if(r<=2&&c<=2)return'z3-inner';if(r>=5&&c>=5)return'z3-e2';if(r>=5||c>=5)return'z3-l2';if(r>=3&&c>=3)return'z3-e1';if(r>=3||c>=3)return'z3-l1';return'z3-inner';}else if(k==='TR'){if(r<=2&&c>=4)return'z3-inner';if(r>=5&&c<=1)return'z3-e2';if(r>=5||c<=1)return'z3-l2';if(r>=3&&c<=3)return'z3-e1';if(r>=3||c<=3)return'z3-l1';return'z3-inner';}else if(k==='BR'){if(r>=4&&c>=4)return'z3-inner';if(r<=1&&c<=1)return'z3-e2';if(r<=1||c<=1)return'z3-l2';if(r<=3&&c<=3)return'z3-e1';if(r<=3||c<=3)return'z3-l1';return'z3-inner';}else{if(r>=4&&c<=2)return'z3-inner';if(r<=1&&c>=5)return'z3-e2';if(r<=1||c>=5)return'z3-l2';if(r<=3&&c>=3)return'z3-e1';if(r<=3||c>=3)return'z3-l1';return'z3-inner';}}
+function c3Bdr(r,c,fi){let b='';const z=c3Zone(r,c,fi);if(c<6&&c3Zone(r,c+1,fi)!==z)b+=' b-r';if(r<6&&c3Zone(r+1,c,fi)!==z)b+=' b-b';if(c>0&&c3Zone(r,c-1,fi)!==z)b+=' b-l';if(r>0&&c3Zone(r-1,c,fi)!==z)b+=' b-t';return b;}
+const CUBE_DEFS=[
+  {title:'Uniform Magic Cube',sub:'Checkerboard 2-color pattern',color:'#c06090',faces:f1,cellClass:(r,c,fi)=>(r+c)%2===0?'cb-dark':'cb-lite',borders:()=>''},
+  {title:'Type 2+3+2 Magic Cube',sub:'2×2 corners · 2×3 rects · 3×3 centre',color:'#c09020',faces:f2,cellClass:(r,c,fi)=>c2Zone(r,c),borders:(r,c,cls,fi)=>c2Bdr(r,c)},
+  {title:'Corner-Type 3+2+2 Cube',sub:'3×3 inner · 2×3+2×2 L-borders',color:'#4a9a50',faces:f3,cellClass:(r,c,fi)=>c3Zone(r,c,fi),borders:(r,c,cls,fi)=>c3Bdr(r,c,fi)}
+];
+const FC=['face-front','face-back','face-right','face-left','face-top','face-bottom'];
+const gridEl=document.getElementById('cubesGrid');
+const cubeEls=[];
+CUBE_DEFS.forEach((def,ci)=>{
+  const panel=document.createElement('div'); panel.className='cube-panel';
+  const badge=document.createElement('div'); badge.className='cube-num-badge'; badge.textContent=ci+1; badge.style.background=def.color; panel.appendChild(badge);
+  const title=document.createElement('div'); title.className='cube-panel-title'; title.style.color=def.color; title.textContent=def.title; panel.appendChild(title);
+  const sub=document.createElement('div'); sub.className='cube-panel-sub'; sub.textContent=def.sub; panel.appendChild(sub);
+  const scene=document.createElement('div'); scene.className='scene';
+  const cubeEl=document.createElement('div'); cubeEl.className='cube'; cubeEl.style.transform='rotateX(-25deg) rotateY('+(35+ci*5)+'deg)';
+  def.faces.forEach((faceData,fi)=>{
+    const faceDiv=document.createElement('div'); faceDiv.className='face '+FC[fi]; faceDiv.style.outlineColor=def.color;
+    const g=document.createElement('div'); g.className='grid7';
+    for(let r=0;r<7;r++) for(let c=0;c<7;c++){const cell=document.createElement('div');const cls=def.cellClass(r,c,fi);const brd=def.borders(r,c,cls,fi);cell.className='cell '+cls+brd;cell.textContent=faceData[r][c];g.appendChild(cell);}
+    const lbl=document.createElement('div'); lbl.className='face-lbl'; lbl.textContent='F'+(fi+1);
+    faceDiv.appendChild(g); faceDiv.appendChild(lbl); cubeEl.appendChild(faceDiv);
+  });
+  scene.appendChild(cubeEl); panel.appendChild(scene); gridEl.appendChild(panel);
+  let rY=35+ci*5;
+  cubeEls.push({el:cubeEl,rY:()=>rY,setRY:v=>rY=v,apply:()=>{cubeEl.style.transform='rotateX(-25deg) rotateY('+rY+'deg)';}});
+});
+(function loop(){cubeEls.forEach(c=>{c.setRY(c.rY()+0.28);c.apply();});requestAnimationFrame(loop);})();</script>
+</body>
+</html>

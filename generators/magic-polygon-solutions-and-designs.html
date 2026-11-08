@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Magic Polygon Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eaf1f8;--bg2:#ffffff;--bg3:#edf3f8;--border:rgba(23,47,73,0.12);--border2:rgba(23,47,73,0.28);--text:#18283a;--muted:#526579;--gold:#b66a12;--gold2:#7a4308;--teal:#087f78;--rose:#b13d59;--blue:#21669a;--peach:#eaf7fb;--peach2:#f5fbfd;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;--display:'Playfair Display',Georgia,serif;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{
+  background-color:var(--bg);
+  background-image:
+    radial-gradient(circle at 12% 8%,rgba(47,151,178,0.18),transparent 27rem),
+    radial-gradient(circle at 88% 22%,rgba(214,139,47,0.14),transparent 25rem),
+    linear-gradient(rgba(30,75,110,0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(30,75,110,0.055) 1px, transparent 1px);
+  background-size:28px 28px;
+  color:var(--text);font-family:var(--sans);font-weight:300;line-height:1.6;
+}
+.page{max-width:900px;margin:0 auto;padding:3rem 1.5rem 5rem;}
+header{margin-bottom:3rem;border:1px solid rgba(255,255,255,0.75);border-bottom:3px solid rgba(33,102,154,0.30);padding:1.6rem 1.8rem;background:linear-gradient(135deg,rgba(255,255,255,0.92),rgba(239,249,252,0.82));box-shadow:0 12px 32px rgba(27,64,92,0.10);}
+.header-label{font-family:var(--mono);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.14em;color:var(--gold);margin-bottom:0.6rem;}
+h1{font-family:var(--display);font-weight:700;font-size:2.4rem;letter-spacing:-0.01em;color:var(--text);}
+h1 em{font-style:italic;color:var(--gold2);font-weight:400;}
+.header-kicker{font-family:var(--display);font-size:1.18rem;font-weight:700;color:var(--blue);margin-top:0.2rem;letter-spacing:0.02em;}
+.header-sub{font-family:var(--mono);font-size:0.82rem;font-weight:700;color:var(--text);margin-top:0.65rem;}
+.header-credit{font-family:var(--display);font-size:0.95rem;font-style:italic;color:var(--gold2);margin-top:0.7rem;}
+.infobox{border-left:3px solid var(--gold);padding:0.75rem 1rem;background:rgba(168,106,31,0.07);font-size:0.87rem;color:#5c4a1f;margin-bottom:1.8rem;line-height:1.7;}
+.infobox code{font-family:var(--mono);color:var(--gold2);}
+.shdg{font-family:var(--mono);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--muted);margin-bottom:0.6rem;display:flex;align-items:center;gap:0.6rem;}
+.ctrls{display:flex;flex-wrap:wrap;gap:0.75rem 1.5rem;align-items:flex-end;background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--gold);padding:1rem 1.25rem;margin-bottom:1.5rem;box-shadow:0 1px 3px rgba(20,30,45,0.05);}
+.ctrl{display:flex;flex-direction:column;gap:0.3rem;min-width:110px;}
+.ctrl label{font-family:var(--mono);font-size:0.62rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);}
+input[type=number]{font-family:var(--mono);font-size:0.85rem;background:var(--bg2);border:1px solid var(--border2);border-bottom:2px solid var(--border2);padding:0.35rem 0.5rem;color:var(--text);outline:none;width:100%;transition:border-color 0.15s;}
+input:focus{border-bottom-color:var(--gold);}
+.btn{font-family:var(--mono);font-size:0.65rem;text-transform:uppercase;letter-spacing:0.14em;background:var(--gold);color:#fff8ec;border:none;padding:0.55rem 1.6rem;cursor:pointer;font-weight:500;transition:background 0.15s,transform 0.1s;white-space:nowrap;}
+.btn:hover{background:var(--gold2);}
+.btn:disabled{opacity:0.4;cursor:default;}
+.chips{display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:1.5rem;}
+.chip{font-family:var(--mono);font-size:0.8rem;background:var(--bg2);border:1px solid var(--border2);color:var(--gold2);padding:0.35rem 0.85rem;cursor:pointer;transition:background 0.15s,border-color 0.15s;}
+.chip:hover{background:var(--bg3);border-color:var(--gold);}
+.chip.on{background:var(--gold);color:#fff8ec;border-color:var(--gold);}
+.sbar{font-family:var(--mono);font-size:0.72rem;color:var(--muted);padding:0.5rem 0;margin-bottom:0.75rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;min-height:1.4rem;}
+.sbar .sc{color:var(--gold2);font-weight:500;}
+.spinner{display:inline-block;width:8px;height:8px;border:1.5px solid var(--border2);border-top-color:var(--gold);border-radius:50%;animation:spin 0.6s linear infinite;vertical-align:middle;margin-right:6px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.empty{text-align:center;padding:3rem;color:var(--muted);font-style:italic;border:1px dashed var(--border2);font-size:0.9rem;background:var(--bg2);}
+.diagram-wrap{display:flex;justify-content:center;background:radial-gradient(circle at 50% 45%,#ffffff 0,#f1fbfd 48%,#dceff5 100%);border:2px solid rgba(33,102,154,0.20);border-radius:12px;padding:1.5rem 0.5rem;margin-bottom:1.5rem;box-shadow:inset 0 0 42px rgba(35,126,151,0.08),0 10px 28px rgba(23,61,88,0.12);overflow:hidden;}
+.diagram-wrap svg{filter:drop-shadow(0 5px 8px rgba(23,54,75,0.14));}
+.dl-preview{background:var(--bg2);border:1px solid var(--border);padding:0.9rem 1.1rem;max-height:320px;overflow-y:auto;margin-bottom:0.6rem;}
+.dl-preview pre{font-family:var(--mono);font-size:0.78rem;color:var(--text);white-space:pre;line-height:1.8;}
+.legend{font-family:var(--mono);font-size:0.7rem;color:var(--muted);display:flex;gap:1.5rem;justify-content:center;margin-bottom:1.2rem;}
+.legend span{display:inline-flex;align-items:center;gap:0.4rem;}
+.dot{width:13px;height:13px;border-radius:50%;display:inline-block;box-shadow:0 1px 4px rgba(20,45,65,0.25);}
+.dot.core{background:var(--teal);border:2px solid #fff;}
+.dot.tip{background:linear-gradient(135deg,#e4962f,#a83f4f);border:2px solid #fff;}
+.foot{margin-top:3rem;padding-top:1rem;border-top:1px solid var(--border);font-size:0.75rem;color:var(--muted);font-style:italic;text-align:center;}
+.foot-credit{display:block;margin-top:0.55rem;font-family:var(--display);font-size:0.95rem;font-weight:700;font-style:normal;color:var(--gold2);}
+.foot-links{display:flex;flex-wrap:wrap;justify-content:center;gap:0.35rem 1rem;margin-top:0.65rem;font-family:var(--mono);font-size:0.72rem;font-style:normal;}
+.foot-links a{color:var(--blue);font-weight:700;text-decoration:none;border-bottom:1px solid rgba(33,102,154,0.32);}
+.foot-links a:hover{color:var(--gold2);border-bottom-color:var(--gold2);}
+</style>
+</head>
+<body>
+<div class="page">
+
+<header>
+  <div class="header-label">Recreational Mathematics · Combinatorics</div>
+  <h1>Magic <em>Polygon</em> Generator</h1>
+  <p class="header-kicker">Solutions and Designs</p>
+  <p class="header-sub">n-sided polygons · k additional points on every side · distinct consecutive numbers · one common magic sum</p>
+  <p class="header-credit">Created by Inder J. Taneja</p>
+</header>
+
+<div id="view-multi">
+<div class="infobox">
+  A magic <code>n</code>-gon has <code>n</code> <strong>core</strong> vertices (each shared by two adjacent sides, forming the polygon itself) and
+  <code>k</code> extra (non-shared) numbers on each side. With <code>n</code> core vertices and <code>k</code> extras per side, that's
+  <code>n×(1+k)</code> numbers total, placed once each, so every side — <code>core[i] + (k extra numbers) + core[i+1]</code> — sums to the same constant.
+  <code>k=1</code> is the original, simplest case (one extra number per side); pentagon (n=5) with k=2 uses numbers 1–15.
+  In the diagram, one extra number per side sticks out as a leaf, and the rest sit inline on the polygon's edge.
+  The sums listed below are <strong>arithmetically admissible candidate sums</strong>; the solver then tests whether an actual polygon arrangement can be constructed.
+</div>
+
+<div class="shdg">Step 1 — choose n and k, see which sums are arithmetically admissible</div>
+<div class="ctrls">
+  <div class="ctrl"><label>Number of sides (n)</label><input type="number" id="m-n-input" value="5" min="3" max="16"></div>
+  <div class="ctrl"><label>Extra per side (k)</label><input type="number" id="m-k-input" value="1" min="1" max="6"></div>
+  <div class="ctrl" style="min-width:auto"><button class="btn" onclick="computeSumsMulti()">Compute possible sums →</button></div>
+</div>
+<div id="m-sums-out"></div>
+
+<div class="shdg" id="m-step2-hdg" style="display:none;margin-top:0.5rem;">Step 2 — solve for a chosen sum</div>
+<div class="ctrls" id="m-solve-ctrls" style="display:none;">
+  <div class="ctrl"><label>Target sum</label><input type="number" id="m-target-sum"></div>
+  <div class="ctrl"><label>Give up after (sec)</label><input type="number" id="m-time-limit" value="20" min="1" max="600"></div>
+  <div class="ctrl"><label>No time limit</label>
+    <select id="m-no-limit"><option value="no">No — use limit above</option><option value="yes">Yes — keep trying until I stop it</option></select>
+  </div>
+  <div class="ctrl" style="min-width:auto"><button class="btn" id="m-solve-btn" onclick="solvePolygonMulti()">Solve →</button></div>
+  <div class="ctrl" style="min-width:auto"><button class="btn" id="m-stop-btn" style="display:none;background:var(--rose);" onclick="stopSearchMulti()">Stop</button></div>
+</div>
+<div id="m-solve-out"></div>
+</div>
+
+<div class="foot">
+  <span class="foot-credit">Created by Inder J. Taneja</span>
+  <div class="foot-links">
+    <a href="https://numbers-magic.com/" target="_blank" rel="noopener">www.numbers-magic.com</a>
+    <a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/" target="_blank" rel="noopener">Inder J. Taneja Mathematical Generators</a>
+    <a href="https://inderjtaneja.wordpress.com/" target="_blank" rel="noopener">www.inderjtaneja.wordpress.com</a>
+  </div>
+</div>
+</div>
+
+<script>
+function shuffle(arr){
+  for(var i=arr.length-1;i>0;i--){
+    var j=Math.floor(Math.random()*(i+1));
+    var tmp=arr[i]; arr[i]=arr[j]; arr[j]=tmp;
+  }
+  return arr;
+}
+
+function sleep(ms){ return new Promise(function(r){ setTimeout(r,ms); }); }
+
+// ============ MULTI MODE (k extra numbers per side) ============
+
+function calculateSumRangeMulti(n,k){
+  var totalNums=n*(1+k);
+  var totalSumAll=totalNums*(totalNums+1)/2;
+  var vmin=n*(n+1)/2;
+  var vmax=0;
+  for(var i=totalNums-n+1;i<=totalNums;i++) vmax+=i;
+  var possible=[];
+  for(var vs=vmin;vs<=vmax;vs++){
+    if((totalSumAll+vs)%n===0) possible.push((totalSumAll+vs)/n);
+  }
+  return [...new Set(possible)].sort(function(a,b){return a-b;});
+}
+
+// Find `k` distinct unused numbers from `pool` summing exactly to `target`,
+// via randomized recursive search with sum-bound pruning.
+function findKSubset(pool, k, target){
+  var sorted = pool.slice().sort(function(a,b){return a-b;});
+  var n = sorted.length;
+  var chosen = [];
+  function recurse(startIdx, remainingK, remainingTarget){
+    if(remainingK===0) return remainingTarget===0 ? [] : null;
+    // Prune: not enough elements left
+    if(n-startIdx < remainingK) return null;
+    // Prune: even the smallest/largest possible remaining sums can't reach target
+    var minPossible=0, maxPossible=0;
+    for(var i=0;i<remainingK;i++){
+      minPossible += sorted[startIdx+i];
+      maxPossible += sorted[n-1-i];
+    }
+    if(remainingTarget < minPossible || remainingTarget > maxPossible) return null;
+
+    // randomized order among candidates at this level for variety between attempts
+    var candidates=[];
+    for(var i=startIdx;i<=n-remainingK;i++) candidates.push(i);
+    shuffle(candidates);
+    for(var ci=0;ci<candidates.length;ci++){
+      var idx=candidates[ci];
+      var v=sorted[idx];
+      if(v>remainingTarget) continue;
+      var rest=sorted.slice(idx+1);
+      var sub=recurseWithPool(rest, remainingK-1, remainingTarget-v);
+      if(sub!==null) return [v].concat(sub);
+    }
+    return null;
+  }
+  function recurseWithPool(subPool, remainingK, remainingTarget){
+    if(remainingK===0) return remainingTarget===0 ? [] : null;
+    if(subPool.length<remainingK) return null;
+    var minPossible=0,maxPossible=0;
+    for(var i=0;i<remainingK;i++){ minPossible+=subPool[i]; maxPossible+=subPool[subPool.length-1-i]; }
+    if(remainingTarget<minPossible || remainingTarget>maxPossible) return null;
+    var idxs=[]; for(var i=0;i<=subPool.length-remainingK;i++) idxs.push(i);
+    shuffle(idxs);
+    for(var ii=0;ii<idxs.length;ii++){
+      var idx=idxs[ii];
+      var v=subPool[idx];
+      if(v>remainingTarget) continue;
+      var rest=subPool.slice(idx+1);
+      var sub=recurseWithPool(rest, remainingK-1, remainingTarget-v);
+      if(sub!==null) return [v].concat(sub);
+    }
+    return null;
+  }
+  return recurse(0, k, target);
+}
+
+function findSolutionMultiBounded(n,k,targetSum,nodeLimit){
+  var totalNums=n*(1+k);
+  var used=new Array(totalNums+1).fill(false);
+  var core=new Array(n).fill(0);
+  var tips=[]; for(var i=0;i<n;i++) tips.push([]);
+  var numbers=[]; for(var i=1;i<=totalNums;i++) numbers.push(i);
+  var nodes=0, hitLimit=false;
+
+  function solve(idx){
+    if(hitLimit) return false;
+    if(idx===n){
+      var need=targetSum-core[n-1]-core[0];
+      var avail=numbers.filter(function(v){return !used[v];});
+      if(avail.length<k) return false;
+      var combo=findKSubset(avail,k,need);
+      if(!combo) return false;
+      tips[n-1]=combo;
+      combo.forEach(function(v){ used[v]=true; });
+      return true;
+    }
+    var candidates=numbers.filter(function(v){return !used[v];});
+    shuffle(candidates);
+    for(var ci=0;ci<candidates.length;ci++){
+      if(++nodes>nodeLimit){ hitLimit=true; return false; }
+      var v=candidates[ci];
+      if(idx>0){
+        var need=targetSum-core[idx-1]-v;
+        var avail=numbers.filter(function(x){return !used[x] && x!==v;});
+        if(avail.length<k) continue;
+        var combo=findKSubset(avail,k,need);
+        if(!combo) continue;
+        tips[idx-1]=combo;
+        combo.forEach(function(x){ used[x]=true; });
+        used[v]=true;
+        core[idx]=v;
+        if(solve(idx+1)) return true;
+        used[v]=false;
+        combo.forEach(function(x){ used[x]=false; });
+      } else {
+        core[idx]=v;
+        used[v]=true;
+        if(solve(idx+1)) return true;
+        used[v]=false;
+      }
+    }
+    return false;
+  }
+
+  var solved=solve(0);
+  var result=null;
+  if(solved){
+    result=[];
+    for(var i=0;i<n;i++) result.push({core1:core[i], tips:tips[i], core2:core[(i+1)%n]});
+  }
+  return {solved:solved, nodes:nodes, result:result};
+}
+
+function pad2m(v){ return String(v).length<2 ? '0'+v : ''+v; }
+
+function computeSumsMulti(){
+  var n=+document.getElementById('m-n-input').value;
+  var k=+document.getElementById('m-k-input').value;
+  var out=document.getElementById('m-sums-out');
+  if(!n||n<3||!k||k<1){
+    out.innerHTML='<div class="empty">Enter n ≥ 3 and k ≥ 1.</div>';
+    document.getElementById('m-step2-hdg').style.display='none';
+    document.getElementById('m-solve-ctrls').style.display='none';
+    return;
+  }
+  var sums=calculateSumRangeMulti(n,k);
+  if(!sums.length){
+    out.innerHTML='<div class="empty">No arithmetically admissible magic sums exist for n='+n+', k='+k+'.</div>';
+    document.getElementById('m-step2-hdg').style.display='none';
+    document.getElementById('m-solve-ctrls').style.display='none';
+    return;
+  }
+  var totalNums=n*(1+k);
+  out.innerHTML='<div class="sbar">'+sums.length+' arithmetically admissible magic sum'+(sums.length>1?'s':'')+' for n='+n+', k='+k+' (numbers 1–'+totalNums+') — click one, or type your own below.</div>'
+    +'<div class="chips">'+sums.map(function(s){return '<span class="chip" onclick="pickSumMulti(this,'+s+')">'+s+'</span>';}).join('')+'</div>';
+  document.getElementById('m-step2-hdg').style.display='flex';
+  document.getElementById('m-solve-ctrls').style.display='flex';
+  document.getElementById('m-target-sum').value=sums[0];
+  document.getElementById('m-solve-out').innerHTML='';
+}
+
+function pickSumMulti(el,s){
+  document.querySelectorAll('#view-multi .chip').forEach(function(c){c.classList.remove('on');});
+  el.classList.add('on');
+  document.getElementById('m-target-sum').value=s;
+}
+
+var searchStopMulti=false;
+function stopSearchMulti(){ searchStopMulti=true; }
+
+async function solvePolygonMulti(){
+  var n=+document.getElementById('m-n-input').value;
+  var k=+document.getElementById('m-k-input').value;
+  var targetSum=+document.getElementById('m-target-sum').value;
+  var validSums=calculateSumRangeMulti(n,k);
+  var out=document.getElementById('m-solve-out');
+  if(validSums.indexOf(targetSum)===-1){
+    out.innerHTML='<div class="empty">Sum '+targetSum+' is not arithmetically admissible for n='+n+', k='+k+'. Admissible candidate sums: '+validSums.join(', ')+'</div>';
+    return;
+  }
+
+  var noLimit=document.getElementById('m-no-limit').value==='yes';
+  var maxSeconds=noLimit ? Infinity : Math.max(1,+document.getElementById('m-time-limit').value||20);
+  var nodeLimitPerAttempt=150000;
+
+  var btn=document.getElementById('m-solve-btn');
+  var stopBtn=document.getElementById('m-stop-btn');
+  btn.disabled=true;
+  stopBtn.style.display='inline-block';
+  searchStopMulti=false;
+
+  var t0=performance.now();
+  var attempts=0, nodesTotal=0, result=null;
+
+  while(true){
+    attempts++;
+    var r=findSolutionMultiBounded(n,k,targetSum,nodeLimitPerAttempt);
+    nodesTotal+=r.nodes;
+    if(r.solved){ result=r.result; break; }
+
+    var elapsed=(performance.now()-t0)/1000;
+    out.innerHTML='<div class="sbar"><span class="spinner"></span> Searching… attempt '+attempts+' · '+elapsed.toFixed(1)+'s elapsed'
+      +(noLimit?'':' (giving up at '+maxSeconds+'s)')+'</div>';
+
+    if(searchStopMulti){
+      btn.disabled=false; stopBtn.style.display='none';
+      out.innerHTML='<div class="empty">Stopped after '+attempts+' attempt'+(attempts>1?'s':'')+' ('+elapsed.toFixed(1)+'s). Click Solve to try again, or raise the time limit.</div>';
+      return;
+    }
+    if(!noLimit && elapsed>=maxSeconds){
+      btn.disabled=false; stopBtn.style.display='none';
+      out.innerHTML='<div class="empty">No solution found within '+maxSeconds+'s ('+attempts+' attempts, '+nodesTotal.toLocaleString()+' nodes explored). '
+        +'Raise "Give up after" or switch to "No time limit" and try again.</div>';
+      return;
+    }
+    await sleep(0);
+  }
+
+  btn.disabled=false;
+  stopBtn.style.display='none';
+  renderSolutionMulti(n,k,targetSum,result,(performance.now()-t0)/1000);
+}
+var COLORWHEEL=['#d8465f','#2777b7','#09927f','#d27a16','#7654c7','#1c94af','#bd438f','#6c9b27','#ae642d','#1f9a63','#b63c73','#6743a9','#cf4d35','#3d7bce','#389044','#bd7822'];
+
+var lastSolutionMulti=null; // {n,k,targetSum,result} — kept so the style toggle can redraw without re-solving
+
+function renderSolutionMulti(n,k,targetSum,result,secs){
+  lastSolutionMulti={n:n,k:k,targetSum:targetSum,result:result};
+  var rows=result.map(function(side,i){
+    var mid=side.tips.map(function(t){return pad2m(t);}).join(' + ');
+    return 'Side '+pad2m(i+1)+': '+pad2m(side.core1)+' + '+mid+' + '+pad2m(side.core2)+' = '+targetSum;
+  }).join('\n');
+  document.getElementById('m-solve-out').innerHTML=
+    '<div class="sbar">SUCCESS in <span class="sc">'+secs.toFixed(4)+'s</span> — n='+n+', k='+k+', magic sum='+targetSum+'</div>'
+    +'<div class="ctrls" style="margin-bottom:0.75rem;">'
+      +'<div class="ctrl"><label>Diagram style</label>'
+      +'<select id="m-diagram-style" onchange="redrawDiagramMulti()">'
+        +'<option value="extended">Extended — one point per side sticks out</option>'
+        +'<option value="midpoint">Midpoint — all points inline on the side</option>'
+      +'</select></div>'
+    +'</div>'
+    +'<div id="m-legend-holder"></div>'
+    +'<div class="diagram-wrap" id="m-diagram-holder"></div>'
+    +'<div class="shdg">Side-by-side listing</div>'
+    +'<div class="dl-preview"><pre>'+rows+'</pre></div>';
+  redrawDiagramMulti();
+}
+
+function redrawDiagramMulti(){
+  if(!lastSolutionMulti) return;
+  var style=document.getElementById('m-diagram-style').value;
+  var n=lastSolutionMulti.n, k=lastSolutionMulti.k, result=lastSolutionMulti.result, targetSum=lastSolutionMulti.targetSum;
+  var svg = style==='midpoint'
+    ? drawPolygonSVGMultiMidpoint(n,k,result,targetSum)
+    : drawPolygonSVGMultiExtended(n,k,result,targetSum);
+  var legend = style==='midpoint'
+    ? '<div class="legend"><span><span class="dot core"></span>core vertex (shared)</span><span><span class="dot tip"></span>side vertex — all inline on the edge</span></div>'
+    : '<div class="legend"><span><span class="dot core"></span>core vertex (shared)</span><span><span class="dot tip"></span>side vertex (one extended, rest inline)</span></div>';
+  document.getElementById('m-legend-holder').innerHTML=legend;
+  document.getElementById('m-diagram-holder').innerHTML=svg;
+}
+
+// Pure inline style: all k extra numbers per side sit evenly spaced along the
+// straight edge between core[i] and core[(i+1)%n] — no leaf, everything collinear.
+function drawPolygonSVGMultiMidpoint(n,k,result,targetSum){
+  var W=680,H=680,cx=340,cy=340;
+  var Rcore=Math.min(240,160+n*2.5);
+  var corePos=[];
+  for(var i=0;i<n;i++){
+    var ang=-Math.PI/2+i*(2*Math.PI/n);
+    corePos.push({x:cx+Rcore*Math.cos(ang),y:cy+Rcore*Math.sin(ang)});
+  }
+  var fontSize=k>3?11:13;
+  var coreR=Math.max(15,20-n*0.3);
+  var tipR=Math.max(13,17-n*0.3-k*0.5);
+
+  var svg='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:680px;height:auto;">';
+
+  for(var i=0;i<n;i++){
+    var c1=corePos[i],c2=corePos[(i+1)%n];
+    var col=COLORWHEEL[i%COLORWHEEL.length];
+    svg+='<line x1="'+c1.x.toFixed(1)+'" y1="'+c1.y.toFixed(1)+'" x2="'+c2.x.toFixed(1)+'" y2="'+c2.y.toFixed(1)+'" style="stroke:'+col+';stroke-width:4.2;stroke-linecap:round;opacity:0.92;"/>';
+  }
+  for(var i=0;i<n;i++){
+    var c1=corePos[i],c2=corePos[(i+1)%n];
+    var side=result[i];
+    var col=COLORWHEEL[i%COLORWHEEL.length];
+    side.tips.forEach(function(val,j){
+      var t=(j+1)/(k+1);
+      var p={x:c1.x+(c2.x-c1.x)*t, y:c1.y+(c2.y-c1.y)*t};
+      svg+='<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+tipR+'" style="fill:'+col+';stroke:#fff;stroke-width:3;filter:drop-shadow(0 2px 3px rgba(18,42,61,.28));"/>';
+      svg+='<text x="'+p.x.toFixed(1)+'" y="'+(p.y+4).toFixed(1)+'" text-anchor="middle" style="font-family:var(--mono);font-size:'+fontSize+'px;font-weight:700;fill:#fff;paint-order:stroke;stroke:rgba(0,0,0,.18);stroke-width:1px;">'+val+'</text>';
+    });
+  }
+  for(var i=0;i<n;i++){
+    var p=corePos[i];
+    svg+='<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+coreR+'" style="fill:var(--teal);stroke:#fff;stroke-width:3.4;filter:drop-shadow(0 2px 4px rgba(18,42,61,.32));"/>';
+    svg+='<text x="'+p.x.toFixed(1)+'" y="'+(p.y+5).toFixed(1)+'" text-anchor="middle" style="font-family:var(--mono);font-size:'+fontSize+'px;font-weight:700;fill:#fff;">'+result[i].core1+'</text>';
+  }
+  svg+='</svg>';
+  return svg;
+}
+
+// Numbers placed sequentially along the straight edge from core[i] to core[(i+1)%n],
+// matching the reference figure's convention (core, tip, tip, ..., core, all collinear).
+function drawPolygonSVGMultiExtended(n,k,result,targetSum){
+  var W=700,H=700,cx=350,cy=350;
+  var Rcore=Math.min(230,155+n*1.8);
+  var leafDist=Rcore*0.42; // how far the extended point sticks out from the polygon
+  var corePos=[];
+  for(var i=0;i<n;i++){
+    var ang=-Math.PI/2+i*(2*Math.PI/n);
+    corePos.push({x:cx+Rcore*Math.cos(ang),y:cy+Rcore*Math.sin(ang)});
+  }
+  var fontSize=k>3?11:13;
+  var coreR=Math.max(15,20-n*0.3);
+  var tipR=Math.max(13,17-n*0.3-k*0.5);
+
+  var svg='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;height:auto;">';
+
+  // Ring edges — each complete side has its own matching color.
+  for(var i=0;i<n;i++){
+    var c1=corePos[i],c2=corePos[(i+1)%n];
+    var col=COLORWHEEL[i%COLORWHEEL.length];
+    svg+='<line x1="'+c1.x.toFixed(1)+'" y1="'+c1.y.toFixed(1)+'" x2="'+c2.x.toFixed(1)+'" y2="'+c2.y.toFixed(1)+'" style="stroke:'+col+';stroke-width:4.2;stroke-linecap:round;opacity:0.92;"/>';
+  }
+
+  // One leaf edge per side — core[i] to its extended point, backward along the edge direction
+  for(var i=0;i<n;i++){
+    var c1=corePos[i],c2=corePos[(i+1)%n];
+    var col=COLORWHEEL[i%COLORWHEEL.length];
+    var ex=c2.x-c1.x, ey=c2.y-c1.y, elen=Math.hypot(ex,ey);
+    var ux=ex/elen, uy=ey/elen;
+    var leaf={x:c1.x-ux*leafDist, y:c1.y-uy*leafDist};
+    svg+='<line x1="'+c1.x.toFixed(1)+'" y1="'+c1.y.toFixed(1)+'" x2="'+leaf.x.toFixed(1)+'" y2="'+leaf.y.toFixed(1)+'" style="stroke:'+col+';stroke-width:4.2;stroke-linecap:round;opacity:0.92;"/>';
+  }
+
+  // Tip vertices: tips[0] is the extended leaf (outside the polygon); tips[1..] sit
+  // inline along the straight ring edge, evenly spaced between core[i] and core[i+1].
+  for(var i=0;i<n;i++){
+    var c1=corePos[i],c2=corePos[(i+1)%n];
+    var side=result[i];
+    var col=COLORWHEEL[i%COLORWHEEL.length];
+    var ex=c2.x-c1.x, ey=c2.y-c1.y, elen=Math.hypot(ex,ey);
+    var ux=ex/elen, uy=ey/elen;
+
+    side.tips.forEach(function(val,j){
+      var p;
+      if(j===0){
+        p={x:c1.x-ux*leafDist, y:c1.y-uy*leafDist};
+      } else {
+        var t=j/k; // j=1..k-1 spread evenly along the edge
+        p={x:c1.x+(c2.x-c1.x)*t, y:c1.y+(c2.y-c1.y)*t};
+      }
+      svg+='<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+tipR+'" style="fill:'+col+';stroke:#fff;stroke-width:3;filter:drop-shadow(0 2px 3px rgba(18,42,61,.28));"/>';
+      svg+='<text x="'+p.x.toFixed(1)+'" y="'+(p.y+4).toFixed(1)+'" text-anchor="middle" style="font-family:var(--mono);font-size:'+fontSize+'px;font-weight:700;fill:#fff;paint-order:stroke;stroke:rgba(0,0,0,.18);stroke-width:1px;">'+val+'</text>';
+    });
+  }
+
+  // Core vertices, on top
+  for(var i=0;i<n;i++){
+    var p=corePos[i];
+    svg+='<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+coreR+'" style="fill:var(--teal);stroke:#fff;stroke-width:3.4;filter:drop-shadow(0 2px 4px rgba(18,42,61,.32));"/>';
+    svg+='<text x="'+p.x.toFixed(1)+'" y="'+(p.y+5).toFixed(1)+'" text-anchor="middle" style="font-family:var(--mono);font-size:'+fontSize+'px;font-weight:700;fill:#fff;">'+result[i].core1+'</text>';
+  }
+  svg+='</svg>';
+  return svg;
+}
+</script>
+</body>
+</html>

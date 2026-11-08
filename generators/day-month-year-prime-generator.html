@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Day–Month–Year Selection — Prime Generator</title>
+
+<style>
+
+body{
+  background:#edf5fb;
+  color:#17324d;
+  font-family:monospace;
+  padding:30px;
+}
+
+.wrap{
+  max-width:1100px;
+  margin:auto;
+}
+
+.card{
+  background:#dcebf6;
+  border:1px solid #b5cfe2;
+  border-radius:14px;
+  padding:24px;
+  margin-bottom:20px;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:14px;
+}
+
+input,select,textarea{
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:10px;
+  background:#eaf3fa;
+  color:#0b5794;
+  border:1px solid #b9d1e4;
+  font-family:monospace;
+  box-sizing:border-box;
+}
+
+input[type="checkbox"]{
+  width:auto;
+  accent-color:#1769aa;
+}
+
+label{
+  display:block;
+  margin-bottom:8px;
+  color:#58738c;
+  font-size:12px;
+}
+
+button{
+  margin-top:20px;
+  padding:14px 22px;
+  border:none;
+  border-radius:10px;
+  background:#1769aa;
+  color:#fff;
+  cursor:pointer;
+  font-weight:bold;
+}
+
+.secondary{
+  background:#55758f;
+  color:#fff;
+}
+
+.row{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+
+.result{
+  margin-bottom:10px;
+  line-height:1.5;
+}
+
+textarea{
+  min-height:260px;
+  color:#17324d;
+  background:#e7f1f8;
+}
+
+.stat{
+  margin-top:20px;
+  color:#58738c;
+}
+
+.info{
+  margin-top:15px;
+  color:#2777ad;
+  font-size:14px;
+}
+
+.hero{
+  background:linear-gradient(135deg,#164f7d,#2c86b5);
+  color:white;
+  border-radius:16px;
+  padding:25px;
+  margin-bottom:20px;
+  text-align:center;
+}
+
+.hero h1{margin:0;font-family:Georgia,serif;}
+.title-first{display:block;font-size:27px;color:#9fddff;font-style:italic;line-height:1.25;}
+.title-second{display:block;font-size:38px;color:#ffffff;margin-top:7px;line-height:1.2;}
+.creator{color:#d9f0ff;font-weight:bold;}
+.hero-summary{
+  max-width:820px;
+  margin:0 auto 20px;
+  padding:15px 24px;
+  color:#244c69;
+  background:#d2e5f3;
+  border:1px solid #aac9df;
+  border-left:5px solid #287eb4;
+  border-radius:10px;
+  font-family:Georgia,serif;
+  font-size:15px;
+  line-height:1.5;
+  text-align:center;
+}
+.footer{
+  text-align:center;
+  padding:20px 10px;
+  color:#355b78;
+  border-top:1px solid #c9dceb;
+  margin-top:24px;
+}
+.footer a{color:#1769aa;margin:0 7px;}
+
+@media(max-width:900px){
+
+  .grid{
+    grid-template-columns:repeat(2,1fr);
+  }
+}
+
+@media(max-width:600px){
+
+  .grid{
+    grid-template-columns:1fr;
+  }
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="wrap">
+
+<div class="hero">
+<h1 class="title-first">Day-Month-Year Selection</h1>
+<h1 class="title-second">Prime Generator</h1>
+<div class="creator">Created by Inder J. Taneja</div>
+</div>
+
+<div class="hero-summary">
+  Select a day, month and year to find prime numbers formed from powers of the date values,
+  with optional automatic day-of-year and reduced-year calculations.
+</div>
+
+<div class="card">
+
+<div class="grid">
+
+<div>
+<label>Day</label>
+<input id="day" type="number" value="16">
+</div>
+
+<div>
+<label>Month</label>
+<input id="month" type="number" value="5">
+</div>
+
+<div>
+<label>Year</label>
+<input id="year" type="number" value="2026">
+</div>
+
+<div>
+
+<label>Mode</label>
+
+<select id="mode" onchange="updateMode()">
+
+<option value="normal">
+Normal
+</option>
+
+<option value="divide">
+Reduced-Year
+</option>
+
+</select>
+
+</div>
+
+<div id="divbox">
+
+<label>Divide year by k</label>
+<input id="k" type="number" value="2">
+
+</div>
+
+</div>
+
+<div style="margin-top:20px">
+
+<input
+  type="checkbox"
+  id="useDayYear"
+  checked
+>
+
+<label style="display:inline;margin-left:8px">
+Use Automatic Day-of-Year
+</label>
+
+</div>
+
+<div
+  id="dayinfo"
+  class="info"
+>
+Day-of-Year: 136
+</div>
+
+<div style="margin-top:20px">
+
+<label>Max exponent</label>
+
+<div class="row">
+
+<input
+  id="maxexp"
+  type="range"
+  min="1"
+  max="20"
+  value="5"
+  oninput="syncExponent(this.value)"
+  style="flex:1"
+>
+
+<input
+  id="expbox"
+  type="number"
+  min="1"
+  max="100"
+  value="5"
+  oninput="syncExponent(this.value)"
+  style="width:120px"
+>
+
+</div>
+
+</div>
+
+<div class="row">
+
+<button onclick="solve()">
+▶ Find primes
+</button>
+
+<button
+  class="secondary"
+  onclick="downloadTXT()"
+>
+⬇ Download TXT
+</button>
+
+<button
+  class="secondary"
+  onclick="downloadExcel()"
+>
+⬇ Download Excel
+</button>
+
+</div>
+
+<div
+  id="status"
+  class="stat"
+></div>
+
+</div>
+
+<div class="card">
+
+<textarea
+  id="txtout"
+  readonly
+></textarea>
+
+</div>
+
+<div class="footer">
+  <strong>Inder J. Taneja</strong><br><br>
+  <a href="https://numbers-magic.com/" target="_blank" rel="noopener">Numbers Magic</a>
+  <a href="https://inderjtaneja.wordpress.com/" target="_blank" rel="noopener">WordPress</a>
+  <a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/" target="_blank" rel="noopener">Mathematical Generators</a>
+</div>
+
+</div>
+
+<script>
+
+let lastTXT = '';
+let lastResults = [];
+
+function updateMode(){
+
+  const mode =
+    document.getElementById("mode").value;
+
+  document.getElementById("divbox").style.display =
+    mode === "divide"
+      ? "block"
+      : "none";
+}
+
+function syncExponent(v){
+
+  document.getElementById("maxexp").value = v;
+  document.getElementById("expbox").value = v;
+}
+
+function getDayOfYear(day,month,year){
+
+  const start =
+    new Date(year,0,0);
+
+  const current =
+    new Date(year,month-1,day);
+
+  const diff =
+    current - start;
+
+  return Math.floor(
+    diff / 86400000
+  );
+}
+
+function updateDayInfo(){
+
+  const day =
+    parseInt(
+      document.getElementById("day").value
+    );
+
+  const month =
+    parseInt(
+      document.getElementById("month").value
+    );
+
+  const year =
+    parseInt(
+      document.getElementById("year").value
+    );
+
+  const d =
+    getDayOfYear(day,month,year);
+
+  document.getElementById("dayinfo").innerHTML =
+    `Day-of-Year: ${d}`;
+}
+
+const MR = [
+  2n,3n,5n,7n,11n,13n,17n
+];
+
+function modpow(base,exp,mod){
+
+  let r = 1n;
+
+  while(exp > 0n){
+
+    if(exp & 1n)
+      r = r * base % mod;
+
+    exp >>= 1n;
+
+    base = base * base % mod;
+  }
+
+  return r;
+}
+
+function isPrime(n){
+
+  if(n < 2n)
+    return false;
+
+  if(n % 2n === 0n)
+    return n === 2n;
+
+  let d = n - 1n;
+  let s = 0n;
+
+  while(d % 2n === 0n){
+
+    d /= 2n;
+    s++;
+  }
+
+  for(const a of MR){
+
+    if(a >= n)
+      continue;
+
+    let x =
+      modpow(a,d,n);
+
+    if(x === 1n || x === n-1n)
+      continue;
+
+    let comp = true;
+
+    for(let i=0n;i<s-1n;i++){
+
+      x = x * x % n;
+
+      if(x === n-1n){
+
+        comp = false;
+        break;
+      }
+    }
+
+    if(comp)
+      return false;
+  }
+
+  return true;
+}
+
+function bigPow(base,exp){
+
+  let r = 1n;
+
+  for(let i=0;i<exp;i++){
+
+    r *= BigInt(base);
+  }
+
+  return r;
+}
+
+function solve(){
+
+  const day =
+    parseInt(
+      document.getElementById("day").value
+    );
+
+  const month =
+    parseInt(
+      document.getElementById("month").value
+    );
+
+  const year =
+    parseInt(
+      document.getElementById("year").value
+    );
+
+  const mode =
+    document.getElementById("mode").value;
+
+  const useDayYear =
+    document.getElementById("useDayYear").checked;
+
+  const k =
+    parseInt(
+      document.getElementById("k").value
+    );
+
+  const maxE =
+    parseInt(
+      document.getElementById("expbox").value
+    );
+
+  if(maxE < 1){
+
+    status.innerHTML =
+      "Exponent must be >= 1";
+
+    return;
+  }
+
+  let y = year;
+
+  if(mode === "divide"){
+
+    if(k === 0){
+
+      status.innerHTML =
+        "k cannot be zero.";
+
+      return;
+    }
+
+    if(year % k !== 0){
+
+      status.innerHTML =
+        "Year must be divisible by k.";
+
+      return;
+    }
+
+    y = Math.floor(year / k);
+  }
+
+  const dayYear =
+    getDayOfYear(day,month,year);
+
+  status.innerHTML =
+    "Searching primes...";
+
+  const found = [];
+
+  for(let a=1;a<=maxE;a++){
+
+    const A =
+      bigPow(day,a);
+
+    for(let b=1;b<=maxE;b++){
+
+      const B =
+        bigPow(month,b);
+
+      for(let c=1;c<=maxE;c++){
+
+        const C =
+          bigPow(y,c);
+
+        if(useDayYear){
+
+          for(let d=1;d<=maxE;d++){
+
+            const D =
+              bigPow(dayYear,d);
+
+            const S =
+              A + B + C + D;
+
+            if(isPrime(S)){
+
+              found.push({
+
+                expr:
+
+                mode === "divide"
+
+                ? `${day}^${a} + ${month}^${b} + (${year}/${k})^${c} + ${dayYear}^${d}`
+
+                : `${day}^${a} + ${month}^${b} + ${year}^${c} + ${dayYear}^${d}`,
+
+                value:S.toString()
+              });
+            }
+          }
+
+        }else{
+
+          const S =
+            A + B + C;
+
+          if(isPrime(S)){
+
+            found.push({
+
+              expr:
+
+              mode === "divide"
+
+              ? `${day}^${a} + ${month}^${b} + (${year}/${k})^${c}`
+
+              : `${day}^${a} + ${month}^${b} + ${year}^${c}`,
+
+              value:S.toString()
+            });
+          }
+        }
+      }
+    }
+  }
+
+  render(found);
+}
+
+function render(found){
+
+  let lines = [];
+
+  lines.push(
+    "============================================"
+  );
+
+  lines.push(
+    "PRIME GENERATOR"
+  );
+
+  lines.push(
+    "============================================"
+  );
+
+  lines.push("");
+
+  if(found.length === 0){
+
+    lines.push(
+      "No primes found."
+    );
+  }
+
+  found.forEach((r,i)=>{
+
+    const line =
+      `${i+1}. ${r.expr} = ${r.value} (prime)`;
+
+    lines.push(line);
+    lines.push("");
+  });
+
+  lines.push(
+    "============================================"
+  );
+
+  lines.push(
+    `Total solutions: ${found.length}`
+  );
+
+  lines.push(
+    "============================================"
+  );
+
+  lastResults = found.slice();
+  lastTXT =
+    lines.join("\n");
+
+  document.getElementById("txtout").value =
+    lastTXT;
+
+  document.getElementById("status").innerHTML =
+    `Done — ${found.length} primes found.`;
+}
+
+function xmlEscape(value){
+  return String(value)
+    .replaceAll('&','&amp;')
+    .replaceAll('<','&lt;')
+    .replaceAll('>','&gt;')
+    .replaceAll('"','&quot;');
+}
+
+function downloadExcel(){
+  if(!lastResults.length){
+    alert('Please find primes before downloading Excel.');
+    return;
+  }
+
+  const rows = lastResults.map((r,i) =>
+    `<Row><Cell><Data ss:Type="Number">${i+1}</Data></Cell>`+
+    `<Cell><Data ss:Type="String">${xmlEscape(r.expr)}</Data></Cell>`+
+    `<Cell><Data ss:Type="String">${xmlEscape(r.value)}</Data></Cell></Row>`
+  ).join('');
+
+  const xml = `<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?>`+
+  `<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" `+
+  `xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">`+
+  `<Styles><Style ss:ID="Header"><Font ss:Bold="1" ss:Color="#FFFFFF"/>`+
+  `<Interior ss:Color="#1769AA" ss:Pattern="Solid"/></Style></Styles>`+
+  `<Worksheet ss:Name="Prime Results"><Table>`+
+  `<Column ss:Width="45"/><Column ss:Width="360"/><Column ss:Width="180"/>`+
+  `<Row ss:StyleID="Header"><Cell><Data ss:Type="String">#</Data></Cell>`+
+  `<Cell><Data ss:Type="String">Expression</Data></Cell>`+
+  `<Cell><Data ss:Type="String">Prime value</Data></Cell></Row>${rows}`+
+  `</Table></Worksheet></Workbook>`;
+
+  const blob = new Blob([xml], {type:'application/vnd.ms-excel'});
+  const a = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  a.href = url;
+  a.download = 'prime_generator_results.xls';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function downloadTXT(){
+
+  if(!lastTXT)
+    return;
+
+  const blob =
+    new Blob(
+      [lastTXT],
+      {type:'text/plain'}
+    );
+
+  const a =
+    document.createElement('a');
+
+  a.href =
+    URL.createObjectURL(blob);
+
+  a.download =
+    'final_prime_generator_v3.txt';
+
+  a.click();
+}
+
+document
+  .getElementById("day")
+  .addEventListener(
+    "input",
+    updateDayInfo
+  );
+
+document
+  .getElementById("month")
+  .addEventListener(
+    "input",
+    updateDayInfo
+  );
+
+document
+  .getElementById("year")
+  .addEventListener(
+    "input",
+    updateDayInfo
+  );
+
+updateMode();
+updateDayInfo();
+
+</script>
+
+</body>
+</html>

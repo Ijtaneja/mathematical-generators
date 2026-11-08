@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Narcissistic Digit-Power Representations Generator | Inder J. Taneja</title>
+<style>
+:root{font-family:Inter,Segoe UI,Arial,sans-serif;color:#19364a;background:#eff2eb}*{box-sizing:border-box}body{margin:0;background:linear-gradient(145deg,#e5f0e8,#f8f0d9);min-height:100vh}main{max-width:1200px;margin:auto;padding:28px 18px 60px}header{background:#123852;color:#fff;border-radius:22px;padding:28px 32px;box-shadow:0 12px 30px #183d4920}.eyebrow{font-size:.8rem;letter-spacing:.15em;text-transform:uppercase;color:#a9d5d3;font-weight:800}h1{font:500 clamp(2rem,5vw,3.7rem)/1.08 Georgia,serif;margin:13px 0}header p{max-width:880px;color:#e1ecec;line-height:1.55}header strong{color:#ffe2a0}.intro{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin:18px 0}.explain,.panel,.result{background:#fffdf8;border:1px solid #cbd9d3;border-radius:17px;padding:20px;box-shadow:0 6px 20px #213c4910}.explain h2,.panel h2{margin:0 0 8px;font:600 1.35rem Georgia,serif;color:#123852}.formula{font:600 1.1rem Cambria,Georgia,serif;color:#0f5e70;overflow-wrap:anywhere}.small{font-size:.88rem;color:#536a73;line-height:1.45}.panel{margin-top:16px}fieldset{border:1px solid #d4ddd9;border-radius:11px;margin:0 0 16px;padding:12px 15px}legend{font-weight:800;color:#285e75;padding:0 6px}.choices{display:flex;flex-wrap:wrap;gap:12px 22px}.choices label{display:flex;align-items:center;gap:6px}.settings{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}label.control{display:grid;gap:5px;font-weight:700;font-size:.85rem}input[type=number],select{width:100%;padding:11px;border:1px solid #9fb8bc;border-radius:9px;background:white;color:#19364a;font:inherit}input[type=checkbox]{accent-color:#237d79}.actions{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin-top:19px}button{border:0;border-radius:10px;padding:11px 16px;background:#136c78;color:white;font-weight:800;cursor:pointer}button.secondary{background:#e1ebea;color:#184e62}button:disabled{opacity:.5;cursor:not-allowed}button:hover:not(:disabled){filter:brightness(1.1)}#status{font-weight:700;color:#3a6675;margin:14px 0}#results{display:grid;gap:12px}.result h3{margin:0 0 8px;color:#123852}.result .kind{color:#277c73;font-size:.8rem;font-weight:800;text-transform:uppercase;letter-spacing:.09em}.identity{font:600 clamp(.95rem,1.5vw,1.16rem)/1.6 Cambria,Georgia,serif;overflow-wrap:anywhere}.meta{color:#57737d;font-size:.84rem;margin-top:7px}.notice{color:#6c5c37;background:#fff8dd;border:1px solid #e7d7a5;padding:12px 14px;border-radius:11px}footer{margin-top:34px;padding:20px 3px;border-top:1px solid #b7c9c4;color:#496674}footer a{color:#1b657c;margin-right:15px}a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #d7a72d;outline-offset:2px}@media(max-width:720px){.intro{grid-template-columns:1fr}.settings{grid-template-columns:repeat(2,1fr)}header{padding:24px}}@media(max-width:440px){.settings{grid-template-columns:1fr}}
+</style></head><body><main>
+<header><div class="eyebrow">Recreational Mathematics · Digit-Power Identities</div><h1>Narcissistic Digit-Power Representations Generator</h1><p>Created by <strong>Inder J. Taneja</strong>. Search for exact identities built from the digits of each number, with or without division and with optional positive and negative terms.</p></header>
+<div class="intro"><div class="explain"><h2>Without division</h2><div class="formula">N = ±a₁<sup>c</sup> ± a₂<sup>c</sup> ± ··· ± aₖ<sup>c</sup></div><p class="small">Here c is the power of every digit. Use the classical choice c = k (the number of digits), or search an exponent range. Example: 153 = 1³ + 5³ + 3³.</p></div><div class="explain"><h2>With division</h2><div class="formula">N = (±Σ aᵢ<sup>c</sup>) / (±Σ aᵢ<sup>d</sup>), 0 ≤ d &lt; c</div><p class="small">The numerator and denominator use the same digits in their original order. The quotient must be exact; zero denominators are excluded. Example: 37 = (3³ + 7³)/(3 + 7).</p></div></div>
+<section class="panel"><h2>Choose the search</h2><fieldset><legend>Representation type</legend><div class="choices"><label><input id="plain" type="checkbox" checked>Without division</label><label><input id="division" type="checkbox" checked>With division</label></div></fieldset><fieldset><legend>Signs and exponents</legend><div class="choices"><label><input type="radio" name="signs" value="positive">All positive</label><label><input type="radio" name="signs" value="mixed" checked>Positive and negative</label></div><p class="small">In the positive and negative mode, each digit term may independently have + or −. For exponent zero, 0⁰ is defined as 1 in this generator.</p></fieldset><fieldset><legend>Without division</legend><label><input id="classical" type="checkbox" checked> Use c = number of digits (classical narcissistic numbers)</label></fieldset><div class="settings"><label class="control">From N<input id="from" type="number" min="1" max="9999999" value="1"></label><label class="control">To N<input id="to" type="number" min="1" max="9999999" value="5000"></label><label class="control">Minimum digit power c<input id="minPower" type="number" min="1" max="20" value="2"></label><label class="control">Maximum digit power c<input id="maxPower" type="number" min="1" max="20" value="8"></label><label class="control">Maximum results per number and type<select id="limit"><option value="1">1 (faster display)</option><option value="5" selected>5</option><option value="20">20</option><option value="100">100</option><option value="0">All</option></select></label></div><p class="notice"><strong>What is c?</strong> It is the power applied to each digit in the numerator, or to each digit when there is no division. For example, <strong>153 = 1³ + 5³ + 3³</strong> uses <strong>c = 3</strong>. With division, <strong>37 = (3³ + 7³)/(3¹ + 7¹)</strong> uses <strong>c = 3</strong> above the fraction line and <strong>d = 1</strong> below it. The search tries every c from the minimum to the maximum selected here; for division it tries each d from 0 to c − 1.</p><p class="small">The exponent range applies to division and to the nonclassical search without division. A search may cover at most 5,000 numbers and numbers may have at most 7 digits. Broad signed searches can take longer.</p><div class="actions"><button id="run">Generate</button><button id="stop" class="secondary" disabled>Stop</button><button id="csv" class="secondary" disabled>Download CSV</button><button id="txt" class="secondary" disabled>Download TXT</button></div><div id="status" role="status">Ready.</div></section>
+<section class="panel"><h2>Verified results</h2><p class="notice">Every identity is checked with integer arithmetic before display and export. Downloads include every result found in the selected interval, including results beyond what fits on screen.</p><div id="results"></div></section>
+<footer><strong>Inder J. Taneja</strong><p><a href="https://numbers-magic.com/">numbers-magic.com</a><a href="https://inderjtaneja.wordpress.com/">inderjtaneja.wordpress.com</a><a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/">Mathematical Generators</a><a href="https://www.youtube.com/@ijtaneja">YouTube Channel</a></p></footer>
+</main><script>
+const workerSource = `
+function variants(digits, exponent, signed) {
+  const powers = digits.map(d => d ** exponent);
+  const count = signed ? 2 ** digits.length : 1;
+  const found = new Map();
+  for (let mask = 0; mask < count; mask++) {
+    let sum = 0; const terms = [];
+    for (let j = 0; j < digits.length; j++) {
+      const negative = (mask & (1 << j)) !== 0;
+      sum += negative ? -powers[j] : powers[j];
+      terms.push((j ? (negative ? ' − ' : ' + ') : (negative ? '−' : '')) + digits[j] + '^' + exponent);
+    }
+    const expression = terms.join('');
+    if (!found.has(sum)) found.set(sum, []);
+    if (!found.get(sum).includes(expression)) found.get(sum).push(expression);
+  }
+  return found;
+}
+function searchNumber(n, config) {
+  const digits = [...String(n)].map(Number), out = [];
+  const cache = new Map();
+  const get = power => { if (!cache.has(power)) cache.set(power, variants(digits, power, config.signed)); return cache.get(power); };
+  const cap = config.limit || Infinity;
+  if (config.plain) {
+    const exponents = config.classical ? [digits.length] : Array.from({length: config.maxPower-config.minPower+1},(_,i)=>config.minPower+i);
+    let count = 0;
+    for (const c of exponents) {
+      const expressions = get(c).get(n) || [];
+      for (const expr of expressions) { out.push({n,kind:'Without division',c,d:'',numerator:expr,denominator:'',value:n}); if (++count >= cap) break; }
+      if (count >= cap) break;
+    }
+  }
+  if (config.division) {
+    let count = 0;
+    const seen = new Set();
+    for (let c = config.minPower; c <= config.maxPower && count < cap; c++) {
+      const numerator = get(c);
+      for (let d = 0; d < c && count < cap; d++) {
+        const denominator = get(d);
+        for (const [top, tops] of numerator) {
+          if (top === 0 || top % n !== 0) continue;
+          const bottom = top / n;
+          if (bottom <= 0 || !denominator.has(bottom)) continue;
+          for (const a of tops) {
+           for (const b of denominator.get(bottom)) {
+            const key = c+'|'+d+'|'+a+'|'+b;
+            if (seen.has(key)) continue;
+            seen.add(key);
+            // Exact integer equality is the verification; bottom is nonzero.
+            if (top !== n * bottom) continue;
+            out.push({n,kind:'With division',c,d,numerator:a,denominator:b,value:n});
+            if (++count >= cap) break;
+           }
+           if (count >= cap) break;
+          }
+          if (count >= cap) break;
+        }
+      }
+    }
+  }
+  return out;
+}
+onmessage = async event => {
+ const c=event.data;
+ for(let n=c.from;n<=c.to;n++) {
+  const rows=searchNumber(n,c);
+  if(rows.length) postMessage({type:'rows',rows});
+  if((n-c.from)%50===0){postMessage({type:'progress',n}); await new Promise(resolve=>setTimeout(resolve,0));}
+ }
+ postMessage({type:'done'});
+};`;
+let worker=null, rows=[], visible=0;const $=id=>document.getElementById(id);
+function csvValue(value){return '"'+String(value).replaceAll('"','""')+'"'}
+function download(name,content,type){const url=URL.createObjectURL(new Blob([content],{type}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+function formula(row){return row.kind==='With division' ? `${row.n} = (${row.numerator}) / (${row.denominator})` : `${row.n} = ${row.numerator}`}
+function renderBatch(batch){const container=$('results');const fragment=document.createDocumentFragment();for(const row of batch){if(visible>=300) break;const card=document.createElement('article');card.className='result';const kind=document.createElement('div');kind.className='kind';kind.textContent=row.kind;const line=document.createElement('div');line.className='identity';line.textContent=formula(row);const meta=document.createElement('div');meta.className='meta';meta.textContent=`Numerator exponent c = ${row.c}`+(row.kind==='With division'?`; denominator exponent d = ${row.d}`:'');card.append(kind,line,meta);fragment.append(card);visible++}container.append(fragment)}
+function finish(message){$('status').textContent=message;$('run').disabled=false;$('stop').disabled=true;$('csv').disabled=!rows.length;$('txt').disabled=!rows.length;if(worker){worker.terminate();worker=null}}
+$('run').onclick=()=>{
+ const c={from:Number($('from').value),to:Number($('to').value),minPower:Number($('minPower').value),maxPower:Number($('maxPower').value),limit:Number($('limit').value),plain:$('plain').checked,division:$('division').checked,signed:document.querySelector('input[name="signs"]:checked').value==='mixed',classical:$('classical').checked};
+ if(!c.plain&&!c.division){$('status').textContent='Select at least one representation type.';return}
+ if(!Number.isInteger(c.from)||!Number.isInteger(c.to)||c.from<1||c.to<c.from||c.to>9999999||c.to-c.from+1>5000){$('status').textContent='Choose an interval of at most 5,000 numbers, between 1 and 9,999,999.';return}
+ if(!Number.isInteger(c.minPower)||!Number.isInteger(c.maxPower)||c.minPower<1||c.maxPower>20||c.maxPower<c.minPower){$('status').textContent='Choose exponents between 1 and 20, with minimum ≤ maximum.';return}
+ rows=[];visible=0;$('results').replaceChildren();$('run').disabled=true;$('stop').disabled=false;$('csv').disabled=true;$('txt').disabled=true;$('status').textContent='Searching…';
+ worker=new Worker(URL.createObjectURL(new Blob([workerSource],{type:'text/javascript'})));
+ worker.onmessage=e=>{const m=e.data;if(m.type==='rows'){rows.push(...m.rows);renderBatch(m.rows)}else if(m.type==='progress'){$('status').textContent=`Checked through ${m.n.toLocaleString()} · ${rows.length.toLocaleString()} identities found${visible<rows.length?' · first 300 shown':''}.`}else if(m.type==='done')finish(`Complete: ${rows.length.toLocaleString()} verified identities. ${visible<rows.length?'The first 300 are shown; downloads contain all results.':'All results shown.'}`)};
+ worker.onerror=e=>finish('Search stopped due to an error: '+e.message);worker.postMessage(c)
+};
+$('stop').onclick=()=>finish(`Stopped: ${rows.length} identities found so far.`);
+$('csv').onclick=()=>{const header=['Number','Type','c','d','Numerator','Denominator','Identity'];const csv=[header.map(csvValue).join(','),...rows.map(r=>[r.n,r.kind,r.c,r.d,r.numerator,r.denominator,formula(r)].map(csvValue).join(','))].join('\r\n');download('narcissistic-digit-power-results.csv','\ufeff'+csv,'text/csv;charset=utf-8')};
+$('txt').onclick=()=>download('narcissistic-digit-power-results.txt',rows.map(formula).join('\n'),'text/plain;charset=utf-8');
+</script></body></html>

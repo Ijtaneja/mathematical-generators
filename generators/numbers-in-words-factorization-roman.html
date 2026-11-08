@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Numbers in Words, Prime Factorization &amp; Roman Numerals</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Mono:ital,wght@0,400;0,600;1,400&family=Playfair+Display:wght@400;700;900&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=Noto+Serif+Devanagari:wght@400;600&family=Noto+Serif+SC:wght@400;600&family=Noto+Serif+JP:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#eeeaf2; --paper2:#e2dae8; --paper3:#d6cadf;
+  --ink:#2e2233; --ink2:#5e4b68; --ink3:#887892;
+  --rubric:#914d68; --rubric2:#71394f;
+  --jade:#1f5c52; --jade2:#163f38;
+  --border:rgba(67,42,82,0.13); --border2:rgba(67,42,82,0.25);
+  --radius:8px; --radius-lg:16px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--paper);color:var(--ink);font-family:'Instrument Mono',monospace;min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='4' height='4' fill='%23eeeaf2'/%3E%3Ccircle cx='1' cy='1' r='0.4' fill='%23d5ccdd'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:0.72;}
+.page{position:relative;z-index:1;max-width:960px;margin:0 auto;padding:0 24px 90px;}
+
+header{background:#432A52;padding:34px 30px 26px;border-bottom:4px solid #B88632;border-radius:0 0 16px 16px;margin-bottom:24px;box-shadow:0 5px 14px rgba(67,42,82,.18);}
+h1{font-family:'Playfair Display',serif;font-size:clamp(26px,5.2vw,44px);font-weight:900;letter-spacing:-0.5px;line-height:1.05;color:#fffaf2;}
+.subtitle{font-size:12.5px;color:#e6dceb;margin-top:12px;line-height:1.6;max-width:68ch;}
+.credit{font-size:11px;color:#e5c27b;margin-top:11px;letter-spacing:0.5px;font-weight:600;}
+
+/* input */
+.input-card{background:var(--paper2);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:20px 22px;margin-bottom:22px;}
+.input-card label{display:block;font-size:10.5px;color:var(--ink3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;}
+.input-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
+.input-row input[type="text"]{flex:1;min-width:220px;background:var(--paper);border:1px solid var(--border2);border-radius:var(--radius);color:var(--ink);font-family:'Instrument Mono',monospace;font-size:22px;padding:12px 14px;outline:none;letter-spacing:1px;}
+.input-row input[type="text"]:focus{border-color:var(--rubric);}
+.input-row select{background:var(--paper);border:1px solid var(--border2);border-radius:var(--radius);color:var(--ink);font-family:'Instrument Mono',monospace;font-size:12.5px;padding:10px 12px;outline:none;cursor:pointer;}
+.input-row select:focus{border-color:var(--rubric);}
+.hint{font-size:11px;color:var(--ink3);margin-top:9px;line-height:1.5;}
+.hint b{color:var(--ink2);}
+
+.featured-card{background:var(--paper);border:2px solid var(--rubric);border-left-width:6px;border-radius:var(--radius-lg);padding:20px 22px;margin-bottom:20px;}
+.featured-card .lang-name .en{color:var(--rubric);}
+.featured-card .lang-name .en::after{content:'— preferred';font-size:9.5px;letter-spacing:1px;text-transform:none;color:var(--ink3);margin-left:8px;font-weight:400;}
+.featured-card .words{font-size:19px;}
+.featured-card.script-lang{border-color:var(--jade);}
+.featured-card.script-lang .lang-name .en{color:var(--jade);}
+
+/* language section */
+.section-label{font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:var(--ink3);margin:24px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--border2);}
+.lang-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;}
+.lang-card{background:var(--paper2);border:1.5px solid rgba(94,75,104,0.40);border-radius:var(--radius-lg);padding:16px 18px;box-shadow:0 2px 7px rgba(67,42,82,0.08);}
+.lang-card.script-lang{border-color:rgba(31,92,82,0.48);background:rgba(31,92,82,0.05);}
+.lang-grid .lang-card{border-left-width:6px;}
+.lang-grid .lang-card:nth-child(1){border-left-color:#a33a36;}
+.lang-grid .lang-card:nth-child(2){border-left-color:#287a68;}
+.lang-grid .lang-card:nth-child(3){border-left-color:#c27a21;}
+.lang-grid .lang-card:nth-child(4){border-left-color:#4d6fa9;}
+.lang-grid .lang-card:nth-child(5){border-left-color:#7b559d;}
+.lang-grid .lang-card:nth-child(6){border-left-color:#a44f73;}
+.lang-name{display:flex;align-items:center;gap:8px;margin-bottom:9px;}
+.lang-name .en{font-family:'Instrument Mono',monospace;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--rubric);}
+.script-lang .lang-name .en{color:var(--jade);}
+.lang-name .native{font-size:11.5px;color:var(--ink3);}
+.words{font-family:'Source Serif 4',serif;font-size:16.5px;line-height:1.5;color:var(--ink);word-break:break-word;}
+.words.hi{font-family:'Noto Serif Devanagari',serif;font-size:17px;}
+.words.zh{font-family:'Noto Serif SC',serif;font-size:17px;}
+.words.ja{font-family:'Noto Serif JP',serif;font-size:17px;}
+.words.empty{color:var(--ink3);font-style:italic;font-family:'Instrument Mono',monospace;font-size:12px;}
+.speak-btn{margin-left:auto;flex:0 0 auto;width:32px;height:32px;border:1px solid var(--border2);border-radius:50%;background:var(--paper);color:var(--jade);font-size:15px;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s;}
+.speak-btn:hover{background:var(--jade);color:#fff;border-color:var(--jade);transform:translateY(-1px);}
+.speak-btn.speaking{background:var(--rubric);color:#fff;border-color:var(--rubric);}
+.voice-status{min-height:18px;margin:10px 2px 0;color:var(--ink3);font-size:10.5px;line-height:1.4;}
+
+/* roman tab */
+.roman-display{background:var(--paper2);border:1px solid var(--border2);border-left:6px solid var(--rubric);border-radius:var(--radius-lg);padding:28px 24px;text-align:center;margin-bottom:18px;}
+.roman-num{font-family:'Playfair Display',serif;font-size:clamp(21px,4.5vw,38px);font-weight:900;letter-spacing:2px;color:var(--rubric2);}
+.roman-num .vinc{display:inline-block;margin-right:6px;}
+.roman-note{font-size:11.5px;color:var(--ink3);margin-top:14px;line-height:1.6;max-width:46ch;margin-left:auto;margin-right:auto;}
+.roman-empty{font-family:'Instrument Mono',monospace;font-size:13px;color:var(--ink3);}
+
+.breakdown-label{font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:var(--ink3);margin:22px 0 10px;}
+.breakdown{display:flex;flex-wrap:wrap;gap:8px;}
+.step{background:var(--paper2);border:1px solid var(--border);border-radius:var(--radius);padding:7px 12px;font-family:'Instrument Mono',monospace;font-size:12.5px;color:var(--ink2);display:flex;align-items:center;gap:6px;}
+.step .sym{font-family:'Playfair Display',serif;font-weight:900;color:var(--rubric);font-size:14px;}
+.step .plus{color:var(--ink3);}
+
+/* prime factorization */
+.factor-display{background:var(--paper);border:2px solid var(--jade);border-left-width:6px;border-radius:var(--radius-lg);padding:22px 24px;text-align:center;margin:0 0 22px;}
+.factor-expression{font-family:'Playfair Display',serif;font-size:clamp(18px,3.5vw,28px);font-weight:700;color:var(--jade2);word-break:break-word;}
+.factor-expression sup{font-size:.58em;color:var(--rubric);}
+.factor-note{font-size:11px;color:var(--ink3);margin-top:12px;line-height:1.5;}
+
+footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--border2);text-align:center;font-size:11px;color:var(--ink3);}
+footer div:first-child{margin-bottom:6px;}
+footer a{color:var(--ink3);text-decoration:underline;}
+</style>
+</head>
+<body>
+<div class="page">
+
+<header>
+  <h1>Numbers in Words, <span style="color:#e5c27b">Prime Factorization</span> <span style="color:#f0a9bd">&amp;</span> Roman Numerals</h1>
+  <p class="subtitle">Type any number to see it spelled out across nine languages, convert it to Roman numerals, or simplify it automatically into prime factors.</p>
+  <p class="credit">Created by Inder J. Taneja</p>
+</header>
+
+<div id="panel-words">
+  <div class="input-card">
+    <label>Number</label>
+    <div class="input-row">
+      <input type="text" id="wordsInput" inputmode="numeric" value="1234567" maxlength="15" placeholder="e.g. 1234567">
+      <select id="preferredLang">
+        <option value="">Preferred language — none</option>
+        <option value="en">English</option>
+        <option value="pt">Portuguese</option>
+        <option value="es">Spanish</option>
+        <option value="fr">French</option>
+        <option value="de">German</option>
+        <option value="it">Italian</option>
+        <option value="hi">Hindi</option>
+        <option value="zh">Chinese</option>
+        <option value="ja">Japanese</option>
+      </select>
+    </div>
+    <p class="hint">Digits only, up to <b>15 digits</b> (zero to 999,999,999,999,999). Pick a preferred language to feature it above the rest.</p>
+    <p class="voice-status" id="voiceStatus" aria-live="polite">Select the speaker beside any language to hear its words.</p>
+  </div>
+
+  <div class="featured-card" id="featuredCard" style="display:none"></div>
+
+  <div class="section-label">Western languages</div>
+  <div class="lang-grid" id="latinGrid"></div>
+
+  <div class="section-label">Hindi &amp; East Asian</div>
+  <div class="lang-grid" id="scriptGrid"></div>
+
+  <div class="factor-display" aria-live="polite" style="margin-top:24px">
+    <div class="section-label" style="margin-top:0">Prime factorization</div>
+    <div class="factor-expression" id="factorOutput"></div>
+    <div class="factor-note" id="factorNote">The factorization updates automatically with the number above.</div>
+  </div>
+
+  <div class="roman-display" id="romanDisplay"></div>
+
+  <div class="breakdown-label">How it's built</div>
+  <div class="breakdown" id="romanBreakdown"></div>
+  <p class="hint" style="margin-top:12px">Roman numerals are shown for values from <b>1 to 3,999,999</b>. For values above 3,999, the part in parentheses is multiplied by 1,000.</p>
+</div>
+
+<footer>
+  <div>Inder J. Taneja</div>
+  <div>
+    <a href="https://numbers-magic.com/" target="_blank">numbers-magic.com</a>
+    &nbsp;·&nbsp;
+    <a href="https://inderjtaneja.wordpress.com/" target="_blank">inderjtaneja.wordpress.com</a>
+    &nbsp;·&nbsp;
+    <a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/" target="_blank">taneja-mathematical-generators.ijtaneja.chatgpt.site</a>
+  </div>
+</footer>
+</div>
+
+<script>
+/* ================= NUMBER-TO-WORDS ENGINE ================= */
+// ===== en_pt_es.js =====
+function chunk3(digits) {
+  const out = [];
+  let s = digits;
+  while (s.length > 3) {
+    out.unshift(s.slice(-3));
+    s = s.slice(0, -3);
+  }
+  out.unshift(s);
+  return out.map(x => parseInt(x, 10));
+}
+
+// ================= ENGLISH =================
+const EN_ONES = ['zero','one','two','three','four','five','six','seven','eight','nine','ten',
+  'eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen'];
+const EN_TENS = ['','','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety'];
+
+function chunkWordsEN(n) {
+  if (n === 0) return '';
+  const parts = [];
+  const h = Math.floor(n / 100), r = n % 100;
+  if (h > 0) parts.push(EN_ONES[h] + ' hundred');
+  if (r > 0) {
+    if (r < 20) parts.push(EN_ONES[r]);
+    else {
+      const t = Math.floor(r / 10), o = r % 10;
+      parts.push(EN_TENS[t] + (o > 0 ? '-' + EN_ONES[o] : ''));
+    }
+  }
+  return parts.join(' ');
+}
+
+const EN_SCALES = ['', 'thousand', 'million', 'billion', 'trillion', 'quadrillion'];
+
+function numberToWordsEN(digits) {
+  digits = digits.replace(/^0+(?=\d)/, '');
+  if (digits === '0') return 'zero';
+  const groups = chunk3(digits); // most-significant first
+  const n = groups.length;
+  const parts = [];
+  for (let i = 0; i < n; i++) {
+    const val = groups[i];
+    if (val === 0) continue;
+    const scaleIdx = n - 1 - i;
+    const w = chunkWordsEN(val);
+    parts.push(scaleIdx > 0 ? w + ' ' + EN_SCALES[scaleIdx] : w);
+  }
+  return parts.join(' ');
+}
+
+// ================= PORTUGUESE (Brazilian) =================
+const PT_ONES = ['zero','um','dois','três','quatro','cinco','seis','sete','oito','nove','dez',
+  'onze','doze','treze','catorze','quinze','dezesseis','dezessete','dezoito','dezenove'];
+const PT_TENS = ['','','vinte','trinta','quarenta','cinquenta','sessenta','setenta','oitenta','noventa'];
+const PT_HUNDREDS = ['','cento','duzentos','trezentos','quatrocentos','quinhentos','seiscentos','setecentos','oitocentos','novecentos'];
+
+function chunkWordsPT(n) {
+  if (n === 0) return '';
+  if (n === 100) return 'cem';
+  const h = Math.floor(n / 100), r = n % 100;
+  const parts = [];
+  if (h > 0) parts.push(PT_HUNDREDS[h]);
+  if (r > 0) {
+    if (h > 0) parts.push('e');
+    if (r < 20) parts.push(PT_ONES[r]);
+    else {
+      const t = Math.floor(r / 10), o = r % 10;
+      parts.push(o > 0 ? PT_TENS[t] + ' e ' + PT_ONES[o] : PT_TENS[t]);
+    }
+  }
+  return parts.join(' ');
+}
+
+// scale: idx1 = mil (invariant, no "um"), idx2+ = noun singular/plural with "um"
+const PT_SCALE_NOUNS = { 2: ['milhão', 'milhões'], 3: ['bilhão', 'bilhões'], 4: ['trilhão', 'trilhões'], 5: ['quatrilhão', 'quatrilhões'] };
+
+function numberToWordsPT(digits) {
+  digits = digits.replace(/^0+(?=\d)/, '');
+  if (digits === '0') return 'zero';
+  const groups = chunk3(digits);
+  const n = groups.length;
+  const groupPhrases = []; // {phrase, chunkVal}
+  for (let i = 0; i < n; i++) {
+    const val = groups[i];
+    if (val === 0) continue;
+    const scaleIdx = n - 1 - i;
+    let phrase;
+    if (scaleIdx === 0) {
+      phrase = chunkWordsPT(val);
+    } else if (scaleIdx === 1) {
+      phrase = (val === 1) ? 'mil' : chunkWordsPT(val) + ' mil';
+    } else {
+      const [sing, plur] = PT_SCALE_NOUNS[scaleIdx];
+      phrase = (val === 1) ? 'um ' + sing : chunkWordsPT(val) + ' ' + plur;
+    }
+    groupPhrases.push({ phrase, val });
+  }
+  if (groupPhrases.length === 0) return 'zero';
+  if (groupPhrases.length === 1) return groupPhrases[0].phrase;
+  const last = groupPhrases[groupPhrases.length - 1];
+  const needE = last.val < 100 || (last.val % 100 === 0);
+  const out = groupPhrases.map((g, idx) => {
+    if (idx === groupPhrases.length - 1 && needE) return 'e ' + g.phrase;
+    return g.phrase;
+  });
+  return out.join(' ');
+}
+
+// ================= SPANISH =================
+const ES_UNDER30 = ['cero','uno','dos','tres','cuatro','cinco','seis','siete','ocho','nueve','diez',
+  'once','doce','trece','catorce','quince','dieciséis','diecisiete','dieciocho','diecinueve','veinte',
+  'veintiuno','veintidós','veintitrés','veinticuatro','veinticinco','veintiséis','veintisiete','veintiocho','veintinueve'];
+const ES_TENS = ['','','','treinta','cuarenta','cincuenta','sesenta','setenta','ochenta','noventa'];
+const ES_HUNDREDS = ['','ciento','doscientos','trescientos','cuatrocientos','quinientos','seiscientos','setecientos','ochocientos','novecientos'];
+
+function chunkWordsES(n) {
+  if (n === 0) return '';
+  if (n === 100) return 'cien';
+  const h = Math.floor(n / 100), r = n % 100;
+  const parts = [];
+  if (h > 0) parts.push(ES_HUNDREDS[h]);
+  if (r > 0) {
+    if (r < 30) parts.push(ES_UNDER30[r]);
+    else {
+      const t = Math.floor(r / 10), o = r % 10;
+      parts.push(o > 0 ? ES_TENS[t] + ' y ' + ES_UNDER30[o] : ES_TENS[t]);
+    }
+  }
+  return parts.join(' ');
+}
+
+// Spanish (RAE long scale): "mil millones"/"mil billones" are compounds, not atomic
+// scale words, so millón/billón must be grouped in chunks of 6 digits, with the
+// count attached to each noun itself expressed via the full 0-999999 (units+mil) form.
+function apocopateES(word) {
+  if (word.endsWith('veintiuno')) return word.slice(0, -'veintiuno'.length) + 'veintiún';
+  if (word.endsWith(' uno')) return word.slice(0, -3) + 'un';
+  if (word === 'uno') return 'un';
+  return word;
+}
+
+function wordsUpTo999999ES(n) {
+  if (n === 0) return '';
+  const thousands = Math.floor(n / 1000), rem = n % 1000;
+  const parts = [];
+  if (thousands > 0) parts.push(thousands === 1 ? 'mil' : apocopateES(chunkWordsES(thousands)) + ' mil');
+  if (rem > 0) parts.push(chunkWordsES(rem));
+  return parts.join(' ');
+}
+
+function chunk6(digits) {
+  const out = [];
+  let s = digits;
+  while (s.length > 6) {
+    out.unshift(s.slice(-6));
+    s = s.slice(0, -6);
+  }
+  out.unshift(s);
+  return out.map(x => parseInt(x, 10));
+}
+
+const ES_BIG_NOUNS = { 1: ['millón', 'millones'], 2: ['billón', 'billones'], 3: ['trillón', 'trillones'] };
+
+function numberToWordsES(digits) {
+  digits = digits.replace(/^0+(?=\d)/, '');
+  if (digits === '0') return 'cero';
+  const groups = chunk6(digits);
+  const n = groups.length;
+  const parts = [];
+  for (let i = 0; i < n; i++) {
+    const val = groups[i];
+    if (val === 0) continue;
+    const scaleIdx = n - 1 - i;
+    if (scaleIdx === 0) {
+      parts.push(wordsUpTo999999ES(val));
+    } else {
+      const [sing, plur] = ES_BIG_NOUNS[scaleIdx];
+      parts.push(val === 1 ? 'un ' + sing : apocopateES(wordsUpTo999999ES(val)) + ' ' + plur);
+    }
+  }
+  return parts.join(' ');
+}
+
+// ===== fr.js =====
+const FR_UNDER17 = ['zéro','un','deux','trois','quatre','cinq','six','sept','huit','neuf','dix',
+  'onze','douze','treize','quatorze','quinze','seize'];
+
+// words for 0-99 (traditional style, spaces around "et")
+function twoDigitFR(n) {
+  if (n < 17) return FR_UNDER17[n];
+  if (n < 20) return 'dix-' + FR_UNDER17[n - 10];
+  if (n < 70) {
+    const tensWords = { 2: 'vingt', 3: 'trente', 4: 'quarante', 5: 'cinquante', 6: 'soixante' };
+    const t = Math.floor(n / 10), o = n % 10;
+    const base = tensWords[t];
+    if (o === 0) return base;
+    if (o === 1) return base + ' et un';
+    return base + '-' + FR_UNDER17[o];
+  }
+  if (n < 80) {
+    // 70-79: soixante + (10..19)
+    const o = n - 60;
+    if (n === 71) return 'soixante et onze';
+    return 'soixante-' + (o < 17 ? FR_UNDER17[o] : 'dix-' + FR_UNDER17[o - 10]);
+  }
+  if (n < 100) {
+    // 80-99: quatre-vingt(s) + (0..19)
+    const o = n - 80;
+    if (o === 0) return 'quatre-vingts';
+    if (o < 17) return 'quatre-vingt-' + FR_UNDER17[o];
+    return 'quatre-vingt-' + 'dix-' + FR_UNDER17[o - 10];
+  }
+}
+
+function chunkWordsFR(n, isFinalGroup) {
+  if (n === 0) return '';
+  const h = Math.floor(n / 100), r = n % 100;
+  const parts = [];
+  if (h > 0) {
+    if (h === 1) parts.push('cent');
+    else parts.push(FR_UNDER17[h] + ' cent' + (r === 0 ? 's' : ''));
+  }
+  if (r > 0) parts.push(twoDigitFR(r));
+  let word = parts.join(' ');
+  // "cents"/"quatre-vingts" keep their -s only when truly nothing follows
+  // in the whole number (i.e. this is the final group); drop it otherwise.
+  if (!isFinalGroup) {
+    word = word.replace(/ cents$/, ' cent').replace(/quatre-vingts$/, 'quatre-vingt');
+  }
+  return word;
+}
+
+const FR_SCALES = { 1: ['mille', 'mille'], 2: ['million', 'millions'], 3: ['milliard', 'milliards'], 4: ['billion', 'billions'], 5: ['billiard', 'billiards'] };
+
+function numberToWordsFR(digits) {
+  digits = digits.replace(/^0+(?=\d)/, '');
+  if (digits === '0') return 'zéro';
+  const groups = chunk3(digits);
+  const n = groups.length;
+  const parts = [];
+  for (let i = 0; i < n; i++) {
+    const val = groups[i];
+    if (val === 0) continue;
+    const scaleIdx = n - 1 - i;
+    const isFinalGroup = scaleIdx === 0;
+    if (scaleIdx === 0) {
+      parts.push(chunkWordsFR(val, true));
+    } else if (scaleIdx === 1) {
+      parts.push(val === 1 ? 'mille' : chunkWordsFR(val, false) + ' mille');
+    } else {
+      const [sing, plur] = FR_SCALES[scaleIdx];
+      parts.push(val === 1 ? 'un ' + sing : chunkWordsFR(val, false) + ' ' + plur);
+    }
+  }
+  return parts.join(' ');
+}
+
+// ===== de.js =====
+const DE_ONES = ['null','eins','zwei','drei','vier','fünf','sechs','sieben','acht','neun','zehn',
+  'elf','zwölf','dreizehn','vierzehn','fünfzehn','sechzehn','siebzehn','achtzehn','neunzehn'];
+const DE_TENS = ['','','zwanzig','dreißig','vierzig','fünfzig','sechzig','siebzig','achtzig','neunzig'];
+
+// chunk word for 0-999, glued (no spaces)
+function chunkWordsDE(n) {
+  if (n === 0) return '';
+  const h = Math.floor(n / 100), r = n % 100;
+  let word = '';
+  if (h > 0) word += (h === 1 ? 'einhundert' : DE_ONES[h] + 'hundert');
+  if (r > 0) {
+    if (r < 20) word += DE_ONES[r];
+    else {
+      const t = Math.floor(r / 10), o = r % 10;
+      if (o === 0) word += DE_TENS[t];
+      else word += (o === 1 ? 'ein' : DE_ONES[o]) + 'und' + DE_TENS[t];
+    }
+  }
+  return word;
+}
+
+// tausend-count (idx1) glued directly to units-count (idx0) -- the only gluing
+// that crosses a scale boundary in German; Million/Milliarde/... stay atomic.
+function subMillionDE(thVal, unitsVal) {
+  let word = '';
+  if (thVal > 0) word += (thVal === 1 ? 'eintausend' : chunkWordsDE(thVal) + 'tausend');
+  if (unitsVal > 0) word += chunkWordsDE(unitsVal);
+  return word;
+}
+
+const DE_BIG_NOUNS = { 2: ['Million', 'Millionen'], 3: ['Milliarde', 'Milliarden'], 4: ['Billion', 'Billionen'], 5: ['Billiarde', 'Billiarden'] };
+
+function numberToWordsDE(digits) {
+  digits = digits.replace(/^0+(?=\d)/, '');
+  if (digits === '0') return 'null';
+  const groups = chunk3(digits); // most-significant first
+  const n = groups.length;
+  const byScale = {}; // scaleIdx -> value
+  for (let i = 0; i < n; i++) byScale[n - 1 - i] = groups[i];
+
+  const parts = [];
+  const maxScale = n - 1;
+  for (let s = maxScale; s >= 2; s--) {
+    const val = byScale[s] || 0;
+    if (val === 0) continue;
+    const [sing, plur] = DE_BIG_NOUNS[s];
+    parts.push(val === 1 ? 'eine ' + sing : chunkWordsDE(val) + ' ' + plur);
+  }
+  const thVal = byScale[1] || 0, unitsVal = byScale[0] || 0;
+  const subMillion = subMillionDE(thVal, unitsVal);
+  if (subMillion) parts.push(subMillion);
+  return parts.join(' ');
+}
+
+// ===== it.js =====
+const IT_UNDER20 = ['zero','uno','due','tre','quattro','cinque','sei','sette','otto','nove','dieci',
+  'undici','dodici','tredici','quattordici','quindici','sedici','diciassette','diciotto','diciannove'];
+const IT_TENS = ['','','venti','trenta','quaranta','cinquanta','sessanta','settanta','ottanta','novanta'];
+
+// 0-99, with elision (venti+uno -> ventuno, venti+otto -> ventotto) and the
+// accent on "tré" when it's the last digit of a compound (ventitré, trentatré...)
+function twoDigitIT(n) {
+  if (n < 20) return IT_UNDER20[n];
+  const t = Math.floor(n / 10), o = n % 10;
+  let tensWord = IT_TENS[t];
+  if (o === 0) return tensWord;
+  if (o === 1 || o === 8) tensWord = tensWord.slice(0, -1); // elide final vowel
+  let onesWord = (o === 3) ? 'tré' : IT_UNDER20[o];
+  return tensWord + onesWord;
+}
+
+// chunk word for 0-999, glued
+function chunkWordsIT(n) {
+  if (n === 0) return '';
+  const h = Math.floor(n / 100), r = n % 100;
+  let word = '';
+  if (h > 0) word += (h === 1 ? 'cento' : IT_UNDER20[h] + 'cento');
+  if (r > 0) word += twoDigitIT(r);
+  return word;
+}
+
+// thousands-count (idx1) glued to units-count (idx0)
+function subMillionIT(thVal, unitsVal) {
+  let word = '';
+  if (thVal > 0) word += (thVal === 1 ? 'mille' : chunkWordsIT(thVal) + 'mila');
+  if (unitsVal > 0) word += chunkWordsIT(unitsVal);
+  return word;
+}
+
+const IT_BIG_NOUNS = { 2: ['milione', 'milioni'], 3: ['miliardo', 'miliardi'], 4: ['bilione', 'bilioni'], 5: ['biliardo', 'biliardi'] };
+
+function numberToWordsIT(digits) {
+  digits = digits.replace(/^0+(?=\d)/, '');
+  if (digits === '0') return 'zero';
+  const groups = chunk3(digits);
+  const n = groups.length;
+  const byScale = {};
+  for (let i = 0; i < n; i++) byScale[n - 1 - i] = groups[i];
+
+  const parts = [];
+  const maxScale = n - 1;
+  for (let s = maxScale; s >= 2; s--) {
+    const val = byScale[s] || 0;
+    if (val === 0) continue;
+    const [sing, plur] = IT_BIG_NOUNS[s];
+    parts.push(val === 1 ? 'un ' + sing : chunkWordsIT(val) + ' ' + plur);
+  }
+  const thVal = byScale[1] || 0, unitsVal = byScale[0] || 0;
+  const subMillion = subMillionIT(thVal, unitsVal);
+  if (subMillion) parts.push(subMillion);
+  return parts.join(' ');
+}
+
+// ===== hi.js =====
+// Hindi (Devanagari) cardinal numbers, Indian numbering system.
+// 0-99 are mostly irregular/lexicalized words (not compositional), so this is
+// a fixed lookup table -- standard commonly published forms.
+const HI_0_99 = [
+'शून्य','एक','दो','तीन','चार','पांच','छह','सात','आठ','नौ','दस',
+'ग्यारह','बारह','तेरह','चौदह','पंद्रह','सोलह','सत्रह','अठारह','उन्नीस','बीस',
+'इक्कीस','बाईस','तेईस','चौबीस','पच्चीस','छब्बीस','सत्ताईस','अट्ठाईस','उनतीस','तीस',
+'इकतीस','बत्तीस','तैंतीस','चौंतीस','पैंतीस','छत्तीस','सैंतीस','अड़तीस','उनतालीस','चालीस',
+'इकतालीस','बयालीस','तैंतालीस','चवालीस','पैंतालीस','छियालीस','सैंतालीस','अड़तालीस','उनचास','पचास',
+'इक्यावन','बावन','तिरपन','चौवन','पचपन','छप्पन','सत्तावन','अट्ठावन','उनसठ','साठ',
+'इकसठ','बासठ','तिरसठ','चौंसठ','पैंसठ','छियासठ','सड़सठ','अड़सठ','उनहत्तर','सत्तर',
+'इकहत्तर','बहत्तर','तिहत्तर','चौहत्तर','पचहत्तर','छिहत्तर','सतहत्तर','अठहत्तर','उनासी','अस्सी',
+'इक्यासी','बयासी','तिरासी','चौरासी','पचासी','छियासी','सत्तासी','अट्ठासी','नवासी','नब्बे',
+'इक्यानवे','बानवे','तिरानवे','चौरानवे','पचानवे','छियानवे','सत्तानवे','अट्ठानवे','निन्यानवे'
+];
+
+function chunkWordsHI(n) {
+  // 0-999 (used only for the base/rightmost group)
+  if (n === 0) return '';
+  const h = Math.floor(n / 100), r = n % 100;
+  const parts = [];
+  if (h > 0) parts.push(HI_0_99[h] + ' सौ');
+  if (r > 0) parts.push(HI_0_99[r]);
+  return parts.join(' ');
+}
+
+// scale words above the base 3-digit group, each counted with a 2-digit (0-99) value
+const HI_SCALES = ['हज़ार', 'लाख', 'करोड़', 'अरब', 'खरब', 'नील', 'पद्म', 'शंख'];
+
+function numberToWordsHI(digits) {
+  digits = digits.replace(/^0+(?=\d)/, '');
+  if (digits === '0') return 'शून्य';
+  // rightmost 3 digits = base group; everything above is grouped by 2 digits
+  let base, rest;
+  if (digits.length <= 3) { base = parseInt(digits, 10); rest = ''; }
+  else { base = parseInt(digits.slice(-3), 10); rest = digits.slice(0, -3); }
+
+  const twoDigitGroups = [];
+  let s = rest;
+  while (s.length > 0) {
+    const take = s.length >= 2 ? 2 : 1;
+    twoDigitGroups.unshift(parseInt(s.slice(-take), 10));
+    s = s.slice(0, -take);
+  }
+  // twoDigitGroups[0] is the most-significant (highest scale)
+  const n = twoDigitGroups.length; // number of 2-digit groups present
+  const parts = [];
+  for (let i = 0; i < n; i++) {
+    const val = twoDigitGroups[i];
+    if (val === 0) continue;
+    const scaleIdx = n - i; // 1 = हज़ार (closest to base), n = highest
+    parts.push(HI_0_99[val] + ' ' + HI_SCALES[scaleIdx - 1]);
+  }
+  if (base > 0) parts.push(chunkWordsHI(base));
+  return parts.join(' ');
+}
+
+// ===== cjk.js =====
+const CN_DIGITS = ['零','一','二','三','四','五','六','七','八','九'];
+
+// Build the word for a 4-digit chunk (0-9999), with correct 零 (zero) insertion:
+// a single 零 marks any internal gap between nonzero digits; no 零 at the very end;
+// "十" (ten) drops its leading 一 ONLY when it's the very first token of the WHOLE
+// number (handled by the caller via `isAbsoluteLeading`).
+function chunk4CJK(n, isAbsoluteLeading) {
+  if (n === 0) return '';
+  const d = [Math.floor(n / 1000) % 10, Math.floor(n / 100) % 10, Math.floor(n / 10) % 10, n % 10];
+  const places = ['千', '百', '十', ''];
+  let out = '';
+  let sawNonzero = false;
+  let pendingZero = false;
+  for (let i = 0; i < 4; i++) {
+    const digit = d[i];
+    if (digit === 0) {
+      if (sawNonzero) pendingZero = true;
+      continue;
+    }
+    if (pendingZero) { out += '零'; pendingZero = false; }
+    const omitLeadingYi = (!sawNonzero) && isAbsoluteLeading && places[i] === '十' && digit === 1;
+    out += omitLeadingYi ? '' : CN_DIGITS[digit];
+    out += places[i];
+    sawNonzero = true;
+  }
+  return out;
+}
+
+function numberToWordsCJK(digits, scaleWords) {
+  // scaleWords: array indexed by myriad-group index (0=base,1=万,2=亿,3=...)
+  digits = digits.replace(/^0+(?=\d)/, '');
+  if (digits === '0') return CN_DIGITS[0];
+  const groups = [];
+  let s = digits;
+  while (s.length > 4) { groups.unshift(s.slice(-4)); s = s.slice(0, -4); }
+  groups.unshift(s);
+  const vals = groups.map(g => parseInt(g, 10)); // most-significant first
+  const n = vals.length;
+
+  let out = '';
+  let prevGroupHadValueAndWasNotFull = false; // to know when to insert 零 across group boundary
+  let firstNonzeroSeen = false;
+  for (let i = 0; i < n; i++) {
+    const val = vals[i];
+    const scaleIdx = n - 1 - i;
+    if (val === 0) {
+      // mark that we may need a 零 before the next nonzero group if this
+      // group was entirely zero but higher groups had a value
+      if (firstNonzeroSeen) prevGroupHadValueAndWasNotFull = true;
+      continue;
+    }
+    const isAbsoluteLeading = !firstNonzeroSeen;
+    // insert a 零 if the previous (higher) group ended with a "gap", OR if this
+    // group's own leading digit is zero relative to a full 4-digit width and a
+    // higher group had a nonzero value (e.g. 万 group=5, base group=0068 -> need 零)
+    const thisGroupStr = String(val).padStart(4, '0');
+    const needsLeadingZero = firstNonzeroSeen && thisGroupStr[0] === '0';
+    if (needsLeadingZero || prevGroupHadValueAndWasNotFull) out += '零';
+    out += chunk4CJK(val, isAbsoluteLeading);
+    out += scaleWords[scaleIdx] || '';
+    firstNonzeroSeen = true;
+    prevGroupHadValueAndWasNotFull = false;
+  }
+  return out;
+}
+
+const ZH_SCALES = ['', '万', '亿', '万亿'];
+const JA_SCALES = ['', '万', '億', '兆'];
+
+function numberToWordsZH(digits) { return numberToWordsCJK(digits, ZH_SCALES); }
+function numberToWordsJA(digits) { return numberToWordsCJK(digits, JA_SCALES); }
+
+// ===== roman.js =====
+const ROMAN_VALUES = [1000,900,500,400,100,90,50,40,10,9,5,4,1];
+const ROMAN_SYMS   = ['M','CM','D','CD','C','XC','L','XL','X','IX','V','IV','I'];
+
+function toRomanBasic(n) {
+  // 0-3999
+  if (n === 0) return '';
+  let out = '';
+  let rem = n;
+  for (let i = 0; i < ROMAN_VALUES.length; i++) {
+    while (rem >= ROMAN_VALUES[i]) { out += ROMAN_SYMS[i]; rem -= ROMAN_VALUES[i]; }
+  }
+  return out;
+}
+
+// For n up to 3,999,999: thousands part gets a vinculum (overline, x1000),
+// returned as {overlined, plain} so the caller can render the overline visually.
+function toRomanExtended(n) {
+  if (n < 1 || n > 3999999) return null;
+  const thousandsPart = Math.floor(n / 1000);
+  const remPart = n % 1000;
+  return {
+    overlined: thousandsPart > 0 ? toRomanBasic(thousandsPart) : '',
+    plain: toRomanBasic(remPart)
+  };
+}
+
+// breakdown steps (for the "how it's built" display), 0-3999
+function toRomanSteps(n) {
+  const steps = [];
+  let rem = n;
+  for (let i = 0; i < ROMAN_VALUES.length; i++) {
+    while (rem >= ROMAN_VALUES[i]) { steps.push({ value: ROMAN_VALUES[i], sym: ROMAN_SYMS[i] }); rem -= ROMAN_VALUES[i]; }
+  }
+  return steps;
+}
+/* ============================================================ */
+
+const LATIN_LANGS = [
+  { code: 'en', en: 'English', native: 'English', fn: numberToWordsEN },
+  { code: 'pt', en: 'Portuguese', native: 'Português', fn: numberToWordsPT },
+  { code: 'es', en: 'Spanish', native: 'Español', fn: numberToWordsES },
+  { code: 'fr', en: 'French', native: 'Français', fn: numberToWordsFR },
+  { code: 'de', en: 'German', native: 'Deutsch', fn: numberToWordsDE },
+  { code: 'it', en: 'Italian', native: 'Italiano', fn: numberToWordsIT },
+];
+const SCRIPT_LANGS = [
+  { code: 'hi', en: 'Hindi', native: 'हिन्दी', fn: numberToWordsHI, cls: 'hi' },
+  { code: 'zh', en: 'Chinese', native: '中文', fn: numberToWordsZH, cls: 'zh' },
+  { code: 'ja', en: 'Japanese', native: '日本語', fn: numberToWordsJA, cls: 'ja' },
+];
+
+function buildGrid(container, langs) {
+  container.innerHTML = langs.map(l => `
+    <div class="lang-card${l.cls ? ' script-lang' : ''}">
+      <div class="lang-name"><span class="en">${l.en}</span><span class="native">${l.native}</span><button class="speak-btn" type="button" title="Listen in ${l.en}" aria-label="Listen in ${l.en}" onclick="speakCard('${l.code}',this)">🔊</button></div>
+      <div class="words${l.cls ? ' ' + l.cls : ''}" id="out-${l.code}"></div>
+    </div>`).join('');
+}
+buildGrid(document.getElementById('latinGrid'), LATIN_LANGS);
+buildGrid(document.getElementById('scriptGrid'), SCRIPT_LANGS);
+
+function renderWords() {
+  const raw = document.getElementById('wordsInput').value.trim();
+  const digits = raw.replace(/[^\d]/g, '').slice(0, 15);
+  const allLangs = LATIN_LANGS.concat(SCRIPT_LANGS);
+  for (const l of allLangs) {
+    const el = document.getElementById('out-' + l.code);
+    if (!digits) { el.textContent = '—'; el.classList.add('empty'); continue; }
+    el.classList.remove('empty');
+    try { el.textContent = l.fn(digits); }
+    catch (e) { el.textContent = '—'; el.classList.add('empty'); }
+  }
+  renderFeatured(digits);
+}
+
+function renderFeatured(digits) {
+  const code = document.getElementById('preferredLang').value;
+  const featured = document.getElementById('featuredCard');
+  if (!code) { featured.style.display = 'none'; return; }
+  const l = LATIN_LANGS.concat(SCRIPT_LANGS).find(x => x.code === code);
+  let words = '—';
+  if (digits) {
+    try { words = l.fn(digits); } catch (e) { words = '—'; }
+  }
+  featured.className = 'featured-card' + (l.cls ? ' script-lang' : '');
+  featured.innerHTML = `
+    <div class="lang-name"><span class="en">${l.en}</span><span class="native">${l.native}</span><button class="speak-btn" type="button" title="Listen in ${l.en}" aria-label="Listen in ${l.en}" onclick="speakCard('${l.code}',this)">🔊</button></div>
+    <div class="words${l.cls ? ' ' + l.cls : ''}${words === '—' ? ' empty' : ''}">${words}</div>`;
+  featured.style.display = 'block';
+}
+
+const VOICE_LOCALES = {
+  en:'en-US', pt:'pt-BR', es:'es-ES', fr:'fr-FR', de:'de-DE',
+  it:'it-IT', hi:'hi-IN', zh:'zh-CN', ja:'ja-JP'
+};
+let activeSpeakButton = null;
+
+function resetSpeakButton() {
+  if (activeSpeakButton) {
+    activeSpeakButton.classList.remove('speaking');
+    activeSpeakButton.textContent = '🔊';
+    activeSpeakButton = null;
+  }
+}
+
+function speakCard(code, button) {
+  const status = document.getElementById('voiceStatus');
+  if (!('speechSynthesis' in window)) {
+    status.textContent = 'Voice is not supported by this browser.';
+    return;
+  }
+  if (activeSpeakButton === button && window.speechSynthesis.speaking) {
+    window.speechSynthesis.cancel();
+    resetSpeakButton();
+    status.textContent = 'Voice stopped.';
+    return;
+  }
+  window.speechSynthesis.cancel();
+  resetSpeakButton();
+  const card = button.closest('.lang-card, .featured-card');
+  const words = card ? card.querySelector('.words') : null;
+  const text = words ? words.textContent.trim() : '';
+  if (!text || text === '—') {
+    status.textContent = 'Enter a number before using the voice.';
+    return;
+  }
+  const utterance = new SpeechSynthesisUtterance(text);
+  const locale = VOICE_LOCALES[code] || code;
+  utterance.lang = locale;
+  const voices = window.speechSynthesis.getVoices();
+  const exact = voices.find(v => v.lang.toLowerCase() === locale.toLowerCase());
+  const family = voices.find(v => v.lang.toLowerCase().startsWith(code.toLowerCase()));
+  if (exact || family) utterance.voice = exact || family;
+  utterance.rate = 0.9;
+  utterance.pitch = 1;
+  activeSpeakButton = button;
+  button.classList.add('speaking');
+  button.textContent = '■';
+  utterance.onend = () => {
+    resetSpeakButton();
+    status.textContent = 'Finished.';
+  };
+  utterance.onerror = event => {
+    resetSpeakButton();
+    if (event.error !== 'canceled' && event.error !== 'interrupted')
+      status.textContent = 'This language voice is not installed in the browser.';
+  };
+  status.textContent = 'Speaking ' + code.toUpperCase() + '… Select the button again to stop.';
+  window.speechSynthesis.speak(utterance);
+}
+document.getElementById('wordsInput').addEventListener('input', function (e) {
+  e.target.value = e.target.value.replace(/[^\d]/g, '').slice(0, 15);
+  renderWords();
+  scheduleFactors();
+  renderRoman();
+});
+document.getElementById('preferredLang').addEventListener('change', renderWords);
+renderWords();
+
+/* ================= ROMAN NUMERALS ================= */
+function renderRoman() {
+  const raw = document.getElementById('wordsInput').value.trim();
+  const n = parseInt(raw, 10);
+  const displayEl = document.getElementById('romanDisplay');
+  const breakEl = document.getElementById('romanBreakdown');
+  if (!raw || isNaN(n) || n < 1 || n > 3999999) {
+    displayEl.innerHTML = '<div class="roman-empty">Enter a number from 1 to 3,999,999</div>';
+    breakEl.innerHTML = '';
+    return;
+  }
+  if (n <= 3999) {
+    const roman = toRomanBasic(n);
+    displayEl.innerHTML = `<div class="roman-num">${roman}</div>`;
+    const steps = toRomanSteps(n);
+    breakEl.innerHTML = steps.map((s, i) =>
+      `<div class="step">${i > 0 ? '<span class="plus">+</span>' : ''}<span class="sym">${s.sym}</span><span>${s.value}</span></div>`
+    ).join('');
+  } else {
+    const { overlined, plain } = toRomanExtended(n);
+    displayEl.innerHTML = `<div class="roman-num">${overlined ? '<span class="vinc">(' + overlined + ')</span>' : ''}${plain}</div>
+      <div class="roman-note">The part in parentheses represents ${overlined} × 1,000${plain ? ', plus ' + plain + ' written normally' : ''}.</div>`;
+    const thousandsPart = Math.floor(n / 1000), remPart = n % 1000;
+    const stepsT = toRomanSteps(thousandsPart);
+    const stepsR = toRomanSteps(remPart);
+    let html = stepsT.map((s, i) =>
+      `<div class="step">${i > 0 ? '<span class="plus">+</span>' : ''}<span class="sym">(${s.sym})</span><span>${s.value.toLocaleString()}×1,000</span></div>`
+    ).join('');
+    if (stepsR.length) {
+      html += stepsR.map((s) =>
+        `<div class="step"><span class="plus">+</span><span class="sym">${s.sym}</span><span>${s.value}</span></div>`
+      ).join('');
+    }
+    breakEl.innerHTML = html;
+  }
+}
+renderRoman();
+
+/* ================= PRIME FACTORIZATION ================= */
+function absBig(n){ return n < 0n ? -n : n; }
+function gcdBig(a,b){
+  a=absBig(a); b=absBig(b);
+  while(b){ const t=a%b; a=b; b=t; }
+  return a;
+}
+function modPowBig(base,exp,mod){
+  let out=1n; base%=mod;
+  while(exp>0n){
+    if(exp&1n) out=out*base%mod;
+    base=base*base%mod; exp>>=1n;
+  }
+  return out;
+}
+function isPrimeBig(n){
+  if(n<2n) return false;
+  const small=[2n,3n,5n,7n,11n,13n,17n,19n,23n,29n,31n,37n];
+  for(const p of small){ if(n===p) return true; if(n%p===0n) return false; }
+  let d=n-1n,s=0;
+  while((d&1n)===0n){ d>>=1n; s++; }
+  const bases=[2n,325n,9375n,28178n,450775n,9780504n,1795265022n];
+  for(const a0 of bases){
+    const a=a0%n; if(a===0n) continue;
+    let x=modPowBig(a,d,n);
+    if(x===1n||x===n-1n) continue;
+    let witness=true;
+    for(let r=1;r<s;r++){ x=x*x%n; if(x===n-1n){ witness=false; break; } }
+    if(witness) return false;
+  }
+  return true;
+}
+function pollardRho(n){
+  if(n%2n===0n) return 2n;
+  if(n%3n===0n) return 3n;
+  for(let seed=1n;seed<40n;seed++){
+    let x=2n+seed, y=x, c=1n+seed, d=1n;
+    const f=v=>(v*v+c)%n;
+    for(let steps=0;d===1n&&steps<120000;steps++){
+      x=f(x); y=f(f(y)); d=gcdBig(x-y,n);
+    }
+    if(d>1n&&d<n) return d;
+  }
+  return n;
+}
+function collectFactors(n,out){
+  if(n===1n) return;
+  if(isPrimeBig(n)){ out.push(n); return; }
+  const d=pollardRho(n);
+  if(d===n){
+    // Extremely rare fallback; exact trial division keeps the answer correct.
+    for(let p=5n;p*p<=n;p+=6n){
+      if(n%p===0n){ collectFactors(p,out);collectFactors(n/p,out);return; }
+      if(n%(p+2n)===0n){ collectFactors(p+2n,out);collectFactors(n/(p+2n),out);return; }
+    }
+    out.push(n); return;
+  }
+  collectFactors(d,out); collectFactors(n/d,out);
+}
+function factorHTML(n,factors){
+  const counts=new Map();
+  for(const p of factors) counts.set(p.toString(),(counts.get(p.toString())||0)+1);
+  return `<span>${n.toString()}</span> = `+[...counts.entries()].map(([p,e])=>
+    e===1 ? `<span>${p}</span>` : `<span>${p}<sup>${e}</sup></span>`
+  ).join(' <span aria-hidden="true">×</span> ');
+}
+let factorTimer=null;
+function renderFactors(){
+  const input=document.getElementById('wordsInput');
+  const output=document.getElementById('factorOutput');
+  const note=document.getElementById('factorNote');
+  const raw=input.value.trim();
+  if(!raw){ output.textContent='Enter a number'; note.textContent='The factorization will appear automatically.'; return; }
+  const n=BigInt(raw);
+  if(n<2n){ output.textContent=n.toString()+' has no prime factorization'; note.textContent='Prime factorization is defined here for whole numbers greater than 1.'; return; }
+  output.textContent='Factoring…'; note.textContent='';
+  setTimeout(()=>{
+    try{
+      const factors=[]; collectFactors(n,factors); factors.sort((a,b)=>a<b?-1:a>b?1:0);
+      output.innerHTML=factorHTML(n,factors);
+      note.textContent=isPrimeBig(n) ? `${n.toString()} is prime.` : 'Repeated prime factors are collected using exponents.';
+    }catch(e){ output.textContent='Unable to factor this value.'; note.textContent='Please check the number and try again.'; }
+  },0);
+}
+function scheduleFactors(){
+  clearTimeout(factorTimer);
+  factorTimer=setTimeout(renderFactors,250);
+}
+renderFactors();
+
+</script>
+</body>
+</html>

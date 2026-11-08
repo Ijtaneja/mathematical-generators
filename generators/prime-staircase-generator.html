@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prime Staircase Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --bg:#D4E6FA;
+    --surface:#FFFFFF;
+    --surface-alt:#E6ECF8;
+    --border:#C4D0E5;
+    --ink:#18273F;
+    --ink-soft:#53647D;
+    --accent:#5B5BD6;
+    --accent-dark:#4444B8;
+    --accent-ink:#FFFFFF;
+    --accent-soft:#ECECFF;
+    --cyan:#0891B2;
+    --cyan-soft:#E3F8FC;
+    --up:#138A66;
+    --up-soft:#E2F6EF;
+    --down:#D05D67;
+    --down-soft:#FCEAEC;
+    --gold:#D49320;
+    --gold-soft:#FFF4D9;
+    --radius-sm:9px;
+    --radius-md:14px;
+    --radius-lg:22px;
+    --shadow:0 12px 35px rgba(67,84,140,0.10),0 2px 8px rgba(67,84,140,0.05);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:linear-gradient(135deg,#C9DFFA 0%,#D8E9FC 48%,#C6E4F7 100%);color:var(--ink);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh;}
+  body:before{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(circle at 12% 8%,rgba(35,100,195,.24),transparent 31%),radial-gradient(circle at 88% 18%,rgba(24,132,201,.20),transparent 30%);}
+  .page{position:relative;max-width:980px;margin:0 auto;padding:2.5rem 1.5rem 4rem;}
+
+  header.hero{position:relative;overflow:hidden;margin-bottom:1.5rem;padding:2.15rem 2.25rem;border:1px solid rgba(52,112,190,.32);border-radius:28px;background:linear-gradient(125deg,rgba(249,252,255,.97),rgba(218,233,251,.96) 55%,rgba(207,237,247,.96));box-shadow:var(--shadow);}
+  header.hero:after{content:"2 · 4 · 6 · 8";position:absolute;right:-12px;bottom:-18px;font-family:'IBM Plex Mono',monospace;font-size:3.6rem;font-weight:600;color:rgba(91,91,214,.07);letter-spacing:.04em;transform:rotate(-4deg);}
+  .kicker{display:inline-flex;align-items:center;gap:.45rem;font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:600;letter-spacing:0.11em;color:var(--accent);margin-bottom:0.75rem;padding:.38rem .7rem;border-radius:999px;background:var(--accent-soft);}
+  h1{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(2.25rem,5vw,3.4rem);line-height:1.04;margin:0 0 0.85rem;letter-spacing:-0.025em;background:linear-gradient(90deg,var(--accent-dark),var(--cyan));-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .hero p{position:relative;z-index:1;font-size:15.5px;line-height:1.7;color:var(--ink-soft);max-width:70ch;margin:0;}
+  .hero-example{
+    position:relative;z-index:1;margin-top:1.15rem;font-family:'IBM Plex Mono',monospace;font-size:13.5px;color:var(--ink-soft);background:rgba(255,255,255,.72);border:1px solid var(--border);border-radius:12px;padding:.72rem .9rem;width:fit-content;
+    display:flex;gap:0.5rem;flex-wrap:wrap;align-items:baseline;
+  }
+  .hero-example b{color:var(--accent);font-weight:600;}
+  .credit-line{position:relative;z-index:1;margin-top:0.95rem;font-size:12.5px;font-weight:700;color:var(--accent);}
+
+  .card{background:rgba(246,248,253,.96);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem 1.6rem;box-shadow:var(--shadow);margin-bottom:1.2rem;}
+  .field-grid{display:grid;grid-template-columns:1fr 1fr auto;gap:0.9rem;align-items:end;}
+  label{display:block;font-size:12px;font-weight:600;letter-spacing:.025em;color:var(--ink-soft);margin-bottom:0.42rem;}
+  input[type=number]{font-family:'IBM Plex Mono',monospace;font-size:16px;padding:0.68rem 0.78rem;border:1px solid var(--border);border-radius:var(--radius-sm);background:#FAFCFF;color:var(--ink);width:100%;transition:.18s ease;}
+  input:focus{outline:none;border-color:var(--accent);background:#fff;box-shadow:0 0 0 4px rgba(91,91,214,.10);}
+
+  .btn-row{display:flex;gap:0.6rem;flex-wrap:wrap;}
+  button{transition:transform .15s ease,box-shadow .15s ease,background .15s ease;}
+  button:active{transform:translateY(1px);}
+  button.primary{font-family:'Inter',sans-serif;font-size:14px;font-weight:600;background:linear-gradient(135deg,var(--accent),#7070E8);color:var(--accent-ink);border:none;border-radius:var(--radius-sm);padding:0.72rem 1.25rem;cursor:pointer;box-shadow:0 7px 16px rgba(91,91,214,.22);}
+  button.primary:hover{background:linear-gradient(135deg,var(--accent-dark),var(--accent));box-shadow:0 9px 20px rgba(91,91,214,.28);}
+  button.ghost{font-family:'Inter',sans-serif;font-size:13px;font-weight:500;background:transparent;color:var(--ink-soft);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.55rem 1rem;cursor:pointer;}
+  button.ghost:hover{background:var(--surface-alt);color:var(--accent);border-color:#BFCBF0;}
+
+  .download-panel{display:none;margin-top:1.2rem;padding-top:1.2rem;border-top:1px solid var(--border);}
+  .download-panel.open{display:block;}
+  .download-panel-title{font-size:12.5px;color:var(--ink-soft);margin-bottom:0.7rem;}
+  .download-row{display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;}
+  .btn-preset{
+    font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:0.4rem 0.8rem;border-radius:999px;
+    border:1px solid var(--border);background:var(--surface);color:var(--ink-soft);cursor:pointer;
+  }
+  .btn-preset:hover{border-color:var(--accent);color:var(--accent);}
+  .download-custom{display:flex;gap:0.4rem;align-items:center;margin-left:auto;flex-wrap:wrap;}
+  .download-custom input{width:80px;font-family:'IBM Plex Mono',monospace;font-size:13px;padding:0.4rem 0.55rem;border:1px solid var(--border);border-radius:var(--radius-sm);}
+  .download-custom span{color:var(--ink-soft);font-size:13px;}
+
+  .filters{display:flex;gap:0.55rem;margin-bottom:1.2rem;flex-wrap:wrap;align-items:center;padding:.85rem 1rem;background:rgba(255,255,255,.68);border:1px solid rgba(215,226,243,.9);border-radius:16px;}
+  .filter-label{font-size:12.5px;color:var(--ink-soft);margin-right:0.2rem;}
+  .pill{
+    font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:0.42rem 0.85rem;border-radius:999px;
+    border:1px solid var(--border);background:var(--surface);color:var(--ink-soft);cursor:pointer;
+  }
+  .pill:hover{border-color:var(--accent);}
+  .pill.active{background:linear-gradient(135deg,var(--accent-soft),#E1F5FB);color:var(--accent-dark);border-color:#AEB4ED;font-weight:600;box-shadow:0 3px 10px rgba(91,91,214,.10);}
+
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:0.8rem;margin-bottom:1.4rem;}
+  .stat{position:relative;overflow:hidden;background:rgba(255,255,255,.94);border:1px solid var(--border);border-radius:var(--radius-md);padding:1rem 1.05rem;box-shadow:0 7px 20px rgba(66,83,130,.06);}
+  .stat:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent);}
+  .stat:nth-child(2):before{background:var(--cyan);}.stat:nth-child(3):before{background:var(--up);}.stat:nth-child(4):before{background:var(--gold);}
+  .stat-label{font-size:11px;color:var(--ink-soft);letter-spacing:0.03em;margin-bottom:0.3rem;}
+  .stat-value{font-family:'Fraunces',serif;font-size:1.62rem;color:var(--accent);}
+  .stat:nth-child(2) .stat-value{color:var(--cyan)}.stat:nth-child(3) .stat-value{color:var(--up)}.stat:nth-child(4) .stat-value{color:var(--gold)}
+
+  .progress-wrap{display:none;margin-bottom:1.4rem;}
+  .progress-wrap.visible{display:block;}
+  .progress-bar-track{height:5px;background:var(--surface-alt);border-radius:999px;overflow:hidden;}
+  .progress-bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--cyan),var(--up));width:0%;transition:width 0.12s linear;}
+
+  .results{display:flex;flex-direction:column;gap:0.9rem;}
+
+  .chain-block{background:rgba(255,255,255,.96);border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;box-shadow:0 5px 16px rgba(66,83,130,.055);transition:transform .16s ease,box-shadow .16s ease;}
+  .chain-block:hover{transform:translateY(-1px);box-shadow:0 9px 24px rgba(66,83,130,.09);}
+  .chain-header{display:flex;align-items:center;justify-content:space-between;gap:0.8rem;padding:0.82rem 1.1rem;background:linear-gradient(90deg,#F6F8FF,#EEF8FB);cursor:pointer;flex-wrap:wrap;}
+  .chain-title{font-family:'Fraunces',serif;font-size:1rem;color:var(--ink);}
+  .chain-badges{display:flex;gap:0.5rem;align-items:center;}
+  .badge{font-family:'IBM Plex Mono',monospace;font-size:11px;padding:0.2rem 0.6rem;border-radius:999px;}
+  .badge-len{background:var(--accent-soft);color:var(--accent);}
+  .badge-dir-up{background:var(--up-soft);color:var(--up);}
+  .badge-dir-down{background:var(--down-soft);color:var(--down);}
+  .chain-toggle{font-size:11px;color:var(--ink-soft);transition:transform 0.15s;}
+  .chain-toggle.open{transform:rotate(180deg);}
+
+  .chain-body{display:none;padding:0.9rem 1.1rem 1.05rem;}
+  .chain-body.open{display:block;}
+  .chain-line{display:flex;align-items:baseline;gap:0.7rem;padding:0.3rem 0;font-family:'IBM Plex Mono',monospace;font-size:13.5px;border-bottom:1px solid var(--surface-alt);flex-wrap:wrap;}
+  .chain-line:last-child{border-bottom:none;}
+  .line-expr{color:var(--ink-soft);min-width:180px;}
+  .line-expr .op{color:var(--accent);}
+  .line-eq{color:var(--ink-soft);}
+  .line-val{color:var(--ink);font-weight:600;min-width:70px;}
+  .line-val.fail{color:var(--down);}
+  .line-check{font-size:13px;}
+  .line-check.ok{color:var(--up);}
+  .line-check.fail{color:var(--down);}
+  .line-fail-reason{font-size:12px;color:var(--ink-soft);font-style:italic;}
+
+  .empty{text-align:center;padding:3rem 1rem;color:var(--ink-soft);font-size:14px;}
+
+  .show-more{text-align:center;margin-top:0.3rem;}
+
+  footer{margin-top:3rem;padding:1.35rem 1.5rem;border:1px solid var(--border);border-radius:16px;background:rgba(255,255,255,.70);font-size:13px;color:var(--ink-soft);line-height:1.9;text-align:center;}
+  footer a{color:var(--accent);text-decoration:none;}
+  footer a:hover{text-decoration:underline;}
+
+  @media (max-width:600px){
+    .page{padding:1rem .8rem 2.5rem;}
+    header.hero{padding:1.5rem 1.25rem;border-radius:20px;}
+    .field-grid{grid-template-columns:1fr;}
+    .stats{grid-template-columns:repeat(2,1fr);}
+    .line-expr{min-width:130px;font-size:12px;}
+    .download-custom{margin-left:0;}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="hero">
+    <div class="kicker">RECREATIONAL NUMBER THEORY</div>
+    <h1>Prime Staircase Generator</h1>
+    <p>Starting from a prime p, keep adding the next even number — p, then p+2, then p+2+4, then p+2+4+6 — for as long as the running total stays prime. Works the same way subtracting. Every chain here runs until it breaks, and shows exactly why.</p>
+    <div class="hero-example">
+      <span>5</span><span class="op" style="color:var(--accent);">→</span><span><b>7</b> = 5+2</span><span class="op" style="color:var(--accent);">→</span><span><b>11</b> = 5+2+4</span><span class="op" style="color:var(--accent);">→</span><span>5+2+4+6 = 17</span>
+    </div>
+    <div class="credit-line">Created by <strong>Inder J. Taneja</strong></div>
+  </header>
+
+  <div class="card">
+    <div class="field-grid">
+      <div>
+        <label for="fromVal">Search from</label>
+        <input type="number" id="fromVal" value="2" min="2">
+      </div>
+      <div>
+        <label for="toVal">Search up to</label>
+        <input type="number" id="toVal" value="500" min="3">
+      </div>
+      <div class="btn-row">
+        <button class="primary" onclick="calculate()">Calculate</button>
+        <button class="ghost" onclick="clearResults()">Clear</button>
+        <button class="ghost" onclick="toggleDownloadPanel()">Download ↓</button>
+      </div>
+    </div>
+
+    <div class="download-panel" id="downloadPanel">
+      <div class="download-panel-title">Download chains for a range as .txt or .xlsx</div>
+      <div class="download-row">
+        <button class="btn-preset" onclick="downloadTxt(1,50)">1–50</button>
+        <button class="btn-preset" onclick="downloadTxt(1,100)">1–100</button>
+        <button class="btn-preset" onclick="downloadTxt(1,500)">1–500</button>
+        <button class="btn-preset" onclick="downloadTxt(1,1000)">1–1000</button>
+        <button class="btn-preset" onclick="downloadTxt(1,5000)">1–5000</button>
+        <button class="btn-preset" onclick="downloadTxt(1,10000)">1–10000</button>
+      </div>
+      <div class="download-row" style="margin-top:0.6rem;">
+        <div class="download-custom">
+          <input type="number" id="dlFrom" placeholder="from" min="1" value="1">
+          <span>–</span>
+          <input type="number" id="dlTo" placeholder="to" min="2" value="200">
+          <button class="btn-preset" onclick="downloadCustomTxt()">Download .txt</button>
+          <button class="btn-preset" onclick="downloadCustomXlsx()">Download .xlsx</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="filters">
+    <span class="filter-label">Direction:</span>
+    <button class="pill active" onclick="setFilter('dir','both',this)">Both</button>
+    <button class="pill" onclick="setFilter('dir','up',this)">Up ↑</button>
+    <button class="pill" onclick="setFilter('dir','down',this)">Down ↓</button>
+    <span class="filter-label" style="margin-left:0.6rem">Min length:</span>
+    <button class="pill active" onclick="setFilter('len',3,this)">3+</button>
+    <button class="pill" onclick="setFilter('len',4,this)">4+</button>
+    <button class="pill" onclick="setFilter('len',6,this)">6+</button>
+    <button class="pill" onclick="setFilter('len',8,this)">8+</button>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-label">Total chains</div><div class="stat-value" id="s-total">—</div></div>
+    <div class="stat"><div class="stat-label">Longest chain</div><div class="stat-value" id="s-longest">—</div></div>
+    <div class="stat"><div class="stat-label">Best starter</div><div class="stat-value" id="s-best">—</div></div>
+    <div class="stat"><div class="stat-label">Primes scanned</div><div class="stat-value" id="s-scanned">—</div></div>
+  </div>
+
+  <div class="progress-wrap" id="progress"><div class="progress-bar-track"><div class="progress-bar" id="pbar"></div></div></div>
+
+  <div class="results" id="results">
+    <div class="empty">Set a range and press Calculate</div>
+  </div>
+
+  <div class="show-more" id="showMoreWrap" style="display:none">
+    <button class="ghost" onclick="showMore()">Show more chains ↓</button>
+  </div>
+
+  <footer>
+    <strong style="font-weight:700;color:var(--ink);">Inder J. Taneja</strong><br>
+    <a href="https://numbers-magic.com/" target="_blank" rel="noopener">numbers-magic.com</a> ·
+    <a href="https://inderjtaneja.wordpress.com/" target="_blank" rel="noopener">inderjtaneja.wordpress.com</a> ·
+    <a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/" target="_blank" rel="noopener">taneja-mathematical-generators.ijtaneja.chatgpt.site</a>
+  </footer>
+
+</div>
+
+<script>
+let allChains = [];
+let filters = { dir: 'both', len: 3 };
+let displayCount = 50;
+
+function isPrime(n) {
+  if (n < 2) return false;
+  if (n === 2) return true;
+  if (n % 2 === 0) return false;
+  for (let i = 3; i * i <= n; i += 2) if (n % i === 0) return false;
+  return true;
+}
+
+function getUpChain(start) {
+  const chain = [start];
+  let val = start, step = 2;
+  while (true) {
+    val += step;
+    if (!isPrime(val)) { chain.push({ val, ok: false, step }); break; }
+    chain.push({ val, ok: true, step });
+    step += 2;
+  }
+  return chain;
+}
+
+function getDownChain(start) {
+  const chain = [start];
+  let val = start, step = 2;
+  while (true) {
+    val -= step;
+    if (val < 2 || !isPrime(val)) { chain.push({ val, ok: false, step }); break; }
+    chain.push({ val, ok: true, step });
+    step += 2;
+  }
+  return chain;
+}
+
+function getPrimes(from, to) {
+  const primes = [];
+  for (let n = Math.max(2, from); n <= to; n++) if (isPrime(n)) primes.push(n);
+  return primes;
+}
+
+const SUPERSCRIPTS = {'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹'};
+function toSuperscript(n) {
+  return String(n).split('').map(d => SUPERSCRIPTS[d] || ('^'+d)).join('');
+}
+
+function factorize(n) {
+  if (n < 2) return n < 0 ? 'negative' : (n === 0 ? '0' : '1');
+  const factors = [];
+  let d = 2, m = n;
+  while (d * d <= m) {
+    while (m % d === 0) { factors.push(d); m = Math.floor(m / d); }
+    d++;
+  }
+  if (m > 1) factors.push(m);
+  if (factors.length === 1) return `${factors[0]}`;
+  const map = {};
+  factors.forEach(f => map[f] = (map[f] || 0) + 1);
+  return Object.entries(map).map(([b, e]) => e > 1 ? `${b}${toSuperscript(e)}` : b).join('×');
+}
+
+function calculate() {
+  const from = parseInt(document.getElementById('fromVal').value);
+  const to = parseInt(document.getElementById('toVal').value);
+  if (isNaN(from) || isNaN(to) || from >= to) {
+    alert('Please enter a valid range.');
+    return;
+  }
+
+  document.getElementById('progress').classList.add('visible');
+  document.getElementById('pbar').style.width = '0%';
+  document.getElementById('results').innerHTML = '';
+  allChains = [];
+
+  const primes = getPrimes(from, to);
+  document.getElementById('s-scanned').textContent = primes.length.toLocaleString();
+
+  let longest = 0, bestStarter = '—';
+
+  primes.forEach((p, idx) => {
+    const upRaw = getUpChain(p);
+    const upPrimes = [p, ...upRaw.filter(x => x?.ok).map(x => x.val)];
+    if (upPrimes.length >= 3) {
+      allChains.push({ dir: 'up', start: p, primes: upPrimes, raw: upRaw, len: upPrimes.length });
+      if (upPrimes.length > longest) { longest = upPrimes.length; bestStarter = p; }
+    }
+
+    const downRaw = getDownChain(p);
+    const downPrimes = [p, ...downRaw.filter(x => x?.ok).map(x => x.val)];
+    if (downPrimes.length >= 3) {
+      allChains.push({ dir: 'down', start: p, primes: downPrimes, raw: downRaw, len: downPrimes.length });
+    }
+
+    if (idx % 100 === 0) {
+      document.getElementById('pbar').style.width = (idx / primes.length * 100) + '%';
+    }
+  });
+
+  document.getElementById('pbar').style.width = '100%';
+  setTimeout(() => { document.getElementById('progress').classList.remove('visible'); }, 400);
+
+  document.getElementById('s-longest').textContent = longest;
+  document.getElementById('s-best').textContent = bestStarter;
+
+  displayCount = 50;
+  renderResults();
+}
+
+function setFilter(key, val, el) {
+  filters[key] = val;
+  el.closest('.filters').querySelectorAll('.pill').forEach(p => {
+    if (p.onclick && p.onclick.toString().includes(`'${key}'`)) p.classList.remove('active');
+  });
+  el.classList.add('active');
+  displayCount = 50;
+  renderResults();
+}
+
+function renderResults() {
+  const filtered = allChains.filter(c => {
+    if (filters.dir !== 'both' && c.dir !== filters.dir) return false;
+    if (c.len < filters.len) return false;
+    return true;
+  });
+
+  document.getElementById('s-total').textContent = filtered.length.toLocaleString();
+
+  const container = document.getElementById('results');
+  if (filtered.length === 0) {
+    container.innerHTML = '<div class="empty">No chains found with current filters</div>';
+    document.getElementById('showMoreWrap').style.display = 'none';
+    return;
+  }
+
+  const toShow = filtered.slice(0, displayCount);
+  container.innerHTML = toShow.map((c, i) => buildChainHTML(c, i)).join('');
+
+  const showMoreWrap = document.getElementById('showMoreWrap');
+  showMoreWrap.style.display = filtered.length > displayCount ? 'block' : 'none';
+}
+
+function buildChainHTML(c, idx) {
+  const dirLabel = c.dir === 'up' ? '↑ ascending' : '↓ descending';
+  const dirBadge = c.dir === 'up' ? 'badge-dir-up' : 'badge-dir-down';
+  const sign = c.dir === 'up' ? '+' : '−';
+
+  let lines = '';
+  lines += `<div class="chain-line">
+    <span class="line-expr">${c.start}</span>
+    <span class="line-eq">=</span>
+    <span class="line-val">${c.start}</span>
+    <span class="line-check ok">✓</span>
+  </div>`;
+
+  let expr = `${c.start}`;
+  let exprHtml = `${c.start}`;
+  let step = 2;
+  for (let i = 1; i < c.raw.length; i++) {
+    const r = c.raw[i];
+    expr += `${sign}${step}`;
+    exprHtml += `<span class="op">${sign}${step}</span>`;
+    if (r.ok) {
+      lines += `<div class="chain-line">
+        <span class="line-expr">${exprHtml}</span>
+        <span class="line-eq">=</span>
+        <span class="line-val">${r.val}</span>
+        <span class="line-check ok">✓</span>
+      </div>`;
+    } else {
+      const reason = r.val < 2 ? (c.dir === 'down' ? 'below 2' : 'not prime') : `not prime — ${factorize(r.val)}`;
+      lines += `<div class="chain-line">
+        <span class="line-expr">${exprHtml}</span>
+        <span class="line-eq">=</span>
+        <span class="line-val fail">${r.val}</span>
+        <span class="line-check fail">✗</span>
+        <span class="line-fail-reason">${reason}</span>
+      </div>`;
+    }
+    step += 2;
+  }
+
+  return `<div class="chain-block">
+    <div class="chain-header" onclick="toggleChain(this)">
+      <span class="chain-title">Starting at ${c.start}</span>
+      <div class="chain-badges">
+        <span class="badge badge-len">${c.len} primes</span>
+        <span class="badge ${dirBadge}">${dirLabel}</span>
+        <span class="chain-toggle">▼</span>
+      </div>
+    </div>
+    <div class="chain-body">
+      ${lines}
+    </div>
+  </div>`;
+}
+
+function toggleChain(header) {
+  const body = header.nextElementSibling;
+  const arrow = header.querySelector('.chain-toggle');
+  const isOpen = body.classList.toggle('open');
+  arrow.classList.toggle('open', isOpen);
+}
+
+function showMore() {
+  displayCount += 50;
+  renderResults();
+}
+
+function clearResults() {
+  allChains = [];
+  document.getElementById('results').innerHTML = '<div class="empty">Set a range and press Calculate</div>';
+  document.getElementById('showMoreWrap').style.display = 'none';
+  ['s-total','s-longest','s-best','s-scanned'].forEach(id => document.getElementById(id).textContent = '—');
+}
+
+function toggleDownloadPanel() {
+  document.getElementById('downloadPanel').classList.toggle('open');
+}
+
+function computeChainsForRange(from, to) {
+  const primes = getPrimes(from, to);
+  const chains = [];
+  primes.forEach(p => {
+    const upRaw = getUpChain(p);
+    const upPrimes = [p, ...upRaw.filter(x => x?.ok).map(x => x.val)];
+    if (upPrimes.length >= 3) chains.push({ dir: 'up', start: p, primes: upPrimes, raw: upRaw });
+
+    const downRaw = getDownChain(p);
+    const downPrimes = [p, ...downRaw.filter(x => x?.ok).map(x => x.val)];
+    if (downPrimes.length >= 3) chains.push({ dir: 'down', start: p, primes: downPrimes, raw: downRaw });
+  });
+  return chains;
+}
+
+function buildTxtForRange(from, to) {
+  const chains = computeChainsForRange(from, to);
+  const lines = [];
+
+  chains.forEach((c, idx) => {
+    const sign = c.dir === 'up' ? '+' : '-';
+    lines.push(`${idx + 1}. ${c.start.toString().padEnd(28)} = ${c.start}`);
+    let expr = `${c.start}`;
+    let step = 2;
+    for (let i = 1; i < c.raw.length; i++) {
+      const r = c.raw[i];
+      expr += `${sign}${step}`;
+      if (r.ok) {
+        lines.push(`   ${expr.padEnd(28)} = ${r.val}`);
+      } else {
+        const reason = r.val < 2 ? 'below 2' : `not prime (${factorize(r.val)})`;
+        lines.push(`   ${expr.padEnd(28)} = ${r.val}  [stops — ${reason}]`);
+      }
+      step += 2;
+    }
+    lines.push('');
+  });
+
+  return lines.join('\n');
+}
+
+function downloadTxt(from, to) {
+  const content = buildTxtForRange(from, to);
+  const blob = new Blob([content], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `prime_chains_${from}-${to}.txt`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function downloadCustomTxt() {
+  const from = parseInt(document.getElementById('dlFrom').value);
+  const to = parseInt(document.getElementById('dlTo').value);
+  if (isNaN(from) || isNaN(to) || from < 1 || to <= from) {
+    alert('Please enter a valid custom range (from < to, both positive).');
+    return;
+  }
+  downloadTxt(from, to);
+}
+
+function downloadCustomXlsx() {
+  const from = parseInt(document.getElementById('dlFrom').value);
+  const to = parseInt(document.getElementById('dlTo').value);
+  if (isNaN(from) || isNaN(to) || from < 1 || to <= from) {
+    alert('Please enter a valid custom range (from < to, both positive).');
+    return;
+  }
+  const chains = computeChainsForRange(from, to);
+  const rows = [['Chain #','Direction','Start','Step','Expression','Value','Status']];
+  chains.forEach((c, idx) => {
+    const sign = c.dir === 'up' ? '+' : '-';
+    rows.push([idx+1, c.dir, c.start, 0, `${c.start}`, c.start, 'ok']);
+    let expr = `${c.start}`;
+    let step = 2;
+    for (let i = 1; i < c.raw.length; i++) {
+      const r = c.raw[i];
+      expr += `${sign}${step}`;
+      rows.push([idx+1, c.dir, c.start, step, expr, r.val, r.ok ? 'ok' : ('stop: '+(r.val<2?'below 2':factorize(r.val)))]);
+      step += 2;
+    }
+  });
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Prime Chains');
+  XLSX.writeFile(wb, `prime_chains_${from}-${to}.xlsx`);
+}
+
+// Auto-run on load
+calculate();
+</script>
+</body>
+</html>

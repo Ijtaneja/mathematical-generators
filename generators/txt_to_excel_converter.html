@@ -1,0 +1,1413 @@
+<!DOCTYPE html>
+<!-- TXT → Excel Converter — improved v2.1 (Excel-compatibility hardening) (replaces "Universal TXT → Excel Single Sheet Generator") -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TXT → Excel Converter</title>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg1:#dfedfb; --bg-mid:#d8e8f8; --bg2:#d3e1f5;
+  --surf:#f1ede7; --surf-hi:#fbf9f6; --surf-lo:#e4ded4;
+  --in-lo:#ece7df; --in-mid:#f8f6f2; --in-hi:#fdfcfa;
+  --sh-d:rgba(140,124,100,.30); --sh-dd:rgba(120,104,82,.42); --sh-l:rgba(255,255,255,.95);
+  --ink:#241f2c; --ink2:#5b5465; --ink3:#9a92a3; --rule:rgba(110,96,82,.14);
+  --violet:#5b2c83; --violet-2:#8b5cf6; --violet-lt:#efe8fc;
+  --teal:#0b7c7c; --teal-2:#2bc0b0; --teal-lt:#dcf4f0;
+  --amber:#b0670a; --amber-2:#f5b23a; --amber-lt:#fcefd5;
+  --rose:#b4304f; --rose-2:#f0789a; --rose-lt:#fce4ea;
+  --emer:#1b7f4b; --emer-2:#46c983; --emer-lt:#dcf3e5;
+  --sky:#2257a8; --sky-2:#5b9cf2; --sky-lt:#e1ecfb;
+  --acc:var(--violet); --acc-2:var(--violet-2); --acc-lt:var(--violet-lt);
+  --recess: inset 5px 5px 11px var(--sh-d), inset -5px -5px 11px var(--sh-l);
+  --recess-deep: inset 7px 7px 15px var(--sh-dd), inset -6px -6px 13px var(--sh-l);
+  --raise: 5px 5px 12px var(--sh-d), -5px -5px 12px var(--sh-l);
+  --raise-sm: 3px 3px 7px var(--sh-d), -3px -3px 7px var(--sh-l);
+  --press: inset 3px 3px 7px var(--sh-dd), inset -3px -3px 7px var(--sh-l);
+  --mono:'Fira Code',ui-monospace,Consolas,monospace; --serif:'Crimson Pro',Georgia,serif;
+  --r-lg:18px; --r-md:12px; --r-sm:9px;
+}
+html[data-bg="yellow"]{ --bg1:#fdf4d2; --bg-mid:#fbeec3; --bg2:#f8e8b8; }
+*{margin:0;padding:0;box-sizing:border-box;}
+html{min-height:100%;background:linear-gradient(160deg,var(--bg1) 0%,var(--bg-mid) 45%,var(--bg2) 100%);transition:background .3s;}
+body{background:transparent;color:var(--ink);font-family:var(--serif);min-height:100vh;}
+.page{max-width:1180px;margin:0 auto;padding:38px 32px 60px;}
+code{font-family:var(--mono);font-size:.84em;background:var(--surf-lo);padding:1px 6px;border-radius:6px;
+  box-shadow:inset 1px 1px 2px var(--sh-d),inset -1px -1px 2px var(--sh-l);}
+
+/* header */
+.header{margin-bottom:24px;padding:22px 28px 20px;border-radius:var(--r-lg);
+  background:linear-gradient(145deg,var(--surf-hi),var(--surf));box-shadow:var(--raise);position:relative;overflow:hidden;}
+.header::after{content:'';position:absolute;left:0;right:0;bottom:0;height:4px;
+  background:linear-gradient(90deg,var(--violet-2),var(--teal-2),var(--amber-2),var(--rose-2));}
+.head-row{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;}
+h1{font-size:2.35rem;font-weight:700;letter-spacing:-.5px;line-height:1.1;
+  background:linear-gradient(95deg,var(--violet) 0%,var(--violet-2) 40%,var(--teal) 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;}
+.subtitle{font-size:1.02rem;color:var(--ink2);font-style:italic;margin-top:6px;}
+.byline{font-size:1.05rem;font-weight:600;color:var(--violet);margin-top:8px;letter-spacing:.2px;}
+
+/* recessed cards */
+.box{border-radius:var(--r-lg);border:1px solid rgba(255,255,255,.55);
+  background:linear-gradient(150deg,var(--surf-lo) 0%,var(--surf) 38%,var(--surf-hi) 100%);
+  box-shadow:var(--recess);padding:20px 22px;margin-bottom:24px;position:relative;}
+.box::before{content:'';position:absolute;left:22px;right:22px;top:0;height:3px;border-radius:0 0 3px 3px;
+  background:linear-gradient(90deg,var(--acc-2),var(--acc));opacity:.75;}
+.sec-title{font-family:var(--mono);font-size:.72rem;letter-spacing:1.6px;text-transform:uppercase;color:var(--acc);
+  margin:0 0 12px;display:flex;align-items:center;gap:10px;font-weight:600;}
+.sec-title::after{content:'';flex:1;height:2px;border-radius:2px;background:linear-gradient(90deg,var(--acc-lt),transparent);}
+.hint{font-family:var(--mono);font-size:.72rem;color:var(--ink2);line-height:1.65;margin-bottom:12px;}
+
+textarea,input[type=text],input[type=number],select{font-family:var(--mono);font-size:.84rem;color:var(--ink);outline:none;
+  border:1px solid transparent;border-radius:var(--r-md);
+  background:linear-gradient(150deg,var(--in-lo),var(--in-mid) 55%,var(--in-hi));box-shadow:var(--recess-deep);transition:box-shadow .2s,border-color .2s;}
+textarea{width:100%;min-height:240px;resize:vertical;padding:13px 16px;line-height:1.6;}
+input[type=text],input[type=number],select{padding:8px 12px;}
+input[type=number]{width:78px;}
+select{cursor:pointer;}
+textarea:focus,input:focus,select:focus{border-color:color-mix(in srgb,var(--acc-2) 55%,transparent);}
+textarea::placeholder{color:#aaa3b0;}
+
+/* drop zone */
+.drop{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 16px;margin-bottom:12px;border-radius:var(--r-md);
+  border:2px dashed color-mix(in srgb,var(--acc-2) 35%,transparent);background:rgba(255,255,255,.35);transition:all .2s;}
+.drop.over{border-color:var(--acc-2);background:var(--acc-lt);}
+.drop .dz-text{font-family:var(--mono);font-size:.76rem;color:var(--ink2);}
+.drop input[type=file]{display:none;}
+
+/* buttons */
+button,.btn{font-family:var(--mono);font-size:.84rem;padding:9px 19px;border:none;border-radius:var(--r-sm);cursor:pointer;
+  white-space:nowrap;color:#fff;background:linear-gradient(135deg,var(--acc-2),var(--acc));display:inline-block;
+  box-shadow:var(--raise-sm),inset 0 1px 0 rgba(255,255,255,.3);transition:transform .12s,box-shadow .15s,filter .15s;}
+button:hover,.btn:hover{filter:brightness(1.06);transform:translateY(-1px);}
+button:active,.btn:active{transform:translateY(1px);box-shadow:var(--press);}
+button.sec,.btn.sec{color:var(--ink);background:linear-gradient(145deg,var(--surf-hi),var(--surf));}
+button.sec:hover,.btn.sec:hover{color:var(--acc);}
+button.big{font-size:.95rem;padding:12px 26px;}
+button.go{background:linear-gradient(135deg,var(--emer-2),var(--emer));}
+button:disabled{opacity:.45;cursor:not-allowed;transform:none;filter:none;}
+.btn-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px;}
+.btn-row .spacer{flex:1;}
+
+/* options grid */
+.opt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;}
+.og{padding:13px 15px;border-radius:var(--r-md);background:linear-gradient(145deg,var(--surf-hi),var(--surf));box-shadow:var(--raise-sm);}
+.og h4{font-family:var(--mono);font-size:.66rem;letter-spacing:1.3px;text-transform:uppercase;color:var(--acc);margin-bottom:9px;font-weight:600;}
+.og label{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:.76rem;color:var(--ink2);margin:7px 0;flex-wrap:wrap;}
+.og label select{flex:1;min-width:0;width:100%;}
+.og label.tog{flex-wrap:nowrap;align-items:center;line-height:1.35;}
+.og .row2{display:flex;gap:10px;flex-wrap:wrap;}
+.tog{display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none;}
+.tog input{display:none;}
+.tog .sw{width:34px;height:19px;border-radius:999px;position:relative;flex:none;
+  background:linear-gradient(145deg,var(--surf-lo),var(--surf));box-shadow:var(--press);transition:background .2s;}
+.tog .sw::after{content:'';position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;
+  background:linear-gradient(145deg,#fff,#e9e4dc);box-shadow:1px 1px 3px var(--sh-dd);transition:left .2s;}
+.tog input:checked + .sw{background:linear-gradient(135deg,var(--acc-2),var(--acc));}
+.tog input:checked + .sw::after{left:17px;}
+
+/* stats / chips */
+.chips{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;}
+.chip{display:flex;flex-direction:column;gap:3px;padding:9px 15px;min-width:100px;border-radius:var(--r-md);
+  background:linear-gradient(145deg,var(--surf-hi),var(--surf));box-shadow:var(--raise-sm);}
+.chip .n{font-size:1.45rem;font-weight:700;line-height:1;color:var(--acc);}
+.chip .l{font-family:var(--mono);font-size:.6rem;letter-spacing:1px;text-transform:uppercase;color:var(--ink3);}
+
+/* block cards */
+.blocks{display:flex;flex-direction:column;gap:16px;}
+.bcard{border-radius:var(--r-md);padding:14px 16px;background:linear-gradient(145deg,var(--surf-hi),var(--surf));box-shadow:var(--raise-sm);}
+.bhead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
+.bnum{font-family:var(--mono);font-size:.72rem;color:#fff;padding:2px 9px;border-radius:999px;background:linear-gradient(135deg,var(--violet-2),var(--violet));}
+.btitle{font-size:1.12rem;font-weight:600;color:var(--violet);}
+.bsize{font-family:var(--mono);font-size:.74rem;color:var(--ink3);}
+.badges{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;}
+.b{display:inline-block;padding:2px 9px;border-radius:999px;font-family:var(--mono);font-size:.64rem;letter-spacing:.3px;font-weight:600;
+  box-shadow:1px 1px 3px var(--sh-d),-1px -1px 2px var(--sh-l);}
+.b-ok{background:linear-gradient(135deg,#e9f8ef,#c9ecd7);color:var(--emer);}
+.b-no{background:linear-gradient(135deg,#fdeef2,#f8cdd8);color:var(--rose);}
+.b-na{background:linear-gradient(135deg,#f6f4f1,#e6e1da);color:var(--ink3);}
+.b-in{background:linear-gradient(135deg,#eef4fd,#cfe0f6);color:var(--sky);}
+.b-am{background:linear-gradient(135deg,#fdf4e1,#f6dfaf);color:var(--amber);}
+.gridwrap{overflow:auto;max-height:520px;padding:8px;border-radius:var(--r-sm);
+  background:linear-gradient(150deg,var(--surf-lo),var(--surf) 40%,var(--surf-hi));box-shadow:var(--recess);}
+table.mx{border-collapse:collapse;font-family:var(--mono);margin:auto;}
+table.mx td{border:1px solid rgba(90,80,70,.22);text-align:center;padding:2px 6px;white-space:nowrap;color:var(--ink);}
+table.mx td.txt{color:var(--rose);font-style:italic;}
+table.mx td.sum{background:#f1eef6;font-weight:600;}
+table.mx td.sum.ok{color:var(--emer);} table.mx td.sum.no{color:var(--rose);}
+table.mx tr.ttl td{background:#5B2C83;color:#fff;font-weight:600;text-align:left;font-family:var(--serif);font-size:1.05em;}
+.et{border-collapse:collapse;font-family:var(--mono);font-size:.76rem;width:100%;}
+.et th{position:sticky;top:0;color:#fff;background:linear-gradient(135deg,var(--violet-2),var(--violet));padding:7px 10px;text-align:left;font-weight:500;font-size:.66rem;letter-spacing:1px;text-transform:uppercase;}
+.et td{padding:5px 10px;border-bottom:1px solid var(--rule);vertical-align:top;white-space:nowrap;}
+.et td.en{color:var(--violet);font-weight:600;} .et td.ee{white-space:normal;word-break:break-word;}
+.et td.enote{color:var(--ink3);font-style:italic;} .et tr.ebad td{background:var(--rose-lt);}
+.more{font-family:var(--mono);font-size:.7rem;color:var(--ink3);margin-top:6px;}
+.msg{padding:30px;text-align:center;color:var(--ink3);font-style:italic;font-size:1.05rem;}
+.warn{font-family:var(--mono);font-size:.74rem;color:var(--amber);margin-bottom:8px;}
+.status{font-family:var(--mono);font-size:.76rem;color:var(--ink2);}
+.status.ok{color:var(--emer);} .status.err{color:var(--rose);}
+
+/* background picker */
+.bg-pick{display:flex;gap:7px;padding:5px 7px;border-radius:999px;background:linear-gradient(145deg,var(--surf-lo),var(--surf));box-shadow:var(--recess);}
+.bg-pick button{width:24px;height:24px;padding:0;border-radius:50%;border:2px solid transparent;box-shadow:var(--raise-sm);transform:none;}
+.bg-pick button:hover{transform:scale(1.08);filter:none;}
+.bg-pick button.on{border-color:var(--ink2);box-shadow:var(--press);}
+.bg-pick [data-bg="blue"]{background:linear-gradient(135deg,#e8f2fc,#b9d3ef);}
+.bg-pick [data-bg="yellow"]{background:linear-gradient(135deg,#fef7dc,#f2d98e);}
+
+/* credits */
+.credits{margin-top:28px;padding:22px 26px;border-radius:var(--r-lg);text-align:center;position:relative;overflow:hidden;
+  background:linear-gradient(145deg,var(--surf-hi),var(--surf));box-shadow:var(--raise);}
+.credits::before{content:'';position:absolute;left:0;right:0;top:0;height:4px;
+  background:linear-gradient(90deg,var(--violet-2),var(--teal-2),var(--amber-2),var(--rose-2));}
+.cr-name{font-size:1.45rem;font-weight:700;
+  background:linear-gradient(95deg,var(--violet),var(--violet-2) 50%,var(--teal));-webkit-background-clip:text;background-clip:text;color:transparent;}
+.cr-links{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:12px;}
+.cr-links a{font-family:var(--mono);font-size:.76rem;text-decoration:none;color:var(--violet);padding:7px 14px;border-radius:999px;
+  background:linear-gradient(145deg,var(--surf-lo),var(--surf));box-shadow:var(--recess);transition:color .15s,box-shadow .15s;word-break:break-all;}
+.cr-links a:hover{color:var(--teal);box-shadow:var(--raise-sm);}
+
+@media (max-width:640px){
+  .page{padding:20px 14px 40px;} h1{font-size:1.8rem;} .header{padding:18px;} .box{padding:16px;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="header">
+  <div class="head-row">
+    <div>
+      <h1>TXT → Excel Converter</h1>
+      <div class="subtitle">Matrices of any order with magic-square checks · expression lists (k := …) verified exactly · colored, publication-style Excel</div>
+      <div class="byline">Created by Inder J. Taneja</div>
+    </div>
+    <span class="bg-pick" title="Page background">
+      <button data-bg="blue" title="Light blue" aria-label="Light blue background"></button>
+      <button data-bg="yellow" title="Light yellow" aria-label="Light yellow background"></button>
+    </span>
+  </div>
+</div>
+
+<!-- ═════ INPUT ═════ -->
+<div class="sec-title">1 · Input</div>
+<div class="box">
+  <div class="drop" id="drop">
+    <label class="btn sec" for="file-in">&#128194; Open .txt files</label>
+    <input type="file" id="file-in" accept=".txt,.csv,.tsv,.dat,text/plain" multiple>
+    <span class="dz-text" id="dz-text">…or drag &amp; drop one or more text files here (they are joined as separate blocks)</span>
+  </div>
+  <textarea id="txt" spellcheck="false" placeholder="Paste matrices here — one row per line, blocks separated by an empty line.
+A text line just above a block (e.g. “Order 4 – pandiagonal”) becomes that block's title.
+
+Magic square of order 4
+16 3 2 13
+5 10 11 8
+9 6 7 12
+4 15 14 1"></textarea>
+  <div class="btn-row">
+    <button class="sec" id="ex-btn">Load example</button>
+    <button class="sec" id="sample-btn">&#8595; Sample .txt</button>
+    <button class="sec" id="clear-btn">&#10005; Clear</button>
+    <span class="spacer"></span>
+    <span class="status" id="in-stat"></span>
+  </div>
+</div>
+
+<!-- ═════ OPTIONS ═════ -->
+<div class="sec-title">2 · Options</div>
+<div class="box">
+  <div class="opt-grid">
+    <div class="og">
+      <h4>Reading</h4>
+      <label>Content
+        <select id="o-mode">
+          <option value="auto" selected>Auto-detect</option>
+          <option value="matrix">Matrices / squares</option>
+          <option value="expr">Expressions (k := …)</option>
+        </select>
+      </label>
+      <label>Separator
+        <select id="o-delim">
+          <option value="auto" selected>Auto (any)</option>
+          <option value="ws">Spaces / tabs</option>
+          <option value="comma">Comma</option>
+          <option value="tab">Tab</option>
+          <option value="semi">Semicolon</option>
+        </select>
+      </label>
+      <label class="tog"><input type="checkbox" id="o-split"><span class="sw"></span>Split stacked squares</label>
+      <label class="tog"><input type="checkbox" id="o-titles" checked><span class="sw"></span>Text line above = title</label>
+    </div>
+    <div class="og">
+      <h4>Layout in Excel</h4>
+      <label>Sheets
+        <select id="o-sheets">
+          <option value="single" selected>One sheet</option>
+          <option value="each">Sheet per block</option>
+        </select>
+      </label>
+      <label>Arrange
+        <select id="o-layout">
+          <option value="stack" selected>Stacked</option>
+          <option value="side">Side by side</option>
+        </select>
+      </label>
+      <div class="row2">
+        <label>Per row <input type="number" id="o-perrow" value="3" min="1" max="50"></label>
+        <label>Gap <input type="number" id="o-gap" value="1" min="0" max="20"></label>
+      </div>
+    </div>
+    <div class="og">
+      <h4>Colors &amp; text</h4>
+      <label>Coloring
+        <select id="o-color">
+          <option value="rings" selected>Rings</option>
+          <option value="blocks">Sub-blocks k×k</option>
+          <option value="checker">Checkerboard</option>
+          <option value="none">None</option>
+        </select>
+      </label>
+      <div class="row2">
+        <label>k <input type="number" id="o-k" value="4" min="1" max="200"></label>
+        <label>Font size (pt) <input type="number" id="o-font" value="6" min="4" max="20"></label>
+      </div>
+      <label>Palette
+        <select id="o-pal">
+          <option value="pastel" selected>Pastel</option>
+          <option value="violet">Violet shades</option>
+          <option value="earth">Warm earth</option>
+          <option value="sea">Sea</option>
+        </select>
+      </label>
+    </div>
+    <div class="og">
+      <h4>Extras</h4>
+      <label class="tog"><input type="checkbox" id="o-ttl" checked><span class="sw"></span>Purple title bars</label>
+      <label class="tog"><input type="checkbox" id="o-sums"><span class="sw"></span>Row &amp; column sums</label>
+      <label class="tog"><input type="checkbox" id="o-summary" checked><span class="sw"></span>“Checks” sheet</label>
+      <label>Expression layout
+        <select id="o-exl">
+          <option value="long" selected>Row per expression</option>
+          <option value="wide">Row per number</option>
+        </select>
+      </label>
+      <label>File name <input type="text" id="o-name" value="generated_excel" style="flex:1;min-width:120px"></label>
+    </div>
+  </div>
+  <div class="btn-row">
+    <button class="big go" id="xl-btn" disabled>&#8595; Download Excel (.xlsx)</button>
+    <span class="status" id="xl-stat"></span>
+  </div>
+</div>
+
+<!-- ═════ PREVIEW ═════ -->
+<div class="sec-title">3 · Preview &amp; checks</div>
+<div class="box">
+  <div class="chips" id="chips" style="display:none"></div>
+  <div class="blocks" id="blocks"><div class="msg">Paste or open a text file — the blocks appear here with their checks.</div></div>
+</div>
+
+<footer class="credits">
+  <div class="cr-name">Inder J. Taneja</div>
+  <div class="cr-links">
+    <a href="https://numbers-magic.com/" target="_blank" rel="noopener">numbers-magic.com</a>
+    <a href="https://inderjtaneja.wordpress.com/" target="_blank" rel="noopener">inderjtaneja.wordpress.com</a>
+    <a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/" target="_blank" rel="noopener">taneja-mathematical-generators.ijtaneja.chatgpt.site</a>
+  </div>
+</footer>
+
+</div>
+
+<!-- ═══════════════════════════ ENGINE ═══════════════════════════ -->
+<script id="engine">
+"use strict";
+
+/* ───────── parsing ───────── */
+const NUM_RE = /^[-+]?(\d+(\.\d*)?|\.\d+)$/;
+function makeCell(tok){
+  if (NUM_RE.test(tok)){
+    const isInt = /^[-+]?\d+$/.test(tok);
+    const c = {raw:tok, kind: isInt ? 'int' : 'dec'};
+    if (isInt) c.big = BigInt(tok.replace(/^\+/, ''));
+    return c;
+  }
+  return {raw:tok, kind:'text'};
+}
+function splitLine(line, delim){
+  let s = line.trim();
+  if (!s) return [];
+  if (delim === 'auto'){ s = s.replace(/[\[\]{}()]/g, ' '); return s.split(/[\s,;]+/).filter(Boolean); }
+  if (delim === 'comma') return s.split(',').map(x => x.trim()).filter(x => x !== '');
+  if (delim === 'tab')   return s.split('\t').map(x => x.trim()).filter(x => x !== '');
+  if (delim === 'semi')  return s.split(';').map(x => x.trim()).filter(x => x !== '');
+  return s.split(/\s+/);
+}
+const isNumericLine = toks => toks.length > 0 && toks.every(t => NUM_RE.test(t));
+
+/* text → blocks [{title, rows:[[cell]], nRows, nCols, ragged}] */
+function parseText(text, o){
+  o = Object.assign({delim:'auto', split:false, titles:true}, o || {});
+  const lines = text.replace(/\r\n?/g, '\n').replace(/^\uFEFF/, '').replace(/\u0000/g, '')
+    .replace(/[\u2212\u2013\u2014]/g, '-').replace(/[\u00A0\u2000-\u200B\u202F\u3000]/g, ' ').split('\n');
+  const groups = []; let cur = [];
+  for (const ln of lines){
+    if (ln.trim() === ''){ if (cur.length){ groups.push(cur); cur = []; } }
+    else cur.push(ln);
+  }
+  if (cur.length) groups.push(cur);
+
+  const blocks = [];
+  let pendingTitle = '';
+  for (const g of groups){
+    let titleLines = [], k = 0;
+    if (o.titles){
+      while (k < g.length && !isNumericLine(splitLine(g[k], o.delim))){ titleLines.push(g[k].trim()); k++; }
+    }
+    const rowsTok = g.slice(k).map(l => splitLine(l, o.delim)).filter(r => r.length);
+    if (!rowsTok.length){                       // a title-only group: attach to the next block
+      if (titleLines.length) pendingTitle = (pendingTitle ? pendingTitle + ' · ' : '') + titleLines.join(' · ');
+      continue;
+    }
+    let title = [pendingTitle, titleLines.join(' · ')].filter(Boolean).join(' · ');
+    pendingTitle = '';
+    const rows = rowsTok.map(r => r.map(makeCell));
+    const nCols = Math.max(...rows.map(r => r.length));
+    // split a tall block (k·n rows × n cols) into k squares
+    if (o.split && nCols > 1 && rows.length > nCols && rows.length % nCols === 0 && rows.every(r => r.length === nCols)){
+      const parts = rows.length / nCols;
+      for (let p = 0; p < parts; p++)
+        blocks.push(finishBlock(rows.slice(p*nCols, (p+1)*nCols), title ? title + ' (' + (p+1) + '/' + parts + ')' : ''));
+    } else blocks.push(finishBlock(rows, title));
+  }
+  return blocks;
+}
+function finishBlock(rows, title){
+  const nCols = Math.max(...rows.map(r => r.length));
+  return {title, rows, nRows:rows.length, nCols, ragged: rows.some(r => r.length !== nCols)};
+}
+
+/* ───────── number theory helpers ───────── */
+function modpow(b, e, m){ let r = 1n; b %= m; while (e > 0n){ if (e & 1n) r = r*b % m; b = b*b % m; e >>= 1n; } return r; }
+const SMALL_P = [2n,3n,5n,7n,11n,13n,17n,19n,23n,29n,31n,37n];
+function isPrime(n){                           // deterministic below 3.3·10^24 (Miller–Rabin, 12 bases)
+  if (n < 2n) return false;
+  for (const p of SMALL_P){ if (n === p) return true; if (n % p === 0n) return false; }
+  let d = n - 1n, s = 0; while ((d & 1n) === 0n){ d >>= 1n; s++; }
+  outer: for (const a of SMALL_P){
+    let x = modpow(a, d, n);
+    if (x === 1n || x === n - 1n) continue;
+    for (let i = 1; i < s; i++){ x = x*x % n; if (x === n - 1n) continue outer; }
+    return false;
+  }
+  return true;
+}
+
+/* ───────── magic-square analysis (exact, BigInt) ───────── */
+function lineSums(A, n, sq){
+  const v = (i,j) => sq ? A[i][j]*A[i][j] : A[i][j];
+  const rows = [], cols = new Array(n).fill(0n);
+  let d1 = 0n, d2 = 0n;
+  for (let i = 0; i < n; i++){
+    let rs = 0n;
+    for (let j = 0; j < n; j++){ const x = v(i,j); rs += x; cols[j] += x; }
+    rows.push(rs); d1 += v(i,i); d2 += v(i,n-1-i);
+  }
+  return {rows, cols, d1, d2};
+}
+function isMagicSub(A, off, m){                 // is the m×m sub-square starting at (off,off) magic?
+  const B = []; for (let i = 0; i < m; i++){ B.push(A[off+i].slice(off, off+m)); }
+  const L = lineSums(B, m, false), S = L.rows[0];
+  return L.rows.every(x => x === S) && L.cols.every(x => x === S) && L.d1 === S && L.d2 === S;
+}
+function analyze(b){
+  const r = {square:false, numeric:false};
+  r.numeric = b.rows.every(row => row.every(c => c.kind === 'int'));
+  r.square = !b.ragged && b.nRows === b.nCols;
+  if (!r.numeric || !r.square || b.nRows < 2) return r;
+  const n = b.nRows, A = b.rows.map(row => row.map(c => c.big));
+  const L = lineSums(A, n, false), S = L.rows[0];
+  r.n = n; r.S = S; r.sums = L;
+  r.rowsOk = L.rows.every(x => x === S);
+  r.colsOk = L.cols.every(x => x === S);
+  r.diagOk = L.d1 === S && L.d2 === S;
+  r.semi = r.rowsOk && r.colsOk;
+  r.magic = r.semi && r.diagOk;
+  // pandiagonal: every broken diagonal in both directions
+  let pan = r.magic;
+  for (let k = 0; pan && k < n; k++){
+    let a = 0n, c = 0n;
+    for (let i = 0; i < n; i++){ a += A[i][(i+k)%n]; c += A[i][((k-i)%n+n)%n]; }
+    if (a !== S || c !== S) pan = false;
+  }
+  r.pandiagonal = pan;
+  // associative / symmetric: a(i,j)+a(n-1-i,n-1-j) constant
+  const cst = A[0][0] + A[n-1][n-1]; let as = true;
+  for (let i = 0; as && i < n; i++) for (let j = 0; j < n; j++) if (A[i][j] + A[n-1-i][n-1-j] !== cst){ as = false; break; }
+  r.associative = as;
+  // bimagic
+  if (r.magic){ const L2 = lineSums(A, n, true), S2 = L2.rows[0];
+    r.bimagic = L2.rows.every(x => x === S2) && L2.cols.every(x => x === S2) && L2.d1 === S2 && L2.d2 === S2;
+    if (r.bimagic) r.S2 = S2; }
+  // concentric (bordered): every inner square obtained by removing borders is magic
+  if (r.magic && n >= 5){
+    let ok = true, layers = 0;
+    for (let k = 1; n - 2*k >= 3; k++){ if (!isMagicSub(A, k, n-2*k)){ ok = false; break; } layers++; }
+    r.concentric = ok && layers > 0;
+  }
+  // values
+  const flat = A.flat(); const set = new Set(flat.map(String));
+  r.distinct = set.size === flat.length;
+  let mn = flat[0]; for (const x of flat) if (x < mn) mn = x;
+  r.min = mn;
+  if (r.distinct){ let ok = true; const seen = new Set(set); for (let t = 0n; t < BigInt(flat.length); t++) if (!seen.has(String(mn + t))){ ok = false; break; } r.consecutive = ok; }
+  r.allPrime = flat.length <= 40000 ? flat.every(isPrime) : null;
+  return r;
+}
+function verdict(a){
+  if (!a.square) return 'not square';
+  if (!a.numeric) return 'not all integers';
+  if (a.magic) return 'magic';
+  if (a.semi) return 'semi-magic';
+  return 'not magic';
+}
+
+/* ───────── colors ───────── */
+const PALETTES = {
+  pastel:['EDE4FB','DCEBFB','DDF3E7','FDF0D2','FCE3EA','DDF2F0','F4E9D8','E7E3F8'],
+  violet:['E9DDF9','F4EEFC','DCCBF3','EFE7FB','D3BDEF','F8F4FE','E2D3F6','CDB3EC'],
+  earth: ['F6E7CF','FBF3E6','EFD9B8','F8ECDA','E8CDA4','FDF8F0','F2E0C2','E2C292'],
+  sea:   ['D6EEF2','E8F6F3','CDE5F3','DFF2EC','C4DDEF','EEF8F8','D3EBE3','BCD6EA']
+};
+function cellColor(i, j, nR, nC, mode, k, pal){
+  const P = PALETTES[pal] || PALETTES.pastel;
+  if (mode === 'none') return 'FFFFFF';
+  if (mode === 'checker') return (i + j) % 2 ? P[1] : P[0];
+  if (mode === 'blocks'){ const bi = Math.floor(i / k), bj = Math.floor(j / k); return P[(bi % 2) * 2 + (bj % 2)]; }
+  const ring = Math.min(i, j, nR - 1 - i, nC - 1 - j);
+  return P[ring % P.length];
+}
+
+/* ───────── .xlsx writer (no library) ───────── */
+const CRC_T = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++){ let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(b){ let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = CRC_T[(c ^ b[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+async function deflateRaw(bytes){
+  if (typeof CompressionStream === 'undefined' || typeof DecompressionStream === 'undefined') return null;
+  try {
+    const comp = new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer());
+    // safety: decompress again and compare byte-for-byte; any difference → store uncompressed
+    const back = new Uint8Array(await new Response(new Blob([comp]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer());
+    if (back.length !== bytes.length) return null;
+    for (let i = 0; i < back.length; i++) if (back[i] !== bytes[i]) return null;
+    return comp;
+  } catch(e){ return null; }
+}
+async function zipFiles(files){
+  const enc = new TextEncoder(), parts = [], central = []; let off = 0;
+  const u16 = v => [v & 255, (v >>> 8) & 255], u32 = v => [v & 255, (v >>> 8) & 255, (v >>> 16) & 255, (v >>> 24) & 255];
+  for (const f of files){
+    const name = enc.encode(f.name), data = enc.encode(f.text), crc = crc32(data);
+    const comp = data.length > 256 ? await deflateRaw(data) : null;
+    const method = comp && comp.length < data.length ? 8 : 0, body = method ? comp : data;
+    const common = [...u16(20), ...u16(0x0800), ...u16(method), ...u16(0), ...u16(0x21), ...u32(crc), ...u32(body.length), ...u32(data.length), ...u16(name.length), ...u16(0)];
+    const local = new Uint8Array([...u32(0x04034b50), ...common]);
+    parts.push(local, name, body);
+    central.push(new Uint8Array([...u32(0x02014b50), ...u16(20), ...common, ...u16(0), ...u16(0), ...u16(0), ...u32(0), ...u32(off)]), name);
+    off += local.length + name.length + body.length;
+  }
+  const cdSize = central.reduce((a, p) => a + p.length, 0);
+  const end = new Uint8Array([...u32(0x06054b50), ...u16(0), ...u16(0), ...u16(files.length), ...u16(files.length), ...u32(cdSize), ...u32(off), ...u16(0)]);
+  const all = [...parts, ...central, end], out = new Uint8Array(all.reduce((a, p) => a + p.length, 0));
+  let p = 0; for (const x of all){ out.set(x, p); p += x.length; }
+  return out;
+}
+const xesc = s => String(s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function colName(i){ let s = ''; i++; while (i){ const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = (i - m - 1) / 26; } return s; }
+
+function StyleBook(){
+  const fonts = ['<font><sz val="11"/><name val="Calibri"/></font>'], fills = ['<fill><patternFill patternType="none"/></fill>','<fill><patternFill patternType="gray125"/></fill>'];
+  const borders = ['<border><left/><right/><top/><bottom/><diagonal/></border>','<border><left style="thin"><color rgb="FFA49A8E"/></left><right style="thin"><color rgb="FFA49A8E"/></right><top style="thin"><color rgb="FFA49A8E"/></top><bottom style="thin"><color rgb="FFA49A8E"/></bottom><diagonal/></border>'];
+  const xfs = ['<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'], fk = {}, flk = {}, xk = {};
+  function font(sz, bold, color, italic){
+    const key = sz + '|' + !!bold + '|' + color + '|' + !!italic;
+    if (fk[key] === undefined){ fk[key] = fonts.length;
+      fonts.push('<font>' + (bold ? '<b/>' : '') + (italic ? '<i/>' : '') + '<sz val="' + sz + '"/><color rgb="FF' + color + '"/><name val="Calibri"/></font>'); }
+    return fk[key];
+  }
+  function fill(color){
+    if (!color) return 0;
+    if (flk[color] === undefined){ flk[color] = fills.length; fills.push('<fill><patternFill patternType="solid"><fgColor rgb="FF' + color + '"/></patternFill></fill>'); }
+    return flk[color];
+  }
+  function xf(o){   // {sz,bold,color,italic,fill,border,h,v,num}
+    const f = font(o.sz || 11, o.bold, o.color || '000000', o.italic), fl = fill(o.fill), bd = o.border ? 1 : 0;
+    const key = [f, fl, bd, o.h || '', o.v || '', o.num || 0].join('|');
+    if (xk[key] === undefined){
+      xk[key] = xfs.length;
+      xfs.push('<xf numFmtId="' + (o.num || 0) + '" fontId="' + f + '" fillId="' + fl + '" borderId="' + bd + '" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyNumberFormat="1" applyAlignment="1">'
+        + '<alignment' + (o.h ? ' horizontal="' + o.h + '"' : '') + ' vertical="' + (o.v || 'center') + '"/></xf>');
+    }
+    return xk[key];
+  }
+  function xml(){
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+      + '<fonts count="' + fonts.length + '">' + fonts.join('') + '</fonts>'
+      + '<fills count="' + fills.length + '">' + fills.join('') + '</fills>'
+      + '<borders count="' + borders.length + '">' + borders.join('') + '</borders>'
+      + '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
+      + '<cellXfs count="' + xfs.length + '">' + xfs.join('') + '</cellXfs>'
+      + '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+  }
+  return {xf, xml};
+}
+
+/* A sheet under construction: sparse cells + merges + sizes */
+function Sheet(name){
+  return {name, cells:new Map(), merges:[], colW:new Map(), rowH:new Map(),
+    set(r, c, v, s){ this.cells.set(r + ',' + c, {r, c, v, s}); },
+    width(c, w){ this.colW.set(c, Math.max(this.colW.get(c) || 0, w)); },
+    height(r, h){ this.rowH.set(r, Math.max(this.rowH.get(r) || 0, h)); }};
+}
+function cellXml(cell){
+  const ref = colName(cell.c) + (cell.r + 1), v = cell.v;
+  if (v === null || v === undefined || v === '') return '<c r="' + ref + '" s="' + cell.s + '"/>';   // Excel rejects empty inline strings
+  if (typeof v === 'number') return '<c r="' + ref + '" s="' + cell.s + '"><v>' + v + '</v></c>';
+  if (typeof v === 'object' && v.num !== undefined) return '<c r="' + ref + '" s="' + cell.s + '"><v>' + v.num + '</v></c>';
+  return '<c r="' + ref + '" s="' + cell.s + '" t="inlineStr"><is><t xml:space="preserve">' + xesc(v) + '</t></is></c>';
+}
+function sheetXml(sh){
+  const byRow = new Map(); let maxR = 0, maxC = 0;
+  for (const c of sh.cells.values()){ if (!byRow.has(c.r)) byRow.set(c.r, []); byRow.get(c.r).push(c); maxR = Math.max(maxR, c.r); maxC = Math.max(maxC, c.c); }
+  const rowsIdx = [...new Set([...byRow.keys(), ...sh.rowH.keys()])].sort((a, b) => a - b);
+  let data = '';
+  for (const r of rowsIdx){
+    const cells = (byRow.get(r) || []).sort((a, b) => a.c - b.c);
+    const h = sh.rowH.get(r);
+    data += '<row r="' + (r + 1) + '"' + (h ? ' ht="' + h.toFixed(1) + '" customHeight="1"' : '') + '>' + cells.map(cellXml).join('') + '</row>';
+  }
+  const cols = [...sh.colW.entries()].sort((a, b) => a[0] - b[0]);
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+    + '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+    + '<dimension ref="A1:' + colName(maxC) + (maxR + 1) + '"/>'
+    + (sh.freeze ? '<sheetViews><sheetView workbookViewId="0"><pane' + (sh.freeze.col ? ' xSplit="' + sh.freeze.col + '"' : '') + ' ySplit="' + sh.freeze.row + '" topLeftCell="' + colName(sh.freeze.col || 0) + (sh.freeze.row + 1) + '" activePane="' + (sh.freeze.col ? 'bottomRight' : 'bottomLeft') + '" state="frozen"/></sheetView></sheetViews>' : '<sheetViews><sheetView workbookViewId="0"/></sheetViews>') + '<sheetFormatPr defaultRowHeight="15"/>'
+    + (cols.length ? '<cols>' + cols.map(([c, w]) => '<col min="' + (c+1) + '" max="' + (c+1) + '" width="' + w.toFixed(2) + '" customWidth="1"/>').join('') + '</cols>' : '')
+    + '<sheetData>' + data + '</sheetData>'
+    + (sh.merges.length ? '<mergeCells count="' + sh.merges.length + '">' + sh.merges.map(m => '<mergeCell ref="' + m + '"/>').join('') + '</mergeCells>' : '')
+    + '<pageMargins left="0.4" right="0.4" top="0.5" bottom="0.5" header="0.3" footer="0.3"/></worksheet>';
+}
+function workbookBytes(sheets, styles){
+  const names = [], used = new Set();
+  sheets.forEach((s, i) => {
+    let n = String(s.name).replace(/[\[\]:*?\/\\]/g, ' ').trim().slice(0, 31) || ('Sheet' + (i+1));
+    let base = n, k = 2; while (used.has(n.toLowerCase())){ const suf = ' (' + k++ + ')'; n = base.slice(0, 31 - suf.length) + suf; }
+    used.add(n.toLowerCase()); names.push(n);
+  });
+  const files = [
+    {name:'[Content_Types].xml', text:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
+      + sheets.map((s, i) => '<Override PartName="/xl/worksheets/sheet' + (i+1) + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>').join('')
+      + '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>'},
+    {name:'_rels/.rels', text:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>'},
+    {name:'xl/workbook.xml', text:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><bookViews><workbookView xWindow="0" yWindow="0" windowWidth="28800" windowHeight="15000"/></bookViews><sheets>'
+      + names.map((n, i) => '<sheet name="' + xesc(n) + '" sheetId="' + (i+1) + '" r:id="rId' + (i+1) + '"/>').join('') + '</sheets></workbook>'},
+    {name:'xl/_rels/workbook.xml.rels', text:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+      + sheets.map((s, i) => '<Relationship Id="rId' + (i+1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet' + (i+1) + '.xml"/>').join('')
+      + '<Relationship Id="rId' + (sheets.length+1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'},
+    {name:'xl/styles.xml', text:styles.xml()},
+    {name:'docProps/core.xml', text:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:creator>Inder J. Taneja</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">' + new Date().toISOString().slice(0,19) + 'Z</dcterms:created></cp:coreProperties>'},
+    {name:'docProps/app.xml', text:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>Microsoft Excel</Application></Properties>'}
+  ];
+  sheets.forEach((s, i) => files.push({name:'xl/worksheets/sheet' + (i+1) + '.xml', text:sheetXml(s)}));
+  return zipFiles(files);
+}
+
+/* cell value for Excel: numbers when Excel can hold them exactly, otherwise text */
+function xlVal(c){
+  if (c.kind === 'int'){
+    const digits = c.raw.replace(/^[-+]/, '');
+    if (digits.length <= 15 && !(digits.length > 1 && digits[0] === '0')) return {num: c.big.toString()};
+    return c.raw;
+  }
+  if (c.kind === 'dec'){
+    const sig = c.raw.replace(/^[-+]/, '').replace('.', '').replace(/^0+/, '');
+    if (sig.length <= 15) return {num: String(Number(c.raw))};
+    return c.raw;
+  }
+  return c.raw;
+}
+const bigVal = x => (x.toString().replace('-', '').length <= 15) ? {num:x.toString()} : x.toString();
+
+function blockTitle(b, a, idx){
+  const head = b.title || ('Block ' + (idx + 1));
+  let t = head + '  —  ' + b.nRows + '×' + b.nCols;
+  if (a.square && a.numeric){
+    t += ' · ' + verdict(a);
+    if (a.magic || a.semi) t += ' · S = ' + a.S;
+    if (a.pandiagonal) t += ' · pandiagonal';
+    if (a.bimagic) t += ' · bimagic';
+  }
+  return t;
+}
+
+/* lay out the blocks and build the workbook */
+function buildWorkbook(blocks, analyses, o){
+  o = Object.assign({sheets:'single', layout:'stack', perRow:3, gap:1, color:'rings', k:4, pal:'pastel', font:6, titles:true, sums:false, summary:true}, o || {});
+  const ST = StyleBook();
+  const sz = Math.max(4, Math.min(20, +o.font || 6));
+  const tsz = Math.max(sz + 2, 8);
+  const sNum = color => ST.xf({sz, fill:color, border:true, h:'center', v:'center'});
+  const sTxt = color => ST.xf({sz, fill:color, border:true, h:'center', v:'center', color:'B4304F', italic:true});
+  const sTitle = ST.xf({sz:tsz, bold:true, color:'FFFFFF', fill:'5B2C83', h:'left', v:'center'});
+  const sSumOk = ST.xf({sz, bold:true, fill:'DCF3E5', border:true, h:'center', color:'1B7F4B'});
+  const sSumNo = ST.xf({sz, bold:true, fill:'FCE4EA', border:true, h:'center', color:'B4304F'});
+  const sSumNa = ST.xf({sz, bold:true, fill:'F1EEF6', border:true, h:'center', color:'4A4458'});
+  const charW = sz / 11 * 1.15, rowH = Math.max(7.5, sz * 1.32 + 1.5);
+
+  function placeBlock(sh, b, a, idx, r0, c0){
+    const w = b.nCols + (o.sums ? 1 : 0);
+    let r = r0;
+    if (o.titles){
+      sh.set(r, c0, blockTitle(b, a, idx), sTitle);
+      for (let c = 1; c < w; c++) sh.set(r, c0 + c, null, sTitle);
+      if (w > 1) sh.merges.push(colName(c0) + (r + 1) + ':' + colName(c0 + w - 1) + (r + 1));
+      sh.height(r, tsz * 1.6);
+      r++;
+    }
+    for (let i = 0; i < b.nRows; i++){
+      for (let j = 0; j < b.nCols; j++){
+        const cell = b.rows[i][j];
+        const color = cellColor(i, j, b.nRows, b.nCols, o.color, Math.max(1, +o.k || 1), o.pal);
+        if (!cell){ sh.set(r + i, c0 + j, null, sNum(color)); continue; }
+        sh.set(r + i, c0 + j, xlVal(cell), cell.kind === 'text' ? sTxt(color) : sNum(color));
+        sh.width(c0 + j, Math.max(2.2, cell.raw.length * charW + 1.0));
+      }
+      sh.height(r + i, rowH);
+    }
+    if (o.sums && a.sums){
+      const S = a.S, L = a.sums;
+      for (let i = 0; i < b.nRows; i++) sh.set(r + i, c0 + b.nCols, bigVal(L.rows[i]), L.rows[i] === S ? sSumOk : sSumNo);
+      for (let j = 0; j < b.nCols; j++) sh.set(r + b.nRows, c0 + j, bigVal(L.cols[j]), L.cols[j] === S ? sSumOk : sSumNo);
+      sh.set(r + b.nRows, c0 + b.nCols, bigVal(L.d1), L.d1 === S ? sSumOk : sSumNo);
+      sh.height(r + b.nRows, rowH);
+      const sw = Math.max(S.toString().length, L.d1.toString().length) * charW + 1.4;
+      sh.width(c0 + b.nCols, sw);
+      for (let j = 0; j < b.nCols; j++) sh.width(c0 + j, L.cols[j].toString().length * charW + 1.4);
+    } else if (o.sums){
+      // non-magic-checkable block: plain sums for integer rows when possible
+      const intRow = row => row.every(c => c && c.kind === 'int');
+      b.rows.forEach((row, i) => { if (intRow(row)) sh.set(r + i, c0 + b.nCols, bigVal(row.reduce((s, c) => s + c.big, 0n)), sSumNa); });
+    }
+    return {w, h: (o.titles ? 1 : 0) + b.nRows + (o.sums ? 1 : 0)};
+  }
+
+  const sheets = [];
+  const gap = Math.max(0, +o.gap || 0);
+  if (o.sheets === 'each'){
+    blocks.forEach((b, i) => {
+      const sh = Sheet((b.title ? b.title : 'Block ' + (i + 1)) + '');
+      if (!b.title) sh.name = 'Block ' + (i + 1) + ' (' + b.nRows + 'x' + b.nCols + ')';
+      placeBlock(sh, b, analyses[i], i, 0, 0);
+      sheets.push(sh);
+    });
+  } else {
+    const sh = Sheet('All_Blocks');
+    if (o.layout === 'side'){
+      const per = Math.max(1, +o.perRow || 1);
+      let r = 0;
+      for (let s = 0; s < blocks.length; s += per){
+        let c = 0, bandH = 0;
+        for (let i = s; i < Math.min(s + per, blocks.length); i++){
+          const d = placeBlock(sh, blocks[i], analyses[i], i, r, c);
+          c += d.w + gap; bandH = Math.max(bandH, d.h);
+          if (gap) for (let g = 0; g < gap; g++) sh.width(c - gap + g, 1.6);
+        }
+        r += bandH + gap;
+      }
+    } else {
+      let r = 0;
+      blocks.forEach((b, i) => { const d = placeBlock(sh, b, analyses[i], i, r, 0); r += d.h + gap; });
+    }
+    sheets.push(sh);
+  }
+
+  if (o.summary){
+    const sh = Sheet('Checks');
+    const sH = ST.xf({sz:10, bold:true, color:'FFFFFF', fill:'5B2C83', border:true, h:'center'});
+    const sT = ST.xf({sz:14, bold:true, color:'4B2A7B'});
+    const sP = ST.xf({sz:10, border:true, v:'top'});
+    const sY = ST.xf({sz:10, bold:true, fill:'DCF3E5', color:'1B7F4B', border:true, h:'center'});
+    const sN = ST.xf({sz:10, bold:true, fill:'FCE4EA', color:'B4304F', border:true, h:'center'});
+    const sD = ST.xf({sz:10, color:'9A92A3', fill:'F3F1EE', border:true, h:'center'});
+    sh.set(0, 0, 'TXT → Excel Converter — checks for ' + blocks.length + ' block' + (blocks.length === 1 ? '' : 's') + ' (exact integer arithmetic)', sT);
+    sh.height(0, 22);
+    const hdr = ['#','Title','Size','Verdict','Magic sum S','Rows','Columns','Diagonals','Pandiagonal','Associative','Bimagic','Concentric','Distinct','Consecutive','All primes'];
+    hdr.forEach((h, c) => sh.set(2, c, h, sH));
+    const widths = [5, 30, 9, 13, 18, 8, 9, 10, 12, 12, 9, 11, 9, 12, 10];
+    widths.forEach((w, c) => sh.width(c, w));
+    const yn = v => v === undefined || v === null ? ['—', sD] : (v ? ['yes', sY] : ['no', sN]);
+    blocks.forEach((b, i) => {
+      const a = analyses[i], r = 3 + i;
+      sh.set(r, 0, i + 1, sP);
+      sh.set(r, 1, b.title || 'Block ' + (i + 1), sP);
+      sh.set(r, 2, b.nRows + '×' + b.nCols, sP);
+      const vd = verdict(a);
+      sh.set(r, 3, vd, vd === 'magic' ? sY : vd === 'semi-magic' ? sD : sN);
+      sh.set(r, 4, a.S !== undefined ? bigVal(a.S) : '—', sP);
+      const cols = [a.rowsOk, a.colsOk, a.diagOk, a.pandiagonal, a.associative, a.bimagic, a.concentric, a.distinct, a.consecutive, a.allPrime];
+      cols.forEach((v, k) => { const [t, s] = yn(a.n ? v : undefined); sh.set(r, 5 + k, t, s); });
+    });
+    sheets.push(sh);
+  }
+  return workbookBytes(sheets, ST);
+}
+
+/* ─────────── exact arithmetic: {ex:true,n,d} (BigInt rational) or {ex:false,f} (float) ─────────── */
+const MAX_DIGITS = 200000;
+function babs(x){ return x < 0n ? -x : x; }
+function gcd(a,b){ a=babs(a); b=babs(b); while(b){ const t=a%b; a=b; b=t; } return a; }
+function R(n,d){
+  if (d === undefined) d = 1n;
+  if (d === 0n) throw new Error('Division by zero');
+  if (d < 0n){ n=-n; d=-d; }
+  const g = gcd(n,d);
+  if (g > 1n){ n/=g; d/=g; }
+  return {ex:true, n, d};
+}
+function Fl(f){
+  if (Number.isNaN(f)) throw new Error('Result is undefined (NaN)');
+  if (!Number.isFinite(f)) throw new Error('Result overflows floating point');
+  return {ex:false, f};
+}
+function log10Abs(x){
+  x = babs(x); if (x === 0n) return -Infinity;
+  const s = x.toString();
+  if (s.length < 16) return Math.log10(Number(x));
+  return s.length - 1 + Math.log10(Number(s.slice(0,15)) / 1e14);
+}
+function toF(v){
+  if (!v.ex) return v.f;
+  if (v.n === 0n) return 0;
+  const sign = v.n < 0n ? -1 : 1;
+  const sn = babs(v.n).toString(), sd = v.d.toString();
+  const kn = Math.max(0, sn.length-20), kd = Math.max(0, sd.length-20);
+  const a = Number(sn.slice(0, sn.length-kn)), b = Number(sd.slice(0, sd.length-kd));
+  return sign * (a/b) * Math.pow(10, kn-kd);
+}
+function isZero(v){ return v.ex ? v.n === 0n : v.f === 0; }
+function isInt(v){ return v.ex && v.d === 1n; }
+function vAdd(a,b){ return a.ex&&b.ex ? R(a.n*b.d + b.n*a.d, a.d*b.d) : Fl(toF(a)+toF(b)); }
+function vSub(a,b){ return a.ex&&b.ex ? R(a.n*b.d - b.n*a.d, a.d*b.d) : Fl(toF(a)-toF(b)); }
+function vMul(a,b){ return a.ex&&b.ex ? R(a.n*b.n, a.d*b.d) : Fl(toF(a)*toF(b)); }
+function vDiv(a,b){
+  if (isZero(b)) throw new Error('Division by zero');
+  return a.ex&&b.ex ? R(a.n*b.d, a.d*b.n) : Fl(toF(a)/toF(b));
+}
+function vNeg(a){ return a.ex ? {ex:true, n:-a.n, d:a.d} : {ex:false, f:-a.f}; }
+function bitlen(x){ return x === 0n ? 0 : x.toString(2).length; }
+function iroot(n,k){            // floor(n^(1/k)), n >= 0
+  if (n < 2n) return n;
+  const K = BigInt(k);
+  let x = 1n << BigInt(Math.ceil(bitlen(n)/k));
+  for(;;){
+    const y = ((K-1n)*x + n/(x**(K-1n))) / K;
+    if (y >= x) return x;
+    x = y;
+  }
+}
+function exactRoot(n,k){ const r = iroot(n,k); return r**BigInt(k) === n ? r : null; }
+function intPow(a,e){           // a exact, e BigInt
+  if (e === 0n) return R(1n);
+  if (a.n === 0n){
+    if (e < 0n) throw new Error('Division by zero (0 to a negative power)');
+    return R(0n);
+  }
+  const ae = e < 0n ? -e : e;
+  if (babs(a.n) === 1n && a.d === 1n) return R((a.n < 0n && ae % 2n === 1n) ? -1n : 1n);
+  const est = Number(ae) * (Math.max(0,log10Abs(a.n)) + Math.max(0,log10Abs(a.d)));
+  if (est > MAX_DIGITS) throw new Error('Result too large (about ' + Math.round(est).toLocaleString('en-US') + ' digits)');
+  return e > 0n ? R(a.n**ae, a.d**ae) : R(a.d**ae, a.n**ae);
+}
+function vPow(a,b){
+  if (a.ex && b.ex){
+    if (b.d === 1n) return intPow(a, b.n);
+    const q = b.d, p = b.n;
+    const neg = a.n < 0n;
+    if (neg && q % 2n === 0n) throw new Error('Even root of a negative number');
+    if (q <= 1000n){
+      const rn = exactRoot(babs(a.n), Number(q)), rd = exactRoot(a.d, Number(q));
+      if (rn !== null && rd !== null) return intPow(R(neg ? -rn : rn, rd), p);
+    }
+    if (neg){ const r = -Math.pow(-toF(a), 1/Number(q)); return Fl(Math.pow(r, Number(p))); }
+  }
+  const x = toF(a), y = toF(b);
+  if (x < 0 && !Number.isInteger(y)) throw new Error('Non-integer power of a negative number');
+  if (x === 0 && y < 0) throw new Error('Division by zero (0 to a negative power)');
+  return Fl(Math.pow(x, y));
+}
+function vSqrt(a){
+  if (a.ex){
+    if (a.n < 0n) throw new Error('sqrt of a negative number');
+    const rn = exactRoot(a.n, 2), rd = exactRoot(a.d, 2);
+    if (rn !== null && rd !== null) return R(rn, rd);
+    return Fl(Math.sqrt(toF(a)));
+  }
+  if (a.f < 0) throw new Error('sqrt of a negative number');
+  return Fl(Math.sqrt(a.f));
+}
+function needNat(v, name){
+  if (!v.ex) throw new Error(name + ' needs a whole number, got the inexact value ≈' + fmtFloat(v.f));
+  if (v.d !== 1n) throw new Error(name + ' needs a whole number, got ' + v.n + '/' + v.d);
+  if (v.n < 0n) throw new Error(name + ' needs n ≥ 0, got ' + v.n);
+  return v.n;
+}
+function fibPair(n){            // [F(n), F(n+1)] — fast doubling
+  if (n === 0n) return [0n, 1n];
+  const [a,b] = fibPair(n >> 1n);
+  const c = a * (2n*b - a), d = a*a + b*b;
+  return (n & 1n) ? [d, c+d] : [c, d];
+}
+function vFib(v){
+  const n = needNat(v, 'F(n)');
+  if (n > 500000n) throw new Error('F(n): n too large (max 500000)');
+  return R(fibPair(n)[0]);
+}
+function vFact(v){
+  const n = needNat(v, 'n!');
+  if (n > 20000n) throw new Error('n!: n too large (max 20000)');
+  let r = 1n; for (let i = 2n; i <= n; i++) r *= i;
+  return R(r);
+}
+function vBinom(a, c){
+  const n = needNat(a, 'B(a,b): a'), k0 = needNat(c, 'B(a,b): b');
+  if (k0 > n) return R(0n);
+  const k = k0 < n - k0 ? k0 : n - k0;
+  if (k > 50000n) throw new Error('B(a,b): too large (min(b, a−b) max 50000)');
+  let r = 1n;
+  for (let i = 1n; i <= k; i++) r = r * (n - k + i) / i;   // exact at every step
+  return R(r);
+}
+function vTri(v){ const n = needNat(v, 'T(n)'); return R(n*(n+1n)/2n); }
+function numVal(s){
+  const dot = s.indexOf('.');
+  if (dot === -1) return R(BigInt(s));
+  const ip = s.slice(0,dot), fp = s.slice(dot+1);
+  return R(BigInt((ip||'0') + fp), 10n ** BigInt(fp.length));
+}
+function vEq(a,b){
+  if (a.ex && b.ex) return {eq: a.n === b.n && a.d === b.d, approx:false};
+  const x = toF(a), y = toF(b);
+  return {eq: Math.abs(x-y) <= 1e-12 * Math.max(1, Math.abs(x), Math.abs(y)), approx:true};
+}
+
+/* ─────────── tokenizer + parser ─────────── */
+function tokenize(s){
+  const toks = []; let i = 0;
+  const OPS = {'+':'+','-':'-','−':'-','–':'-','*':'*','×':'*','x':'*','·':'*','∙':'*','/':'/','÷':'/','^':'^','!':'!',
+               '(':'(','[':'(','{':'(',')':')',']':')','}':')',',':','};
+  while (i < s.length){
+    const c = s[i];
+    if (/\s/.test(c)){ i++; continue; }
+    if (/[0-9.]/.test(c)){
+      let j = i;
+      while (j < s.length && /[0-9]/.test(s[j])) j++;
+      if (s[j] === '.'){ j++; while (j < s.length && /[0-9]/.test(s[j])) j++; }
+      const txt = s.slice(i,j);
+      if (txt === '.' || (txt.match(/\./g)||[]).length > 1) throw new Error("Bad number at position " + (i+1));
+      toks.push({k:'num', v:txt, p:i}); i = j; continue;
+    }
+    if (s.startsWith('sqrt', i)){ toks.push({k:'fn', v:'sqrt', p:i}); i += 4; continue; }
+    if (c === '√'){ toks.push({k:'fn', v:'sqrt', p:i, bare:true}); i++; continue; }
+    if ('TFQCB'.includes(c)){
+      let j = i+1; while (j < s.length && s[j] === ' ') j++;
+      if ('([{'.includes(s[j])){ toks.push({k:'fn', v:c, p:i}); i++; continue; }
+    }
+    if (c === '*' && s[i+1] === '*'){ toks.push({k:'op', v:'^', p:i}); i += 2; continue; }
+    if (OPS[c] !== undefined){ toks.push({k:'op', v:OPS[c], p:i, raw:c}); i++; continue; }
+    throw new Error("Unexpected '" + c + "' at position " + (i+1));
+  }
+  return toks;
+}
+
+function parseExpr(s){
+  const T = tokenize(s); let i = 0;
+  const isOp = v => i < T.length && T[i].k === 'op' && T[i].v === v;
+  const where = () => i < T.length ? 'at position ' + (T[i].p+1) : 'at end of expression';
+  function expect(v){ if (!isOp(v)) throw new Error("Expected '" + v + "' " + where()); i++; }
+  function expr(){
+    let l = term();
+    while (isOp('+') || isOp('-')){ const op = T[i++].v; l = {t:'bin', op, left:l, right:term()}; }
+    return l;
+  }
+  function term(){
+    let l = unary();
+    while (isOp('*') || isOp('/')){ const op = T[i++].v; l = {t:'bin', op, left:l, right:unary()}; }
+    return l;
+  }
+  function unary(){
+    if (isOp('-')){ i++; return {t:'neg', child:unary()}; }
+    if (isOp('+')){ i++; return unary(); }
+    return power();
+  }
+  function power(){
+    const b = postfix();
+    if (isOp('^')){ i++; return {t:'bin', op:'^', left:b, right:unary()}; }   // right-associative
+    return b;
+  }
+  function postfix(){
+    let n = primary();
+    while (isOp('!')){ i++; n = {t:'post', op:'!', child:n}; }
+    return n;
+  }
+  function primary(){
+    if (i >= T.length) throw new Error('Unexpected end of expression');
+    const t = T[i];
+    if (t.k === 'num'){ i++; return {t:'num', val:t.v}; }
+    if (t.k === 'fn'){
+      i++;
+      if (t.bare && !isOp('(')) return {t:'pre', op:'sqrt', child:postfix()};
+      expect('(');
+      if (t.v === 'B'){
+        const a = expr(); expect(','); const c = expr(); expect(')');
+        return {t:'fn2', op:'B', args:[a, c]};
+      }
+      const e = expr(); expect(')');
+      return {t:'pre', op:t.v, child:e};
+    }
+    if (isOp('(')){ i++; const e = expr(); expect(')'); return e; }
+    throw new Error("Unexpected '" + (t.raw || t.v) + "' " + where());
+  }
+  if (!T.length) throw new Error('Empty expression');
+  const ast = expr();
+  if (i < T.length) throw new Error("Unexpected '" + (T[i].raw || T[i].v) + "' " + where());
+  return ast;
+}
+
+/* ─────────── evaluator ─────────── */
+function evalNode(n){
+  switch (n.t){
+    case 'num': return numVal(n.val);
+    case 'neg': return vNeg(evalNode(n.child));
+    case 'pre': {
+      const v = evalNode(n.child);
+      switch (n.op){
+        case 'T': return vTri(v);
+        case 'F': return vFib(v);
+        case 'Q': return vMul(v,v);
+        case 'C': return vMul(vMul(v,v),v);
+        case 'sqrt': return vSqrt(v);
+      }
+      throw new Error('Unknown function ' + n.op);
+    }
+    case 'fn2': return vBinom(evalNode(n.args[0]), evalNode(n.args[1]));
+    case 'post': return vFact(evalNode(n.child));
+    case 'bin': {
+      const l = evalNode(n.left), r = evalNode(n.right);
+      switch (n.op){
+        case '+': return vAdd(l,r);
+        case '-': return vSub(l,r);
+        case '*': return vMul(l,r);
+        case '/': return vDiv(l,r);
+        case '^': return vPow(l,r);
+      }
+    }
+  }
+  throw new Error('Unknown node');
+}
+function evaluate(s){ return evalNode(parseExpr(s)); }
+
+
+/* ═════════ EXPRESSION LISTS  (k123 := …  /  := … continuation lines) ═════════ */
+function fmtFloat(f){
+  if (Number.isInteger(f) && Math.abs(f) < 1e21) return String(f);
+  let s = f.toPrecision(15); const trim = m => m.includes('.') ? m.replace(/0+$/,'').replace(/\.$/,'') : m;
+  if (s.includes('e')){ const [m,e] = s.split('e'); return trim(m) + 'e' + e; } return trim(s);
+}
+const LABEL_RE = /^(\S[^:=]*?)\s*:=\s*(.*)$/, CONT_RE = /^\s+:=\s*(.*)$/;
+function looksLikeExpressions(text){
+  const lines = text.split(/\r?\n/, 4000);
+  let lab = 0, cont = 0, num = 0;
+  for (const l of lines){ if (LABEL_RE.test(l)) lab++; else if (CONT_RE.test(l)) cont++; else if (isNumericLine(splitLine(l, 'auto'))) num++; }
+  return lab + cont >= 2 && lab + cont >= num;
+}
+function labelNum(label){ const m = /^[A-Za-z]{0,3}[_ ]?(\d+)$/.exec(label.trim()); return m ? BigInt(m[1]) : null; }
+const descDigits = k => { let s = ''; for (let d = k; d >= 0; d--) s += d; return s; };
+function parseExprList(text){
+  const lines = text.replace(/\r\n?/g, '\n').replace(/^﻿/, '').replace(/\u0000/g, '').split('\n');
+  const head = [], tail = [], items = []; let label = null, N = null, seen = false;
+  for (const raw of lines){
+    let m;
+    if ((m = LABEL_RE.exec(raw)) && !/^\s/.test(raw)){ label = m[1].trim(); N = labelNum(label); seen = true; items.push(mkItem(label, N, m[2])); continue; }
+    if ((m = CONT_RE.exec(raw)) && label !== null){ items.push(mkItem(label, N, m[1])); continue; }
+    const t = raw.trim(); if (!t) continue;
+    const note = /^\(\s*k\s*=\s*(\d+)\s*:\s*(.*?)\)\.?$/.exec(t);
+    if (note && label !== null){ items.push({label, N, k:+note[1], expr:'', note:note[2]}); continue; }
+    (seen ? tail : head).push(t);
+  }
+  return {head, tail, items};
+}
+function mkItem(label, N, exprRaw){
+  const expr = exprRaw.trim().replace(/\.\s*$/, '').trim();
+  const fd = /\d/.exec(expr);
+  return {label, N, k: fd ? +fd[0] : null, expr, note:''};
+}
+function checkItem(it){
+  if (it.note || !it.expr){ it.status = 'note'; return it; }
+  try {
+    const v = evaluate(it.expr);
+    it.value = v;
+    it.valueOk = it.N === null ? null : (v.ex && v.d === 1n && v.n === it.N);
+  } catch(e){ it.err = e.message; it.valueOk = false; }
+  const dg = it.expr.replace(/\D/g, '');
+  it.digitsOk = it.k !== null && dg === descDigits(it.k);
+  it.status = (it.valueOk !== false && it.digitsOk) ? 'ok' : 'bad';
+  return it;
+}
+function valueText(v){ return v ? (v.ex ? (v.d === 1n ? v.n.toString() : v.n + '/' + v.d) : '≈' + fmtFloat(v.f)) : ''; }
+
+function buildExprWorkbook(doc, o){
+  o = Object.assign({exprLayout:'long', font:10, summary:true}, o || {});
+  const ST = StyleBook(), sz = Math.max(8, Math.min(16, +o.font || 10));
+  const sT = ST.xf({sz:14, bold:true, color:'4B2A7B'}), sS = ST.xf({sz:10, italic:true, color:'6A6460'});
+  const sH = ST.xf({sz:sz, bold:true, color:'FFFFFF', fill:'5B2C83', border:true, h:'center'});
+  const sN = ST.xf({sz, bold:true, border:true, h:'center', fill:'EDE4FB', color:'4B2A7B'});
+  const sK = ST.xf({sz, border:true, h:'center'});
+  const sE = ST.xf({sz, border:true, h:'left'});
+  const sEbad = ST.xf({sz, border:true, h:'left', fill:'FCE4EA', color:'B4304F'});
+  const sNote = ST.xf({sz, border:true, h:'left', italic:true, color:'9A92A3', fill:'F6F4F1'});
+  const sY = ST.xf({sz, bold:true, fill:'DCF3E5', color:'1B7F4B', border:true, h:'center'});
+  const sX = ST.xf({sz, bold:true, fill:'FCE4EA', color:'B4304F', border:true, h:'center'});
+  const sD = ST.xf({sz, color:'9A92A3', fill:'F6F4F1', border:true, h:'center'});
+  const it = doc.items, cw = sz / 11 * 1.1;
+  const sh = Sheet('Representations');
+  let r = 0;
+  const ttl = doc.head[0] || 'Expressions';
+  sh.set(r, 0, ttl, sT); sh.height(r, 22); r++;
+  for (const l of doc.head.slice(1)) { sh.set(r++, 0, l, sS); }
+  const nOk = it.filter(x => x.status === 'ok').length, nBad = it.filter(x => x.status === 'bad').length;
+  sh.set(r++, 0, 'Checked by TXT → Excel Converter: ' + nOk + ' expressions verified (value = number, digits k…0 once each, decreasing)' + (nBad ? ', ' + nBad + ' failed (red)' : ''), sS);
+  r++;
+  const mark = (ok) => ok === null || ok === undefined ? ['—', sD] : ok ? ['✓', sY] : ['✗', sX];
+  if (o.exprLayout === 'wide'){
+    const ks = [...new Set(it.map(x => x.k).filter(k => k !== null))].sort((a, b) => a - b);
+    const hdr = ['Number', ...ks.map(k => 'k = ' + k)];
+    hdr.forEach((h, c) => sh.set(r, c, h, sH)); sh.height(r, sz * 1.8);
+    const hr = r; r++;
+    const byLabel = new Map();
+    for (const x of it){ if (!byLabel.has(x.label)) byLabel.set(x.label, []); byLabel.get(x.label).push(x); }
+    const colMax = new Array(hdr.length).fill(6);
+    for (const [label, xs] of byLabel){
+      const N = xs[0].N;
+      sh.set(r, 0, N !== null && N.toString().length <= 15 ? {num:N.toString()} : label, sN);
+      ks.forEach((k, c) => {
+        const x = xs.find(y => y.k === k);
+        if (!x){ sh.set(r, c + 1, null, sK); return; }
+        const txt = x.note ? '(' + x.note + ')' : x.expr;
+        sh.set(r, c + 1, txt, x.note ? sNote : x.status === 'bad' ? sEbad : sE);
+        colMax[c + 1] = Math.max(colMax[c + 1], txt.length);
+      });
+      r++;
+    }
+    sh.width(0, 9);
+    colMax.forEach((w, c) => { if (c) sh.width(c, Math.min(90, w * cw + 2)); });
+    sh.merges.push('A1:' + colName(hdr.length - 1) + '1');
+    sh.freeze = {row: hr + 1, col: 1};
+  } else {
+    const hdr = ['Number', 'k', 'Expression', 'Value', 'Value = number', 'Digits k…0'];
+    hdr.forEach((h, c) => sh.set(r, c, h, sH)); sh.height(r, sz * 1.8);
+    const hr = r; r++;
+    let maxE = 20, maxV = 6, prev = null;
+    for (const x of it){
+      const first = x.label !== prev; prev = x.label;
+      sh.set(r, 0, x.N !== null && x.N.toString().length <= 15 ? {num:x.N.toString()} : x.label, first ? sN : sK);
+      sh.set(r, 1, x.k === null ? '' : x.k, sK);
+      if (x.note){ sh.set(r, 2, '(' + x.note + ')', sNote); sh.set(r, 3, '', sD); sh.set(r, 4, '—', sD); sh.set(r, 5, '—', sD); }
+      else {
+        sh.set(r, 2, x.expr, x.status === 'bad' ? sEbad : sE);
+        const vt = x.err ? 'error: ' + x.err : valueText(x.value);
+        sh.set(r, 3, x.value && x.value.ex && x.value.d === 1n && vt.replace('-', '').length <= 15 ? {num:vt} : vt, sK);
+        const [a, sa] = mark(x.valueOk), [b2, sb] = mark(x.digitsOk);
+        sh.set(r, 4, a, sa); sh.set(r, 5, b2, sb);
+        maxE = Math.max(maxE, x.expr.length); maxV = Math.max(maxV, vt.length);
+      }
+      r++;
+    }
+    [9, 5, Math.min(100, maxE * cw + 2), Math.min(30, maxV * cw + 2), 15, 12].forEach((w, c) => sh.width(c, w));
+    sh.merges.push('A1:F1');
+    sh.freeze = {row: hr + 1, col: 0};
+  }
+  if (doc.tail.length){ r++; for (const l of doc.tail) sh.set(r++, 0, l, sS); }
+  return workbookBytes([sh], ST);
+}
+
+const SAMPLE_TXT = `Order 3 (Lo Shu)
+2 7 6
+9 5 1
+4 3 8
+
+Order 4 — pandiagonal
+1 8 13 12
+14 11 2 7
+4 5 16 9
+15 10 3 6
+
+Order 5 — bordered (concentric)
+1 2 18 21 23
+19 10 15 14 7
+20 17 13 9 6
+22 12 11 16 4
+3 24 8 5 25
+
+Order 4 — prime magic square
+3 61 19 37
+43 31 5 41
+7 11 73 29
+67 17 23 13
+
+Order 8 — bimagic
+16 41 36 5 27 62 55 18
+26 63 54 19 13 44 33 8
+1 40 45 12 22 51 58 31
+23 50 59 30 4 37 48 9
+38 3 10 47 49 24 29 60
+52 21 32 57 39 2 11 46
+43 14 7 34 64 25 20 53
+61 28 17 56 42 15 6 35`;
+
+if (typeof module !== 'undefined') module.exports = {looksLikeExpressions, parseExprList, checkItem, buildExprWorkbook, evaluate,
+  parseText, analyze, verdict, buildWorkbook, isPrime, SAMPLE_TXT, cellColor};
+</script>
+
+<!-- ═══════════════════════════ USER INTERFACE ═══════════════════════════ -->
+<script>
+"use strict";
+(function(){
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+/* background picker */
+function setBg(t){
+  document.documentElement.dataset.bg = t;
+  document.querySelectorAll('.bg-pick button').forEach(b => b.classList.toggle('on', b.dataset.bg === t));
+  try { localStorage.setItem('bcv-bg', t); } catch(e){}
+}
+document.querySelectorAll('.bg-pick button').forEach(b => b.addEventListener('click', () => setBg(b.dataset.bg)));
+let saved = 'blue'; try { saved = localStorage.getItem('bcv-bg') || 'blue'; } catch(e){}
+setBg(['blue','yellow'].includes(saved) ? saved : 'blue');
+
+/* options */
+function opts(){
+  return {
+    delim:$('o-delim').value, split:$('o-split').checked, titles:$('o-titles').checked,
+    sheets:$('o-sheets').value, layout:$('o-layout').value, perRow:+$('o-perrow').value || 1, gap:+$('o-gap').value || 0,
+    color:$('o-color').value, k:+$('o-k').value || 1, pal:$('o-pal').value, font:+$('o-font').value || 6,
+    titlesBar:$('o-ttl').checked, sums:$('o-sums').checked, summary:$('o-summary').checked
+  };
+}
+function syncEnabled(){
+  const side = $('o-layout').value === 'side' && $('o-sheets').value === 'single';
+  $('o-perrow').disabled = !side;
+  $('o-layout').disabled = $('o-sheets').value === 'each';
+  $('o-k').disabled = $('o-color').value !== 'blocks';
+}
+
+/* state */
+let blocks = [], analyses = [], exprDoc = null;
+
+function run(){
+  const text = $('txt').value;
+  const o = opts();
+  syncEnabled();
+  if (!text.trim()){
+    blocks = []; analyses = [];
+    $('blocks').innerHTML = '<div class="msg">Paste or open a text file — the blocks appear here with their checks.</div>';
+    $('chips').style.display = 'none'; $('xl-btn').disabled = true; $('in-stat').textContent = ''; $('xl-stat').textContent = '';
+    return;
+  }
+  const t0 = performance.now();
+  const mode = $('o-mode').value;
+  if (mode === 'expr' || (mode === 'auto' && looksLikeExpressions(text))){
+    blocks = []; analyses = [];
+    exprDoc = parseExprList(text);
+    exprDoc.items.forEach(checkItem);
+    renderExpr();
+    $('xl-btn').disabled = !exprDoc.items.length;
+    $('in-stat').textContent = text.split(/\r?\n/).length.toLocaleString('en-US') + ' lines · expressions mode · checked in ' + Math.round(performance.now() - t0) + ' ms';
+    return;
+  }
+  exprDoc = null;
+  blocks = parseText(text, {delim:o.delim, split:o.split, titles:o.titles});
+  analyses = blocks.map(analyze);
+  render(o);
+  $('xl-btn').disabled = !blocks.length;
+  const lines = text.split(/\r?\n/).length;
+  $('in-stat').textContent = lines.toLocaleString('en-US') + ' lines · ' + blocks.length + ' block' + (blocks.length === 1 ? '' : 's') + ' · ' + Math.round(performance.now() - t0) + ' ms';
+}
+
+function badge(cls, txt, title){ return '<span class="b ' + cls + '"' + (title ? ' title="' + esc(title) + '"' : '') + '>' + txt + '</span>'; }
+
+function render(o){
+  const nMagic = analyses.filter(a => a.magic).length, nSemi = analyses.filter(a => a.semi && !a.magic).length;
+  const nCells = blocks.reduce((s, b) => s + b.rows.reduce((t, r) => t + r.length, 0), 0);
+  const sizes = [...new Set(blocks.map(b => b.nRows + '×' + b.nCols))];
+  const chip = (n, l, c) => '<div class="chip"><span class="n"' + (c ? ' style="color:' + c + '"' : '') + '>' + n + '</span><span class="l">' + l + '</span></div>';
+  $('chips').innerHTML = chip(blocks.length, 'Blocks') + chip(nCells.toLocaleString('en-US'), 'Cells') + chip(nMagic, 'Magic', 'var(--emer)')
+    + chip(nSemi, 'Semi-magic', 'var(--amber)') + chip(blocks.length - nMagic - nSemi, 'Other', 'var(--ink2)')
+    + chip(sizes.length > 4 ? sizes.length + ' sizes' : sizes.join(', '), 'Orders', 'var(--sky)');
+  $('chips').style.display = 'flex';
+
+  const P_LIMIT = 70;   // preview at most 70×70 cells per block
+  const html = blocks.map((b, i) => {
+    const a = analyses[i];
+    let bd = '';
+    const v = verdict(a);
+    if (a.square && a.numeric){
+      bd += badge(a.magic ? 'b-ok' : a.semi ? 'b-am' : 'b-no', v === 'magic' ? '✓ magic' : v === 'semi-magic' ? '◐ semi-magic' : '✗ not magic',
+        a.magic ? 'All rows, columns and both diagonals add up to S' : a.semi ? 'Rows and columns equal S, diagonals do not' : 'Rows/columns do not all have the same sum');
+      if (a.magic || a.semi) bd += badge('b-in', 'S = ' + a.S);
+      if (a.pandiagonal) bd += badge('b-ok', 'pandiagonal');
+      if (a.associative) bd += badge('b-ok', 'associative', 'a(i,j) + a(n−1−i, n−1−j) is constant');
+      if (a.bimagic) bd += badge('b-ok', 'bimagic', 'Squares also form a magic square, S₂ = ' + a.S2);
+      if (a.concentric) bd += badge('b-ok', 'concentric', 'Every inner square left after removing borders is magic');
+      bd += a.distinct ? badge('b-ok', 'distinct') : badge('b-no', 'repeated values');
+      if (a.consecutive) bd += badge('b-in', a.min + '…' + (a.min + BigInt(a.n * a.n) - 1n));
+      if (a.allPrime) bd += badge('b-am', 'all primes');
+    } else {
+      bd += badge('b-na', b.ragged ? 'rows of different length' : !a.square ? 'not square — no magic check' : 'contains non-integers');
+    }
+    const showR = Math.min(b.nRows, P_LIMIT), showC = Math.min(b.nCols, P_LIMIT);
+    const fz = Math.max(9, Math.min(14, Math.round(16 - Math.max(showR, showC) / 6)));
+    let t = '<table class="mx" style="font-size:' + fz + 'px">';
+    if (o.titlesBar) t += '<tr class="ttl"><td colspan="' + (showC + (o.sums && a.sums ? 1 : 0)) + '">' + esc(blockTitleText(b, a, i)) + '</td></tr>';
+    for (let r = 0; r < showR; r++){
+      t += '<tr>';
+      for (let c = 0; c < showC; c++){
+        const cell = b.rows[r][c];
+        const bg = '#' + cellColor(r, c, b.nRows, b.nCols, o.color, Math.max(1, o.k), o.pal);
+        t += '<td' + (cell && cell.kind === 'text' ? ' class="txt"' : '') + ' style="background:' + bg + '">' + (cell ? esc(cell.raw) : '') + '</td>';
+      }
+      if (o.sums && a.sums && showC === b.nCols) t += '<td class="sum ' + (a.sums.rows[r] === a.S ? 'ok' : 'no') + '">' + a.sums.rows[r] + '</td>';
+      t += '</tr>';
+    }
+    if (o.sums && a.sums && showR === b.nRows && showC === b.nCols){
+      t += '<tr>' + a.sums.cols.map(x => '<td class="sum ' + (x === a.S ? 'ok' : 'no') + '">' + x + '</td>').join('')
+         + '<td class="sum ' + (a.sums.d1 === a.S ? 'ok' : 'no') + '" title="main diagonal">' + a.sums.d1 + '</td></tr>';
+    }
+    t += '</table>';
+    const more = (b.nRows > P_LIMIT || b.nCols > P_LIMIT) ? '<div class="more">Preview shows the first ' + showR + '×' + showC + ' cells — the Excel file contains all ' + b.nRows + '×' + b.nCols + '.</div>' : '';
+    const warn = b.ragged ? '<div class="warn">⚠ Rows have different lengths (' + [...new Set(b.rows.map(r => r.length))].join(', ') + ' values) — short rows are padded with empty cells.</div>' : '';
+    return '<div class="bcard"><div class="bhead"><span class="bnum">' + (i + 1) + '</span><span class="btitle">' + esc(b.title || 'Block ' + (i + 1))
+      + '</span><span class="bsize">' + b.nRows + '×' + b.nCols + '</span></div><div class="badges">' + bd + '</div>' + warn
+      + '<div class="gridwrap">' + t + '</div>' + more + '</div>';
+  }).join('');
+  $('blocks').innerHTML = html || '<div class="msg">No numeric rows found.</div>';
+}
+function renderExpr(){
+  const it = exprDoc.items;
+  const nums = new Set(it.map(x => x.label)).size;
+  const ok = it.filter(x => x.status === 'ok').length, bad = it.filter(x => x.status === 'bad');
+  const notes = it.filter(x => x.status === 'note').length;
+  const vBad = bad.filter(x => x.valueOk === false).length, dBad = bad.filter(x => !x.digitsOk).length;
+  const chip = (n, l, c) => '<div class="chip"><span class="n"' + (c ? ' style="color:' + c + '"' : '') + '>' + n + '</span><span class="l">' + l + '</span></div>';
+  $('chips').innerHTML = chip(nums.toLocaleString('en-US'), 'Numbers') + chip(it.length - notes, 'Expressions')
+    + chip(ok.toLocaleString('en-US'), 'Verified ✓', 'var(--emer)') + chip(vBad, 'Wrong value', vBad ? 'var(--rose)' : 'var(--ink3)')
+    + chip(dBad, 'Wrong digits', dBad ? 'var(--rose)' : 'var(--ink3)') + chip(notes, 'Notes', 'var(--ink2)');
+  $('chips').style.display = 'flex';
+  const row = x => {
+    if (x.note) return '<tr><td class="en">' + esc(x.label) + '</td><td>' + x.k + '</td><td class="enote">(' + esc(x.note) + ')</td><td></td><td></td></tr>';
+    const v = x.err ? '<span style="color:var(--rose)">' + esc(x.err) + '</span>' : esc(valueText(x.value));
+    return '<tr' + (x.status === 'bad' ? ' class="ebad"' : '') + '><td class="en">' + esc(x.label) + '</td><td>' + (x.k ?? '') + '</td><td class="ee">' + esc(x.expr) + '</td><td>' + v + '</td><td>'
+      + (x.valueOk === false ? badge('b-no', 'value ✗') : x.valueOk ? badge('b-ok', 'value ✓') : '') + (x.digitsOk ? badge('b-ok', 'digits ✓') : badge('b-no', 'digits ✗')) + '</td></tr>';
+  };
+  const table = rows => '<div class="gridwrap"><table class="et"><tr><th>Number</th><th>k</th><th>Expression</th><th>Value</th><th>Checks</th></tr>' + rows.map(row).join('') + '</table></div>';
+  const SHOW = 300;
+  let html = '';
+  if (exprDoc.head.length) html += '<div class="bcard"><div class="btitle">' + esc(exprDoc.head[0]) + '</div>' + exprDoc.head.slice(1).map(l => '<div class="hint" style="margin:4px 0 0">' + esc(l) + '</div>').join('') + '</div>';
+  if (bad.length) html += '<div class="bcard"><div class="bhead"><span class="btitle" style="color:var(--rose)">✗ ' + bad.length + ' expression' + (bad.length === 1 ? '' : 's') + ' failed</span></div>' + table(bad.slice(0, 500)) + '</div>';
+  else html += '<div class="bcard"><div class="bhead"><span class="btitle" style="color:var(--emer)">✓ All ' + ok.toLocaleString('en-US') + ' expressions verified</span></div><div class="hint" style="margin:0">Each value equals its number exactly, and each uses the digits k, k−1, …, 0 once, in decreasing order.</div></div>';
+  html += '<div class="bcard"><div class="bhead"><span class="btitle">First ' + Math.min(SHOW, it.length) + ' rows</span><span class="bsize">the Excel file contains all ' + it.length.toLocaleString('en-US') + '</span></div>' + table(it.slice(0, SHOW)) + '</div>';
+  $('blocks').innerHTML = html;
+}
+function blockTitleText(b, a, i){
+  const head = b.title || ('Block ' + (i + 1));
+  let t = head + '  —  ' + b.nRows + '×' + b.nCols;
+  if (a.square && a.numeric){ t += ' · ' + verdict(a); if (a.magic || a.semi) t += ' · S = ' + a.S; if (a.pandiagonal) t += ' · pandiagonal'; if (a.bimagic) t += ' · bimagic'; }
+  return t;
+}
+
+/* debounce live preview */
+let timer = null;
+function schedule(){ clearTimeout(timer); timer = setTimeout(run, $('txt').value.length > 300000 ? 700 : 250); }
+$('txt').addEventListener('input', schedule);
+document.querySelectorAll('.og select, .og input').forEach(el => el.addEventListener(el.type === 'text' ? 'change' : 'input', () => { if (el.id !== 'o-name') run(); }));
+
+/* files: open + drag & drop — decodes UTF-8, UTF-16 (Notepad "Unicode"), Windows-1252 */
+function decodeText(b){
+  const dec = (enc, bytes, fatal) => new TextDecoder(enc, {fatal: !!fatal}).decode(bytes);
+  if (b[0] === 0xEF && b[1] === 0xBB && b[2] === 0xBF) return dec('utf-8', b.subarray(3));
+  if (b[0] === 0xFF && b[1] === 0xFE) return dec('utf-16le', b.subarray(2));
+  if (b[0] === 0xFE && b[1] === 0xFF) return dec('utf-16be', b.subarray(2));
+  const n = Math.min(b.length, 4000); let zEven = 0, zOdd = 0;
+  for (let i = 0; i < n; i++) if (b[i] === 0) (i % 2 ? zOdd++ : zEven++);
+  if (zOdd > n / 4) return dec('utf-16le', b);
+  if (zEven > n / 4) return dec('utf-16be', b);
+  try { return dec('utf-8', b, true); } catch(e){ return dec('windows-1252', b); }
+}
+
+function readFiles(list){
+  const files = [...list].filter(f => f.size < 60 * 1024 * 1024);
+  if (!files.length) return;
+  Promise.all(files.map(f => f.arrayBuffer().then(buf => ({name:f.name, t:decodeText(new Uint8Array(buf))})))).then(arr => {
+    const joined = arr.map(x => arr.length > 1 && !/^[^\n]*[A-Za-z]/.test(x.t.trim()) ? x.name.replace(/\.[^.]+$/, '') + '\n' + x.t.trim() : x.t.trim()).join('\n\n');
+    $('txt').value = joined;
+    $('dz-text').textContent = 'Loaded: ' + arr.map(x => x.name).join(', ');
+    if (arr.length === 1) $('o-name').value = arr[0].name.replace(/\.[^.]+$/, '') || 'generated_excel';
+    run();
+  });
+}
+$('file-in').addEventListener('change', e => { readFiles(e.target.files); e.target.value = ''; });
+const drop = $('drop');
+['dragenter','dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', e => readFiles(e.dataTransfer.files));
+$('txt').addEventListener('dragover', e => e.preventDefault());
+$('txt').addEventListener('drop', e => { if (e.dataTransfer.files.length){ e.preventDefault(); readFiles(e.dataTransfer.files); } });
+
+/* buttons */
+function download(name, data, mime){
+  const blob = new Blob([data], {type:mime});
+  if (window.navigator && navigator.msSaveOrOpenBlob){ navigator.msSaveOrOpenBlob(blob, name); return; }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = name; a.rel = 'noopener'; a.style.display = 'none';
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 60000);
+}
+$('ex-btn').addEventListener('click', () => { $('txt').value = SAMPLE_TXT; run(); });
+$('sample-btn').addEventListener('click', () => download('sample.txt', SAMPLE_TXT, 'text/plain'));
+$('clear-btn').addEventListener('click', () => { $('txt').value = ''; $('dz-text').textContent = '…or drag & drop one or more text files here (they are joined as separate blocks)'; run(); });
+$('xl-btn').addEventListener('click', async () => {
+  if (!blocks.length && !exprDoc) return;
+  const o = opts();
+  $('xl-btn').disabled = true; $('xl-stat').className = 'status'; $('xl-stat').textContent = 'Building…';
+  await new Promise(r => setTimeout(r, 30));
+  try {
+    const t0 = performance.now();
+    const bytes = exprDoc ? await buildExprWorkbook(exprDoc, {exprLayout:$('o-exl').value, font: o.font < 8 ? 10 : o.font})
+      : await buildWorkbook(blocks, analyses, {sheets:o.sheets, layout:o.layout, perRow:o.perRow, gap:o.gap, color:o.color, k:o.k, pal:o.pal,
+      font:o.font, titles:o.titlesBar, sums:o.sums, summary:o.summary});
+    let name = ($('o-name').value || 'generated_excel').trim().replace(/[\\\/:*?"<>|]/g, '_');
+    if (!/\.xlsx$/i.test(name)) name += '.xlsx';
+    download(name, bytes, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    $('xl-stat').className = 'status ok';
+    const what = exprDoc ? exprDoc.items.length.toLocaleString('en-US') + ' expressions' : blocks.length + ' block' + (blocks.length === 1 ? '' : 's');
+    const kb = bytes.length / 1024;
+    $('xl-stat').textContent = '✓ ' + name + ' — ' + what + ', ' + (kb > 2048 ? (kb / 1024).toFixed(1) + ' MB' : kb.toFixed(0) + ' KB') + ', ' + Math.round(performance.now() - t0) + ' ms';
+  } catch(err){
+    $('xl-stat').className = 'status err'; $('xl-stat').textContent = '✗ ' + err.message;
+  }
+  $('xl-btn').disabled = false;
+});
+syncEnabled();
+})();
+</script>
+</body>
+</html>

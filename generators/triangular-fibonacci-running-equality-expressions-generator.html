@@ -1,0 +1,1828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Triangular and Fibonacci Running Equality Expressions Generator</title>
+<script src="/generators/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --bg:#f1edf6;
+    --panel:#ffffff;
+    --ink:#251c2d;
+    --muted:#70677a;
+    --line:#ddd3e6;
+    --accent:#604079;
+    --accent-dark:#432a52;
+    --accent-soft:#f1eaf6;
+    --gold:#c8953d;
+    --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family: "Iowan Old Style","Georgia",serif;
+    line-height:1.5;
+    min-height:100vh;
+    padding-top:18px;
+    background-image:radial-gradient(circle at 8% 5%,rgba(122,82,150,.16),transparent 26rem),radial-gradient(circle at 92% 92%,rgba(61,90,128,.13),transparent 28rem);
+  }
+  header{
+    max-width:1100px;
+    margin:0 auto;
+    padding:34px 32px 26px;
+    border:1px solid rgba(255,255,255,.2);
+    border-radius:18px;
+    background:linear-gradient(135deg,#34203f 0%,#56356a 54%,#334f70 100%);
+    color:#fff;
+    box-shadow:0 10px 32px rgba(48,28,60,.2);
+    overflow:hidden;
+  }
+  .header-inner{
+    max-width:1100px;
+    margin:0 auto;
+  }
+  h1{
+    font-size:clamp(1.75rem,4vw,2.45rem);
+    margin:0 0 6px;
+    font-weight:700;
+    font-style:italic;
+    letter-spacing:0.2px;
+  }
+  header p{
+    margin:0;
+    color:#eee7f3;
+    font-size:1.02rem;
+    max-width:760px;
+  }
+  .byline{margin:8px 0 0!important;color:#f2d39b!important;font-weight:600;letter-spacing:.25px;}
+  .rule-box{
+    margin-top:14px;
+    font-family:var(--mono);
+    font-size:0.9rem;
+    color:#fff;
+    background:rgba(255,255,255,.1);
+    border:1px solid rgba(255,255,255,.22);
+    border-left:3px solid var(--gold);
+    border-radius:9px;
+    padding:10px 14px;
+    max-width:820px;
+  }
+  .aim-box{
+    max-width:1100px;
+    margin:18px auto 0;
+    padding:16px 20px 17px;
+    background:rgba(255,255,255,.88);
+    border:1px solid var(--line);
+    border-left:4px solid var(--gold);
+    border-radius:12px;
+    box-shadow:0 8px 24px rgba(55,37,69,.09);
+  }
+  .aim-box h2{margin:0 0 10px;color:var(--accent-dark);font-size:1rem;font-weight:700;}
+  .aim-examples{display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;}
+  .aim-example{padding:10px 12px;background:#f8f5fa;border:1px solid #e7deed;border-radius:8px;border-left:3px solid #82609a;overflow-x:auto;}
+  .aim-example code{display:block;color:#32263a;font-family:var(--mono);font-size:.88rem;line-height:1.7;white-space:nowrap;}
+  main{
+    padding:24px 32px 60px;
+    max-width:1100px;
+    margin:0 auto;
+    margin-top:22px;
+    background:rgba(255,255,255,.62);
+    border:1px solid rgba(255,255,255,.88);
+    border-radius:18px;
+    box-shadow:0 18px 55px rgba(55,37,69,.12);
+    backdrop-filter:blur(8px);
+  }
+  .controls{
+    display:flex;
+    align-items:center;
+    gap:18px;
+    flex-wrap:wrap;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:19px 20px;
+    box-shadow:0 5px 18px rgba(67,42,82,.07);
+    margin-bottom:22px;
+  }
+  .controls label{
+    font-size:0.92rem;
+    color:var(--muted);
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .controls input[type=number]{
+    width:64px;
+    padding:5px 7px;
+    border:1px solid #cfcdc3;
+    border-radius:5px;
+    font-family:var(--mono);
+    font-size:0.85rem;
+  }
+  .controls select{
+    padding:5px 7px;
+    border:1px solid #cfcdc3;
+    border-radius:5px;
+    font-family:inherit;
+    font-size:0.85rem;
+    background:#fff;
+    color:var(--ink);
+  }
+  .stepper{
+    display:inline-flex;
+    align-items:center;
+    gap:0;
+    border:1px solid #cfcdc3;
+    border-radius:5px;
+    overflow:hidden;
+  }
+  .stepper input[type=number]{
+    border:none;
+    border-radius:0;
+    width:48px;
+    text-align:center;
+  }
+  .step-btn{
+    background:var(--accent-soft);
+    color:var(--accent-dark);
+    border:none;
+    padding:5px 10px;
+    font-size:0.95rem;
+    line-height:1;
+    cursor:pointer;
+    border-radius:0;
+  }
+  .step-btn:hover{background:#dfe7ee;}
+  .control-note{
+    max-width:820px;
+    color:var(--muted);
+    font-size:0.9rem;
+    margin:-10px 0 20px;
+    padding:9px 12px;
+    border-left:3px solid #9a78ad;
+    background:linear-gradient(90deg,rgba(241,234,246,.9),rgba(255,255,255,0));
+    border-radius:0 7px 7px 0;
+  }
+  button{
+    font-family:inherit;
+    font-size:0.9rem;
+    padding:9px 18px;
+    border-radius:8px;
+    border:none;
+    background:linear-gradient(135deg,var(--accent),#496b91);
+    color:#fff;
+    cursor:pointer;
+  }
+  button:hover{background:var(--accent-dark);}
+  button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid rgba(200,149,61,.38);outline-offset:2px;}
+  button:disabled{background:#b7c1cc; cursor:default;}
+  button.secondary{
+    background:transparent;
+    color:var(--accent-dark);
+    border:1px solid #cfd7de;
+  }
+  button.secondary:hover{background:var(--accent-soft);}
+  #status{
+    font-size:0.92rem;
+    color:var(--muted);
+    margin-left:auto;
+  }
+  .progress-track{
+    width:100%;
+    height:6px;
+    background:#ece9e0;
+    border-radius:4px;
+    overflow:hidden;
+    margin:4px 0 20px;
+    display:none;
+  }
+  .progress-fill{
+    height:100%;
+    width:0%;
+    background:var(--accent);
+    transition:width 0.15s ease;
+  }
+  .summary{
+    display:flex;
+    gap:28px;
+    flex-wrap:wrap;
+    margin-bottom:18px;
+    font-size:0.94rem;
+    color:var(--muted);
+  }
+  .summary strong{
+    color:var(--ink);
+    font-size:1.18rem;
+    display:block;
+    font-family:var(--mono);
+  }
+  .export-buttons{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-left:auto;
+  }
+  .export-buttons button{
+    padding:6px 12px;
+    font-size:0.88rem;
+  }
+  .search-row{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    margin-bottom:14px;
+  }
+  .search-row input[type=text]{
+    flex:1;
+    max-width:260px;
+    padding:8px 10px;
+    border:1px solid #cfcdc3;
+    border-radius:6px;
+    font-family:var(--mono);
+    font-size:0.9rem;
+  }
+  .run-filter{
+    display:flex;
+    gap:14px;
+    margin-left:auto;
+    font-size:0.82rem;
+    color:var(--muted);
+  }
+  .run-filter label{
+    display:flex;
+    align-items:center;
+    gap:5px;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .run-filter input[type=checkbox]{
+    accent-color:var(--accent);
+  }
+  .digit-run-box{
+    width:100%;
+    margin:2px 0;
+    padding:12px 14px 14px;
+    border:1px solid #d7c9df;
+    border-radius:12px;
+    background:linear-gradient(135deg,#fcf9fd,#f3edf7);
+  }
+  .digit-run-box legend{
+    padding:0 8px;
+    color:var(--ink);
+    font-weight:700;
+  }
+  .digit-run-hint{
+    margin:0 0 10px;
+    color:var(--muted);
+    font-size:0.82rem;
+  }
+  .digit-run-options{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:10px;
+  }
+  .digit-run-choice{
+    display:flex!important;
+    justify-content:flex-start!important;
+    align-items:center;
+    gap:10px;
+    min-width:0;
+    padding:11px 12px;
+    border:1px solid #d8d0dc;
+    border-radius:9px;
+    background:#fff;
+    cursor:pointer;
+  }
+  .digit-run-choice:hover{
+    border-color:var(--accent);
+    box-shadow:0 2px 8px rgba(93,52,112,.1);
+  }
+  .digit-run-choice input{flex:0 0 auto;accent-color:var(--accent);}
+  .digit-run-choice strong,.digit-run-choice small{display:block;}
+  .digit-run-choice strong{color:var(--ink);font-family:var(--mono);font-size:.98rem;}
+  .digit-run-choice small{margin-top:2px;color:var(--muted);font-size:.76rem;}
+  .special-function-box{
+    width:100%;
+    margin:2px 0;
+    padding:12px 14px 14px;
+    border:1px solid #c7d8df;
+    border-radius:12px;
+    background:linear-gradient(135deg,#f8fcfd,#edf5f7);
+  }
+  .operation-box{
+    width:100%;
+    margin:2px 0;
+    padding:12px 14px 14px;
+    border:1px solid #d9d2bd;
+    border-radius:12px;
+    background:linear-gradient(135deg,#fffdf8,#f8f3e6);
+  }
+  .operation-box legend{padding:0 8px;color:#5d4a23;font-weight:700;}
+  .operation-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
+  .operation-choice{
+    display:flex!important;
+    justify-content:flex-start!important;
+    align-items:center;
+    gap:10px;
+    min-width:0;
+    padding:11px 12px;
+    border:1px solid #ddd4bc;
+    border-radius:9px;
+    background:#fff;
+    cursor:pointer;
+  }
+  .operation-choice input{flex:0 0 auto;accent-color:#92712f;}
+  .operation-choice strong,.operation-choice small{display:block;}
+  .operation-choice strong{color:#5d4a23;font-size:.92rem;}
+  .operation-choice small{margin-top:2px;color:var(--muted);font-size:.76rem;}
+  .equality-box{
+    width:100%;
+    margin:2px 0;
+    padding:12px 14px 14px;
+    border:1px solid #d9c9dc;
+    border-radius:12px;
+    background:linear-gradient(135deg,#fdfafd,#f5edf7);
+  }
+  .equality-box legend{padding:0 8px;color:#5d3867;font-weight:700;}
+  .equality-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
+  .equality-choice{
+    display:flex!important;
+    justify-content:flex-start!important;
+    align-items:center;
+    gap:10px;
+    min-width:0;
+    padding:11px 12px;
+    border:1px solid #ddcfdf;
+    border-radius:9px;
+    background:#fff;
+    cursor:pointer;
+  }
+  .equality-choice:hover{border-color:#83578e;box-shadow:0 2px 8px rgba(93,56,103,.1);}
+  .equality-choice input{flex:0 0 auto;accent-color:#754780;}
+  .equality-choice strong,.equality-choice small{display:block;}
+  .equality-choice strong{color:#5d3867;font-size:.92rem;}
+  .equality-choice small{margin-top:2px;color:var(--muted);font-family:var(--mono);font-size:.76rem;}
+  .special-function-box legend{
+    padding:0 8px;
+    color:#294d5a;
+    font-weight:700;
+  }
+  .special-function-options{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:10px;
+  }
+  .special-function-choice{
+    display:flex!important;
+    justify-content:flex-start!important;
+    align-items:center;
+    gap:10px;
+    min-width:0;
+    padding:11px 12px;
+    border:1px solid #ccdce2;
+    border-radius:9px;
+    background:#fff;
+    cursor:pointer;
+  }
+  .special-function-choice:hover{
+    border-color:#4d8395;
+    box-shadow:0 2px 8px rgba(40,91,108,.1);
+  }
+  .special-function-choice input{flex:0 0 auto;accent-color:#3e7487;}
+  .special-function-choice strong,.special-function-choice small{display:block;}
+  .special-function-choice strong{color:#294d5a;font-size:.92rem;}
+  .special-function-choice small{margin-top:2px;color:var(--muted);font-size:.76rem;}
+  .composition-control{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-top:12px;
+    padding-top:11px;
+    border-top:1px solid #d6e3e7;
+    color:#294d5a;
+    font-size:.88rem;
+  }
+  .composition-control select{
+    padding:5px 8px;
+    border:1px solid #bfcfd5;
+    border-radius:6px;
+    background:#fff;
+    color:var(--ink);
+  }
+  #resultsWrap{
+    display:grid;
+    grid-template-columns: 200px 1fr;
+    gap:0;
+    border:1px solid var(--line);
+    border-radius:12px;
+    background:var(--panel);
+    overflow:hidden;
+    min-height:200px;
+    box-shadow:0 8px 26px rgba(67,42,82,.08);
+  }
+  #klist{
+    border-right:1px solid var(--line);
+    max-height:560px;
+    overflow-y:auto;
+  }
+  #klist .krow{
+    padding:9px 14px;
+    font-family:var(--mono);
+    font-size:0.92rem;
+    cursor:pointer;
+    display:flex;
+    justify-content:space-between;
+    border-bottom:1px solid #f1efe8;
+  }
+  #klist .krow:hover{background:var(--accent-soft);}
+  #klist .krow.active{background:var(--accent); color:#fff;}
+  #klist .krow span.count{color:var(--muted); font-size:0.78rem;}
+  #klist .krow.active span.count{color:#dce6ef;}
+  #detail{
+    padding:18px 22px;
+    max-height:560px;
+    overflow-y:auto;
+  }
+  #detail h2{
+    margin:0 0 4px;
+    font-family:var(--mono);
+    font-size:1.3rem;
+  }
+  #detail .meta-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    color:var(--muted);
+    font-size:0.89rem;
+    margin-bottom:14px;
+  }
+  .eq-item{
+    font-family:var(--mono);
+    font-size:1rem;
+    padding:9px 12px;
+    background:#f7f6f1;
+    border:1px solid #eceae1;
+    border-radius:8px;
+    border-left:3px solid #82609a;
+    margin-bottom:8px;
+    word-break:break-all;
+  }
+  .eq-item .tag{
+    display:inline-block;
+    font-family:inherit;
+    font-size:0.68rem;
+    color:#fff;
+    background:var(--accent);
+    border-radius:3px;
+    padding:1px 6px;
+    margin-right:8px;
+    vertical-align:middle;
+  }
+  .eq-item .tag-split{
+    background:#8a8d76;
+  }
+  .eq-meta{
+    color:var(--muted);
+    font-size:0.78rem;
+    white-space:normal;
+  }
+  .empty-note{
+    color:var(--muted);
+    font-size:0.9rem;
+    padding:40px 20px;
+    text-align:center;
+  }
+  footer{
+    max-width:1100px;
+    margin:20px auto 60px;
+    padding:0 32px;
+    color:var(--muted);
+    font-size:0.88rem;
+    text-align:center;
+  }
+  footer p{max-width:900px;margin:0 auto 14px;}
+  footer a{color:var(--accent-dark);font-weight:600;text-decoration:none;}
+  footer a:hover{text-decoration:underline;}
+  .footer-credit{font-size:.96rem;color:var(--ink);line-height:1.8;}
+  .footer-name{display:block;font-size:1.05rem;font-weight:700;color:var(--accent-dark);letter-spacing:.2px;}
+  .work-reference{
+    margin-top:18px;
+    padding:11px 14px;
+    border-left:3px solid var(--gold);
+    border-radius:0 8px 8px 0;
+    background:linear-gradient(90deg,rgba(241,234,246,.92),rgba(255,255,255,0));
+    color:#554b5e;
+    font-size:.9rem;
+  }
+  .work-reference a{white-space:nowrap;}
+  .work-reference-title{display:block;margin-bottom:7px;color:var(--accent-dark);font-size:.96rem;}
+  .work-reference ol{margin:0;padding-left:22px;text-align:left;}
+  .work-reference li{padding:4px 0 6px 4px;}
+  @media (max-width:1140px){header{margin-left:8px;margin-right:8px;}}
+  @media (max-width:720px){
+    body{padding-top:8px;}
+    header{padding:26px 18px 22px;border-radius:13px;}
+    .aim-box{margin:12px 8px 0;padding:14px;border-radius:10px;}
+    .aim-examples{grid-template-columns:1fr;}
+    main{padding:18px 14px 38px;margin:12px 8px 0;border-radius:13px;}
+    .controls{align-items:stretch;gap:12px;}
+    .controls label{justify-content:space-between;}
+    #status{width:100%;margin-left:0;}
+    .run-filter{width:100%;margin-left:0;flex-wrap:wrap;}
+    .digit-run-options{grid-template-columns:1fr;}
+    .special-function-options{grid-template-columns:1fr;}
+    .operation-options{grid-template-columns:1fr;}
+    .equality-options{grid-template-columns:1fr;}
+    .search-row{align-items:stretch;flex-wrap:wrap;}
+    .search-row input[type=text]{max-width:none;}
+    #resultsWrap{grid-template-columns:1fr;}
+    #klist{border-right:0;border-bottom:1px solid var(--line);max-height:210px;}
+    #detail{max-height:none;padding:16px;}
+    .summary{gap:16px;}
+    .export-buttons{width:100%;margin-left:0;}
+    footer{padding:0 18px;}
+  }
+  @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important;}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <h1>Triangular and Fibonacci Running Equality Expressions Generator</h1>
+    <p class="byline">Created by Inder J. Taneja</p>
+    <p>Searches for identities where the digits 1–9 (ascending), 9–1 (descending), or 9–0 (descending through zero) each
+    appear exactly once, in strict order, split across an equals sign into two sides that evaluate to the same value k.</p>
+    <div class="rule-box">
+      digits: <b>123456789</b> &nbsp;|&nbsp; <b>987654321</b> &nbsp;|&nbsp; <b>9876543210</b><br>
+      ops: + &minus; &times; &divide; &nbsp; ^ &nbsp; &radic; (up to 4 nested roots) &nbsp; ! &nbsp; (a!)! (factorial applied twice) &nbsp; T(n) &nbsp; F(n) &nbsp; parentheses &nbsp; unary &minus;
+    </div>
+  </div>
+</header>
+
+<section class="aim-box" aria-labelledby="aimTitle">
+  <h2 id="aimTitle">Examples with Triangular and Fibonacci functions:</h2>
+  <div class="aim-examples">
+    <div class="aim-example">
+      <code>881 := -9+8+7*(6+5!) = T(4)-T(T(F(3!)))-T(2)+T(T(10))</code>
+      <code>881 := 1+2*F(3!)*T(T(4)) = -5+T(6)+F(F(7))+T(T(8))-F(9)</code>
+    </div>
+    <div class="aim-example">
+      <code>1010 := -1+2+3!+4^5-T(6) = T(7)*T(8)+F(sqrt(9))</code>
+      <code>1010 := F(sqrt(9))+T(8)*T(7) = T(6)+5+4+T(T(3^2))-T(10)</code>
+    </div>
+  </div>
+</section>
+
+<main>
+  <div class="controls">
+    <label>Mode
+      <select id="searchMode">
+        <option value="broad">All k (broad, small-magnitude biased)</option>
+        <option value="interval">Specific interval</option>
+        <option value="exact">Exact target k</option>
+      </select>
+    </label>
+    <span id="intervalInputs" style="display:none; align-items:center; gap:8px;">
+      <label>From <input type="number" id="intervalFrom" value="1010" style="width:80px;"></label>
+      <label>To <input type="number" id="intervalTo" value="1033" style="width:80px;"></label>
+    </span>
+    <span id="targetInput" style="display:none; align-items:center; gap:8px;">
+      <label>Target k <input type="number" id="targetK" value="721" style="width:90px;"></label>
+    </span>
+    <label>Splits
+      <select id="splitPolicy">
+        <option value="all">All contiguous splits</option>
+        <option value="balanced">Balanced splits only</option>
+      </select>
+    </label>
+    <label>Initial "showing" count
+      <span class="stepper">
+        <button type="button" class="step-btn" id="repMinus">&minus;</button>
+        <input type="number" id="repCount" value="6" min="1" max="30">
+        <button type="button" class="step-btn" id="repPlus">+</button>
+      </span>
+    </label>
+    <fieldset class="equality-box" id="equalityBox">
+      <legend>Choose equality type</legend>
+      <p class="digit-run-hint">Select one or more equality structures to include in the search.</p>
+      <div class="equality-options">
+        <label class="equality-choice">
+          <input type="checkbox" class="side-toggle" value="2" checked>
+          <span><strong>Single equality</strong><small>k := a = b</small></span>
+        </label>
+        <label class="equality-choice">
+          <input type="checkbox" class="side-toggle" value="3">
+          <span><strong>Double equality</strong><small>k := a = b = c</small></span>
+        </label>
+        <label class="equality-choice">
+          <input type="checkbox" class="side-toggle" value="4">
+          <span><strong>Triple equality</strong><small>k := a = b = c = d</small></span>
+        </label>
+      </div>
+    </fieldset>
+    <fieldset class="operation-box" id="operationBox">
+      <legend>Choose operations</legend>
+      <p class="digit-run-hint">Basic operations and powers are always included. Add square roots and/or factorials.</p>
+      <div class="operation-options">
+        <label class="operation-choice">
+          <input type="checkbox" checked disabled>
+          <span><strong>Basic + powers</strong><small>+ − × ÷ and a^b</small></span>
+        </label>
+        <label class="operation-choice">
+          <input type="checkbox" id="allowSqrt" checked>
+          <span><strong>Square roots</strong><small>Allow sqrt(n)</small></span>
+        </label>
+        <label class="operation-choice">
+          <input type="checkbox" id="allowFactorial" checked>
+          <span><strong>Factorials</strong><small>Allow n! and (n!)!</small></span>
+        </label>
+      </div>
+    </fieldset>
+    <fieldset class="digit-run-box" id="searchRunFilter">
+      <legend>Choose digit runs</legend>
+      <p class="digit-run-hint">Select one or more sequences to include in the search.</p>
+      <div class="digit-run-options">
+        <label class="digit-run-choice">
+          <input type="checkbox" class="search-run-toggle" value="1→9" checked>
+          <span><strong>1 → 9</strong><small>Increasing: 123456789</small></span>
+        </label>
+        <label class="digit-run-choice">
+          <input type="checkbox" class="search-run-toggle" value="9→1" checked>
+          <span><strong>9 → 1</strong><small>Decreasing: 987654321</small></span>
+        </label>
+        <label class="digit-run-choice">
+          <input type="checkbox" class="search-run-toggle" value="9→0" checked>
+          <span><strong>9 → 0</strong><small>Decreasing through zero: 9876543210</small></span>
+        </label>
+      </div>
+    </fieldset>
+    <fieldset class="special-function-box" id="specialFunctionBox">
+      <legend>Choose special number functions</legend>
+      <p class="digit-run-hint">This choice is independent of Basic, square-root, and factorial operations.</p>
+      <div class="special-function-options">
+        <label class="special-function-choice">
+          <input type="radio" name="specialFunction" value="none" checked>
+          <span><strong>None</strong><small>No special number function</small></span>
+        </label>
+        <label class="special-function-choice">
+          <input type="radio" name="specialFunction" value="triangular">
+          <span><strong>Triangular</strong><small>T(n) = n(n+1)/2</small></span>
+        </label>
+        <label class="special-function-choice">
+          <input type="radio" name="specialFunction" value="fibonacci">
+          <span><strong>Fibonacci</strong><small>F(0)=0, F(1)=1</small></span>
+        </label>
+        <label class="special-function-choice">
+          <input type="radio" name="specialFunction" value="both">
+          <span><strong>Both</strong><small>Allow T(n) and F(n)</small></span>
+        </label>
+      </div>
+      <label class="composition-control">Composition depth
+        <select id="specialCompositionDepth">
+          <option value="1">1 — direct only: T(n), F(n)</option>
+          <option value="2">Up to 2 levels</option>
+          <option value="3">Up to 3 levels</option>
+          <option value="4" selected>Up to 4 levels</option>
+        </select>
+        <span>Includes T(T(n)), F(F(n)), T(F(n)), F(T(n)), and deeper mixtures.</span>
+      </label>
+    </fieldset>
+    <button id="runBtn">Run search</button>
+    <button id="stopBtn" class="secondary" disabled>Stop</button>
+    <span id="status"></span>
+  </div>
+  <p class="control-note">Equality partitions split the digit run into contiguous, non-overlapping chunks
+    (for example, a double equality may split 9 digits into three groups of 3) — every chunk still uses its digits
+    exactly once, and no digit is ever shared between chunks. Double and triple equalities add search time because
+    more partition points must be checked.</p>
+  <p class="control-note" id="modeNoteBroad">This only sets how many equations are shown per k when the search first
+    finishes — every distinct equation the search actually finds for a k is stored and can be reached via the
+    "showing" +/- control below, and downloads always include the full stored set, not just what's currently
+    displayed. Results are ranked by a transparent complexity score, with the simplest verified identities first.</p>
+  <p class="control-note" id="modeNoteInterval" style="display:none;">Interval mode retunes the search to favor values
+    near your chosen range instead of small numbers — this is what makes ranges like 1010–1033 reachable, at the cost
+    of no longer finding much outside it. Only the digit runs selected above are searched, and only k values
+    inside [From, To] are kept.</p>
+  <p class="control-note" id="modeNoteExact" style="display:none;">Exact-target mode concentrates the search on one
+    chosen value of k and retains only identities that pass a strict independent numerical recheck.</p>
+  <div class="progress-track" id="progressTrack"><div class="progress-fill" id="progressFill"></div></div>
+
+  <div id="summaryWrap" class="summary" style="display:none;">
+    <div><strong id="statKCount">0</strong>distinct k values</div>
+    <div><strong id="statEqCount">0</strong>equations stored</div>
+    <div><strong id="statRange">–</strong>k range</div>
+    <div><strong id="statRunCounts">–</strong>equations by digit run</div>
+    <span class="export-buttons" id="exportButtons">
+      <button class="secondary" id="downloadTxtBtn">Download .txt</button>
+      <button class="secondary" id="downloadXlsxBtn">Download .xlsx</button>
+    </span>
+  </div>
+
+  <div class="search-row" id="searchRow" style="display:none;">
+    <input type="text" id="kSearch" placeholder="Jump to k (e.g. 10080)">
+    <button class="secondary" id="jumpBtn">Go</button>
+    <span class="run-filter" id="runFilter">
+      <label><input type="checkbox" class="run-toggle" value="1→9" checked> 1→9 (increasing)</label>
+      <label><input type="checkbox" class="run-toggle" value="9→1" checked> 9→1 (decreasing)</label>
+      <label><input type="checkbox" class="run-toggle" value="9→0" checked> 9→0 (decreasing)</label>
+    </span>
+  </div>
+
+  <div id="resultsWrap" style="display:none;">
+    <div id="klist"></div>
+    <div id="detail"><div class="empty-note">Select a k value on the left.</div></div>
+  </div>
+
+  <div id="preRunNote" class="empty-note">Click "Run search" to build the table. This runs entirely in your browser.
+    Square-root, factorial, Triangular, and Fibonacci choices increase the search time; the progress line above shows
+    which stage is running.</div>
+</main>
+
+<footer>
+  <p><b>Caps used for performance and safety:</b> factorial argument limited to 0–12; factorial applied twice, written as (a!)!,
+  limited to arguments 0–3 (since (4!)! would require 24!, which is astronomically large); exponent magnitude capped
+  at ±10 unless the base is exactly &minus;1, 0, or 1 (which allow arbitrarily large throwaway exponents, matching
+  tricks like (9&minus;8)^765); Triangular indices are limited to 0–631 and Fibonacci indices to 0–27; all intermediate values capped at 200,000 in magnitude (real targets stay far below
+  that, and allowing bigger numbers mainly just multiplies the search space with useless giants); and at most 300
+  distinct values, 3 expression variants each, are kept per sub-expression, with smaller-magnitude integers kept in
+  preference to larger ones when a sub-expression has to be trimmed. That last choice is a deliberate trade-off: it's
+  what makes small-to-moderate k values (single and double digits, low hundreds) come back with dozens of
+  representations, but it means very large targets — several thousand and up, the kind that need a surviving
+  intermediate like 6! or 7! deep in the tree — are less likely to surface. If you want the search retuned to favor
+  that high range instead, that's a small constant change away.</p>
+  <p class="footer-credit"><span class="footer-name">Inder J. Taneja</span>
+    <a href="https://numbers-magic.com/" target="_blank" rel="noopener"><b>Numbers Magic</b></a> &nbsp;·&nbsp;
+    <a href="https://inderjtaneja.wordpress.com/" target="_blank" rel="noopener"><b>WordPress</b></a> &nbsp;·&nbsp;
+    <a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/" target="_blank" rel="noopener"><b>Mathematical Generators</b></a>
+  </p>
+  <div class="work-reference">
+    <b class="work-reference-title">References by the author:</b>
+    <ol>
+      <li>Inder J. Taneja, <i>Running Expressions in Increasing and Decreasing Orders of Natural Numbers Separated by Equality Signs</i>, RGMIA Research Report Collection, 18 (2015), Article 27, pp. 1–54,
+        <a href="http://rgmia.org/papers/v18/v18a27.pdf" target="_blank" rel="noopener">http://rgmia.org/papers/v18/v18a27.pdf</a>.</li>
+      <li>Inder J. Taneja, <i>Crazy Running Equality Expressions with Factorial and Square-Root</i>, Zenodo, December 06, 2021, pp. 1–464,
+        <a href="https://doi.org/10.5281/zenodo.5761752" target="_blank" rel="noopener">https://doi.org/10.5281/zenodo.5761752</a>.</li>
+      <li value="3">Inder J. Taneja, <i>Fibonacci Sequence and Running Expressions with Equalities – I</i>, RGMIA Research Report Collection, 20 (2017), Art. 35, pp. 1–83,
+        <a href="http://rgmia.org/papers/v20/v20a35.pdf" target="_blank" rel="noopener">http://rgmia.org/papers/v20/v20a35.pdf</a>.<br>
+        <b>Site Link:</b> Inder J. Taneja, <i>Fibonacci Sequence and Running Expressions with Equalities</i>,
+        <a href="https://inderjtaneja.wordpress.com/2017/08/21/fibonacci-sequence-and-running-expressions-with-equalities/" target="_blank" rel="noopener">https://inderjtaneja.wordpress.com/2017/08/21/fibonacci-sequence-and-running-expressions-with-equalities/</a>
+      </li>
+      <li value="4">Inder J. Taneja, <i>Running Expressions with Triangular Numbers – I</i>, Zenodo, December 21, 2018,
+        <a href="https://doi.org/10.5281/zenodo.2483327" target="_blank" rel="noopener">https://doi.org/10.5281/zenodo.2483327</a>.</li>
+    </ol>
+  </div>
+</footer>
+
+<script>
+// ---- Pretty-printer: minimal-parens display simplification ----
+// ---- Tokenizer ----
+function tokenize(s){
+  const toks = [];
+  let i=0;
+  while(i<s.length){
+    const c = s[i];
+    if(c===' '){ i++; continue; }
+    if(/[0-9]/.test(c)){
+      let j=i; while(j<s.length && /[0-9]/.test(s[j])) j++;
+      toks.push({t:'NUM', v:s.slice(i,j)}); i=j; continue;
+    }
+    if(s.slice(i,i+5)==='sqrt('){ toks.push({t:'SQRT'}); i+=4; continue; }
+    if(s.slice(i,i+2)==='T('){ toks.push({t:'TRI'}); i+=1; continue; }
+    if(s.slice(i,i+2)==='F('){ toks.push({t:'FIB'}); i+=1; continue; }
+    if(c==='!'){
+      if(s[i+1]==='!'){ toks.push({t:'FFACT'}); i+=2; } else { toks.push({t:'FACT'}); i+=1; }
+      continue;
+    }
+    if('+-*/^()'.includes(c)){ toks.push({t:c}); i++; continue; }
+    throw new Error('Unexpected char '+c+' at '+i);
+  }
+  return toks;
+}
+
+// ---- Parser (recursive descent) ----
+function parse(str){
+  const toks = tokenize(str);
+  let p = 0;
+  function peek(){ return toks[p]; }
+  function next(){ return toks[p++]; }
+  function expect(t){ if(!peek() || peek().t!==t) throw new Error('Expected '+t+' got '+JSON.stringify(peek())+' in '+str); return next(); }
+
+  function parseExpr(){
+    let node = parseTerm();
+    while(peek() && (peek().t==='+' || peek().t==='-')){
+      const op = next().t;
+      const rhs = parseTerm();
+      node = {type: op==='+'?'add':'sub', left:node, right:rhs};
+    }
+    return node;
+  }
+  function parseTerm(){
+    // Each multiplicand/divisor is parsed via parseUnary so a leading sign
+    // is legal on any factor (e.g. "2*-3"), not just the first one.
+    let node = parseUnary();
+    while(peek() && (peek().t==='*' || peek().t==='/')){
+      const op = next().t;
+      const rhs = parseUnary();
+      node = {type: op==='*'?'mul':'div', left:node, right:rhs};
+    }
+    return node;
+  }
+  function parseUnary(){
+    // Unary minus binds LOOSER than exponentiation (standard convention:
+    // -1^2 == -(1^2) == -1, not (-1)^2), so it wraps around parsePow rather
+    // than being parsed underneath it.
+    if(peek() && peek().t==='-'){
+      next();
+      return {type:'neg', arg: parseUnary()};
+    }
+    return parsePow();
+  }
+  function parsePow(){
+    let node = parsePostfix();
+    if(peek() && peek().t==='^'){
+      next();
+      const rhs = parseUnary(); // right-assoc; exponent may itself be signed (8^-9)
+      node = {type:'pow', left:node, right:rhs};
+    }
+    return node;
+  }
+  function parsePostfix(){
+    let node = parseAtom();
+    while(peek() && (peek().t==='FACT' || peek().t==='FFACT')){
+      const t = next().t;
+      node = {type: t==='FACT' ? 'fact' : 'ffact', arg: node};
+    }
+    return node;
+  }
+  function parseAtom(){
+    const tk = peek();
+    if(!tk) throw new Error('Unexpected end in '+str);
+    if(tk.t==='NUM'){ next(); return {type:'num', text: tk.v, value: Number(tk.v)}; }
+    if(tk.t==='SQRT'){ next(); expect('('); const inner=parseExpr(); expect(')'); return {type:'sqrt', arg:inner}; }
+    if(tk.t==='TRI'){ next(); expect('('); const inner=parseExpr(); expect(')'); return {type:'tri', arg:inner}; }
+    if(tk.t==='FIB'){ next(); expect('('); const inner=parseExpr(); expect(')'); return {type:'fib', arg:inner}; }
+    if(tk.t==='('){ next(); const inner=parseExpr(); expect(')'); return inner; } // parens are transparent
+    throw new Error('Unexpected token '+JSON.stringify(tk)+' in '+str);
+  }
+
+  const result = parseExpr();
+  if(p !== toks.length) throw new Error('Trailing tokens in '+str);
+  return result;
+}
+
+// Independent strict recheck of every completed identity before display.
+function evaluateAst(node){
+  switch(node.type){
+    case 'num': return node.value;
+    case 'neg': return -evaluateAst(node.arg);
+    case 'add': return evaluateAst(node.left) + evaluateAst(node.right);
+    case 'sub': return evaluateAst(node.left) - evaluateAst(node.right);
+    case 'mul': return evaluateAst(node.left) * evaluateAst(node.right);
+    case 'div': {
+      const d = evaluateAst(node.right);
+      return d === 0 ? NaN : evaluateAst(node.left) / d;
+    }
+    case 'pow': return Math.pow(evaluateAst(node.left), evaluateAst(node.right));
+    case 'sqrt': {
+      const v = evaluateAst(node.arg);
+      return v < 0 ? NaN : Math.sqrt(v);
+    }
+    case 'tri': {
+      const v = evaluateAst(node.arg);
+      return Number.isInteger(v) && v >= 0 && v <= TRI_INDEX_MAX ? triangular(v) : NaN;
+    }
+    case 'fib': {
+      const v = evaluateAst(node.arg);
+      return Number.isInteger(v) && v >= 0 && v <= FIB_INDEX_MAX ? fibonacci(v) : NaN;
+    }
+    case 'fact': {
+      const v = evaluateAst(node.arg);
+      return Number.isInteger(v) && v >= 0 && v <= FACT_MAX ? factorial(v) : NaN;
+    }
+    case 'ffact': {
+      const v = evaluateAst(node.arg);
+      return Number.isInteger(v) && v >= 0 && v <= FFACT_MAX ? factorial(factorial(v)) : NaN;
+    }
+    default: return NaN;
+  }
+}
+
+function strictlyVerified(sides, target){
+  try{
+    const values = sides.map(s => evaluateAst(parse(s)));
+    const tolerance = 1e-9 * Math.max(1, Math.abs(target));
+    return values.every(v => Number.isFinite(v) && Math.abs(v-target) <= tolerance) &&
+      values.every(v => Math.abs(v-values[0]) <= tolerance);
+  } catch(e){ return false; }
+}
+
+function expressionComplexity(sides){
+  const text = sides.join('=');
+  const factorials = (text.match(/!/g) || []).length;
+  const roots = (text.match(/sqrt/g) || []).length;
+  const specialFunctions = (text.match(/[TF]\(/g) || []).length;
+  const powers = (text.match(/\^/g) || []).length;
+  const binary = (text.match(/[+\-*/]/g) || []).length;
+  return binary + powers*2 + roots*3 + specialFunctions*3 + factorials*4 + Math.round(text.length/20);
+}
+
+// ---- Simplify ----
+// Flatten a +/- chain into signed terms WITHOUT folding numeric literals
+// together — every original digit block must stay visibly separate.
+function flattenSum(node, sign, out){
+  if(node.type==='add'){ flattenSum(node.left, sign, out); flattenSum(node.right, sign, out); }
+  else if(node.type==='sub'){ flattenSum(node.left, sign, out); flattenSum(node.right, -sign, out); }
+  else if(node.type==='neg'){ flattenSum(node.arg, -sign, out); }
+  else { out.push({sign, node}); }
+}
+
+function flattenMul(node, out){
+  if(node.type==='mul'){ flattenMul(node.left, out); flattenMul(node.right, out); }
+  else { out.push(node); }
+}
+
+// Recursively checks whether a node's rendering would start with a bare,
+// unguarded "-" — true for `neg` itself, and also for a `product` whose
+// leading factor is negative, or a `div` whose dividend is negative, since
+// both of those embed that leading render with no wrapping of their own.
+// Used to (a) fold such a leading sign into an enclosing sum term's own
+// sign instead of rendering an ugly "+-6", and (b) decide when a non-
+// leading operand needs protective parentheses (5/-6 -> 5/(-6)).
+function pullSign(node){
+  if(node.type === 'neg') return {sign:-1, node: node.arg};
+  if(node.type === 'product' && node.factors.length){
+    const first = pullSign(node.factors[0]);
+    if(first.sign === -1){
+      return {sign:-1, node: {type:'product', factors:[first.node, ...node.factors.slice(1)]}};
+    }
+  }
+  if(node.type === 'div'){
+    const left = pullSign(node.left);
+    if(left.sign === -1){
+      return {sign:-1, node: {type:'div', left:left.node, right:node.right}};
+    }
+  }
+  return {sign:1, node};
+}
+function startsWithBareMinus(node){ return pullSign(node).sign === -1; }
+
+function simplify(node){
+  switch(node.type){
+    case 'num': return node;
+    case 'sqrt': return {type:'sqrt', arg: simplify(node.arg)};
+    case 'tri': return {type:'tri', arg: simplify(node.arg)};
+    case 'fib': return {type:'fib', arg: simplify(node.arg)};
+    case 'fact': return {type:'fact', arg: simplify(node.arg)};
+    case 'ffact': return {type:'ffact', arg: simplify(node.arg)};
+    case 'pow': return {type:'pow', left: simplify(node.left), right: simplify(node.right)};
+    case 'div': {
+      const left = simplify(node.left), right = simplify(node.right);
+      if(left.type === 'neg' && right.type === 'neg'){
+        return {type:'div', left:left.arg, right:right.arg}; // -a/-b = a/b
+      }
+      // A single negative operand (either side) is left exactly as it was
+      // — rendering already places it correctly (bare if it's the
+      // dividend, parenthesized if it's the divisor). Only the double-
+      // negative case needs any change here.
+      return {type:'div', left, right};
+    }
+    case 'neg': {
+      const arg = simplify(node.arg);
+      if(arg.type === 'sum'){
+        // -(A - B + C) = -A + B - C : distributes cleanly, no digits merged.
+        return {type:'sum', terms: arg.terms.map(t => ({sign:-t.sign, node:t.node}))};
+      }
+      if(arg.type === 'neg') return arg.arg; // -(-x) = x
+      return {type:'neg', arg};
+    }
+    case 'mul': {
+      const factors = [];
+      flattenMul(node, factors);
+      const simplified = factors.map(simplify);
+      const negIndices = [];
+      simplified.forEach((f,i) => { if(f.type === 'neg') negIndices.push(i); });
+      // Cancel negative factors in pairs (-a*-b = a*b), left to right. An
+      // odd one out is left negative in its ORIGINAL position rather than
+      // pulling every sign out to the front of the whole product — a lone
+      // negative factor already renders correctly right where it is
+      // (bare if leading, parenthesized otherwise), so only an actual
+      // cancellable pair should change anything here.
+      const toCancel = new Set();
+      for(let i=0; i+1<negIndices.length; i+=2){ toCancel.add(negIndices[i]); toCancel.add(negIndices[i+1]); }
+      const stripped = simplified.map((f,i) => (f.type==='neg' && toCancel.has(i)) ? f.arg : f);
+      return stripped.length === 1 ? stripped[0] : {type:'product', factors: stripped};
+    }
+    case 'add': case 'sub': {
+      const raw = [];
+      flattenSum(node, 1, raw);
+      let terms = raw.map(({sign,node}) => ({sign, node: simplify(node)}));
+      // A term can come back wrapped in `neg` from the mul/div cancellation
+      // above even though it wasn't negated going in (e.g. "-a*b" inside a
+      // sum) — fold that into the term's own sign instead of rendering an
+      // inline "+-6".
+      terms = terms.map(({sign,node}) => {
+        const pulled = pullSign(node);
+        return {sign: sign*pulled.sign, node: pulled.node};
+      });
+      if(terms.length === 1 && terms[0].sign === 1) return terms[0].node;
+      return {type:'sum', terms};
+    }
+    default: return node;
+  }
+}
+
+// ---- Precedence-aware renderer (minimal necessary parens only) ----
+// Precedence: sum(1) < product/div(2) < pow/unary(3) < postfix !/!! (4) < atom(5)
+function precOf(node){
+  switch(node.type){
+    case 'sum': return 1;
+    case 'product': case 'div': return 2;
+    case 'pow': return 3;
+    case 'neg': return 3;
+    case 'fact': case 'ffact': return 4;
+    default: return 5; // num, sqrt
+  }
+}
+
+function render(node){
+  switch(node.type){
+    case 'num': return node.text;
+    case 'sqrt': return `sqrt(${render(node.arg)})`;
+    case 'tri': return `T(${render(node.arg)})`;
+    case 'fib': return `F(${render(node.arg)})`;
+    case 'fact': return wrapForPostfix(node.arg) + '!';
+    case 'ffact': {
+      // Rendered as (X!)! rather than X!! — in modern notation, n!! is
+      // the double factorial (n·(n-2)·(n-4)·...), a genuinely different
+      // operation from applying factorial twice. Writing it as (X!)!
+      // says exactly what's meant with no risk of that mix-up.
+      return `(${wrapForPostfix(node.arg)}!)!`;
+    }
+    case 'neg': return '-' + wrapIfBelow(node.arg, 3);
+    case 'pow': {
+      const base = wrapIfBelow(node.left, 4);
+      const exp = wrapNegOperand(node.right, 3);
+      return `${base}^${exp}`;
+    }
+    case 'div': {
+      const left = wrapIfBelow(node.left, 3);
+      const right = wrapNegOperand(node.right, 3);
+      return `${left}/${right}`;
+    }
+    case 'product': return node.factors.map((f, idx) => {
+      // Only non-leading factors risk reading as "*-" — a leading "-3*4"
+      // is ordinary and unambiguous, so it's left alone.
+      if(idx > 0) return wrapNegOperand(f, 3);
+      return wrapIfBelow(f, 3);
+    }).join('*');
+    case 'sum': {
+      let out = '';
+      node.terms.forEach((t, idx) => {
+        const rendered = wrapIfBelow(t.node, 2);
+        if(idx===0){ out += (t.sign<0? '-':'') + rendered; }
+        else { out += (t.sign<0? '-':'+') + rendered; }
+      });
+      return out;
+    }
+  }
+}
+// render child, adding parens only if child's precedence is strictly below `min`
+function wrapIfBelow(node, min){
+  const r = render(node);
+  return precOf(node) < min ? `(${r})` : r;
+}
+// Like wrapIfBelow, but ALSO parenthesizes a bare negative — used for the
+// right-hand operand of /, ^, and non-leading factors of *, where a raw
+// "-" right after another operator symbol (5/-6, 3^-4, 3*-45) reads badly
+// even though it isn't actually ambiguous. The base of ^, the left side of
+// /, and the leading factor of a product don't have this problem, so they
+// keep using plain wrapIfBelow.
+function wrapNegOperand(node, min){
+  if(startsWithBareMinus(node)) return `(${render(node)})`;
+  return wrapIfBelow(node, min);
+}
+// A sqrt result feeding straight into ! / !! is technically unambiguous bare
+// ("sqrt(9)!"), but reads oddly without a paren separating the function call
+// from the postfix operator, so this convention always adds one there —
+// matching how these equations are written by hand.
+function wrapForPostfix(node){
+  const r = render(node);
+  if(node.type === 'sqrt' || node.type === 'tri' || node.type === 'fib') return `(${r})`;
+  return precOf(node) < 5 ? `(${r})` : r;
+}
+
+function prettify(exprStr){
+  const ast = parse(exprStr);
+  const simplified = simplify(ast);
+  return render(simplified);
+}
+
+
+
+const FACT_MAX = 12;
+const FFACT_MAX = 3;
+const POW_EXP_CAP = 10;
+const TRI_INDEX_MAX = 631;
+const FIB_INDEX_MAX = 27;
+// Kept deliberately much tighter than a double's real range: without this,
+// chains of factorials/exponents explode into astronomically large integers
+// that are never useful (real k targets stay well under six digits) but
+// multiply the search space enormously. Nested sqrt/factorial composition
+// across interval levels still reaches deep constructions even with a small
+// per-level closure budget (see UNARY_ROUNDS).
+const VALUE_CAP = 200000;
+// Per-interval cap on distinct values kept, applied AFTER all raw
+// combinations for that interval are computed (not during insertion) —
+// trimming by insertion order badly biases toward whatever operator/split
+// happened to run first, which can silently drop simple, useful values
+// (this was caught during testing: a naive insertion-order cap dropped the
+// value 9 = 12-3 entirely). Trimming instead keeps the shortest-expression
+// (simplest) entries, which is both a reasonable proxy for "useful to build
+// on" and deterministic regardless of iteration order.
+const INTERVAL_VALUE_CAP = 300;
+const EXPR_PER_VALUE_CAP = 3;
+const UNARY_ROUNDS = 4; // allows sqrt(sqrt(sqrt(sqrt(x))))
+const EPS = 1e-6;
+
+function rkey(v){
+  if(!isFinite(v)) return null;
+  const r = Math.round(v*1e6)/1e6;
+  return Object.is(r,-0)?0:r;
+}
+
+function factorial(n){
+  let r=1;
+  for(let i=2;i<=n;i++) r*=i;
+  return r;
+}
+
+function triangular(n){
+  return n*(n+1)/2;
+}
+
+function fibonacci(n){
+  let a=0, b=1;
+  for(let i=0;i<n;i++) [a,b]=[b,a+b];
+  return a;
+}
+
+function isPureLiteral(e){
+  return /^\d+$/.test(e);
+}
+function wrapNeg(e){ return isPureLiteral(e) ? `-${e}` : `-(${e})`; }
+function wrapFact(e){ return isPureLiteral(e) ? `${e}!` : `(${e})!`; }
+function wrapFFact(e){ return `(${wrapFact(e)})!`; }
+
+function addEntry(map, value, expr){
+  const key = rkey(value);
+  if(key===null) return;
+  if(Math.abs(key) > VALUE_CAP) return;
+  if(!map.has(key)){
+    map.set(key, {value:key, exprs:[expr]});
+  } else {
+    const entry = map.get(key);
+    if(entry.exprs.length < EXPR_PER_VALUE_CAP && !entry.exprs.includes(expr)){
+      entry.exprs.push(expr);
+    }
+  }
+}
+
+let TARGET_RANGE = null; // null = broad mode; {lo, hi} = interval/exact mode
+let ALLOW_SQRT = true;
+let ALLOW_FACTORIAL = true;
+let SPECIAL_FUNCTION_MODE = 'none';
+let SPECIAL_COMPOSITION_DEPTH = 4;
+let SPLIT_POLICY = 'all';
+let SEARCH_RUN_LABELS = new Set(['1→9', '9→1', '9→0']);
+
+function priorityScore(v){
+  if(TARGET_RANGE){
+    const {lo, hi} = TARGET_RANGE;
+    const dist = (v >= lo && v <= hi) ? 0 : (v < lo ? lo - v : v - hi);
+    // Small values are always kept regardless of the target range — they're
+    // the "correction" terms (+3, -7, etc.) needed to fine-tune a
+    // near-target combination into landing exactly inside it.
+    return Math.abs(v) <= 20 ? 0 : dist;
+  }
+  return Math.abs(v); // broad mode: smaller magnitude wins, as before
+}
+
+function trimMap(map, cap){
+  // Priority: integers first (final matches must be integers, and integers
+  // are the most useful stepping stones for further factorial/sqrt chains),
+  // then by priorityScore (see above — depends on search mode), then
+  // shortest representative expression within each tier. Ranking integers
+  // ahead of everything else — rather than by raw expression length —
+  // matters a lot here: a freshly-closed value like sqrt(9)=3 has a longer
+  // expression than most raw literals, so a length-only trim systematically
+  // discarded exactly the sqrt/factorial results the search exists to find.
+  if(map.size <= cap) return;
+  const entries = Array.from(map.values());
+  entries.sort((a,b) => {
+    const ai = Number.isInteger(a.value) ? 0 : 1;
+    const bi = Number.isInteger(b.value) ? 0 : 1;
+    if(ai !== bi) return ai - bi;
+    const as = priorityScore(a.value), bs = priorityScore(b.value);
+    if(as !== bs) return as - bs;
+    return a.exprs[0].length - b.exprs[0].length;
+  });
+  map.clear();
+  for(let i=0;i<cap;i++){
+    map.set(entries[i].value, entries[i]);
+  }
+}
+
+function applyUnary(value, expr){
+  const out = [];
+  const specialDepth = (expr.match(/[TF]\(/g) || []).length;
+  // Skip re-negating an already-negative expression (e.g. turning "-12"
+  // back into "-(-12)") — mathematically harmless but produces cluttered,
+  // redundant-looking equations with no new expressive power.
+  if(!expr.startsWith('-')) out.push([-value, wrapNeg(expr)]);
+  if(ALLOW_SQRT && value >= 0) out.push([Math.sqrt(value), `sqrt(${expr})`]);
+  if(ALLOW_FACTORIAL && Number.isInteger(value) && value>=0 && value<=FACT_MAX){
+    out.push([factorial(value), wrapFact(expr)]);
+  }
+  if(ALLOW_FACTORIAL && Number.isInteger(value) && value>=0 && value<=FFACT_MAX){
+    out.push([factorial(factorial(value)), wrapFFact(expr)]);
+  }
+  if(specialDepth < SPECIAL_COMPOSITION_DEPTH &&
+      (SPECIAL_FUNCTION_MODE === 'triangular' || SPECIAL_FUNCTION_MODE === 'both') &&
+      Number.isInteger(value) && value>=0 && value<=TRI_INDEX_MAX){
+    out.push([triangular(value), `T(${expr})`]);
+  }
+  if(specialDepth < SPECIAL_COMPOSITION_DEPTH &&
+      (SPECIAL_FUNCTION_MODE === 'fibonacci' || SPECIAL_FUNCTION_MODE === 'both') &&
+      Number.isInteger(value) && value>=0 && value<=FIB_INDEX_MAX){
+    out.push([fibonacci(value), `F(${expr})`]);
+  }
+  return out.filter(([v]) => isFinite(v) && Math.abs(v) <= VALUE_CAP);
+}
+
+function unaryClose(map){
+  // No intermediate trimming here: the map entering this function is
+  // already capped to a bounded size, and letting a couple of rounds run
+  // freely before the final trimMap (called by the caller) is what allows
+  // sqrt/factorial results to actually survive priority ranking instead of
+  // being judged mid-derivation.
+  for(let r=0;r<UNARY_ROUNDS;r++){
+    const snapshot = [];
+    for(const e of map.values()) snapshot.push({value:e.value, expr:e.exprs[0]});
+    for(const {value,expr} of snapshot){
+      for(const [nv,nexpr] of applyUnary(value,expr)){
+        addEntry(map, nv, nexpr);
+      }
+    }
+  }
+}
+
+function safePow(base, exp){
+  if(!isFinite(base) || !isFinite(exp)) return null;
+  const b = rkey(base);
+  if(b === 1) return 1;
+  if(b === -1){
+    if(Number.isInteger(exp)) return (((exp%2)+2)%2===0) ? 1 : -1;
+    return null;
+  }
+  if(b === 0){
+    if(exp > 0) return 0;
+    return null;
+  }
+  // Negative exponents on any OTHER base are deliberately disallowed. A
+  // base like 7 to a negative power is a genuinely tiny but nonzero
+  // fraction (7^-8 ≈ 0.0000002) — this was previously allowed, and the
+  // fixed-precision rounding used for dedup/capping silently snapped
+  // values like that to exactly 0, letting the search report equations
+  // that were only approximately true as if they were exact. None of the
+  // hand-crafted examples this tool was built from ever use a negative
+  // exponent on anything but base -1, 0, or 1 (all handled exactly above)
+  // — so this restriction costs no real expressive power, it just closes
+  // off the one path that was producing inexact "identities".
+  if(exp < 0) return null;
+  if(exp > POW_EXP_CAP) return null;
+  if(!Number.isInteger(exp) && base < 0) return null;
+  const result = Math.pow(base, exp);
+  if(!isFinite(result) || Math.abs(result) > VALUE_CAP) return null;
+  return result;
+}
+
+async function buildDP(digits, shouldStop){
+  const n = digits.length;
+  const dp = [];
+  for(let i=0;i<=n;i++) dp.push(new Array(n+1));
+  for(let len=1; len<=n; len++){
+    for(let i=0; i+len<=n; i++){
+      if(shouldStop()) return null;
+      const j = i+len;
+      const map = new Map();
+      const literalStr = digits.slice(i,j).join('');
+      addEntry(map, Number(literalStr), literalStr);
+      for(let k=i+1; k<j; k++){
+        const leftMap = dp[i][k], rightMap = dp[k][j];
+        for(const le of leftMap.values()){
+          const lexpr = le.exprs[0], lval = le.value;
+          for(const re of rightMap.values()){
+            const rexpr = re.exprs[0], rval = re.value;
+            addEntry(map, lval+rval, `(${lexpr}+${rexpr})`);
+            addEntry(map, lval-rval, `(${lexpr}-${rexpr})`);
+            addEntry(map, lval*rval, `(${lexpr}*${rexpr})`);
+            if(rval !== 0) addEntry(map, lval/rval, `(${lexpr}/${rexpr})`);
+            const p = safePow(lval, rval);
+            if(p !== null){
+              // A negative base written bare before "^" is genuinely
+              // ambiguous text — "-6^2" reads as -(6^2) = -36 under
+              // standard precedence, not (-6)^2 = 36, which is what's
+              // actually meant here. Only the base side has this risk
+              // (the exponent side, e.g. "6^-9", is unambiguous).
+              const baseExpr = lexpr.startsWith('-') ? `(${lexpr})` : lexpr;
+              addEntry(map, p, `(${baseExpr}^${rexpr})`);
+            }
+          }
+        }
+      }
+      trimMap(map, INTERVAL_VALUE_CAP);
+      unaryClose(map);
+      trimMap(map, INTERVAL_VALUE_CAP);
+      dp[i][j] = map;
+      await new Promise(resolve => setTimeout(resolve, 0));
+    }
+  }
+  return dp;
+}
+
+function stripOuterParens(s){
+  while(s.length>1 && s[0]==='(' && s[s.length-1]===')'){
+    let depth=0, wraps=true;
+    for(let idx=0; idx<s.length; idx++){
+      if(s[idx]==='(') depth++;
+      else if(s[idx]===')') depth--;
+      if(depth===0 && idx < s.length-1){ wraps=false; break; }
+    }
+    if(!wraps) break;
+    s = s.slice(1,-1);
+  }
+  return s;
+}
+
+function combinations(arr, k){
+  const result = [];
+  const combo = [];
+  function helper(start){
+    if(combo.length === k){ result.push(combo.slice()); return; }
+    for(let i=start; i<arr.length; i++){
+      combo.push(arr[i]);
+      helper(i+1);
+      combo.pop();
+    }
+  }
+  helper(0);
+  return result;
+}
+
+// Generates up to `cap` combinations picking one expr from each group's
+// exprs list (each already capped small by EXPR_PER_VALUE_CAP), so a 4-way
+// match doesn't explode into 3^4 near-duplicate rows.
+function cartesianExprs(groupEntries, cap){
+  const out = [];
+  function helper(i, acc){
+    if(out.length >= cap) return;
+    if(i === groupEntries.length){ out.push(acc.slice()); return; }
+    for(const expr of groupEntries[i].exprs){
+      if(out.length >= cap) return;
+      acc.push(expr);
+      helper(i+1, acc);
+      acc.pop();
+    }
+  }
+  helper(0, []);
+  return out;
+}
+
+let sideCounts = new Set([2]); // which partition sizes (2-way, 3-way, 4-way...) to search for
+
+const RUNS = [
+  {label:'1→9', digits:'123456789'.split('')},
+  {label:'9→1', digits:'987654321'.split('')},
+  {label:'9→0', digits:'9876543210'.split('')}
+];
+
+let kMap = new Map();
+let cancelRequested = false;
+
+const STORAGE_CAP_PER_K = 1000; // generous safety ceiling only — testing showed real
+// counts top out in the low hundreds even with every partition size enabled, so this
+// is just a guard against a pathological edge case, not a practical limit.
+
+function recordMatch(kMap, kInt, boundaries, groupEntries, label, repCount){
+  if(!kMap.has(kInt)) kMap.set(kInt, {set:new Set(), list:[]});
+  const bucket = kMap.get(kInt);
+  if(bucket.list.length >= STORAGE_CAP_PER_K) return;
+  const combos = cartesianExprs(groupEntries, 6);
+  const splitTag = boundaries.slice(1).map((b,i) => b - boundaries[i]).join(' | ') + ' digits';
+  for(const combo of combos){
+    const rawSides = combo.map(stripOuterParens);
+    if(!strictlyVerified(rawSides, kInt)) continue;
+    // Dedup on the SIMPLIFIED form, not the raw one: different internal
+    // construction paths (different associativity groupings, different
+    // operator orders) often produce raw strings that are textually
+    // different but simplify to the exact same displayed equation — using
+    // the raw string as the dedup key let those through as "different"
+    // representations that then showed up as identical-looking repeats.
+    let prettySides;
+    try { prettySides = rawSides.map(prettify); } catch(e){ prettySides = rawSides; }
+    const eqStr = `k${kInt} := ${prettySides.join(' = ')}`;
+    if(bucket.list.length >= STORAGE_CAP_PER_K) break;
+    if(!bucket.set.has(eqStr)){
+      bucket.set.add(eqStr);
+      bucket.list.push({kInt, sides: rawSides, run: label, splitTag, sideCount: rawSides.length,
+        complexity: expressionComplexity(rawSides), verified:true});
+    }
+  }
+}
+
+function scanPartitions(dp, n, groupCount, label, repCount, kMap){
+  const cutPoints = [];
+  for(let i=1; i<n; i++) cutPoints.push(i);
+  const cutCombos = combinations(cutPoints, groupCount-1);
+  for(const cuts of cutCombos){
+    const boundaries = [0, ...cuts, n];
+    const sizes = boundaries.slice(1).map((b,i) => b - boundaries[i]);
+    if(SPLIT_POLICY === 'balanced' && Math.max(...sizes) - Math.min(...sizes) > 1) continue;
+    const groupMaps = [];
+    for(let i=0; i<groupCount; i++) groupMaps.push(dp[boundaries[i]][boundaries[i+1]]);
+    // Iterate the smallest map for efficiency, check membership in the rest.
+    let smallestIdx = 0;
+    for(let i=1; i<groupMaps.length; i++) if(groupMaps[i].size < groupMaps[smallestIdx].size) smallestIdx = i;
+    for(const [key, entry] of groupMaps[smallestIdx]){
+      const kInt = Math.round(key);
+      if(Math.abs(key-kInt) > EPS) continue;
+      if(TARGET_RANGE && (kInt < TARGET_RANGE.lo || kInt > TARGET_RANGE.hi)) continue;
+      let allMatch = true;
+      const ordered = [];
+      for(let i=0; i<groupMaps.length; i++){
+        if(i === smallestIdx){ ordered.push(entry); continue; }
+        const e = groupMaps[i].get(key);
+        if(!e){ allMatch = false; break; }
+        ordered.push(e);
+      }
+      if(!allMatch) continue;
+      recordMatch(kMap, kInt, boundaries, ordered, label, repCount);
+    }
+  }
+}
+
+function runSearch(repCount, onProgress, onDone, onStopped){
+  kMap = new Map();
+  const selectedRuns = RUNS.filter(run => SEARCH_RUN_LABELS.has(run.label));
+  let runIdx = 0;
+
+  function processRun(){
+    if(runIdx >= selectedRuns.length){ onDone(); return; }
+    const {label, digits} = selectedRuns[runIdx];
+    onProgress(`Building expression table for ${label} (${digits.join('')})...`, runIdx/selectedRuns.length*0.6);
+    setTimeout(async () => {
+      const dp = await buildDP(digits, () => cancelRequested);
+      if(cancelRequested || !dp){ onStopped(); return; }
+      const n = digits.length;
+      onProgress(`Scanning partitions for ${label}...`, runIdx/selectedRuns.length*0.6 + 0.15);
+      for(const g of sideCounts){
+        if(cancelRequested){ onStopped(); return; }
+        if(g < 2 || g > n) continue;
+        scanPartitions(dp, n, g, label, repCount, kMap);
+      }
+      runIdx++;
+      setTimeout(processRun, 0);
+    }, 0);
+  }
+  processRun();
+}
+
+const runBtn = document.getElementById('runBtn');
+const stopBtn = document.getElementById('stopBtn');
+const statusEl = document.getElementById('status');
+const progressTrack = document.getElementById('progressTrack');
+const progressFill = document.getElementById('progressFill');
+const preRunNote = document.getElementById('preRunNote');
+const resultsWrap = document.getElementById('resultsWrap');
+const summaryWrap = document.getElementById('summaryWrap');
+const searchRow = document.getElementById('searchRow');
+const klistEl = document.getElementById('klist');
+const detailEl = document.getElementById('detail');
+
+let currentRepCount = 6; // how many are stored per k when the search runs (search-time cap)
+let currentShowCount = 6; // how many are displayed right now (adjustable live, capped by what's stored)
+let activeK = null;
+let sortedKs = [];
+let enabledRuns = new Set(['1→9', '9→1', '9→0']);
+
+function visibleList(bucket){
+  return bucket.list.filter(it => enabledRuns.has(it.run));
+}
+
+document.querySelectorAll('.run-toggle').forEach(cb => {
+  cb.addEventListener('change', () => {
+    enabledRuns = new Set(Array.from(document.querySelectorAll('.run-toggle:checked')).map(el => el.value));
+    if(enabledRuns.size === 0){
+      // Don't let the filter hide everything silently — treat "all
+      // unchecked" the same as "all checked" rather than showing nothing.
+      document.querySelectorAll('.run-toggle').forEach(el => el.checked = true);
+      enabledRuns = new Set(['1→9', '9→1', '9→0']);
+    }
+    renderResults();
+  });
+});
+
+document.getElementById('repMinus').addEventListener('click', () => stepRepInput(-1));
+document.getElementById('repPlus').addEventListener('click', () => stepRepInput(1));
+function stepRepInput(delta){
+  const input = document.getElementById('repCount');
+  const val = Math.max(1, Math.min(30, (parseInt(input.value,10)||6) + delta));
+  input.value = val;
+}
+
+const searchModeSel = document.getElementById('searchMode');
+const intervalInputs = document.getElementById('intervalInputs');
+const targetInput = document.getElementById('targetInput');
+const modeNoteBroad = document.getElementById('modeNoteBroad');
+const modeNoteInterval = document.getElementById('modeNoteInterval');
+const modeNoteExact = document.getElementById('modeNoteExact');
+searchModeSel.addEventListener('change', () => {
+  const isInterval = searchModeSel.value === 'interval';
+  const isExact = searchModeSel.value === 'exact';
+  intervalInputs.style.display = isInterval ? 'inline-flex' : 'none';
+  targetInput.style.display = isExact ? 'inline-flex' : 'none';
+  modeNoteBroad.style.display = (!isInterval && !isExact) ? 'block' : 'none';
+  modeNoteInterval.style.display = isInterval ? 'block' : 'none';
+  modeNoteExact.style.display = isExact ? 'block' : 'none';
+});
+
+runBtn.addEventListener('click', () => {
+  const repCount = Math.max(1, Math.min(30, parseInt(document.getElementById('repCount').value,10) || 6));
+  currentRepCount = repCount;
+  currentShowCount = repCount;
+
+  sideCounts = new Set(Array.from(document.querySelectorAll('.side-toggle:checked')).map(el => parseInt(el.value,10)));
+  if(sideCounts.size === 0){
+    document.querySelector('.side-toggle[value="2"]').checked = true;
+    sideCounts = new Set([2]);
+  }
+
+  SEARCH_RUN_LABELS = new Set(Array.from(document.querySelectorAll('.search-run-toggle:checked')).map(el => el.value));
+  if(SEARCH_RUN_LABELS.size === 0){
+    document.querySelector('.search-run-toggle[value="1→9"]').checked = true;
+    SEARCH_RUN_LABELS = new Set(['1→9']);
+  }
+  enabledRuns = new Set(SEARCH_RUN_LABELS);
+  document.querySelectorAll('.run-toggle').forEach(el => { el.checked = enabledRuns.has(el.value); });
+  ALLOW_SQRT = document.getElementById('allowSqrt').checked;
+  ALLOW_FACTORIAL = document.getElementById('allowFactorial').checked;
+  SPECIAL_FUNCTION_MODE = document.querySelector('input[name="specialFunction"]:checked').value;
+  SPECIAL_COMPOSITION_DEPTH = parseInt(document.getElementById('specialCompositionDepth').value, 10);
+  SPLIT_POLICY = document.getElementById('splitPolicy').value;
+
+  if(searchModeSel.value === 'interval'){
+    let lo = parseInt(document.getElementById('intervalFrom').value, 10);
+    let hi = parseInt(document.getElementById('intervalTo').value, 10);
+    if(isNaN(lo) || isNaN(hi)){ statusEl.textContent = 'Enter valid From/To values.'; return; }
+    if(lo > hi) [lo, hi] = [hi, lo];
+    TARGET_RANGE = {lo, hi};
+  } else if(searchModeSel.value === 'exact'){
+    const target = parseInt(document.getElementById('targetK').value, 10);
+    if(isNaN(target)){ statusEl.textContent = 'Enter a valid target k.'; return; }
+    TARGET_RANGE = {lo:target, hi:target};
+  } else {
+    TARGET_RANGE = null;
+  }
+
+  runBtn.disabled = true;
+  stopBtn.disabled = false;
+  cancelRequested = false;
+  preRunNote.style.display = 'none';
+  progressTrack.style.display = 'block';
+  resultsWrap.style.display = 'none';
+  summaryWrap.style.display = 'none';
+  searchRow.style.display = 'none';
+  statusEl.textContent = 'Starting...';
+
+  runSearch(repCount, (msg, frac) => {
+    statusEl.textContent = msg;
+    progressFill.style.width = `${Math.round(frac*100)}%`;
+  }, () => {
+    // Put the simplest verified identities first, deterministically.
+    for(const bucket of kMap.values()){
+      bucket.list.sort((a,b) => a.complexity-b.complexity || formatEq(a).localeCompare(formatEq(b)));
+    }
+    progressFill.style.width = '100%';
+    statusEl.textContent = 'Done.';
+    runBtn.disabled = false;
+    stopBtn.disabled = true;
+    renderResults();
+  }, () => {
+    statusEl.textContent = 'Search stopped.';
+    runBtn.disabled = false;
+    stopBtn.disabled = true;
+    progressTrack.style.display = 'none';
+    if(kMap.size) renderResults();
+  });
+});
+
+stopBtn.addEventListener('click', () => {
+  cancelRequested = true;
+  stopBtn.disabled = true;
+  statusEl.textContent = 'Stopping safely…';
+});
+
+function renderResults(){
+  // Only k values that still have at least one match under the current
+  // run filter are listed — a k found only via, say, 9→1 disappears from
+  // the list entirely if that run is unchecked, rather than showing with
+  // a confusing "0" count.
+  sortedKs = Array.from(kMap.keys()).filter(k => visibleList(kMap.get(k)).length > 0).sort((a,b)=>a-b);
+  document.getElementById('statKCount').textContent = sortedKs.length.toLocaleString();
+  let totalEq = 0;
+  for(const k of sortedKs) totalEq += visibleList(kMap.get(k)).length;
+  document.getElementById('statEqCount').textContent = totalEq.toLocaleString();
+  document.getElementById('statRange').textContent = sortedKs.length ?
+    `${sortedKs[0]} … ${sortedKs[sortedKs.length-1]}` : '–';
+  const runCounts = {'1→9':0,'9→1':0,'9→0':0};
+  for(const k of sortedKs) for(const it of visibleList(kMap.get(k))) runCounts[it.run]++;
+  document.getElementById('statRunCounts').textContent = Array.from(enabledRuns).map(r => `${r}: ${runCounts[r]}`).join(' · ') || '–';
+
+  klistEl.innerHTML = '';
+  const frag = document.createDocumentFragment();
+  for(const k of sortedKs){
+    const row = document.createElement('div');
+    row.className = 'krow';
+    row.dataset.k = k;
+    const count = Math.min(visibleList(kMap.get(k)).length, currentShowCount);
+    row.innerHTML = `<span>k = ${k}</span><span class="count">${count}</span>`;
+    row.addEventListener('click', () => selectK(k));
+    frag.appendChild(row);
+  }
+  klistEl.appendChild(frag);
+
+  summaryWrap.style.display = 'flex';
+  searchRow.style.display = 'flex';
+  resultsWrap.style.display = sortedKs.length ? 'grid' : 'none';
+
+  if(sortedKs.length){
+    // Keep the current k selected if it's still visible; otherwise fall
+    // back to the first visible one.
+    selectK(sortedKs.includes(activeK) ? activeK : sortedKs[0]);
+  } else {
+    detailEl.innerHTML = `<div class="empty-note">No results match the current run filter.</div>`;
+  }
+}
+
+function refreshKlistCounts(){
+  document.querySelectorAll('#klist .krow').forEach(el => {
+    const k = Number(el.dataset.k);
+    const count = Math.min(visibleList(kMap.get(k)).length, currentShowCount);
+    el.querySelector('.count').textContent = count;
+  });
+  let totalEq = 0;
+  for(const k of sortedKs) totalEq += visibleList(kMap.get(k)).length;
+  document.getElementById('statEqCount').textContent = totalEq.toLocaleString();
+}
+
+function selectK(k){
+  activeK = k;
+  document.querySelectorAll('#klist .krow').forEach(el => {
+    el.classList.toggle('active', Number(el.dataset.k) === k);
+  });
+  const activeRow = document.querySelector(`#klist .krow[data-k="${k}"]`);
+  if(activeRow) activeRow.scrollIntoView({block:'nearest'});
+  renderDetail();
+}
+
+function formatEq(it){
+  // Simplify each side independently for display only — the stored raw
+  // (fully-parenthesized) form is what's actually verified, so a failure
+  // here just falls back to showing that raw form instead.
+  const pretty = it.sides.map(s => { try { return prettify(s); } catch(e){ return s; } });
+  return `${it.kInt} := ${pretty.join(' = ')}`;
+}
+
+function renderDetail(){
+  const k = activeK;
+  const bucket = kMap.get(k);
+  const visible = visibleList(bucket);
+  const maxAvail = visible.length;
+  currentShowCount = Math.max(1, Math.min(currentShowCount, maxAvail));
+  const items = visible.slice(0, currentShowCount);
+  detailEl.innerHTML = `
+    <h2>k = ${k}</h2>
+    <div class="meta-row">
+      <span>${maxAvail} verified representation${maxAvail===1?'':'s'} found · simplest first</span>
+      <span class="stepper">
+        <button type="button" class="step-btn" id="showMinus">&minus;</button>
+        <span id="showCountLabel" style="padding:0 8px; font-family:var(--mono); font-size:0.82rem;">showing ${items.length}</span>
+        <button type="button" class="step-btn" id="showPlus">+</button>
+      </span>
+    </div>
+    ${items.map(it => `<div class="eq-item">${formatEq(it)}<span class="eq-meta"> : (${it.run} | ${it.splitTag} | ${it.sideCount===2?'single equality':it.sideCount===3?'double equality':'triple equality'} | complexity ${it.complexity} | ✓ rechecked)</span></div>`).join('')}
+  `;
+  document.getElementById('showMinus').addEventListener('click', () => adjustShowCount(-1));
+  document.getElementById('showPlus').addEventListener('click', () => adjustShowCount(1));
+}
+
+function adjustShowCount(delta){
+  const maxAvail = visibleList(kMap.get(activeK)).length;
+  currentShowCount = Math.max(1, Math.min(maxAvail, currentShowCount + delta));
+  renderDetail();
+  refreshKlistCounts();
+}
+
+document.getElementById('jumpBtn').addEventListener('click', jumpToK);
+document.getElementById('kSearch').addEventListener('keydown', e => { if(e.key==='Enter') jumpToK(); });
+
+function jumpToK(){
+  const val = parseInt(document.getElementById('kSearch').value, 10);
+  if(isNaN(val)) return;
+  if(kMap.has(val) && visibleList(kMap.get(val)).length > 0){
+    selectK(val);
+  } else if(kMap.has(val)){
+    detailEl.innerHTML = `<div class="empty-note">k = ${val} was found, but not under the currently checked digit runs.</div>`;
+    document.querySelectorAll('#klist .krow').forEach(el => el.classList.remove('active'));
+  } else {
+    detailEl.innerHTML = `<div class="empty-note">No representations found for k = ${val}.</div>`;
+    document.querySelectorAll('#klist .krow').forEach(el => el.classList.remove('active'));
+  }
+}
+
+// ---- Export: .txt and .xlsx ----
+// Exports everything currently stored for the visible (filtered) k's — not
+// just what's on screen — since "showing N" is a display cap, and the
+// point of a download is to hand over the full found set.
+function gatherExportRows(){
+  const rows = [];
+  for(const k of sortedKs){
+    for(const it of visibleList(kMap.get(k))){
+      const sides = it.sides.map(s => { try { return prettify(s); } catch(e){ return s; } });
+      rows.push({k: it.kInt, sides, sideCount: it.sideCount, run: it.run, split: it.splitTag,
+        complexity:it.complexity, verified:it.verified});
+    }
+  }
+  return rows;
+}
+
+function triggerDownload(blob, filename){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function downloadTxt(){
+  const rows = gatherExportRows();
+  if(!rows.length){ statusEl.textContent = 'Nothing to export — run a search first.'; return; }
+  const modeDesc = searchModeSel.value === 'exact' ? `Exact target k = ${TARGET_RANGE.lo}` :
+    (TARGET_RANGE ? `Interval [${TARGET_RANGE.lo}, ${TARGET_RANGE.hi}]` : 'Broad (all k)');
+  let out = 'Crazy Running Equality Expressions Generator\n';
+  out += `Generated: ${new Date().toISOString()}\n`;
+  out += `Search mode: ${modeDesc}\n`;
+  out += `Digit runs included: ${Array.from(enabledRuns).join(', ')}\n`;
+  out += `Side counts included: ${Array.from(sideCounts).sort((a,b)=>a-b).join(', ')}\n`;
+  out += `Operations: Basic + powers${ALLOW_SQRT ? ', square roots' : ''}${ALLOW_FACTORIAL ? ', factorials' : ''}\n`;
+  out += `Special number functions: ${SPECIAL_FUNCTION_MODE}\n`;
+  out += `Special-function composition depth: ${SPECIAL_COMPOSITION_DEPTH}\n`;
+  out += `Split policy: ${SPLIT_POLICY}\n`;
+  out += `Total equations: ${rows.length}\n`;
+  out += '\n';
+  for(const row of rows){
+    out += `${row.k} := ${row.sides.join(' = ')} : (${row.run} | ${row.split} | ${row.sideCount===2?'single equality':row.sideCount===3?'double equality':'triple equality'} | complexity ${row.complexity} | ✓ rechecked)\n`;
+  }
+  triggerDownload(new Blob([out], {type:'text/plain'}), 'crazy_running_equality_expressions.txt');
+}
+
+function downloadXlsx(){
+  if(typeof XLSX === 'undefined'){
+    statusEl.textContent = 'Excel export library failed to load (check your network settings).';
+    return;
+  }
+  const rows = gatherExportRows();
+  if(!rows.length){ statusEl.textContent = 'Nothing to export — run a search first.'; return; }
+  const data = [['k', 'Equation', 'Equality type', 'Sides', 'Digit run', 'Split (digits)', 'Complexity', 'Verification']];
+  for(const row of rows) data.push([row.k, row.sides.join(' = '), row.sideCount===2?'Single':row.sideCount===3?'Double':'Triple', row.sideCount, row.run, row.split, row.complexity, row.verified?'Rechecked':'']);
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [{wch:8}, {wch:80}, {wch:8}, {wch:10}, {wch:16}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Equations');
+  XLSX.writeFile(wb, 'crazy_running_equality_expressions.xlsx');
+}
+
+document.getElementById('downloadTxtBtn').addEventListener('click', downloadTxt);
+document.getElementById('downloadXlsxBtn').addEventListener('click', downloadXlsx);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Upside-Down Plates: Orders 9 and 10</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Oswald:wght@400;500&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root{
+  --s:230px;
+  --orig:#f7c5dd;      /* original faces (pink, as on numbers-magic.com) */
+  --refl:#bfe8f5;      /* water-reflection faces */
+  --ink:#111111;
+  --sh:1.6;            /* sky and water heights (equal) */
+  --lw:1;
+  --faint:rgba(70,60,50,.22);   /* ordinary cell lines inside block squares */              /* line thickness multiplier */
+  --line:#2a2a2a;      /* grid line colour */
+  --gold:#e8c66a;
+  --violet:#a98bff;
+  --bg:#07050E;
+}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,#fbf4e0 0%,#f7ecd0 55%,#f3e4bd 100%);color:#2a2340;font-family:'Share Tech Mono',monospace;}
+header{text-align:center;padding:22px 16px 6px}
+h1{font-family:'Cinzel',serif;color:var(--gold);margin:0;font-size:clamp(22px,3.4vw,38px);letter-spacing:.06em}
+.sub{color:#b9b0d8;margin-top:6px;font-size:14px}
+.wrap{display:grid;grid-template-columns:1fr 370px;gap:18px;max-width:1300px;margin:12px auto;padding:0 16px}
+@media (max-width:950px){.wrap{grid-template-columns:1fr}}
+
+/* ---------- stage ---------- */
+.stage{position:relative;border:1px solid #2a2340;border-radius:14px;overflow:hidden;
+  background:radial-gradient(ellipse at 50% 30%,#1b1433 0%,#0a0716 70%);cursor:grab;user-select:none;touch-action:none}
+.stage:active{cursor:grabbing}
+.scene{position:relative;height:calc(var(--s)*var(--sh));perspective:calc(var(--s)*5);display:flex;align-items:center;justify-content:center}
+.cube{position:relative;width:var(--s);height:var(--s);transform-style:preserve-3d}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.face.active .grid{box-shadow:0 0 calc(var(--s)*.09) var(--gold)}
+.badge{position:absolute;top:4%;left:4%;font:600 calc(var(--s)*.045) 'Share Tech Mono',monospace;
+  background:rgba(0,0,0,.72);color:var(--gold);padding:.15em .4em;border-radius:.3em;pointer-events:none}
+.face.refl .badge{color:#8fe3ff}
+.hidelabels .badge{display:none}
+
+.waterline{height:2px;background:linear-gradient(90deg,transparent,rgba(190,235,255,.5) 18%,rgba(255,238,200,.75) 50%,rgba(190,235,255,.5) 82%,transparent);
+  background-size:200% 100%;animation:shimmer 9s linear infinite;box-shadow:0 0 10px rgba(120,200,255,.35)}
+@keyframes shimmer{to{background-position:-200% 0}}
+.water{position:relative;height:calc(var(--s)*var(--sh));overflow:hidden;
+  background:linear-gradient(#0b2b46 0%,#06192b 55%,#030a14 100%)}
+.rl{position:absolute;inset:0;pointer-events:none}
+.rl .scene{transform:scaleY(-1)}
+/* near layer: crisp, gently rippled, strongest right under the surface */
+.rl-near{filter:url(#ripple) brightness(.88) saturate(.95);opacity:.9;
+  -webkit-mask-image:linear-gradient(to bottom,#000 0%,rgba(0,0,0,.9) 45%,rgba(0,0,0,.55) 80%,rgba(0,0,0,.25) 100%);
+          mask-image:linear-gradient(to bottom,#000 0%,rgba(0,0,0,.9) 45%,rgba(0,0,0,.55) 80%,rgba(0,0,0,.25) 100%)}
+/* deep layer: softer, more distorted, fades into the dark */
+.rl-far{filter:url(#rippleDeep) blur(1.5px) brightness(.72);opacity:.55;
+  -webkit-mask-image:linear-gradient(to bottom,transparent 25%,rgba(0,0,0,.6) 55%,rgba(0,0,0,.6) 85%,transparent 100%);
+          mask-image:linear-gradient(to bottom,transparent 25%,rgba(0,0,0,.6) 55%,rgba(0,0,0,.6) 85%,transparent 100%)}
+.water .tint{position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(rgba(60,140,200,.08) 0%,rgba(10,45,80,.22) 50%,rgba(3,10,20,.5) 100%)}
+.water .glow{position:absolute;left:50%;top:0;width:calc(var(--s)*2.2);height:calc(var(--s)*.4);transform:translate(-50%,-50%);
+  background:radial-gradient(ellipse at center,rgba(232,198,106,.16),rgba(120,200,255,.06) 45%,transparent 70%);pointer-events:none}
+.glints{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;mix-blend-mode:screen}
+.glints path{fill:none;stroke-linecap:round;vector-effect:non-scaling-stroke;animation:glint linear infinite}
+@keyframes glint{to{stroke-dashoffset:-600}}
+.nowater .water,.nowater .waterline{display:none}
+
+/* ---------- grids (shared by cube + cards) ---------- */
+.grid{display:grid;width:100%;height:100%;border:calc(var(--s)*.009*var(--lw)) solid var(--line);background:var(--orig)}
+.refl .grid,.grid.refl{background:var(--refl)}
+.cell{display:flex;align-items:center;justify-content:center;border:calc(var(--s)*.0032*var(--lw)) solid var(--line);
+  font-family:'Oswald',sans-serif;font-weight:500;color:var(--ink);line-height:1}
+/* "1" drawn as a plain bar so it stays a 1 in the water (as in the original figures) */
+.edge{position:absolute;background:linear-gradient(90deg,#7a5f22,#e8c66a 50%,#7a5f22);backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.cell{overflow:hidden;min-width:0;min-height:0}
+.ct{display:inline-flex;align-items:center;white-space:nowrap;transform-origin:center}
+.seg7{height:.8em;width:auto;margin:0 .05em;fill:currentColor;display:block}
+.cell.sg{gap:0}
+.one{display:inline-block;width:.1em;height:.72em;background:currentColor;margin:0 .13em;vertical-align:baseline}
+
+/* ---------- panel ---------- */
+.panel{display:flex;flex-direction:column;gap:12px}
+.box{border:1px solid #2a2340;border-radius:12px;padding:12px 14px;background:#0e0a1c}
+.box h2{font-family:'Cinzel',serif;font-size:15px;color:var(--gold);margin:0 0 10px;letter-spacing:.05em}
+.btns{display:flex;flex-wrap:wrap;gap:6px}
+button{font:13px 'Share Tech Mono',monospace;background:#1c1533;color:#eee;border:1px solid #3d3363;
+  border-radius:7px;padding:6px 9px;cursor:pointer}
+button:hover{border-color:var(--gold);color:var(--gold)}
+button.o{border-left:4px solid var(--orig)}
+button.r{border-left:4px solid var(--refl)}
+button.w{background:#0d3150;border-color:#2c78a8}
+.prow{display:grid;grid-template-columns:88px 1fr 1fr 34px;gap:6px;align-items:center;margin-bottom:6px;font-size:13px}
+.ctl{display:grid;grid-template-columns:120px 1fr 48px;gap:8px;align-items:center;font-size:13px;margin:6px 0}
+.ctl input[type=range]{width:100%}
+.chk{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;margin-top:6px}
+input[type=color]{width:100%;height:26px;border:none;background:none;padding:0}
+#activeInfo{font-size:13px;line-height:1.55}
+#activeInfo .t{color:var(--gold);font-size:14px}
+#activeMini{width:150px;height:150px;margin:8px auto;--s:150px}
+.ok{color:#7ee2a8}.bad{color:#ff8f8f}
+
+/* ---------- pairs section ---------- */
+section.pairs{max-width:1300px;margin:8px auto 30px;padding:0 16px}
+section.pairs h2{font-family:'Cinzel',serif;color:var(--gold);font-size:20px;margin:18px 0 10px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:14px}
+.card{border:1px solid #2a2340;border-radius:12px;padding:12px;background:#0e0a1c}
+.card h3{margin:0 0 8px;font-family:'Cinzel',serif;color:#f1d98f;font-size:15px}
+.duo{display:flex;gap:14px;justify-content:center}
+.duo figure{margin:0;text-align:center;font-size:12px;color:#b9b0d8}
+.mini{--s:120px;width:120px;height:120px;margin:4px auto}
+.lake{margin:10px auto 4px;width:150px}
+.lake .mini{--s:120px}
+.lake .wl{height:2px;margin:3px 0;background:linear-gradient(90deg,transparent,#8fe3ff,transparent)}
+.lake .mir{transform:scaleY(-1);opacity:.85;filter:url(#rippleSoft) brightness(.85);
+  -webkit-mask-image:linear-gradient(to top,#000 0%,rgba(0,0,0,.55) 55%,transparent 100%);
+          mask-image:linear-gradient(to top,#000 0%,rgba(0,0,0,.55) 55%,transparent 100%)}
+.card p{font-size:12.5px;line-height:1.5;margin:8px 0 0;color:#d6d0e6}
+details{margin-top:14px}
+summary{cursor:pointer;color:var(--gold);font-family:'Cinzel',serif}
+.ed{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:10px}
+textarea{width:100%;height:90px;background:#120d24;color:#eee;border:1px solid #3d3363;border-radius:8px;
+  font:14px 'Share Tech Mono',monospace;padding:6px}
+.tabs{display:grid;grid-template-columns:repeat(2,auto);justify-content:center;align-items:center;gap:8px 30px;margin:12px auto 6px;max-width:1000px}
+.tabgroup{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.tablabel{font-family:'Cinzel',serif;color:var(--gold);font-size:13px;font-weight:700;margin-right:2px;white-space:nowrap}
+@media (max-width:760px){.tabs{grid-template-columns:1fr;justify-items:center}}
+.tabs a{font:13px 'Share Tech Mono',monospace;color:#cfc6ee;text-decoration:none;padding:5px 11px;border:1px solid #3d3363;border-radius:20px;background:#140f27}
+.tabs a:hover{border-color:var(--gold);color:var(--gold)}
+.tabs a.on{background:var(--gold);color:#1a1206;border-color:var(--gold);font-weight:600}
+.chips{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:4px 0 6px}
+.chips a{font:13px 'Share Tech Mono',monospace;color:#cfc6ee;text-decoration:none;padding:5px 11px;border:1px solid #3d3363;border-radius:8px;background:#100c20}
+.chips a:hover{border-color:var(--gold);color:var(--gold)}
+.chips a.on{border-color:#8fe3ff;color:#8fe3ff;background:#0d3150}
+footer{text-align:center;color:#6f6790;font-size:12px;padding:10px 0 24px}
+
+/* ---------- light page with coloured cards ---------- */
+h1{color:#4b2e83}
+.sub{color:#5a5275}
+.box{box-shadow:0 3px 12px rgba(90,60,10,.16)}
+.panel .box:nth-child(1){background:#efe9ff;border-color:#cfc3f7}
+.panel .box:nth-child(1) h2{color:#5b3fb5}
+.panel .box:nth-child(2){background:#e6f7ee;border-color:#ade0c4}
+.panel .box:nth-child(2) h2{color:#1f7a4d}
+.panel .box:nth-child(3){background:#fff1e3;border-color:#f3cfa8}
+.panel .box:nth-child(3) h2{color:#b5651d}
+#activeInfo{color:#2a2340}
+#activeInfo .t{color:#1f7a4d}
+button{background:#fff;color:#2a2340;border:1px solid #c9c0e0}
+button:hover{border-color:#c79a2a;color:#9a6b00}
+button.w{background:#dff2fb;border-color:#8cc8e6;color:#0d4d6e}
+.tabs a{background:#fff;color:#3b3355;border-color:#d5cdea}
+.tabs a:hover{border-color:#c79a2a;color:#9a6b00}
+.tabs a.on{background:#e8c66a;color:#1a1206;border-color:#c9a43f}
+.tablabel{color:#9a6b00}
+.chips a{background:#fff;color:#3b3355;border-color:#d5cdea}
+.chips a.on{background:#dff2fb;border-color:#5fb3d9;color:#0d4d6e}
+.stage{border-color:#cfc6e6;box-shadow:0 6px 22px rgba(30,20,60,.28)}
+section.pairs h2{color:#3d2470}
+.cards .card:nth-child(3n+1){background:#e4f1fb;border-color:#a8cde9}
+.cards .card:nth-child(3n+1) h3{color:#1f5f8b}
+.cards .card:nth-child(3n+2){background:#fde9f0;border-color:#f0b3c8}
+.cards .card:nth-child(3n+2) h3{color:#a8325e}
+.cards .card:nth-child(3n){background:#fbf5d6;border-color:#eadb8e}
+.cards .card:nth-child(3n) h3{color:#7d6200}
+.card{box-shadow:0 3px 12px rgba(90,60,10,.16)}
+.card p{color:#2a2340}
+.duo figure{color:#5a5275}
+.ok{color:#1d7a46}.bad{color:#c0392b}
+summary{color:#6b4500}
+textarea{background:#fff;color:#2a2340;border-color:#cfc6e6}
+footer{color:#7a7290}
+
+/* ---------- title & index cards, left stripes, footer ---------- */
+header{padding:18px 16px 4px;max-width:1300px;margin:0 auto;display:grid;gap:12px}
+.hcard{position:relative;border-radius:12px;padding:16px 20px 14px 26px;border:1px solid #e2dbf0;box-shadow:0 3px 12px rgba(90,60,10,.16);overflow:hidden}
+.hcard::before,.box::before,.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:7px}
+.box,.card{position:relative;overflow:hidden;padding-left:22px}
+.titlecard{background:linear-gradient(100deg,#fffaf0,#f3ecff);text-align:center}
+.titlecard::before{background:linear-gradient(#7b4fd6,#e8c66a)}
+.titlecard h1{margin:0}
+.byline{font-family:'Cinzel',serif;font-size:15px;color:#8a5a00;margin-top:6px;letter-spacing:.04em}
+.byline b{color:#4b2e83}
+.indexcard{background:#fffdf6;text-align:center}
+.indexcard::before{background:linear-gradient(#e8a33a,#d8577a)}
+.idxhead{font-family:'Cinzel',serif;font-weight:700;color:#b5651d;font-size:15px;letter-spacing:.08em;text-transform:uppercase;text-align:left;margin-bottom:4px}
+.indexcard .tabs{margin:6px auto 4px}
+.note{font-size:12.5px;color:#7a7290;margin-top:4px}
+.panel .box:nth-child(1)::before{background:#7b4fd6}
+.panel .box:nth-child(2)::before{background:#2fa36b}
+.panel .box:nth-child(3)::before{background:#e08a3a}
+.cards .card:nth-child(3n+1)::before{background:#3a8fd0}
+.cards .card:nth-child(3n+2)::before{background:#d8577a}
+.cards .card:nth-child(3n)::before{background:#d4b02a}
+footer{text-align:center;padding:18px 16px 30px;font-size:13px;color:#3d3355}
+.fname{font-family:'Cinzel',serif;font-weight:700;color:#4b2e83;font-size:16px;margin-bottom:6px}
+.flinks{display:flex;gap:18px;justify-content:center;flex-wrap:wrap}
+.flinks a{color:#14466b;text-decoration:none;border-bottom:1px dotted #14466b}
+.flinks a:hover{color:#9a6b00;border-bottom-color:#9a6b00}
+
+.sectioncard{background:#eefaf8;border-color:#b5e3dc;text-align:center;padding-top:12px;padding-bottom:12px}
+.sectioncard::before{background:linear-gradient(#1aa39a,#3a8fd0)}
+.sechead{font-family:'Cinzel',serif;font-weight:700;color:#137a73;font-size:13px;letter-spacing:.08em;text-transform:uppercase;text-align:left;margin-bottom:2px}
+.sectext{font-size:15px;color:#0f4f4a;line-height:1.5}
+
+.refcard{position:relative;overflow:hidden;max-width:1268px;margin:8px auto 4px;background:#f2f6ff;border:1px solid #c7d4f0;border-radius:12px;padding:14px 20px 14px 28px;box-shadow:0 3px 12px rgba(90,60,10,.16)}
+.refcard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:7px;background:linear-gradient(#3a5bd0,#7b4fd6)}
+.refhead{font-family:'Cinzel',serif;font-weight:700;color:#2c3f94;font-size:17px;margin:0 0 8px;letter-spacing:.04em}
+.reflist{margin:0;list-style:decimal;padding-left:22px;color:#2a2340;font-size:13.5px;line-height:1.6}
+.reflist > li{margin-bottom:6px}
+.sublinks{margin:6px 0 0;padding-left:18px;list-style:disc}
+.sublinks li{margin:2px 0}
+.refcard a{color:#1f5f8b;text-decoration:none;border-bottom:1px dotted #1f5f8b;word-break:break-word}
+.refcard a:hover{color:#9a6b00;border-bottom-color:#9a6b00}
+@media (max-width:1300px){.refcard{margin-left:16px;margin-right:16px}}
+
+/* ---------- recessed 3D gradient cards ---------- */
+.hcard,.box,.card,.refcard{
+  border:1px solid rgba(120,85,20,.28) !important;
+  box-shadow:inset 8px 8px 18px rgba(70,45,0,.32), inset 2px 2px 3px rgba(70,45,0,.25),
+             inset -6px -6px 14px rgba(255,255,255,.9),
+             1px 1px 0 rgba(255,255,255,.85), -1px -1px 0 rgba(120,85,20,.28) !important}
+.titlecard{background:linear-gradient(145deg,#fffaf0 0%,#f3eafe 55%,#e3d3fb 100%)}
+.indexcard{background:linear-gradient(145deg,#fffdf4 0%,#fbf0d6 55%,#f2deb0 100%)}
+.sectioncard{background:linear-gradient(145deg,#f4fdfb 0%,#dff4ef 55%,#c6e9e1 100%)}
+.panel .box:nth-child(1){background:linear-gradient(145deg,#f7f3ff 0%,#e7ddfd 55%,#d5c6f8 100%)}
+.panel .box:nth-child(2){background:linear-gradient(145deg,#f3fcf7 0%,#dcf3e6 55%,#c3e7d2 100%)}
+.panel .box:nth-child(3){background:linear-gradient(145deg,#fff8ef 0%,#fde7cf 55%,#f7d2ac 100%)}
+.cards .card:nth-child(3n+1){background:linear-gradient(145deg,#f1f8fe 0%,#dcebf8 55%,#c4dcf1 100%)}
+.cards .card:nth-child(3n+2){background:linear-gradient(145deg,#fff3f7 0%,#fbdfe9 55%,#f3c7d7 100%)}
+.cards .card:nth-child(3n){background:linear-gradient(145deg,#fffcea 0%,#f9efc2 55%,#efdf98 100%)}
+.refcard{background:linear-gradient(145deg,#f6f9ff 0%,#e3eafb 55%,#cfdaf5 100%)}
+/* stripe sits inside the recess */
+.hcard::before,.box::before,.card::before,.refcard::before{box-shadow:inset -2px 0 3px rgba(0,0,0,.18), inset 2px 2px 3px rgba(0,0,0,.15)}
+/* raised controls stand out against the sunken cards */
+.tabs a,.chips a,button{box-shadow:0 2px 3px rgba(70,45,0,.18), inset 0 1px 0 rgba(255,255,255,.9)}
+.tabs a.on,.chips a.on{box-shadow:inset 1px 1px 3px rgba(70,45,0,.25)}
+button:active{box-shadow:inset 1px 1px 3px rgba(70,45,0,.3)}
+/* the 3D stage as a recessed window */
+.stage{border:1px solid rgba(120,85,20,.35);box-shadow:0 1px 0 rgba(255,255,255,.7), 0 -1px 0 rgba(120,85,20,.15)}
+.stage::after{content:"";position:absolute;inset:0;border-radius:14px;pointer-events:none;z-index:5;
+  box-shadow:inset 6px 8px 22px rgba(0,0,0,.65), inset -3px -4px 12px rgba(255,255,255,.06)}
+/* mini grids inside cards look set into the surface */
+#activeMini .grid,.mini .grid{box-shadow:inset 1px 1px 2px rgba(0,0,0,.15)}
+
+/* striped squares: each vertical stripe its own colour (lighter on the water-reflection side) */
+.cell.st0{background:#ffc98b}
+.cell.st1{background:#a9d6ff}
+.refl .cell.st0,.grid.refl .cell.st0{background:#ffe2c2}
+.refl .cell.st1,.grid.refl .cell.st1{background:#d6ecff}
+
+/* pair card: four images in one row */
+.cards{grid-template-columns:1fr !important}
+.quad{display:grid;grid-template-columns:repeat(4,minmax(0,180px));gap:18px;justify-content:center;align-items:end;margin:6px 0 4px}
+.quad figure{margin:0;text-align:center;font-size:12px;color:#5a5275;container-type:inline-size;position:relative}
+.quad figcaption{min-height:2.6em;line-height:1.3;display:flex;align-items:flex-end;justify-content:center;margin-bottom:4px}
+.quad .mini{--s:100cqw;width:100%;height:auto;aspect-ratio:1;margin:0}
+.quad .qwl{position:absolute;left:-4px;right:-4px;height:3px;bottom:calc(100cqw + 2px);border-radius:2px;
+  background:linear-gradient(90deg,transparent,#4fb3e8 15%,#8fe3ff 50%,#4fb3e8 85%,transparent)}
+.quad .mir{transform:scaleY(-1);opacity:.9;filter:url(#rippleSoft) brightness(.9);
+  -webkit-mask-image:linear-gradient(to top,#000 0%,rgba(0,0,0,.8) 60%,rgba(0,0,0,.45) 100%);
+          mask-image:linear-gradient(to top,#000 0%,rgba(0,0,0,.8) 60%,rgba(0,0,0,.45) 100%)}
+@media (max-width:700px){.quad{grid-template-columns:repeat(2,minmax(0,170px))}}
+
+.ordline{font-family:'Cinzel',serif;font-size:19px;font-weight:700;color:#8a5a00;letter-spacing:.06em;margin-top:2px}
+
+/* index: every example visible */
+.tabs{grid-template-columns:1fr !important;justify-items:center;gap:8px !important;max-width:1250px !important}
+.tabgroup{justify-content:center;row-gap:6px}
+.secgroup{display:inline-flex;align-items:center;gap:3px;padding:3px 5px 3px 3px;border-radius:20px;background:rgba(255,255,255,.45);border:1px solid rgba(160,130,60,.25);margin:0 3px}
+.secgroup.on{background:rgba(232,198,106,.25);border-color:rgba(199,154,42,.6)}
+.tabs a.seclink{padding:4px 10px}
+.tabs a.exlink{min-width:26px;text-align:center;padding:3px 7px;font-size:12px;border-radius:12px}
+.tabs a.exlink.on{background:#dff2fb;border-color:#5fb3d9;color:#0d4d6e;font-weight:700}
+.chips:empty{display:none}
+
+/* gold outer frame on the plates */
+.face .grid{border-color:#d4a72c !important;border-width:calc(var(--s)*.016) !important;
+  box-shadow:inset 0 0 0 1px #8a6a12, 0 0 0 1px #8a6a12}
+.edge{background:linear-gradient(90deg,#8a6a12,#f3d27a 50%,#8a6a12) !important}
+
+/* larger grids in the side panel and pair cards */
+#activeMini{width:100% !important;max-width:340px;height:auto !important;aspect-ratio:1;container-type:inline-size;margin:10px auto !important}
+#activeMini .grid{--s:100cqw}
+.quad{grid-template-columns:repeat(4,minmax(0,1fr)) !important;max-width:1180px;margin:8px auto 6px !important;gap:22px !important}
+.quad figure{font-size:13px}
+@media (max-width:700px){.quad{grid-template-columns:repeat(2,minmax(0,1fr)) !important;gap:14px !important}}
+
+.quad.big{grid-template-columns:repeat(2,minmax(0,1fr)) !important;max-width:1000px;gap:26px 34px !important}
+
+/* the digit 1 drawn as the font's capital I: same height and stroke as 0, 3, 8, and symmetric in water */
+.one{width:auto !important;height:auto !important;background:none !important;margin:0 .045em !important;vertical-align:baseline}
+
+.subline{font-family:'Cinzel',serif;font-size:20px;font-weight:700;color:#5b3fb5;letter-spacing:.08em;margin-top:2px}
+
+.refsub{font-size:14px;color:#2c3f94;font-style:italic;margin:-2px 0 8px}
+
+.cell.hlc{background:#ffd9a8}
+.refl .cell.hlc,.grid.refl .cell.hlc{background:#ffe9c9}
+
+.genlink{margin-top:10px;padding-top:8px;border-top:1px dashed rgba(44,63,148,.3);font-size:13.5px;color:#2a2340}
+
+/* ---------- generator card ---------- */
+.gencard{background:linear-gradient(145deg,#fff8f5 0%,#fde7de 55%,#f5cfc0 100%);border-color:#efc9b8;text-align:left}
+.gencard::before{background:linear-gradient(#d8577a,#7b4fd6)}
+.grow{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin:9px 0}
+.glabel{font-family:'Cinzel',serif;font-weight:700;color:#8a3b2e;font-size:13px;min-width:128px}
+.gl2{min-width:0;margin-left:10px}
+.famlist{display:flex;flex-wrap:wrap;gap:6px}
+.fam{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border:1px solid #d5cdea;border-radius:16px;background:#fff;font-size:13px;cursor:pointer;color:#2a2340;box-shadow:0 2px 3px rgba(70,45,0,.12)}
+.fam input{margin:0;accent-color:#7b4fd6}
+.fam.sg{border-color:#9cc9e2}
+.ginput{font:14px 'Share Tech Mono',monospace;padding:4px 8px;border:1px solid #c9c0e0;border-radius:6px;width:84px;background:#fff;color:#2a2340}
+.gown{width:150px}
+.gnote{font-size:12.5px;color:#7a6f96}
+.ghint{margin:-2px 0 4px;line-height:1.45}
+button.gmain{background:#7b4fd6;color:#fff;border-color:#5d39b0;font-weight:600}
+button.gmain:hover{background:#6a3fc4;color:#fff}
+.gstatus{font-size:13.5px;line-height:1.55;color:#2a2340;margin-top:4px;min-height:1.4em}
+.howto{margin-top:8px;font-size:13.5px;line-height:1.55;color:#2a2340}
+.howto p{margin:6px 0}
+@media (max-width:640px){.glabel{min-width:0;width:100%}.gl2{margin-left:0}}
+.quad.updual{grid-template-columns:repeat(3,minmax(0,1fr)) !important}
+.mini.turned{transform:rotate(180deg)}
+.fam.sg{border-color:#e0b26a}
+.ctlbox{margin-top:12px;position:relative;overflow:hidden;padding-left:22px;background:linear-gradient(145deg,#fff8ef 0%,#fde7cf 55%,#f7d2ac 100%) !important;border-color:#f3cfa8 !important;color:#2a2340}.ctlbox h2{color:#b5651d !important}.ctlbox::before{content:"";position:absolute;left:0;top:0;bottom:0;width:7px;background:#e08a3a;box-shadow:inset -2px 0 3px rgba(0,0,0,.18), inset 2px 2px 3px rgba(0,0,0,.15)}.ctlbox .ctl span,.ctlbox .chk{color:#3d3355}
+.ctlgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 26px}
+@media (max-width:760px){.ctlgrid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- water filters: horizontal-only displacement (G fixed at 0.5 = no vertical shift) -->
+<svg width="0" height="0" style="position:absolute">
+  <filter id="ripple" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.006 0.055" numOctaves="2" seed="11" result="n">
+      <animate attributeName="baseFrequency" dur="7s" values="0.006 0.055;0.0066 0.063;0.006 0.055" repeatCount="indefinite"/>
+    </feTurbulence>
+    <feColorMatrix in="n" type="matrix" values="1 0 0 0 0  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 1" result="x"/>
+    <feDisplacementMap id="dNear" in="SourceGraphic" in2="x" scale="5" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+  <filter id="rippleDeep" x="-8%" y="-5%" width="116%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.008 0.035" numOctaves="2" seed="4" result="n">
+      <animate attributeName="baseFrequency" dur="9s" values="0.008 0.035;0.009 0.042;0.008 0.035" repeatCount="indefinite"/>
+    </feTurbulence>
+    <feColorMatrix in="n" type="matrix" values="1 0 0 0 0  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 1" result="x"/>
+    <feDisplacementMap id="dDeep" in="SourceGraphic" in2="x" scale="11" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+  <filter id="rippleSoft" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.02 0.09" numOctaves="1" seed="2" result="n">
+      <animate attributeName="baseFrequency" dur="6s" values="0.02 0.09;0.022 0.1;0.02 0.09" repeatCount="indefinite"/>
+    </feTurbulence>
+    <feColorMatrix in="n" type="matrix" values="1 0 0 0 0  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 1" result="x"/>
+    <feDisplacementMap id="dSoft" in="SourceGraphic" in2="x" scale="2.5" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<header>
+  <div class="hcard titlecard">
+    <h1>Upside-Down Magic Squares</h1>
+    <div class="subline">Plate Representations</div>
+    <div class="ordline">Orders 9 and 10</div>
+    <div class="byline">Created by <b>Inder J. Taneja</b></div>
+  </div>
+  <div class="hcard indexcard">
+    <div class="idxhead">Index</div>
+    <nav class="tabs" id="tabs"></nav>
+    <nav class="chips" id="chips"></nav>
+    <div class="sub note">Each plate turns by 180° in its own plane: the same square read upside down is again a magic square</div>
+  </div>
+  <div class="hcard sectioncard">
+    <div class="sechead">Current Section</div>
+    <div class="sectext" id="subTitle"></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div>
+    <div class="stage" id="stage">
+      <div class="scene"><div class="cube" id="cube"></div></div>
+      <div class="waterline"></div>
+      <div class="water">
+        <div class="glow"></div>
+        <div class="rl rl-far"><div class="scene"><div class="cube" id="cube3"></div></div></div>
+        <div class="rl rl-near"><div class="scene"><div class="cube" id="cube2"></div></div></div>
+        <div class="tint"></div>
+        <svg class="glints" id="glints" viewBox="0 0 1000 400" preserveAspectRatio="none"></svg>
+      </div>
+    </div>
+    <div class="box ctlbox">
+      <h2>Controls</h2>
+      <div class="ctlgrid">
+      <div class="ctl"><span>Play speed</span><input type="range" id="speed" min="0.4" max="2.5" step="0.1" value="1"><span id="speedV">1.0×</span></div>
+      <div class="ctl"><span>Plate size</span><input type="range" id="size" min="140" max="1200" value="230"><span id="sizeV">230</span></div>
+      <div class="ctl" style="display:none"><span>Ripple strength</span><input type="range" id="rippleIn" min="0" max="12" step="0.5" value="5"><span id="rippleV">5</span></div>
+      <div class="ctl"><span>Line thickness</span><input type="range" id="lw" min="0.3" max="3" step="0.1" value="1"><span id="lwV">1.0</span></div>
+      <div class="ctl"><span>Line colour</span><input type="color" id="cLine" value="#2a2a2a"><span></span></div>
+      <div class="ctl"><span>Digit style</span><select id="styleSel" style="background:#fff;color:#2a2340;border:1px solid #c9c0e0;border-radius:6px;padding:4px;font:13px 'Share Tech Mono',monospace"><option value="classic">Classic (condensed)</option><option value="seg">Seven-segment</option></select><span></span></div>
+      <div class="ctl"><span>Original colour</span><input type="color" id="cOrig" value="#f7c5dd"><span></span></div>
+      <div class="ctl" style="display:none"><span>Reflection colour</span><input type="color" id="cRefl" value="#bfe8f5"><span></span></div>
+      <div class="ctl"><span>Digit colour</span><input type="color" id="cInk" value="#111111"><span></span></div>
+      </div>
+      <div class="chk">
+        
+        <label><input type="checkbox" id="showLabels" checked> Face labels</label>
+      </div>
+      <div style="font-size:12px;color:#8d84ad;margin-top:8px">Drag the plate to turn it by hand.</div>
+    </div>
+
+  </div>
+
+  <div class="panel">
+    <div class="box">
+      <h2>Plate &amp; Upside-Down Turn</h2>
+      <div id="faceBtns"></div>
+      <div class="btns" style="margin-top:8px">
+        <button id="playBtn" style="border-color:#c79a2a;color:#8a5a00;background:#fff6dc;font-weight:600">⏸ Pause</button>
+        <button class="w" id="flipBtn">🔄 Turn upside down</button>
+        <button id="prevBtn">◀ Previous</button>
+        <button id="nextBtn">Next ▶</button>
+        <label style="font-size:13px;display:flex;align-items:center;gap:6px">Auto-play
+          <select id="scopeSel" style="background:#fff;color:#2a2340;border:1px solid #c9c0e0;border-radius:6px;padding:4px;font:13px 'Share Tech Mono',monospace">
+            <option value="all" id="scopeAll">all examples</option><option value="section">this section only</option></select></label>
+        <div id="autoInfo" style="font-size:12px;color:#8d84ad;width:100%"></div>
+      </div>
+    </div>
+
+    <div class="box">
+      <h2>Showing Now</h2>
+      <div id="activeInfo"></div>
+    </div>
+
+  </div>
+</div>
+
+<section class="pairs">
+  <h2 id="pairsTitle">The Three Pairs</h2>
+  <div class="cards" id="cards"></div>
+
+  <details>
+    <summary>Edit the original square (the upside-down view is derived automatically)</summary>
+    <div class="ed" id="editor"></div>
+    <div class="btns" style="margin-top:8px"><button id="applyBtn">Apply</button></div>
+    <div id="edMsg" style="font-size:13px;margin-top:6px"></div>
+  </details>
+</section>
+
+<section class="refcard">
+  <h2 class="refhead">References</h2>
+  <div class="refsub">Based on the author's following research works:</div>
+  <ol class="reflist">
+    <li><span class="refmain">Inder J. Taneja, <i>Upside-Down, Mirror Looking and Water Reflection Magic Squares: Orders 7 to 10</i>, Zenodo, January 07, 2025, pp. 1-171,
+      <a href="https://doi.org/10.5281/zenodo.14607071" target="_blank" rel="noopener">https://doi.org/10.5281/zenodo.14607071</a>.</span>
+      <ul class="sublinks">
+        <li>Site link: <a href="https://numbers-magic.com/?p=12654" target="_blank" rel="noopener">Universal and Upside-Down Magic Squares of Orders 7 to 10 (new site)</a></li>
+        <li>Site link: <a href="https://inderjtaneja.wordpress.com/2024/09/30/universal-and-upside-down-magic-squares-of-orders-7-to-10/" target="_blank" rel="noopener">Universal and Upside-Down Magic Squares of Orders 7 to 10 (old site)</a></li>
+      </ul>
+    </li>
+    <li><span class="refmain">Inder J. Taneja, Online generator: <a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/generators/water-reflection-magic-squares-generator" target="_blank" rel="noopener">Water-Reflection Magic Squares Generator</a></span></li>
+  </ol>
+</section>
+<footer>
+  <div class="fname">Inder J. Taneja</div>
+  <div class="flinks"><a href="https://numbers-magic.com/" target="_blank" rel="noopener">https://numbers-magic.com/</a>
+  <a href="https://inderjtaneja.wordpress.com/" target="_blank" rel="noopener">https://inderjtaneja.wordpress.com/</a></div>
+</footer>
+
+<script>
+/* =========================================================
+   DATA — the three originals; the water reflection of each is
+   its rows in reverse order. Digits 0, 1, 3, 8 are symmetric
+   about a horizontal axis, so they read the same in water.
+   ========================================================= */
+/* =====================================================================
+   Water-reflection magic square engine  (Inder J. Taneja generator)
+   ---------------------------------------------------------------------
+   A "design" of order n is a list of layers (n×n matrices of symbols).
+   Every layer is LINE-BALANCED: each row, each column and both main
+   diagonals contain the same multiset of symbols. The cell → (layer
+   symbols) map is one-to-one.  Writing each layer symbol as a fixed-length
+   digit string and concatenating the strings therefore gives n² distinct
+   numbers whose rows, columns and diagonals all have the same sum —
+   for ANY choice of digit strings.  The water reflection (rows reversed,
+   2 ↔ 5) is the same design with other digit strings, so it is magic too.
+   ===================================================================== */
+/* =====================================================================
+   Water-reflection magic square engine  (Inder J. Taneja generator)
+   ---------------------------------------------------------------------
+   A "design" of order n is a list of layers (n×n matrices of symbols).
+   Every layer is LINE-BALANCED: each row, each column and both main
+   diagonals contain the same multiset of symbols. The cell → (layer
+   symbols) map is one-to-one.  Writing each layer symbol as a fixed-length
+   digit string and concatenating the strings therefore gives n² distinct
+   numbers whose rows, columns and diagonals all have the same sum —
+   for ANY choice of digit strings.  The water reflection (rows reversed,
+   2 ↔ 5) is the same design with other digit strings, so it is magic too.
+   ===================================================================== */
+const ENGINE = (() => {
+  /* ---------- seeded random ---------- */
+  function rng(seed) { let a = (seed >>> 0) || 1;
+    return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  const shuffle = (arr, R) => { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(R() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; };
+  const gcd = (a, b) => b ? gcd(b, a % b) : a;
+  const mat = (n, f) => Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => f(i, j)));
+
+  /* ---------- 1. cyclic construction (n prime to 6): pandiagonal ---------- */
+  function cyclic(n, R) {
+    const unit = x => gcd(((x % n) + n) % n, n) === 1;
+    const opts = [];
+    for (let a = 1; a < n; a++) for (let b = 1; b < n; b++) if (unit(a) && unit(b) && unit(a + b) && unit(a - b)) opts.push([a, b]);
+    let A, B;
+    for (let t = 0; t < 500; t++) { A = opts[Math.floor(R() * opts.length)]; B = opts[Math.floor(R() * opts.length)]; if (unit(A[0] * B[1] - A[1] * B[0])) break; }
+    const s1 = Math.floor(R() * n), s2 = Math.floor(R() * n);
+    return { n, kind: 'cyclic', layers: [{ a: n, M: mat(n, (i, j) => (A[0] * i + A[1] * j + s1) % n) }, { a: n, M: mat(n, (i, j) => (B[0] * i + B[1] * j + s2) % n) }] };
+  }
+
+  /* ---------- 2. finite field GF(p^k), q ≥ 4 ---------- */
+  function primePower(q) {
+    for (let p = 2; p <= q; p++) if (q % p === 0) { let k = 0, r = q; while (r % p === 0) { r /= p; k++; } return r === 1 ? [p, k] : null; }
+    return null;
+  }
+  function makeField(p, k) {
+    const q = p ** k, toV = x => { const v = []; for (let i = 0; i < k; i++) { v.push(x % p); x = Math.floor(x / p); } return v; },
+      toX = v => v.reduceRight((s, d) => s * p + d, 0);
+    const polyMod = (a, m) => { a = a.slice(); for (let i = a.length - 1; i >= m.length - 1; i--) { const c = a[i] % p; if (!c) continue;
+        for (let j = 0; j < m.length; j++) a[i - (m.length - 1) + j] = ((a[i - (m.length - 1) + j] - c * m[j]) % p + p) % p; }
+      return a.slice(0, m.length - 1); };
+    let irr = null;
+    for (let c = 0; c < p ** k && !irr; c++) {           // monic poly x^k + c(x)
+      const m = [...toV(c), 1]; let ok = true;
+      for (let d = 1; d <= Math.floor(k / 2) && ok; d++) for (let e = 0; e < p ** d && ok; e++) {
+        const f = [...toV(e).slice(0, d), 1]; while (f.length < d + 1) f.splice(f.length - 1, 0, 0);
+        const r = polyMod(m, f); if (r.every(x => x === 0)) ok = false; }
+      if (ok) irr = m;
+    }
+    const add = (x, y) => toX(toV(x).map((d, i) => (d + toV(y)[i]) % p));
+    const neg = x => toX(toV(x).map(d => (p - d) % p));
+    const mul = (x, y) => { const a = toV(x), b = toV(y), r = new Array(2 * k).fill(0);
+      for (let i = 0; i < k; i++) for (let j = 0; j < k; j++) r[i + j] = (r[i + j] + a[i] * b[j]) % p;
+      return toX(k > 1 ? polyMod(r, irr) : [r[0] % p]); };
+    return { q, p, add, neg, mul };
+  }
+  function fieldDesign(q, R) {
+    const [p, k] = primePower(q), F = makeField(p, k);
+    /* row/column labelling with r(n-1-i) = δ - r(i) so that BOTH diagonals are lines */
+    const delta = p === 2 ? 1 : 0, used = new Set(), lab = new Array(q);
+    let lo = 0, hi = q - 1;
+    const els = shuffle([...Array(q).keys()], R);
+    for (const x of els) { if (used.has(x)) continue; const y = F.add(delta, F.neg(x));
+      if (y === x) { lab[(q - 1) / 2] = x; used.add(x); continue; }
+      lab[lo++] = x; lab[hi--] = y; used.add(x); used.add(y); }
+    const bad = new Set([0, 1, F.neg(1)]), cand = shuffle([...Array(q).keys()].filter(x => !bad.has(x)), R);
+    const [al, be] = cand;
+    const L = c => mat(q, (i, j) => F.add(lab[i], F.mul(c, lab[j])));
+    return { n: q, kind: 'field', layers: [{ a: q, M: L(al) }, { a: q, M: L(be) }] };
+  }
+
+  /* ---------- 3. Kronecker product of two orthogonal diagonal Latin designs ---------- */
+  function product(D1, D2) {
+    const n1 = D1.n, n2 = D2.n, n = n1 * n2;
+    const layers = [0, 1].map(t => ({ a: n, M: mat(n, (i, j) => D1.layers[t].M[Math.floor(i / n2)][Math.floor(j / n2)] * n2 + D2.layers[t].M[i % n2][j % n2]) }));
+    return { n, kind: 'product', parts: [D1, D2], layers };
+  }
+
+  /* ---------- 4. blow-up of an order-m design by s×s blocks (search for the block layers) ---------- */
+  function blockSearch(n, s, radices, R, maxIter, diag = true) {
+    const m = n / s, cells = s * s, F = radices.length;
+    const digitsOf = sym => { const d = []; for (const r of radices) { d.push(sym % r); sym = Math.floor(sym / r); } return d; };
+    const DIG = [...Array(cells).keys()].map(digitsOf);
+    const target = radices.map(r => n / r);             // each value appears n/r times in every line
+    const nL = diag ? 2 * n + 2 : 2 * n;
+    const linesOf = (i, j) => { const L = [i, n + j]; if (diag && i === j) L.push(2 * n); if (diag && i + j === n - 1) L.push(2 * n + 1); return L; };
+    const LO = mat(n, linesOf);
+    for (let attempt = 0; attempt < 6; attempt++) {
+      const sym = mat(n, () => 0);
+      for (let bi = 0; bi < m; bi++) for (let bj = 0; bj < m; bj++) {
+        const perm = shuffle([...Array(cells).keys()], R);
+        for (let c = 0; c < cells; c++) sym[bi * s + Math.floor(c / s)][bj * s + c % s] = perm[c];
+      }
+      const cnt = radices.map(r => Array.from({ length: nL }, () => new Array(r).fill(0)));
+      for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) for (const l of LO[i][j]) DIG[sym[i][j]].forEach((d, f) => cnt[f][l][d]++);
+      let cost = 0; cnt.forEach((cf, f) => cf.forEach(row => row.forEach(c => cost += Math.abs(c - target[f]))));
+      let T = 2.0;
+      for (let it = 0; it < maxIter && cost > 0; it++) {
+        const bi = Math.floor(R() * m), bj = Math.floor(R() * m);
+        const c1 = Math.floor(R() * cells); let c2 = Math.floor(R() * (cells - 1)); if (c2 >= c1) c2++;
+        const i1 = bi * s + Math.floor(c1 / s), j1 = bj * s + c1 % s, i2 = bi * s + Math.floor(c2 / s), j2 = bj * s + c2 % s;
+        const x = sym[i1][j1], y = sym[i2][j2], dx = DIG[x], dy = DIG[y];
+        let delta = 0; const ch = [];
+        const bump = (f, l, v, k) => { const c = cnt[f][l][v]; delta += Math.abs(c + k - target[f]) - Math.abs(c - target[f]); cnt[f][l][v] += k; ch.push([f, l, v, k]); };
+        for (let f = 0; f < F; f++) { if (dx[f] === dy[f]) continue;
+          for (const l of LO[i1][j1]) { bump(f, l, dx[f], -1); bump(f, l, dy[f], 1); }
+          for (const l of LO[i2][j2]) { bump(f, l, dy[f], -1); bump(f, l, dx[f], 1); } }
+        if (delta <= 0 || R() < Math.exp(-delta / T)) { sym[i1][j1] = y; sym[i2][j2] = x; cost += delta; }
+        else for (let t = ch.length - 1; t >= 0; t--) { const [f, l, v, k] = ch[t]; cnt[f][l][v] -= k; }
+        if (it % 2000 === 0) T = Math.max(0.05, T * 0.97);
+      }
+      if (cost === 0) return radices.map((r, f) => ({ a: r, M: mat(n, (i, j) => DIG[sym[i][j]][f]) }));
+    }
+    return null;
+  }
+  function blowup(D, s, R) {
+    const m = D.n, n = m * s;
+    const radices = s === 6 ? [2, 3, 2, 3] : s === 4 ? [4, 4] : [s, s];
+    const inner = blockSearch(n, s, radices, R, 1500000);
+    if (!inner) return null;
+    const outer = D.layers.map(L => ({ a: L.a, M: mat(n, (i, j) => L.M[Math.floor(i / s)][Math.floor(j / s)]) }));
+    return { n, kind: 'blowup', s, base: D, layers: [...outer, ...inner] };
+  }
+  function direct(n, R) {               // stand-alone search (used for order 6)
+    const L = blockSearch(n, n, [2, 3, 2, 3], R, 3000000);
+    return L ? { n, kind: 'search', layers: L } : null;
+  }
+
+  /* ---------- choose a construction for order n ---------- */
+  const hasODLS = n => n >= 4 && n !== 6 && (gcd(n, 6) === 1 || primePower(n) || splitODLS(n));
+  function splitODLS(n) { for (let a = 4; a * 4 <= n; a++) if (n % a === 0 && hasODLS(a) && hasODLS(n / a)) return [a, n / a]; return null; }
+  function odls(n, R) {
+    if (gcd(n, 6) === 1) return cyclic(n, R);
+    if (primePower(n)) return fieldDesign(n, R);
+    const [a, b] = splitODLS(n); return product(odls(a, R), odls(b, R));
+  }
+  function design(n, seed) {
+    const R = rng(seed);
+    if (n < 4) throw new Error('Order ' + n + ' cannot be built this way (the smallest order is 4).');
+    if (hasODLS(n)) return odls(n, R);
+    if (n === 6) throw new Error('Order 6 cannot be built with this method (like Euler\u2019s 36-officers problem). Your own order-6 squares are in the Orders 5\u20136 generator.');
+    const S = [2, 3, 4, 5, 7].filter(s => n % s === 0 && n / s >= 4 && n / s !== 6);
+    for (const pass of [0, 1]) for (const s of S) {      // first: blocks over a direct design, then over a built one
+      const m = n / s; if (pass === 0 && !hasODLS(m)) continue; if (pass === 1 && hasODLS(m)) continue;
+      let D; try { D = pass === 0 ? odls(m, R) : design(m, Math.floor(R() * 1e9)); } catch (e) { continue; }
+      const B = blowup(D, s, R); if (B) return B;
+    }
+    throw new Error('No design found for order ' + n + ' — try another variation number.');
+  }
+
+  /* ---------- digit strings for each layer symbol ---------- */
+  function encode(D, digits, seed) {
+    const R = rng(seed * 7 + 3), d = digits.length;
+    const lens = D.layers.map(L => { let t = 1; while (d ** t < L.a) t++; return t; });
+    const codes = D.layers.map((L, k) => {
+      const all = []; for (let x = 0; x < d ** lens[k]; x++) { let s = '', y = x; for (let t = 0; t < lens[k]; t++) { s = digits[y % d] + s; y = Math.floor(y / d); } all.push(s); }
+      return shuffle(all, R).slice(0, L.a);
+    });
+    const n = D.n;
+    return mat(n, (i, j) => D.layers.map((L, k) => codes[k][L.M[i][j]]).join(''));
+  }
+  /* three-digit entries a·b·c (all different) built algebraically: three layers, each row, column and both
+     diagonals hold every layer value equally often.  n = 4, 8 over GF(2) (4 values per layer), n = 5 over Z5,
+     n = 10 = 2·5 (5 values per layer). */
+  const tripleK = n => ({4:4, 5:5, 7:7, 8:4, 10:5, 14:7})[n] || 0;
+  function rankMod(Mx, p) {
+    const A = Mx.map(r => r.map(v => ((v % p) + p) % p)); let rk = 0; const rows = A.length, cols = rows ? A[0].length : 0;
+    for (let c = 0; c < cols && rk < rows; c++) {
+      let piv = -1; for (let r = rk; r < rows; r++) if (A[r][c]) { piv = r; break; }
+      if (piv < 0) continue; [A[rk], A[piv]] = [A[piv], A[rk]];
+      const inv = [...Array(p).keys()].find(x => (A[rk][c] * x) % p === 1);
+      A[rk] = A[rk].map(v => (v * inv) % p);
+      for (let r = 0; r < rows; r++) if (r !== rk && A[r][c]) { const f = A[r][c]; A[r] = A[r].map((v, k) => ((v - f * A[rk][k]) % p + p) % p); }
+      rk++;
+    }
+    return rk;
+  }
+  function tripleDesign(n, seed) {
+    const R = rng(seed * 31 + n), k = tripleK(n); if (!k) return null;
+    if (n === 10 || n === 14) {           // n = 2P: x = i mod P, y = j mod P, p = i div P, q = j div P
+      const P = n / 2, nz = [...Array(P - 1).keys()].map(x => x + 1), pick = () => nz[Math.floor(R() * nz.length)];
+      for (let t = 0; t < 4000; t++) {
+        const L = [0, 1, 2].map(() => [pick(), pick()]);
+        if (!L.every(([al, be]) => (al + be) % P && (al - be + P) % P)) continue;
+        if (((L[0][0] * L[1][1] - L[0][1] * L[1][0]) % P + P) % P === 0) continue;
+        const s1 = Math.floor(R() * P), e = [[0, 1], [2, 3]];                       // e(p,q) distinct for the 4 copies
+        const layers = L.map(([al, be], f) => ({ a: P, M: mat(n, (i, j) => (al * (i % P) + be * (j % P) + (f === 2 ? e[Math.floor(i / P)][Math.floor(j / P)] : 0) + (f === 0 ? s1 : 0)) % P) }));
+        return { n, kind: 'triple', layers };
+      }
+      return null;
+    }
+    const p = (n === 5 || n === 7) ? n : 2, m = p === 2 ? Math.log2(n) : 1, r = p === 2 ? 2 : 1;
+    const vec = x => { const v = []; for (let t = 0; t < m; t++) { v.push(x % p); x = Math.floor(x / p); } return v; };
+    const rnd = () => Array.from({ length: r }, () => Array.from({ length: m }, () => Math.floor(R() * p)));
+    const add = (X, Y, sg) => X.map((row, a) => row.map((v, b) => (v + sg * Y[a][b] + p * p) % p));
+    const layerOK = (X, Y) => rankMod(X, p) === r && rankMod(Y, p) === r && rankMod(add(X, Y, 1), p) === r && rankMod(add(X, Y, -1), p) === r;
+    const oneLayer = () => { for (;;) { const X = rnd(), Y = rnd(); if (layerOK(X, Y)) return [X, Y]; } };
+    for (let t = 0; t < 20000; t++) {
+      const LY = [oneLayer(), oneLayer(), oneLayer()], A = LY.map(x => x[0]), B = LY.map(x => x[1]);
+      const big = []; for (let f = 0; f < 3; f++) for (let a = 0; a < r; a++) big.push([...A[f][a], ...B[f][a]]);
+      if (rankMod(big, p) < 2 * m) continue;
+      const layers = [0, 1, 2].map(f => ({ a: k, M: mat(n, (i, j) => { const vi = vec(i), vj = vec(j); let x = 0;
+        for (let a = r - 1; a >= 0; a--) { let s2 = 0; for (let b = 0; b < m; b++) s2 += A[f][a][b] * vi[b] + B[f][a][b] * vj[b]; x = x * p + (s2 % p); } return x; }) }));
+      return { n, kind: 'triple', layers };
+    }
+    return null;
+  }
+  function encodeTriple(D, digits, seed) {
+    const R = rng(seed * 11 + 7), codes = D.layers.map(() => shuffle(digits.slice(), R));
+    return mat(D.n, (i, j) => D.layers.map((L, f) => codes[f][L.M[i][j]]).join(''));
+  }
+  /* palindromic entries a·b·a (two layers, one digit each): reading backwards leaves every entry unchanged */
+  function canPal(D, digits) { return D.layers.length === 2 && D.layers.every(L => L.a <= digits.length); }
+  function encodePal(D, digits, seed) {
+    const R = rng(seed * 7 + 5);
+    const codes = D.layers.map(L => shuffle(digits.slice(), R).slice(0, L.a));
+    return mat(D.n, (i, j) => { const a = codes[0][D.layers[0].M[i][j]], b = codes[1][D.layers[1].M[i][j]]; return a + b + a; });
+  }
+  /* symmetric relabelling of rows & columns (keeps both diagonals) + optional transpose */
+  function vary(D, seed) {
+    const R = rng(seed * 13 + 5), n = D.n, pi = new Array(n);
+    if (D.kind === 'cyclic') { const a = Math.floor(R() * n), b = Math.floor(R() * n), tr = R() < 0.5;
+      return { ...D, layers: D.layers.map(L => ({ a: L.a, M: mat(n, (i, j) => tr ? L.M[(j + a) % n][(i + b) % n] : L.M[(i + a) % n][(j + b) % n]) })) }; }
+    const half = Math.floor(n / 2), perm = shuffle([...Array(half).keys()], R);
+    for (let i = 0; i < half; i++) { const t = perm[i], flip = R() < 0.5; pi[i] = flip ? n - 1 - t : t; pi[n - 1 - i] = flip ? t : n - 1 - t; }
+    if (n % 2) pi[half] = half;
+    const tr = R() < 0.5;
+    return { ...D, layers: D.layers.map(L => ({ a: L.a, M: mat(n, (i, j) => tr ? L.M[pi[j]][pi[i]] : L.M[pi[i]][pi[j]]) })) };
+  }
+  function describe(D) {
+    if (D.kind === 'cyclic') return 'cyclic Latin squares (pandiagonal)';
+    if (D.kind === 'field') return 'finite field GF(' + D.n + ')';
+    if (D.kind === 'product') return 'product of orders ' + D.parts.map(p => p.n).join(' × ');
+    if (D.kind === 'blowup') return 'order ' + D.base.n + ' design with ' + D.s + '×' + D.s + ' blocks';
+    return 'direct search';
+  }
+  /* ---------- semi-magic designs (rows and columns only) for orders 3 and 6 ---------- */
+  function semiDesign(n, seed) {
+    const R = rng(seed * 17 + 11);
+    if (n === 3) {
+      const p = shuffle([0, 1, 2], R), q = shuffle([0, 1, 2], R), a = 1 + Math.floor(R() * 2), b = 3 - a;
+      return { n, kind: 'semi', layers: [{ a: 3, M: mat(3, (i, j) => p[(i + a * j) % 3]) }, { a: 3, M: mat(3, (i, j) => q[(i + b * j) % 3]) }] };
+    }
+    for (let t = 0; t < 8; t++) { const L = blockSearch(n, n, [2, 3, 2, 3], R, 600000, false); if (L) return { n, kind: 'semi', layers: L }; }
+    throw new Error('No semi-magic design found for order ' + n + ' — try another variation number.');
+  }
+  return { design, encode, encodePal, canPal, tripleDesign, tripleK, encodeTriple, vary, describe, semiDesign };
+})();
+
+/* =========================================================
+   DIGIT FAMILIES — 6 and 9 always together; families with the same number of digits are digit substitutions of each other
+   ========================================================= */
+const FAMS_ALL=['6,9','0,6,9','1,6,9','8,6,9','2,6,9','5,6,9','0,1,6,9','0,8,6,9','1,8,6,9','2,5,6,9','0,1,8,6,9','0,2,5,6,9','1,2,5,6,9','8,2,5,6,9','0,1,2,5,6,9','0,1,2,5,8,6,9'];
+const famLabel=f=>'('+f.split(',').map(Number).sort((x,y)=>x-y).join(',')+')';
+if(document.getElementById('famC')) document.getElementById('famC').innerHTML=FAMS_ALL.map(f=>`<span class="fam sg">${famLabel(f)}</span>`).join('');
+const O3UP = {"25689":{"3":{"n":48,"sq":[[["256","826","586"],["886","556","226"],["526","286","856"]],[["256","886","526"],["826","556","286"],["586","226","856"]],[["259","829","589"],["889","559","229"],["529","289","859"]],[["259","889","529"],["829","559","289"],["589","229","859"]],[["265","862","568"],["868","565","262"],["562","268","865"]],[["265","868","562"],["862","565","268"],["568","262","865"]],[["295","892","598"],["898","595","292"],["592","298","895"]],[["295","898","592"],["892","595","298"],["598","292","895"]],[["526","286","856"],["886","556","226"],["256","826","586"]],[["526","886","256"],["286","556","826"],["856","226","586"]],[["529","289","859"],["889","559","229"],["259","829","589"]],[["529","889","259"],["289","559","829"],["859","229","589"]],[["562","268","865"],["868","565","262"],["265","862","568"]],[["562","868","265"],["268","565","862"],["865","262","568"]],[["568","262","865"],["862","565","268"],["265","868","562"]],[["568","862","265"],["262","565","868"],["865","268","562"]],[["586","226","856"],["826","556","286"],["256","886","526"]],[["586","826","256"],["226","556","886"],["856","286","526"]],[["589","229","859"],["829","559","289"],["259","889","529"]],[["589","829","259"],["229","559","889"],["859","289","529"]],[["592","298","895"],["898","595","292"],["295","892","598"]],[["592","898","295"],["298","595","892"],["895","292","598"]],[["598","292","895"],["892","595","298"],["295","898","592"]],[["598","892","295"],["292","595","898"],["895","298","592"]],[["625","682","658"],["688","655","622"],["652","628","685"]],[["625","688","652"],["682","655","628"],["658","622","685"]],[["652","628","685"],["688","655","622"],["625","682","658"]],[["652","688","625"],["628","655","682"],["685","622","658"]],[["658","622","685"],["682","655","628"],["625","688","652"]],[["658","682","625"],["622","655","688"],["685","628","652"]],[["685","622","658"],["628","655","682"],["652","688","625"]],[["685","628","652"],["622","655","688"],["658","682","625"]],[["856","226","586"],["286","556","826"],["526","886","256"]],[["856","286","526"],["226","556","886"],["586","826","256"]],[["859","229","589"],["289","559","829"],["529","889","259"]],[["859","289","529"],["229","559","889"],["589","829","259"]],[["865","262","568"],["268","565","862"],["562","868","265"]],[["865","268","562"],["262","565","868"],["568","862","265"]],[["895","292","598"],["298","595","892"],["592","898","295"]],[["895","298","592"],["292","595","898"],["598","892","295"]],[["925","982","958"],["988","955","922"],["952","928","985"]],[["925","988","952"],["982","955","928"],["958","922","985"]],[["952","928","985"],["988","955","922"],["925","982","958"]],[["952","988","925"],["928","955","982"],["985","922","958"]],[["958","922","985"],["982","955","928"],["925","988","952"]],[["958","982","925"],["922","955","988"],["985","928","952"]],[["985","922","958"],["928","955","982"],["952","988","925"]],[["985","928","952"],["922","955","988"],["958","982","925"]]]},"4":{"n":1216,"sq":[[["2256","2826","2586"],["2886","2556","2226"],["2526","2286","2856"]],[["2256","2886","2526"],["2826","2556","2286"],["2586","2226","2856"]],[["2256","8226","5286"],["8286","5256","2226"],["5226","2286","8256"]],[["2256","8286","5226"],["8226","5256","2286"],["5286","2226","8256"]],[["2256","8826","5586"],["8886","5556","2226"],["5526","2286","8856"]],[["2256","8886","5526"],["8826","5556","2286"],["5586","2226","8856"]],[["2259","2829","2589"],["2889","2559","2229"],["2529","2289","2859"]],[["2259","2889","2529"],["2829","2559","2289"],["2589","2229","2859"]],[["2259","8229","5289"],["8289","5259","2229"],["5229","2289","8259"]],[["2259","8289","5229"],["8229","5259","2289"],["5289","2229","8259"]],[["2259","8829","5589"],["8889","5559","2229"],["5529","2289","8859"]],[["2259","8889","5529"],["8829","5559","2289"],["5589","2229","8859"]],[["2265","2862","2568"],["2868","2565","2262"],["2562","2268","2865"]],[["2265","2868","2562"],["2862","2565","2268"],["2568","2262","2865"]],[["2265","8262","5268"],["8268","5265","2262"],["5262","2268","8265"]],[["2265","8268","5262"],["8262","5265","2268"],["5268","2262","8265"]],[["2265","8862","5568"],["8868","5565","2262"],["5562","2268","8865"]],[["2265","8868","5562"],["8862","5565","2268"],["5568","2262","8865"]],[["2295","2892","2598"],["2898","2595","2292"],["2592","2298","2895"]],[["2295","2898","2592"],["2892","2595","2298"],["2598","2292","2895"]],[["2295","8292","5298"],["8298","5295","2292"],["5292","2298","8295"]],[["2295","8298","5292"],["8292","5295","2298"],["5298","2292","8295"]],[["2295","8892","5598"],["8898","5595","2292"],["5592","2298","8895"]],[["2295","8898","5592"],["8892","5595","2298"],["5598","2292","8895"]],[["2526","2286","2856"],["2886","2556","2226"],["2256","2826","2586"]],[["2526","2886","2256"],["2286","2556","2826"],["2856","2226","2586"]],[["2526","8226","5826"],["8826","5526","2226"],["5226","2826","8526"]],[["2526","8286","5856"],["8886","5556","2226"],["5256","2826","8586"]],[["2526","8826","5226"],["8226","5526","2826"],["5826","2226","8526"]],[["2526","8886","5256"],["8286","5556","2826"],["5856","2226","8586"]],[["2529","2289","2859"],["2889","2559","2229"],["2259","2829","2589"]],[["2529","2889","2259"],["2289","2559","2829"],["2859","2229","2589"]],[["2529","8229","5829"],["8829","5529","2229"],["5229","2829","8529"]],[["2529","8289","5859"],["8889","5559","2229"],["5259","2829","8589"]],[["2529","8829","5229"],["8229","5529","2829"],["5829","2229","8529"]],[["2529","8889","5259"],["8289","5559","2829"],["5859","2229","8589"]],[["2556","8226","5886"],["8886","5556","2226"],["5226","2886","8556"]],[["2556","8256","5856"],["8856","5556","2256"],["5256","2856","8556"]],[["2556","8286","5826"],["8826","5556","2286"],["5286","2826","8556"]],[["2556","8526","5586"],["8586","5556","2526"],["5526","2586","8556"]],[["2556","8586","5526"],["8526","5556","2586"],["5586","2526","8556"]],[["2556","8826","5286"],["8286","5556","2826"],["5826","2286","8556"]],[["2556","8856","5256"],["8256","5556","2856"],["5856","2256","8556"]],[["2556","8886","5226"],["8226","5556","2886"],["5886","2226","8556"]],[["2559","8229","5889"],["8889","5559","2229"],["5229","2889","8559"]],[["2559","8259","5859"],["8859","5559","2259"],["5259","2859","8559"]],[["2559","8289","5829"],["8829","5559","2289"],["5289","2829","8559"]],[["2559","8529","5589"],["8589","5559","2529"],["5529","2589","8559"]],[["2559","8589","5529"],["8529","5559","2589"],["5589","2529","8559"]],[["2559","8829","5289"],["8289","5559","2829"],["5829","2289","8559"]],[["2559","8859","5259"],["8259","5559","2859"],["5859","2259","8559"]],[["2559","8889","5229"],["8229","5559","2889"],["5889","2229","8559"]],[["2562","2268","2865"],["2868","2565","2262"],["2265","2862","2568"]],[["2562","2868","2265"],["2268","2565","2862"],["2865","2262","2568"]],[["2562","8262","5862"],["8862","5562","2262"],["5262","2862","8562"]],[["2562","8268","5865"],["8868","5565","2262"],["5265","2862","8568"]],[["2562","8862","5262"],["8262","5562","2862"],["5862","2262","8562"]],[["2562","8868","5265"],["8268","5565","2862"],["5865","2262","8568"]],[["2565","8262","5868"],["8868","5565","2262"],["5262","2868","8565"]],[["2565","8265","5865"],["8865","5565","2265"],["5265","2865","8565"]],[["2565","8268","5862"],["8862","5565","2268"],["5268","2862","8565"]],[["2565","8562","5568"],["8568","5565","2562"],["5562","2568","8565"]],[["2565","8568","5562"],["8562","5565","2568"],["5568","2562","8565"]],[["2565","8862","5268"],["8268","5565","2862"],["5862","2268","8565"]],[["2565","8865","5265"],["8265","5565","2865"],["5865","2265","8565"]],[["2565","8868","5262"],["8262","5565","2868"],["5868","2262","8565"]],[["2566","8266","5866"],["8866","5566","2266"],["5266","2866","8566"]],[["2566","8866","5266"],["8266","5566","2866"],["5866","2266","8566"]],[["2568","2262","2865"],["2862","2565","2268"],["2265","2868","2562"]],[["2568","2862","2265"],["2262","2565","2868"],["2865","2268","2562"]],[["2568","8262","5865"],["8862","5565","2268"],["5265","2868","8562"]],[["2568","8268","5868"],["8868","5568","2268"],["5268","2868","8568"]],[["2568","8862","5265"],["8262","5565","2868"],["5865","2268","8562"]],[["2568","8868","5268"],["8268","5568","2868"],["5868","2268","8568"]],[["2569","8269","5869"],["8869","5569","2269"],["5269","2869","8569"]],[["2569","8869","5269"],["8269","5569","2869"],["5869","2269","8569"]],[["2586","2226","2856"],["2826","2556","2286"],["2256","2886","2526"]],[["2586","2826","2256"],["2226","2556","2886"],["2856","2286","2526"]],[["2586","8226","5856"],["8826","5556","2286"],["5256","2886","8526"]],[["2586","8286","5886"],["8886","5586","2286"],["5286","2886","8586"]],[["2586","8826","5256"],["8226","5556","2886"],["5856","2286","8526"]],[["2586","8886","5286"],["8286","5586","2886"],["5886","2286","8586"]],[["2589","2229","2859"],["2829","2559","2289"],["2259","2889","2529"]],[["2589","2829","2259"],["2229","2559","2889"],["2859","2289","2529"]],[["2589","8229","5859"],["8829","5559","2289"],["5259","2889","8529"]],[["2589","8289","5889"],["8889","5589","2289"],["5289","2889","8589"]],[["2589","8829","5259"],["8229","5559","2889"],["5859","2289","8529"]],[["2589","8889","5289"],["8289","5589","2889"],["5889","2289","8589"]],[["2592","2298","2895"],["2898","2595","2292"],["2295","2892","2598"]],[["2592","2898","2295"],["2298","2595","2892"],["2895","2292","2598"]],[["2592","8292","5892"],["8892","5592","2292"],["5292","2892","8592"]],[["2592","8298","5895"],["8898","5595","2292"],["5295","2892","8598"]],[["2592","8892","5292"],["8292","5592","2892"],["5892","2292","8592"]],[["2592","8898","5295"],["8298","5595","2892"],["5895","2292","8598"]],[["2595","8292","5898"],["8898","5595","2292"],["5292","2898","8595"]],[["2595","8295","5895"],["8895","5595","2295"],["5295","2895","8595"]],[["2595","8298","5892"],["8892","5595","2298"],["5298","2892","8595"]],[["2595","8592","5598"],["8598","5595","2592"],["5592","2598","8595"]],[["2595","8598","5592"],["8592","5595","2598"],["5598","2592","8595"]],[["2595","8892","5298"],["8298","5595","2892"],["5892","2298","8595"]],[["2595","8895","5295"],["8295","5595","2895"],["5895","2295","8595"]],[["2595","8898","5292"],["8292","5595","2898"],["5898","2292","8595"]],[["2596","8296","5896"],["8896","5596","2296"],["5296","2896","8596"]],[["2596","8896","5296"],["8296","5596","2896"],["5896","2296","8596"]],[["2598","2292","2895"],["2892","2595","2298"],["2295","2898","2592"]],[["2598","2892","2295"],["2292","2595","2898"],["2895","2298","2592"]],[["2598","8292","5895"],["8892","5595","2298"],["5295","2898","8592"]],[["2598","8298","5898"],["8898","5598","2298"],["5298","2898","8598"]],[["2598","8892","5295"],["8292","5595","2898"],["5895","2298","8592"]],[["2598","8898","5298"],["8298","5598","2898"],["5898","2298","8598"]],[["2599","8299","5899"],["8899","5599","2299"],["5299","2899","8599"]],[["2599","8899","5299"],["8299","5599","2899"],["5899","2299","8599"]],[["2625","2682","2658"],["2688","2655","2622"],["2652","2628","2685"]],[["2625","2688","2652"],["2682","2655","2628"],["2658","2622","2685"]],[["2625","8622","5628"],["8628","5625","2622"],["5622","2628","8625"]],[["2625","8628","5622"],["8622","5625","2628"],["5628","2622","8625"]],[["2625","8682","5658"],["8688","5655","2622"],["5652","2628","8685"]],[["2625","8688","5652"],["8682","5655","2628"],["5658","2622","8685"]],[["2625","9962","6298"],["9968","6295","2622"],["6292","2628","9965"]],[["2625","9968","6292"],["9962","6295","2628"],["6298","2622","9965"]],[["2629","8262","5996"],["8996","5629","2262"],["5262","2996","8629"]],[["2629","8266","5992"],["8992","5629","2266"],["5266","2992","8629"]],[["2629","8292","5966"],["8966","5629","2292"],["5292","2966","8629"]],[["2629","8296","5962"],["8962","5629","2296"],["5296","2962","8629"]],[["2629","8962","5296"],["8296","5629","2962"],["5962","2296","8629"]],[["2629","8966","5292"],["8292","5629","2966"],["5966","2292","8629"]],[["2629","8992","5266"],["8266","5629","2992"],["5992","2266","8629"]],[["2629","8996","5262"],["8262","5629","2996"],["5996","2262","8629"]],[["2652","2628","2685"],["2688","2655","2622"],["2625","2682","2658"]],[["2652","2688","2625"],["2628","2655","2682"],["2685","2622","2658"]],[["2652","8622","5682"],["8682","5652","2622"],["5622","2682","8652"]],[["2652","8628","5685"],["8688","5655","2622"],["5625","2682","8658"]],[["2652","8682","5622"],["8622","5652","2682"],["5682","2622","8652"]],[["2652","8688","5625"],["8628","5655","2682"],["5685","2622","8658"]],[["2655","8622","5688"],["8688","5655","2622"],["5622","2688","8655"]],[["2655","8625","5685"],["8685","5655","2625"],["5625","2685","8655"]],[["2655","8628","5682"],["8682","5655","2628"],["5628","2682","8655"]],[["2655","8652","5658"],["8658","5655","2652"],["5652","2658","8655"]],[["2655","8658","5652"],["8652","5655","2658"],["5658","2652","8655"]],[["2655","8682","5628"],["8628","5655","2682"],["5682","2628","8655"]],[["2655","8685","5625"],["8625","5655","2685"],["5685","2625","8655"]],[["2655","8688","5622"],["8622","5655","2688"],["5688","2622","8655"]],[["2656","8626","5686"],["8686","5656","2626"],["5626","2686","8656"]],[["2656","8686","5626"],["8626","5656","2686"],["5686","2626","8656"]],[["2658","2622","2685"],["2682","2655","2628"],["2625","2688","2652"]],[["2658","2682","2625"],["2622","2655","2688"],["2685","2628","2652"]],[["2658","8622","5685"],["8682","5655","2628"],["5625","2688","8652"]],[["2658","8628","5688"],["8688","5658","2628"],["5628","2688","8658"]],[["2658","8682","5625"],["8622","5655","2688"],["5685","2628","8652"]],[["2658","8688","5628"],["8628","5658","2688"],["5688","2628","8658"]],[["2659","8629","5689"],["8689","5659","2629"],["5629","2689","8659"]],[["2659","8689","5629"],["8629","5659","2689"],["5689","2629","8659"]],[["2665","8662","5668"],["8668","5665","2662"],["5662","2668","8665"]],[["2665","8668","5662"],["8662","5665","2668"],["5668","2662","8665"]],[["2665","9922","6298"],["9928","6295","2662"],["6292","2668","9925"]],[["2665","9928","6292"],["9922","6295","2668"],["6298","2662","9925"]],[["2685","2622","2658"],["2628","2655","2682"],["2652","2688","2625"]],[["2685","2628","2652"],["2622","2655","2688"],["2658","2682","2625"]],[["2685","8622","5658"],["8628","5655","2682"],["5652","2688","8625"]],[["2685","8628","5652"],["8622","5655","2688"],["5658","2682","8625"]],[["2685","8682","5688"],["8688","5685","2682"],["5682","2688","8685"]],[["2685","8688","5682"],["8682","5685","2688"],["5688","2682","8685"]],[["2695","8692","5698"],["8698","5695","2692"],["5692","2698","8695"]],[["2695","8698","5692"],["8692","5695","2698"],["5698","2692","8695"]],[["2856","2226","2586"],["2286","2556","2826"],["2526","2886","2256"]],[["2856","2286","2526"],["2226","2556","2886"],["2586","2826","2256"]],[["2856","8226","5586"],["8286","5556","2826"],["5526","2886","8256"]],[["2856","8286","5526"],["8226","5556","2886"],["5586","2826","8256"]],[["2856","8826","5886"],["8886","5856","2826"],["5826","2886","8856"]],[["2856","8886","5826"],["8826","5856","2886"],["5886","2826","8856"]],[["2859","2229","2589"],["2289","2559","2829"],["2529","2889","2259"]],[["2859","2289","2529"],["2229","2559","2889"],["2589","2829","2259"]],[["2859","8229","5589"],["8289","5559","2829"],["5529","2889","8259"]],[["2859","8289","5529"],["8229","5559","2889"],["5589","2829","8259"]],[["2859","8829","5889"],["8889","5859","2829"],["5829","2889","8859"]],[["2859","8889","5829"],["8829","5859","2889"],["5889","2829","8859"]],[["2865","2262","2568"],["2268","2565","2862"],["2562","2868","2265"]],[["2865","2268","2562"],["2262","2565","2868"],["2568","2862","2265"]],[["2865","8262","5568"],["8268","5565","2862"],["5562","2868","8265"]],[["2865","8268","5562"],["8262","5565","2868"],["5568","2862","8265"]],[["2865","8862","5868"],["8868","5865","2862"],["5862","2868","8865"]],[["2865","8868","5862"],["8862","5865","2868"],["5868","2862","8865"]],[["2895","2292","2598"],["2298","2595","2892"],["2592","2898","2295"]],[["2895","2298","2592"],["2292","2595","2898"],["2598","2892","2295"]],[["2895","8292","5598"],["8298","5595","2892"],["5592","2898","8295"]],[["2895","8298","5592"],["8292","5595","2898"],["5598","2892","8295"]],[["2895","8892","5898"],["8898","5895","2892"],["5892","2898","8895"]],[["2895","8898","5892"],["8892","5895","2898"],["5898","2892","8895"]],[["2925","2982","2958"],["2988","2955","2922"],["2952","2928","2985"]],[["2925","2988","2952"],["2982","2955","2928"],["2958","2922","2985"]],[["2925","8922","5928"],["8928","5925","2922"],["5922","2928","8925"]],[["2925","8928","5922"],["8922","5925","2928"],["5928","2922","8925"]],[["2925","8982","5958"],["8988","5955","2922"],["5952","2928","8985"]],[["2925","8988","5952"],["8982","5955","2928"],["5958","2922","8985"]],[["2925","9662","6298"],["9668","6295","2922"],["6292","2928","9665"]],[["2925","9668","6292"],["9662","6295","2928"],["6298","2922","9665"]],[["2952","2928","2985"],["2988","2955","2922"],["2925","2982","2958"]],[["2952","2988","2925"],["2928","2955","2982"],["2985","2922","2958"]],[["2952","8922","5982"],["8982","5952","2922"],["5922","2982","8952"]],[["2952","8928","5985"],["8988","5955","2922"],["5925","2982","8958"]]]}},"012569":{"3":{"n":48,"sq":[[["016","206","126"],["226","116","006"],["106","026","216"]],[["016","226","106"],["206","116","026"],["126","006","216"]],[["019","209","129"],["229","119","009"],["109","029","219"]],[["019","229","109"],["209","119","029"],["129","009","219"]],[["061","260","162"],["262","161","060"],["160","062","261"]],[["061","262","160"],["260","161","062"],["162","060","261"]],[["091","290","192"],["292","191","090"],["190","092","291"]],[["091","292","190"],["290","191","092"],["192","090","291"]],[["106","026","216"],["226","116","006"],["016","206","126"]],[["106","226","016"],["026","116","206"],["216","006","126"]],[["109","029","219"],["229","119","009"],["019","209","129"]],[["109","229","019"],["029","119","209"],["219","009","129"]],[["126","006","216"],["206","116","026"],["016","226","106"]],[["126","206","016"],["006","116","226"],["216","026","106"]],[["129","009","219"],["209","119","029"],["019","229","109"]],[["129","209","019"],["009","119","229"],["219","029","109"]],[["160","062","261"],["262","161","060"],["061","260","162"]],[["160","262","061"],["062","161","260"],["261","060","162"]],[["162","060","261"],["260","161","062"],["061","262","160"]],[["162","260","061"],["060","161","262"],["261","062","160"]],[["190","092","291"],["292","191","090"],["091","290","192"]],[["190","292","091"],["092","191","290"],["291","090","192"]],[["192","090","291"],["290","191","092"],["091","292","190"]],[["192","290","091"],["090","191","292"],["291","092","190"]],[["216","006","126"],["026","116","206"],["106","226","016"]],[["216","026","106"],["006","116","226"],["126","206","016"]],[["219","009","129"],["029","119","209"],["109","229","019"]],[["219","029","109"],["009","119","229"],["129","209","019"]],[["261","060","162"],["062","161","260"],["160","262","061"]],[["261","062","160"],["060","161","262"],["162","260","061"]],[["291","090","192"],["092","191","290"],["190","292","091"]],[["291","092","190"],["090","191","292"],["192","290","091"]],[["601","620","612"],["622","611","600"],["610","602","621"]],[["601","622","610"],["620","611","602"],["612","600","621"]],[["610","602","621"],["622","611","600"],["601","620","612"]],[["610","622","601"],["602","611","620"],["621","600","612"]],[["612","600","621"],["620","611","602"],["601","622","610"]],[["612","620","601"],["600","611","622"],["621","602","610"]],[["621","600","612"],["602","611","620"],["610","622","601"]],[["621","602","610"],["600","611","622"],["612","620","601"]],[["901","920","912"],["922","911","900"],["910","902","921"]],[["901","922","910"],["920","911","902"],["912","900","921"]],[["910","902","921"],["922","911","900"],["901","920","912"]],[["910","922","901"],["902","911","920"],["921","900","912"]],[["912","900","921"],["920","911","902"],["901","922","910"]],[["912","920","901"],["900","911","922"],["921","902","910"]],[["921","900","912"],["902","911","920"],["910","922","901"]],[["921","902","910"],["900","911","922"],["912","920","901"]]]},"4":{"n":1408,"sq":[[["0016","0206","0126"],["0226","0116","0006"],["0106","0026","0216"]],[["0016","0226","0106"],["0206","0116","0026"],["0126","0006","0216"]],[["0016","2006","1026"],["2026","1016","0006"],["1006","0026","2016"]],[["0016","2026","1006"],["2006","1016","0026"],["1026","0006","2016"]],[["0016","2206","1126"],["2226","1116","0006"],["1106","0026","2216"]],[["0016","2226","1106"],["2206","1116","0026"],["1126","0006","2216"]],[["0019","0209","0129"],["0229","0119","0009"],["0109","0029","0219"]],[["0019","0229","0109"],["0209","0119","0029"],["0129","0009","0219"]],[["0019","2009","1029"],["2029","1019","0009"],["1009","0029","2019"]],[["0019","2029","1009"],["2009","1019","0029"],["1029","0009","2019"]],[["0019","2209","1129"],["2229","1119","0009"],["1109","0029","2219"]],[["0019","2229","1109"],["2209","1119","0029"],["1129","0009","2219"]],[["0061","0260","0162"],["0262","0161","0060"],["0160","0062","0261"]],[["0061","0262","0160"],["0260","0161","0062"],["0162","0060","0261"]],[["0061","2060","1062"],["2062","1061","0060"],["1060","0062","2061"]],[["0061","2062","1060"],["2060","1061","0062"],["1062","0060","2061"]],[["0061","2260","1162"],["2262","1161","0060"],["1160","0062","2261"]],[["0061","2262","1160"],["2260","1161","0062"],["1162","0060","2261"]],[["0091","0290","0192"],["0292","0191","0090"],["0190","0092","0291"]],[["0091","0292","0190"],["0290","0191","0092"],["0192","0090","0291"]],[["0091","2090","1092"],["2092","1091","0090"],["1090","0092","2091"]],[["0091","2092","1090"],["2090","1091","0092"],["1092","0090","2091"]],[["0091","2290","1192"],["2292","1191","0090"],["1190","0092","2291"]],[["0091","2292","1190"],["2290","1191","0092"],["1192","0090","2291"]],[["0106","0026","0216"],["0226","0116","0006"],["0016","0206","0126"]],[["0106","0226","0016"],["0026","0116","0206"],["0216","0006","0126"]],[["0106","2006","1206"],["2206","1106","0006"],["1006","0206","2106"]],[["0106","2026","1216"],["2226","1116","0006"],["1016","0206","2126"]],[["0106","2206","1006"],["2006","1106","0206"],["1206","0006","2106"]],[["0106","2226","1016"],["2026","1116","0206"],["1216","0006","2126"]],[["0109","0029","0219"],["0229","0119","0009"],["0019","0209","0129"]],[["0109","0229","0019"],["0029","0119","0209"],["0219","0009","0129"]],[["0109","2009","1209"],["2209","1109","0009"],["1009","0209","2109"]],[["0109","2029","1219"],["2229","1119","0009"],["1019","0209","2129"]],[["0109","2209","1009"],["2009","1109","0209"],["1209","0009","2109"]],[["0109","2229","1019"],["2029","1119","0209"],["1219","0009","2129"]],[["0116","2006","1226"],["2226","1116","0006"],["1006","0226","2116"]],[["0116","2016","1216"],["2216","1116","0016"],["1016","0216","2116"]],[["0116","2026","1206"],["2206","1116","0026"],["1026","0206","2116"]],[["0116","2106","1126"],["2126","1116","0106"],["1106","0126","2116"]],[["0116","2126","1106"],["2106","1116","0126"],["1126","0106","2116"]],[["0116","2206","1026"],["2026","1116","0206"],["1206","0026","2116"]],[["0116","2216","1016"],["2016","1116","0216"],["1216","0016","2116"]],[["0116","2226","1006"],["2006","1116","0226"],["1226","0006","2116"]],[["0119","2009","1229"],["2229","1119","0009"],["1009","0229","2119"]],[["0119","2019","1219"],["2219","1119","0019"],["1019","0219","2119"]],[["0119","2029","1209"],["2209","1119","0029"],["1029","0209","2119"]],[["0119","2109","1129"],["2129","1119","0109"],["1109","0129","2119"]],[["0119","2129","1109"],["2109","1119","0129"],["1129","0109","2119"]],[["0119","2209","1029"],["2029","1119","0209"],["1209","0029","2119"]],[["0119","2219","1019"],["2019","1119","0219"],["1219","0019","2119"]],[["0119","2229","1009"],["2009","1119","0229"],["1229","0009","2119"]],[["0126","0006","0216"],["0206","0116","0026"],["0016","0226","0106"]],[["0126","0206","0016"],["0006","0116","0226"],["0216","0026","0106"]],[["0126","2006","1216"],["2206","1116","0026"],["1016","0226","2106"]],[["0126","2026","1226"],["2226","1126","0026"],["1026","0226","2126"]],[["0126","2206","1016"],["2006","1116","0226"],["1216","0026","2106"]],[["0126","2226","1026"],["2026","1126","0226"],["1226","0026","2126"]],[["0129","0009","0219"],["0209","0119","0029"],["0019","0229","0109"]],[["0129","0209","0019"],["0009","0119","0229"],["0219","0029","0109"]],[["0129","2009","1219"],["2209","1119","0029"],["1019","0229","2109"]],[["0129","2029","1229"],["2229","1129","0029"],["1029","0229","2129"]],[["0129","2209","1019"],["2009","1119","0229"],["1219","0029","2109"]],[["0129","2229","1029"],["2029","1129","0229"],["1229","0029","2129"]],[["0156","2056","1256"],["2256","1156","0056"],["1056","0256","2156"]],[["0156","2256","1056"],["2056","1156","0256"],["1256","0056","2156"]],[["0159","2059","1259"],["2259","1159","0059"],["1059","0259","2159"]],[["0159","2259","1059"],["2059","1159","0259"],["1259","0059","2159"]],[["0160","0062","0261"],["0262","0161","0060"],["0061","0260","0162"]],[["0160","0262","0061"],["0062","0161","0260"],["0261","0060","0162"]],[["0160","2060","1260"],["2260","1160","0060"],["1060","0260","2160"]],[["0160","2062","1261"],["2262","1161","0060"],["1061","0260","2162"]],[["0160","2260","1060"],["2060","1160","0260"],["1260","0060","2160"]],[["0160","2262","1061"],["2062","1161","0260"],["1261","0060","2162"]],[["0161","2060","1262"],["2262","1161","0060"],["1060","0262","2161"]],[["0161","2061","1261"],["2261","1161","0061"],["1061","0261","2161"]],[["0161","2062","1260"],["2260","1161","0062"],["1062","0260","2161"]],[["0161","2160","1162"],["2162","1161","0160"],["1160","0162","2161"]],[["0161","2162","1160"],["2160","1161","0162"],["1162","0160","2161"]],[["0161","2260","1062"],["2062","1161","0260"],["1260","0062","2161"]],[["0161","2261","1061"],["2061","1161","0261"],["1261","0061","2161"]],[["0161","2262","1060"],["2060","1161","0262"],["1262","0060","2161"]],[["0162","0060","0261"],["0260","0161","0062"],["0061","0262","0160"]],[["0162","0260","0061"],["0060","0161","0262"],["0261","0062","0160"]],[["0162","2060","1261"],["2260","1161","0062"],["1061","0262","2160"]],[["0162","2062","1262"],["2262","1162","0062"],["1062","0262","2162"]],[["0162","2260","1061"],["2060","1161","0262"],["1261","0062","2160"]],[["0162","2262","1062"],["2062","1162","0262"],["1262","0062","2162"]],[["0165","2065","1265"],["2265","1165","0065"],["1065","0265","2165"]],[["0165","2265","1065"],["2065","1165","0265"],["1265","0065","2165"]],[["0166","2066","1266"],["2266","1166","0066"],["1066","0266","2166"]],[["0166","2266","1066"],["2066","1166","0266"],["1266","0066","2166"]],[["0169","2069","1269"],["2269","1169","0069"],["1069","0269","2169"]],[["0169","2269","1069"],["2069","1169","0269"],["1269","0069","2169"]],[["0190","0092","0291"],["0292","0191","0090"],["0091","0290","0192"]],[["0190","0292","0091"],["0092","0191","0290"],["0291","0090","0192"]],[["0190","2090","1290"],["2290","1190","0090"],["1090","0290","2190"]],[["0190","2092","1291"],["2292","1191","0090"],["1091","0290","2192"]],[["0190","2290","1090"],["2090","1190","0290"],["1290","0090","2190"]],[["0190","2292","1091"],["2092","1191","0290"],["1291","0090","2192"]],[["0191","2090","1292"],["2292","1191","0090"],["1090","0292","2191"]],[["0191","2091","1291"],["2291","1191","0091"],["1091","0291","2191"]],[["0191","2092","1290"],["2290","1191","0092"],["1092","0290","2191"]],[["0191","2190","1192"],["2192","1191","0190"],["1190","0192","2191"]],[["0191","2192","1190"],["2190","1191","0192"],["1192","0190","2191"]],[["0191","2290","1092"],["2092","1191","0290"],["1290","0092","2191"]],[["0191","2291","1091"],["2091","1191","0291"],["1291","0091","2191"]],[["0191","2292","1090"],["2090","1191","0292"],["1292","0090","2191"]],[["0192","0090","0291"],["0290","0191","0092"],["0091","0292","0190"]],[["0192","0290","0091"],["0090","0191","0292"],["0291","0092","0190"]],[["0192","2090","1291"],["2290","1191","0092"],["1091","0292","2190"]],[["0192","2092","1292"],["2292","1192","0092"],["1092","0292","2192"]],[["0192","2290","1091"],["2090","1191","0292"],["1291","0092","2190"]],[["0192","2292","1092"],["2092","1192","0292"],["1292","0092","2192"]],[["0195","2095","1295"],["2295","1195","0095"],["1095","0295","2195"]],[["0195","2295","1095"],["2095","1195","0295"],["1295","0095","2195"]],[["0196","2096","1296"],["2296","1196","0096"],["1096","0296","2196"]],[["0196","2296","1096"],["2096","1196","0296"],["1296","0096","2196"]],[["0199","2099","1299"],["2299","1199","0099"],["1099","0299","2199"]],[["0199","2299","1099"],["2099","1199","0299"],["1299","0099","2199"]],[["0216","0006","0126"],["0026","0116","0206"],["0106","0226","0016"]],[["0216","0026","0106"],["0006","0116","0226"],["0126","0206","0016"]],[["0216","2006","1126"],["2026","1116","0206"],["1106","0226","2016"]],[["0216","2026","1106"],["2006","1116","0226"],["1126","0206","2016"]],[["0216","2206","1226"],["2226","1216","0206"],["1206","0226","2216"]],[["0216","2226","1206"],["2206","1216","0226"],["1226","0206","2216"]],[["0219","0009","0129"],["0029","0119","0209"],["0109","0229","0019"]],[["0219","0029","0109"],["0009","0119","0229"],["0129","0209","0019"]],[["0219","2009","1129"],["2029","1119","0209"],["1109","0229","2019"]],[["0219","2029","1109"],["2009","1119","0229"],["1129","0209","2019"]],[["0219","2209","1229"],["2229","1219","0209"],["1209","0229","2219"]],[["0219","2229","1209"],["2209","1219","0229"],["1229","0209","2219"]],[["0261","0060","0162"],["0062","0161","0260"],["0160","0262","0061"]],[["0261","0062","0160"],["0060","0161","0262"],["0162","0260","0061"]],[["0261","2060","1162"],["2062","1161","0260"],["1160","0262","2061"]],[["0261","2062","1160"],["2060","1161","0262"],["1162","0260","2061"]],[["0261","2260","1262"],["2262","1261","0260"],["1260","0262","2261"]],[["0261","2262","1260"],["2260","1261","0262"],["1262","0260","2261"]],[["0291","0090","0192"],["0092","0191","0290"],["0190","0292","0091"]],[["0291","0092","0190"],["0090","0191","0292"],["0192","0290","0091"]],[["0291","2090","1192"],["2092","1191","0290"],["1190","0292","2091"]],[["0291","2092","1190"],["2090","1191","0292"],["1192","0290","2091"]],[["0291","2290","1292"],["2292","1291","0290"],["1290","0292","2291"]],[["0291","2292","1290"],["2290","1291","0292"],["1292","0290","2291"]],[["0516","2506","1526"],["2526","1516","0506"],["1506","0526","2516"]],[["0516","2526","1506"],["2506","1516","0526"],["1526","0506","2516"]],[["0519","2509","1529"],["2529","1519","0509"],["1509","0529","2519"]],[["0519","2529","1509"],["2509","1519","0529"],["1529","0509","2519"]],[["0561","2560","1562"],["2562","1561","0560"],["1560","0562","2561"]],[["0561","2562","1560"],["2560","1561","0562"],["1562","0560","2561"]],[["0591","2590","1592"],["2592","1591","0590"],["1590","0592","2591"]],[["0591","2592","1590"],["2590","1591","0592"],["1592","0590","2591"]],[["0601","0620","0612"],["0622","0611","0600"],["0610","0602","0621"]],[["0601","0622","0610"],["0620","0611","0602"],["0612","0600","0621"]],[["0601","2600","1602"],["2602","1601","0600"],["1600","0602","2601"]],[["0601","2602","1600"],["2600","1601","0602"],["1602","0600","2601"]],[["0601","2620","1612"],["2622","1611","0600"],["1610","0602","2621"]],[["0601","2622","1610"],["2620","1611","0602"],["1612","0600","2621"]],[["0610","0602","0621"],["0622","0611","0600"],["0601","0620","0612"]],[["0610","0622","0601"],["0602","0611","0620"],["0621","0600","0612"]],[["0610","2600","1620"],["2620","1610","0600"],["1600","0620","2610"]],[["0610","2602","1621"],["2622","1611","0600"],["1601","0620","2612"]],[["0610","2620","1600"],["2600","1610","0620"],["1620","0600","2610"]],[["0610","2622","1601"],["2602","1611","0620"],["1621","0600","2612"]],[["0611","2600","1622"],["2622","1611","0600"],["1600","0622","2611"]],[["0611","2601","1621"],["2621","1611","0601"],["1601","0621","2611"]],[["0611","2602","1620"],["2620","1611","0602"],["1602","0620","2611"]],[["0611","2610","1612"],["2612","1611","0610"],["1610","0612","2611"]],[["0611","2612","1610"],["2610","1611","0612"],["1612","0610","2611"]],[["0611","2620","1602"],["2602","1611","0620"],["1620","0602","2611"]],[["0611","2621","1601"],["2601","1611","0621"],["1621","0601","2611"]],[["0611","2622","1600"],["2600","1611","0622"],["1622","0600","2611"]],[["0612","0600","0621"],["0620","0611","0602"],["0601","0622","0610"]],[["0612","0620","0601"],["0600","0611","0622"],["0621","0602","0610"]],[["0612","2600","1621"],["2620","1611","0602"],["1601","0622","2610"]],[["0612","2602","1622"],["2622","1612","0602"],["1602","0622","2612"]],[["0612","2620","1601"],["2600","1611","0622"],["1621","0602","2610"]],[["0612","2622","1602"],["2602","1612","0622"],["1622","0602","2612"]],[["0615","2605","1625"],["2625","1615","0605"],["1605","0625","2615"]],[["0615","2625","1605"],["2605","1615","0625"],["1625","0605","2615"]],[["0616","2606","1626"],["2626","1616","0606"],["1606","0626","2616"]],[["0616","2626","1606"],["2606","1616","0626"],["1626","0606","2616"]],[["0619","2609","1629"],["2629","1619","0609"],["1609","0629","2619"]],[["0619","2629","1609"],["2609","1619","0629"],["1629","0609","2619"]],[["0621","0600","0612"],["0602","0611","0620"],["0610","0622","0601"]],[["0621","0602","0610"],["0600","0611","0622"],["0612","0620","0601"]],[["0621","2600","1612"],["2602","1611","0620"],["1610","0622","2601"]],[["0621","2602","1610"],["2600","1611","0622"],["1612","0620","2601"]],[["0621","2620","1622"],["2622","1621","0620"],["1620","0622","2621"]],[["0621","2622","1620"],["2620","1621","0622"],["1622","0620","2621"]],[["0629","2262","1996"],["2996","1629","0262"],["1262","0996","2629"]],[["0629","2266","1992"],["2992","1629","0266"],["1266","0992","2629"]],[["0629","2292","1966"],["2966","1629","0292"],["1292","0966","2629"]],[["0629","2296","1962"],["2962","1629","0296"],["1296","0962","2629"]],[["0629","2962","1296"],["2296","1629","0962"],["1962","0296","2629"]],[["0629","2966","1292"],["2292","1629","0966"],["1966","0292","2629"]],[["0629","2992","1266"],["2266","1629","0992"],["1992","0266","2629"]],[["0629","2996","1262"],["2262","1629","0996"],["1996","0262","2629"]],[["0651","2650","1652"],["2652","1651","0650"],["1650","0652","2651"]],[["0651","2652","1650"],["2650","1651","0652"],["1652","0650","2651"]]]}},"0125689":{"3":{"n":192,"sq":[[["016","206","126"],["226","116","006"],["106","026","216"]],[["016","226","106"],["206","116","026"],["126","006","216"]],[["019","209","129"],["229","119","009"],["109","029","219"]],[["019","229","109"],["209","119","029"],["129","009","219"]],[["056","226","186"],["286","156","026"],["126","086","256"]],[["056","286","126"],["226","156","086"],["186","026","256"]],[["059","229","189"],["289","159","029"],["129","089","259"]],[["059","289","129"],["229","159","089"],["189","029","259"]],[["061","260","162"],["262","161","060"],["160","062","261"]],[["061","262","160"],["260","161","062"],["162","060","261"]],[["065","262","168"],["268","165","062"],["162","068","265"]],[["065","268","162"],["262","165","068"],["168","062","265"]],[["091","290","192"],["292","191","090"],["190","092","291"]],[["091","292","190"],["290","191","092"],["192","090","291"]],[["095","292","198"],["298","195","092"],["192","098","295"]],[["095","298","192"],["292","195","098"],["198","092","295"]],[["106","026","216"],["226","116","006"],["016","206","126"]],[["106","226","016"],["026","116","206"],["216","006","126"]],[["109","029","219"],["229","119","009"],["019","209","129"]],[["109","229","019"],["029","119","209"],["219","009","129"]],[["126","006","216"],["206","116","026"],["016","226","106"]],[["126","086","256"],["286","156","026"],["056","226","186"]],[["126","206","016"],["006","116","226"],["216","026","106"]],[["126","286","056"],["086","156","226"],["256","026","186"]],[["129","009","219"],["209","119","029"],["019","229","109"]],[["129","089","259"],["289","159","029"],["059","229","189"]],[["129","209","019"],["009","119","229"],["219","029","109"]],[["129","289","059"],["089","159","229"],["259","029","189"]],[["160","062","261"],["262","161","060"],["061","260","162"]],[["160","262","061"],["062","161","260"],["261","060","162"]],[["162","060","261"],["260","161","062"],["061","262","160"]],[["162","068","265"],["268","165","062"],["065","262","168"]],[["162","260","061"],["060","161","262"],["261","062","160"]],[["162","268","065"],["068","165","262"],["265","062","168"]],[["168","062","265"],["262","165","068"],["065","268","162"]],[["168","262","065"],["062","165","268"],["265","068","162"]],[["186","026","256"],["226","156","086"],["056","286","126"]],[["186","226","056"],["026","156","286"],["256","086","126"]],[["189","029","259"],["229","159","089"],["059","289","129"]],[["189","229","059"],["029","159","289"],["259","089","129"]],[["190","092","291"],["292","191","090"],["091","290","192"]],[["190","292","091"],["092","191","290"],["291","090","192"]],[["192","090","291"],["290","191","092"],["091","292","190"]],[["192","098","295"],["298","195","092"],["095","292","198"]],[["192","290","091"],["090","191","292"],["291","092","190"]],[["192","298","095"],["098","195","292"],["295","092","198"]],[["198","092","295"],["292","195","098"],["095","298","192"]],[["198","292","095"],["092","195","298"],["295","098","192"]],[["216","006","126"],["026","116","206"],["106","226","016"]],[["216","026","106"],["006","116","226"],["126","206","016"]],[["216","806","526"],["826","516","206"],["506","226","816"]],[["216","826","506"],["806","516","226"],["526","206","816"]],[["219","009","129"],["029","119","209"],["109","229","019"]],[["219","029","109"],["009","119","229"],["129","209","019"]],[["219","809","529"],["829","519","209"],["509","229","819"]],[["219","829","509"],["809","519","229"],["529","209","819"]],[["256","026","186"],["086","156","226"],["126","286","056"]],[["256","086","126"],["026","156","286"],["186","226","056"]],[["256","826","586"],["886","556","226"],["526","286","856"]],[["256","886","526"],["826","556","286"],["586","226","856"]],[["259","029","189"],["089","159","229"],["129","289","059"]],[["259","089","129"],["029","159","289"],["189","229","059"]],[["259","829","589"],["889","559","229"],["529","289","859"]],[["259","889","529"],["829","559","289"],["589","229","859"]],[["261","060","162"],["062","161","260"],["160","262","061"]],[["261","062","160"],["060","161","262"],["162","260","061"]],[["261","860","562"],["862","561","260"],["560","262","861"]],[["261","862","560"],["860","561","262"],["562","260","861"]],[["265","062","168"],["068","165","262"],["162","268","065"]],[["265","068","162"],["062","165","268"],["168","262","065"]],[["265","862","568"],["868","565","262"],["562","268","865"]],[["265","868","562"],["862","565","268"],["568","262","865"]],[["291","090","192"],["092","191","290"],["190","292","091"]],[["291","092","190"],["090","191","292"],["192","290","091"]],[["291","890","592"],["892","591","290"],["590","292","891"]],[["291","892","590"],["890","591","292"],["592","290","891"]],[["295","092","198"],["098","195","292"],["192","298","095"]],[["295","098","192"],["092","195","298"],["198","292","095"]],[["295","892","598"],["898","595","292"],["592","298","895"]],[["295","898","592"],["892","595","298"],["598","292","895"]],[["506","226","816"],["826","516","206"],["216","806","526"]],[["506","826","216"],["226","516","806"],["816","206","526"]],[["509","229","819"],["829","519","209"],["219","809","529"]],[["509","829","219"],["229","519","809"],["819","209","529"]],[["526","206","816"],["806","516","226"],["216","826","506"]],[["526","286","856"],["886","556","226"],["256","826","586"]],[["526","806","216"],["206","516","826"],["816","226","506"]],[["526","886","256"],["286","556","826"],["856","226","586"]],[["529","209","819"],["809","519","229"],["219","829","509"]],[["529","289","859"],["889","559","229"],["259","829","589"]],[["529","809","219"],["209","519","829"],["819","229","509"]],[["529","889","259"],["289","559","829"],["859","229","589"]],[["560","262","861"],["862","561","260"],["261","860","562"]],[["560","862","261"],["262","561","860"],["861","260","562"]],[["562","260","861"],["860","561","262"],["261","862","560"]],[["562","268","865"],["868","565","262"],["265","862","568"]],[["562","860","261"],["260","561","862"],["861","262","560"]],[["562","868","265"],["268","565","862"],["865","262","568"]],[["568","262","865"],["862","565","268"],["265","868","562"]],[["568","862","265"],["262","565","868"],["865","268","562"]],[["586","226","856"],["826","556","286"],["256","886","526"]],[["586","826","256"],["226","556","886"],["856","286","526"]],[["589","229","859"],["829","559","289"],["259","889","529"]],[["589","829","259"],["229","559","889"],["859","289","529"]],[["590","292","891"],["892","591","290"],["291","890","592"]],[["590","892","291"],["292","591","890"],["891","290","592"]],[["592","290","891"],["890","591","292"],["291","892","590"]],[["592","298","895"],["898","595","292"],["295","892","598"]],[["592","890","291"],["290","591","892"],["891","292","590"]],[["592","898","295"],["298","595","892"],["895","292","598"]],[["598","292","895"],["892","595","298"],["295","898","592"]],[["598","892","295"],["292","595","898"],["895","298","592"]],[["601","620","612"],["622","611","600"],["610","602","621"]],[["601","622","610"],["620","611","602"],["612","600","621"]],[["605","622","618"],["628","615","602"],["612","608","625"]],[["605","628","612"],["622","615","608"],["618","602","625"]],[["610","602","621"],["622","611","600"],["601","620","612"]],[["610","622","601"],["602","611","620"],["621","600","612"]],[["612","600","621"],["620","611","602"],["601","622","610"]],[["612","608","625"],["628","615","602"],["605","622","618"]],[["612","620","601"],["600","611","622"],["621","602","610"]],[["612","628","605"],["608","615","622"],["625","602","618"]],[["618","602","625"],["622","615","608"],["605","628","612"]],[["618","622","605"],["602","615","628"],["625","608","612"]],[["621","600","612"],["602","611","620"],["610","622","601"]],[["621","602","610"],["600","611","622"],["612","620","601"]],[["621","680","652"],["682","651","620"],["650","622","681"]],[["621","682","650"],["680","651","622"],["652","620","681"]],[["625","602","618"],["608","615","622"],["612","628","605"]],[["625","608","612"],["602","615","628"],["618","622","605"]],[["625","682","658"],["688","655","622"],["652","628","685"]],[["625","688","652"],["682","655","628"],["658","622","685"]],[["650","622","681"],["682","651","620"],["621","680","652"]],[["650","682","621"],["622","651","680"],["681","620","652"]],[["652","620","681"],["680","651","622"],["621","682","650"]],[["652","628","685"],["688","655","622"],["625","682","658"]],[["652","680","621"],["620","651","682"],["681","622","650"]],[["652","688","625"],["628","655","682"],["685","622","658"]],[["658","622","685"],["682","655","628"],["625","688","652"]],[["658","682","625"],["622","655","688"],["685","628","652"]],[["681","620","652"],["622","651","680"],["650","682","621"]],[["681","622","650"],["620","651","682"],["652","680","621"]],[["685","622","658"],["628","655","682"],["652","688","625"]],[["685","628","652"],["622","655","688"],["658","682","625"]],[["816","206","526"],["226","516","806"],["506","826","216"]],[["816","226","506"],["206","516","826"],["526","806","216"]],[["819","209","529"],["229","519","809"],["509","829","219"]],[["819","229","509"],["209","519","829"],["529","809","219"]],[["856","226","586"],["286","556","826"],["526","886","256"]],[["856","286","526"],["226","556","886"],["586","826","256"]],[["859","229","589"],["289","559","829"],["529","889","259"]],[["859","289","529"],["229","559","889"],["589","829","259"]],[["861","260","562"],["262","561","860"],["560","862","261"]],[["861","262","560"],["260","561","862"],["562","860","261"]],[["865","262","568"],["268","565","862"],["562","868","265"]],[["865","268","562"],["262","565","868"],["568","862","265"]],[["891","290","592"],["292","591","890"],["590","892","291"]],[["891","292","590"],["290","591","892"],["592","890","291"]],[["895","292","598"],["298","595","892"],["592","898","295"]],[["895","298","592"],["292","595","898"],["598","892","295"]],[["901","920","912"],["922","911","900"],["910","902","921"]],[["901","922","910"],["920","911","902"],["912","900","921"]],[["905","922","918"],["928","915","902"],["912","908","925"]],[["905","928","912"],["922","915","908"],["918","902","925"]],[["910","902","921"],["922","911","900"],["901","920","912"]],[["910","922","901"],["902","911","920"],["921","900","912"]],[["912","900","921"],["920","911","902"],["901","922","910"]],[["912","908","925"],["928","915","902"],["905","922","918"]],[["912","920","901"],["900","911","922"],["921","902","910"]],[["912","928","905"],["908","915","922"],["925","902","918"]],[["918","902","925"],["922","915","908"],["905","928","912"]],[["918","922","905"],["902","915","928"],["925","908","912"]],[["921","900","912"],["902","911","920"],["910","922","901"]],[["921","902","910"],["900","911","922"],["912","920","901"]],[["921","980","952"],["982","951","920"],["950","922","981"]],[["921","982","950"],["980","951","922"],["952","920","981"]],[["925","902","918"],["908","915","922"],["912","928","905"]],[["925","908","912"],["902","915","928"],["918","922","905"]],[["925","982","958"],["988","955","922"],["952","928","985"]],[["925","988","952"],["982","955","928"],["958","922","985"]],[["950","922","981"],["982","951","920"],["921","980","952"]],[["950","982","921"],["922","951","980"],["981","920","952"]],[["952","920","981"],["980","951","922"],["921","982","950"]],[["952","928","985"],["988","955","922"],["925","982","958"]],[["952","980","921"],["920","951","982"],["981","922","950"]],[["952","988","925"],["928","955","982"],["985","922","958"]],[["958","922","985"],["982","955","928"],["925","988","952"]],[["958","982","925"],["922","955","988"],["985","928","952"]],[["981","920","952"],["922","951","980"],["950","982","921"]],[["981","922","950"],["920","951","982"],["952","980","921"]],[["985","922","958"],["928","955","982"],["952","988","925"]],[["985","928","952"],["922","955","988"],["958","982","925"]]]},"4":{"n":7936,"sq":[[["0016","0206","0126"],["0226","0116","0006"],["0106","0026","0216"]],[["0016","0226","0106"],["0206","0116","0026"],["0126","0006","0216"]],[["0016","2006","1026"],["2026","1016","0006"],["1006","0026","2016"]],[["0016","2026","1006"],["2006","1016","0026"],["1026","0006","2016"]],[["0016","2206","1126"],["2226","1116","0006"],["1106","0026","2216"]],[["0016","2226","1106"],["2206","1116","0026"],["1126","0006","2216"]],[["0019","0209","0129"],["0229","0119","0009"],["0109","0029","0219"]],[["0019","0229","0109"],["0209","0119","0029"],["0129","0009","0219"]],[["0019","2009","1029"],["2029","1019","0009"],["1009","0029","2019"]],[["0019","2029","1009"],["2009","1019","0029"],["1029","0009","2019"]],[["0019","2209","1129"],["2229","1119","0009"],["1109","0029","2219"]],[["0019","2229","1109"],["2209","1119","0029"],["1129","0009","2219"]],[["0056","0226","0186"],["0286","0156","0026"],["0126","0086","0256"]],[["0056","0286","0126"],["0226","0156","0086"],["0186","0026","0256"]],[["0056","2026","1086"],["2086","1056","0026"],["1026","0086","2056"]],[["0056","2086","1026"],["2026","1056","0086"],["1086","0026","2056"]],[["0056","2226","1186"],["2286","1156","0026"],["1126","0086","2256"]],[["0056","2286","1126"],["2226","1156","0086"],["1186","0026","2256"]],[["0059","0229","0189"],["0289","0159","0029"],["0129","0089","0259"]],[["0059","0289","0129"],["0229","0159","0089"],["0189","0029","0259"]],[["0059","2029","1089"],["2089","1059","0029"],["1029","0089","2059"]],[["0059","2089","1029"],["2029","1059","0089"],["1089","0029","2059"]],[["0059","2229","1189"],["2289","1159","0029"],["1129","0089","2259"]],[["0059","2289","1129"],["2229","1159","0089"],["1189","0029","2259"]],[["0061","0260","0162"],["0262","0161","0060"],["0160","0062","0261"]],[["0061","0262","0160"],["0260","0161","0062"],["0162","0060","0261"]],[["0061","2060","1062"],["2062","1061","0060"],["1060","0062","2061"]],[["0061","2062","1060"],["2060","1061","0062"],["1062","0060","2061"]],[["0061","2260","1162"],["2262","1161","0060"],["1160","0062","2261"]],[["0061","2262","1160"],["2260","1161","0062"],["1162","0060","2261"]],[["0065","0262","0168"],["0268","0165","0062"],["0162","0068","0265"]],[["0065","0268","0162"],["0262","0165","0068"],["0168","0062","0265"]],[["0065","2062","1068"],["2068","1065","0062"],["1062","0068","2065"]],[["0065","2068","1062"],["2062","1065","0068"],["1068","0062","2065"]],[["0065","2262","1168"],["2268","1165","0062"],["1162","0068","2265"]],[["0065","2268","1162"],["2262","1165","0068"],["1168","0062","2265"]],[["0091","0290","0192"],["0292","0191","0090"],["0190","0092","0291"]],[["0091","0292","0190"],["0290","0191","0092"],["0192","0090","0291"]],[["0091","2090","1092"],["2092","1091","0090"],["1090","0092","2091"]],[["0091","2092","1090"],["2090","1091","0092"],["1092","0090","2091"]],[["0091","2290","1192"],["2292","1191","0090"],["1190","0092","2291"]],[["0091","2292","1190"],["2290","1191","0092"],["1192","0090","2291"]],[["0095","0292","0198"],["0298","0195","0092"],["0192","0098","0295"]],[["0095","0298","0192"],["0292","0195","0098"],["0198","0092","0295"]],[["0095","2092","1098"],["2098","1095","0092"],["1092","0098","2095"]],[["0095","2098","1092"],["2092","1095","0098"],["1098","0092","2095"]],[["0095","2292","1198"],["2298","1195","0092"],["1192","0098","2295"]],[["0095","2298","1192"],["2292","1195","0098"],["1198","0092","2295"]],[["0106","0026","0216"],["0226","0116","0006"],["0016","0206","0126"]],[["0106","0226","0016"],["0026","0116","0206"],["0216","0006","0126"]],[["0106","2006","1206"],["2206","1106","0006"],["1006","0206","2106"]],[["0106","2026","1216"],["2226","1116","0006"],["1016","0206","2126"]],[["0106","2206","1006"],["2006","1106","0206"],["1206","0006","2106"]],[["0106","2226","1016"],["2026","1116","0206"],["1216","0006","2126"]],[["0109","0029","0219"],["0229","0119","0009"],["0019","0209","0129"]],[["0109","0229","0019"],["0029","0119","0209"],["0219","0009","0129"]],[["0109","2009","1209"],["2209","1109","0009"],["1009","0209","2109"]],[["0109","2029","1219"],["2229","1119","0009"],["1019","0209","2129"]],[["0109","2209","1009"],["2009","1109","0209"],["1209","0009","2109"]],[["0109","2229","1019"],["2029","1119","0209"],["1219","0009","2129"]],[["0116","2006","1226"],["2226","1116","0006"],["1006","0226","2116"]],[["0116","2016","1216"],["2216","1116","0016"],["1016","0216","2116"]],[["0116","2026","1206"],["2206","1116","0026"],["1026","0206","2116"]],[["0116","2106","1126"],["2126","1116","0106"],["1106","0126","2116"]],[["0116","2126","1106"],["2106","1116","0126"],["1126","0106","2116"]],[["0116","2206","1026"],["2026","1116","0206"],["1206","0026","2116"]],[["0116","2216","1016"],["2016","1116","0216"],["1216","0016","2116"]],[["0116","2226","1006"],["2006","1116","0226"],["1226","0006","2116"]],[["0119","2009","1229"],["2229","1119","0009"],["1009","0229","2119"]],[["0119","2019","1219"],["2219","1119","0019"],["1019","0219","2119"]],[["0119","2029","1209"],["2209","1119","0029"],["1029","0209","2119"]],[["0119","2109","1129"],["2129","1119","0109"],["1109","0129","2119"]],[["0119","2129","1109"],["2109","1119","0129"],["1129","0109","2119"]],[["0119","2209","1029"],["2029","1119","0209"],["1209","0029","2119"]],[["0119","2219","1019"],["2019","1119","0219"],["1219","0019","2119"]],[["0119","2229","1009"],["2009","1119","0229"],["1229","0009","2119"]],[["0126","0006","0216"],["0206","0116","0026"],["0016","0226","0106"]],[["0126","0086","0256"],["0286","0156","0026"],["0056","0226","0186"]],[["0126","0206","0016"],["0006","0116","0226"],["0216","0026","0106"]],[["0126","0286","0056"],["0086","0156","0226"],["0256","0026","0186"]],[["0126","2006","1216"],["2206","1116","0026"],["1016","0226","2106"]],[["0126","2026","1226"],["2226","1126","0026"],["1026","0226","2126"]],[["0126","2086","1256"],["2286","1156","0026"],["1056","0226","2186"]],[["0126","2206","1016"],["2006","1116","0226"],["1216","0026","2106"]],[["0126","2226","1026"],["2026","1126","0226"],["1226","0026","2126"]],[["0126","2286","1056"],["2086","1156","0226"],["1256","0026","2186"]],[["0129","0009","0219"],["0209","0119","0029"],["0019","0229","0109"]],[["0129","0089","0259"],["0289","0159","0029"],["0059","0229","0189"]],[["0129","0209","0019"],["0009","0119","0229"],["0219","0029","0109"]],[["0129","0289","0059"],["0089","0159","0229"],["0259","0029","0189"]],[["0129","2009","1219"],["2209","1119","0029"],["1019","0229","2109"]],[["0129","2029","1229"],["2229","1129","0029"],["1029","0229","2129"]],[["0129","2089","1259"],["2289","1159","0029"],["1059","0229","2189"]],[["0129","2209","1019"],["2009","1119","0229"],["1219","0029","2109"]],[["0129","2229","1029"],["2029","1129","0229"],["1229","0029","2129"]],[["0129","2289","1059"],["2089","1159","0229"],["1259","0029","2189"]],[["0156","2026","1286"],["2286","1156","0026"],["1026","0286","2156"]],[["0156","2056","1256"],["2256","1156","0056"],["1056","0256","2156"]],[["0156","2086","1226"],["2226","1156","0086"],["1086","0226","2156"]],[["0156","2126","1186"],["2186","1156","0126"],["1126","0186","2156"]],[["0156","2186","1126"],["2126","1156","0186"],["1186","0126","2156"]],[["0156","2226","1086"],["2086","1156","0226"],["1226","0086","2156"]],[["0156","2256","1056"],["2056","1156","0256"],["1256","0056","2156"]],[["0156","2286","1026"],["2026","1156","0286"],["1286","0026","2156"]],[["0159","2029","1289"],["2289","1159","0029"],["1029","0289","2159"]],[["0159","2059","1259"],["2259","1159","0059"],["1059","0259","2159"]],[["0159","2089","1229"],["2229","1159","0089"],["1089","0229","2159"]],[["0159","2129","1189"],["2189","1159","0129"],["1129","0189","2159"]],[["0159","2189","1129"],["2129","1159","0189"],["1189","0129","2159"]],[["0159","2229","1089"],["2089","1159","0229"],["1229","0089","2159"]],[["0159","2259","1059"],["2059","1159","0259"],["1259","0059","2159"]],[["0159","2289","1029"],["2029","1159","0289"],["1289","0029","2159"]],[["0160","0062","0261"],["0262","0161","0060"],["0061","0260","0162"]],[["0160","0262","0061"],["0062","0161","0260"],["0261","0060","0162"]],[["0160","2060","1260"],["2260","1160","0060"],["1060","0260","2160"]],[["0160","2062","1261"],["2262","1161","0060"],["1061","0260","2162"]],[["0160","2260","1060"],["2060","1160","0260"],["1260","0060","2160"]],[["0160","2262","1061"],["2062","1161","0260"],["1261","0060","2162"]],[["0161","2060","1262"],["2262","1161","0060"],["1060","0262","2161"]],[["0161","2061","1261"],["2261","1161","0061"],["1061","0261","2161"]],[["0161","2062","1260"],["2260","1161","0062"],["1062","0260","2161"]],[["0161","2160","1162"],["2162","1161","0160"],["1160","0162","2161"]],[["0161","2162","1160"],["2160","1161","0162"],["1162","0160","2161"]],[["0161","2260","1062"],["2062","1161","0260"],["1260","0062","2161"]],[["0161","2261","1061"],["2061","1161","0261"],["1261","0061","2161"]],[["0161","2262","1060"],["2060","1161","0262"],["1262","0060","2161"]],[["0162","0060","0261"],["0260","0161","0062"],["0061","0262","0160"]],[["0162","0068","0265"],["0268","0165","0062"],["0065","0262","0168"]],[["0162","0260","0061"],["0060","0161","0262"],["0261","0062","0160"]],[["0162","0268","0065"],["0068","0165","0262"],["0265","0062","0168"]],[["0162","2060","1261"],["2260","1161","0062"],["1061","0262","2160"]],[["0162","2062","1262"],["2262","1162","0062"],["1062","0262","2162"]],[["0162","2068","1265"],["2268","1165","0062"],["1065","0262","2168"]],[["0162","2260","1061"],["2060","1161","0262"],["1261","0062","2160"]],[["0162","2262","1062"],["2062","1162","0262"],["1262","0062","2162"]],[["0162","2268","1065"],["2068","1165","0262"],["1265","0062","2168"]],[["0165","2062","1268"],["2268","1165","0062"],["1062","0268","2165"]],[["0165","2065","1265"],["2265","1165","0065"],["1065","0265","2165"]],[["0165","2068","1262"],["2262","1165","0068"],["1068","0262","2165"]],[["0165","2162","1168"],["2168","1165","0162"],["1162","0168","2165"]],[["0165","2168","1162"],["2162","1165","0168"],["1168","0162","2165"]],[["0165","2262","1068"],["2068","1165","0262"],["1262","0068","2165"]],[["0165","2265","1065"],["2065","1165","0265"],["1265","0065","2165"]],[["0165","2268","1062"],["2062","1165","0268"],["1268","0062","2165"]],[["0166","2066","1266"],["2266","1166","0066"],["1066","0266","2166"]],[["0166","2266","1066"],["2066","1166","0266"],["1266","0066","2166"]],[["0168","0062","0265"],["0262","0165","0068"],["0065","0268","0162"]],[["0168","0262","0065"],["0062","0165","0268"],["0265","0068","0162"]],[["0168","2062","1265"],["2262","1165","0068"],["1065","0268","2162"]],[["0168","2068","1268"],["2268","1168","0068"],["1068","0268","2168"]],[["0168","2262","1065"],["2062","1165","0268"],["1265","0068","2162"]],[["0168","2268","1068"],["2068","1168","0268"],["1268","0068","2168"]],[["0169","2069","1269"],["2269","1169","0069"],["1069","0269","2169"]],[["0169","2269","1069"],["2069","1169","0269"],["1269","0069","2169"]],[["0186","0026","0256"],["0226","0156","0086"],["0056","0286","0126"]],[["0186","0226","0056"],["0026","0156","0286"],["0256","0086","0126"]],[["0186","2026","1256"],["2226","1156","0086"],["1056","0286","2126"]],[["0186","2086","1286"],["2286","1186","0086"],["1086","0286","2186"]],[["0186","2226","1056"],["2026","1156","0286"],["1256","0086","2126"]],[["0186","2286","1086"],["2086","1186","0286"],["1286","0086","2186"]],[["0189","0029","0259"],["0229","0159","0089"],["0059","0289","0129"]],[["0189","0229","0059"],["0029","0159","0289"],["0259","0089","0129"]],[["0189","2029","1259"],["2229","1159","0089"],["1059","0289","2129"]],[["0189","2089","1289"],["2289","1189","0089"],["1089","0289","2189"]],[["0189","2229","1059"],["2029","1159","0289"],["1259","0089","2129"]],[["0189","2289","1089"],["2089","1189","0289"],["1289","0089","2189"]],[["0190","0092","0291"],["0292","0191","0090"],["0091","0290","0192"]],[["0190","0292","0091"],["0092","0191","0290"],["0291","0090","0192"]],[["0190","2090","1290"],["2290","1190","0090"],["1090","0290","2190"]],[["0190","2092","1291"],["2292","1191","0090"],["1091","0290","2192"]],[["0190","2290","1090"],["2090","1190","0290"],["1290","0090","2190"]],[["0190","2292","1091"],["2092","1191","0290"],["1291","0090","2192"]],[["0191","2090","1292"],["2292","1191","0090"],["1090","0292","2191"]],[["0191","2091","1291"],["2291","1191","0091"],["1091","0291","2191"]],[["0191","2092","1290"],["2290","1191","0092"],["1092","0290","2191"]],[["0191","2190","1192"],["2192","1191","0190"],["1190","0192","2191"]],[["0191","2192","1190"],["2190","1191","0192"],["1192","0190","2191"]],[["0191","2290","1092"],["2092","1191","0290"],["1290","0092","2191"]],[["0191","2291","1091"],["2091","1191","0291"],["1291","0091","2191"]],[["0191","2292","1090"],["2090","1191","0292"],["1292","0090","2191"]],[["0192","0090","0291"],["0290","0191","0092"],["0091","0292","0190"]],[["0192","0098","0295"],["0298","0195","0092"],["0095","0292","0198"]],[["0192","0290","0091"],["0090","0191","0292"],["0291","0092","0190"]],[["0192","0298","0095"],["0098","0195","0292"],["0295","0092","0198"]],[["0192","2090","1291"],["2290","1191","0092"],["1091","0292","2190"]],[["0192","2092","1292"],["2292","1192","0092"],["1092","0292","2192"]],[["0192","2098","1295"],["2298","1195","0092"],["1095","0292","2198"]],[["0192","2290","1091"],["2090","1191","0292"],["1291","0092","2190"]],[["0192","2292","1092"],["2092","1192","0292"],["1292","0092","2192"]],[["0192","2298","1095"],["2098","1195","0292"],["1295","0092","2198"]],[["0195","2092","1298"],["2298","1195","0092"],["1092","0298","2195"]],[["0195","2095","1295"],["2295","1195","0095"],["1095","0295","2195"]],[["0195","2098","1292"],["2292","1195","0098"],["1098","0292","2195"]],[["0195","2192","1198"],["2198","1195","0192"],["1192","0198","2195"]],[["0195","2198","1192"],["2192","1195","0198"],["1198","0192","2195"]],[["0195","2292","1098"],["2098","1195","0292"],["1292","0098","2195"]],[["0195","2295","1095"],["2095","1195","0295"],["1295","0095","2195"]],[["0195","2298","1092"],["2092","1195","0298"],["1298","0092","2195"]],[["0196","2096","1296"],["2296","1196","0096"],["1096","0296","2196"]],[["0196","2296","1096"],["2096","1196","0296"],["1296","0096","2196"]]]}}};   /* order 3: upside-down magic squares containing 6 or 9 (complete search; lists shortened to 200) */
+const SETS = {};
+let GEN={n:0,seed:0,desc:'',note:''};
+function ownFam(){
+  const own=document.getElementById('genOwn').value.trim(); if(!own) return null;
+  const d=own.split(/[\s,;]+/).filter(Boolean);
+  if(d.some(x=>!/^[0125689]$/.test(x))) throw new Error('Own digits: use only 0, 1, 2, 5, 6, 8 and 9.');
+  if(new Set(d).size!==d.length||d.length<2) throw new Error('Own digits: give at least two different digits.');
+  if(d.includes('6')!==d.includes('9')) throw new Error('Own digits: 6 and 9 must be used together, since each becomes the other upside down.');
+  return d.join(',');
+}
+function tickedFams(){ return FAMS_ALL.slice(); }
+function familyResults(n,seed,fams,all){
+  let D=null, SD=null, TD=null; const out=[]; const key=f=>f.split(',').sort().join('');
+  for(const f of fams){ const ds=f.split(',');
+    if(n===3 && O3UP[key(f)]){ for(const L of Object.keys(O3UP[key(f)])){ const T=O3UP[key(f)][L];
+        out.push({fam:f,seg:true,kind:'upside',L:+L,count:T.n,stored:T.sq.length,squares: all ? T.sq : [T.sq[(seed-1)%T.sq.length]]}); } continue; }
+    if(n===3||n===6){ SD=SD||ENGINE.semiDesign(n,seed); out.push({fam:f,seg:true,kind:'semi',squares:[ENGINE.encode(SD,ds,seed)]}); continue; }
+    D=D||ENGINE.vary(ENGINE.design(n,seed),seed);
+    out.push({fam:f,seg:true,kind:'magic',squares:[ENGINE.encode(D,ds,seed)],desc:ENGINE.describe(D)});
+    if(ENGINE.canPal(D,ds)) out.push({fam:f,seg:true,kind:'pal',squares:[ENGINE.encodePal(D,ds,seed)]});
+    if(ENGINE.tripleK(n)===ds.length){ TD=TD||ENGINE.vary(ENGINE.tripleDesign(n,seed),seed); if(TD) out.push({fam:f,seg:true,kind:'triple',squares:[ENGINE.encodeTriple(TD,ds,seed)]}); }
+  }
+  return out;
+}
+function buildSets(n,seed,fams){
+  const res=familyResults(n,seed,fams,false);
+  const up=res.filter(r=>r.kind==='upside');
+  const desc = n===3 ? 'complete computer search (upside-down magic) and orthogonal Latin squares (semi-magic)' : n===6 ? 'computer search (semi-magic)' : (res.find(r=>r.desc)||{}).desc;
+  const note = n===3 ? 'Order 3 with 6 and 9: upside-down magic squares exist only with 3- and 4-digit cells — '+(up.length?up.map(r=>famLabel(r.fam)+' '+r.L+'-digit: '+r.count+' (no. '+((seed-1)%r.stored+1)+')').join(' · '):'none for these digits')+
+      (res.some(r=>r.kind==='semi')?' · the other families: semi-magic (equal rows and columns, upright and upside down).':'')
+     : n===6 ? 'Order 6: no fully magic squares with this method; all are semi-magic (equal rows and columns, upright and upside down).' : '';
+  Object.keys(SETS).forEach(k=>delete SETS[k]);
+  const groups=new Map(), seen=new Set();
+  for(const kind of ['upside','magic','pal','triple','semi']) for(const r of res.filter(x=>x.kind===kind)){
+    const sig=JSON.stringify(r.squares[0]); if(seen.has(sig)) continue; seen.add(sig);
+    const L=r.squares[0][0][0].length, g=kind+'|'+L; if(!groups.has(g)) groups.set(g,{kind,L,list:[]}); groups.get(g).list.push(r); }
+  let ex=1;
+  for(const [g,G] of groups){
+    const data=G.list.map(r=>({name:'Example '+(ex++), orig:r.squares[0].map(row=>row.slice()), kind:G.kind==='semi'?'semi':'magic'}));
+    const pan=G.kind!=='semi' && data.every(d=>analyse(d.orig).type==='pandiagonal magic');
+    const lab={upside:'',magic:'',pal:'Palindromic ',triple:'Three-layer ',semi:'Semi-magic '}[G.kind];
+    SETS['g'+n+'_'+G.kind+G.L]={ tab:'Order '+n+' · '+lab+G.L+'-Digit', style:'seg',
+      orig:G.kind==='semi'?'#e8f0ff':'#fff1d6', refl:'#e6f6c6', size:Math.min(820,Math.round(230+n*20+G.L*10)),
+      sub:'Order '+n+' · '+G.L+'-digit entries · '+G.list.map(r=>famLabel(r.fam)).join(', ')+' · upside-down: turned 180°, 6 ↔ 9 · '+
+        (G.kind==='semi'?'semi-magic upright and upside down':(G.kind==='pal'?'palindromic entries a b a · ':G.kind==='triple'?'three balanced layers a b c · ':'')+(pan?'pandiagonal magic upright and upside down':'magic upright and upside down')), data };
+  }
+  GEN={n,seed,desc,note};
+}
+let STYLE='classic', STRIPES=0, BLOCKS=null, CENTER=null;
+const cloneSet = k => SETS[k].data.map(d=>({name:d.name, orig:d.orig.map(r=>r.slice())}));
+/* every example becomes its own two-sided plate */
+const EXAMPLES=[];
+function fillExamples(){ EXAMPLES.length=0; Object.entries(SETS).forEach(([k,v])=>v.data.forEach((d,i)=>EXAMPLES.push({set:k,idx:i,name:d.name,num:'o'+d.orig.length+'e'+(d.name.match(/\d+/)||['x'])[0]}))); }
+Object.assign(SETS, {"g9_magic8":{"tab":"Order 9 · 8-Digit","style":"seg","orig":"#fff1d6","refl":"#e6f6c6","size":490,"sub":"Order 9 · 8-digit entries · (6,9) · upside-down: turned 180°, 6 ↔ 9 · magic upright and upside down","data":[{"name":"Example 1","orig":[["69999666","66669669","66696999","99666699","66999696","99966696","99999969","96996666","69966969"],["99996969","66996699","69969669","69996999","96999666","66696666","99666696","66669969","99969696"],["66666699","99966666","99996696","96999969","66699669","69996969","66999666","69969696","99666999"],["69966666","99666969","66669666","66699696","69996696","96996699","99969669","99996999","66999969"],["96999669","69966696","69999969","66996666","99966999","99669666","66669696","66696969","99996699"],["99669696","96996999","99966699","99999669","66666969","69969969","69996666","66996696","66699666"],["66996999","66699969","99666666","66666696","69966699","99999696","96996969","99969666","69999669"],["99969969","69999696","66996969","69969666","99996666","66666999","66696699","99669669","96996696"],["66696696","99999666","96999696","99966969","99669969","66999669","69966999","69996699","66666666"]],"kind":"magic"}]},"g9_magic4":{"tab":"Order 9 · 4-Digit","style":"seg","orig":"#fff1d6","refl":"#e6f6c6","size":450,"sub":"Order 9 · 4-digit entries · (0,6,9), (1,6,9), (6,8,9), (2,6,9), (5,6,9), (0,1,6,9), (0,6,8,9), (1,6,8,9), (2,5,6,9), (0,1,6,8,9), (0,2,5,6,9), (1,2,5,6,9), (2,5,6,8,9), (0,1,2,5,6,9), (0,1,2,5,6,8,9) · upside-down: turned 180°, 6 ↔ 9 · magic upright and upside down","data":[{"name":"Example 2","orig":[["0909","6699","0669","6996","0000","6090","9606","9060","9966"],["9666","0096","9999","0969","9009","0660","6990","6606","6000"],["6696","6060","9690","9006","0699","0966","0009","9900","6969"],["9960","6966","6609","0600","0990","9096","6099","9669","0006"],["9099","9990","0906","0060","6069","6909","6600","0666","9696"],["6900","9069","6096","9699","6666","9906","0960","0090","0609"],["0069","0606","6960","6690","9996","9600","9066","6009","0999"],["6006","0900","0066","9909","9660","6669","0696","6999","9090"],["0690","9609","9000","6066","6906","0099","9969","0996","6660"]],"kind":"magic"},{"name":"Example 3","orig":[["1919","6699","1669","6996","1111","6191","9616","9161","9966"],["9666","1196","9999","1969","9119","1661","6991","6616","6111"],["6696","6161","9691","9116","1699","1966","1119","9911","6969"],["9961","6966","6619","1611","1991","9196","6199","9669","1116"],["9199","9991","1916","1161","6169","6919","6611","1666","9696"],["6911","9169","6196","9699","6666","9916","1961","1191","1619"],["1169","1616","6961","6691","9996","9611","9166","6119","1999"],["6116","1911","1166","9919","9661","6669","1696","6999","9191"],["1691","9619","9111","6166","6916","1199","9969","1996","6661"]],"kind":"magic"},{"name":"Example 4","orig":[["8989","6699","8669","6996","8888","6898","9686","9868","9966"],["9666","8896","9999","8969","9889","8668","6998","6686","6888"],["6696","6868","9698","9886","8699","8966","8889","9988","6969"],["9968","6966","6689","8688","8998","9896","6899","9669","8886"],["9899","9998","8986","8868","6869","6989","6688","8666","9696"],["6988","9869","6896","9699","6666","9986","8968","8898","8689"],["8869","8686","6968","6698","9996","9688","9866","6889","8999"],["6886","8988","8866","9989","9668","6669","8696","6999","9898"],["8698","9689","9888","6866","6986","8899","9969","8996","6668"]],"kind":"magic"},{"name":"Example 5","orig":[["2929","6699","2669","6996","2222","6292","9626","9262","9966"],["9666","2296","9999","2969","9229","2662","6992","6626","6222"],["6696","6262","9692","9226","2699","2966","2229","9922","6969"],["9962","6966","6629","2622","2992","9296","6299","9669","2226"],["9299","9992","2926","2262","6269","6929","6622","2666","9696"],["6922","9269","6296","9699","6666","9926","2962","2292","2629"],["2269","2626","6962","6692","9996","9622","9266","6229","2999"],["6226","2922","2266","9929","9662","6669","2696","6999","9292"],["2692","9629","9222","6266","6926","2299","9969","2996","6662"]],"kind":"magic"},{"name":"Example 6","orig":[["5959","6699","5669","6996","5555","6595","9656","9565","9966"],["9666","5596","9999","5969","9559","5665","6995","6656","6555"],["6696","6565","9695","9556","5699","5966","5559","9955","6969"],["9965","6966","6659","5655","5995","9596","6599","9669","5556"],["9599","9995","5956","5565","6569","6959","6655","5666","9696"],["6955","9569","6596","9699","6666","9956","5965","5595","5659"],["5569","5656","6965","6695","9996","9655","9566","6559","5999"],["6556","5955","5566","9959","9665","6669","5696","6999","9595"],["5695","9659","9555","6566","6956","5599","9969","5996","6665"]],"kind":"magic"},{"name":"Example 7","orig":[["1960","0061","0119","9009","0966","9606","9991","6900","1611"],["9911","0909","1661","1919","6960","0100","9006","0091","9666"],["0009","9600","9906","6991","0161","1911","0960","1666","9019"],["1600","9011","0060","0166","1906","6909","9661","9919","0991"],["6961","1606","1991","0900","9619","9060","0066","0111","9909"],["9066","6919","9609","9961","0011","1691","1900","0906","0160"],["0919","0191","9000","0006","1609","9966","6911","9660","1961"],["9691","1966","0911","1660","9900","0019","0109","9061","6906"],["0106","9960","6966","9611","9091","0961","1619","1909","0000"]],"kind":"magic"},{"name":"Example 8","orig":[["8960","0068","0889","9009","0966","9606","9998","6900","8688"],["9988","0909","8668","8989","6960","0800","9006","0098","9666"],["0009","9600","9906","6998","0868","8988","0960","8666","9089"],["8600","9088","0060","0866","8906","6909","9668","9989","0998"],["6968","8606","8998","0900","9689","9060","0066","0888","9909"],["9066","6989","9609","9968","0088","8698","8900","0906","0860"],["0989","0898","9000","0006","8609","9966","6988","9660","8968"],["9698","8966","0988","8660","9900","0089","0809","9068","6906"],["0806","9960","6966","9688","9098","0968","8689","8909","0000"]],"kind":"magic"},{"name":"Example 9","orig":[["8961","1168","1889","9119","1966","9616","9998","6911","8688"],["9988","1919","8668","8989","6961","1811","9116","1198","9666"],["1119","9611","9916","6998","1868","8988","1961","8666","9189"],["8611","9188","1161","1866","8916","6919","9668","9989","1998"],["6968","8616","8998","1911","9689","9161","1166","1888","9919"],["9166","6989","9619","9968","1188","8698","8911","1916","1861"],["1989","1898","9111","1116","8619","9966","6988","9661","8968"],["9698","8966","1988","8661","9911","1189","1819","9168","6916"],["1816","9961","6966","9688","9198","1968","8689","8919","1111"]],"kind":"magic"},{"name":"Example 10","orig":[["5962","2265","2559","9229","2966","9626","9995","6922","5655"],["9955","2929","5665","5959","6962","2522","9226","2295","9666"],["2229","9622","9926","6995","2565","5955","2962","5666","9259"],["5622","9255","2262","2566","5926","6929","9665","9959","2995"],["6965","5626","5995","2922","9659","9262","2266","2555","9929"],["9266","6959","9629","9965","2255","5695","5922","2926","2562"],["2959","2595","9222","2226","5629","9966","6955","9662","5965"],["9695","5966","2955","5662","9922","2259","2529","9265","6926"],["2526","9962","6966","9655","9295","2965","5659","5929","2222"]],"kind":"magic"},{"name":"Example 11","orig":[["8966","0891","6969","9989","8099","6661","1198","6186","1888"],["1188","8089","1891","8969","6166","6986","9961","0898","6699"],["0889","6686","1161","6198","6991","8988","8066","1899","9969"],["1886","9988","0866","6999","8961","6189","6691","1169","8098"],["6191","1861","8998","8086","6669","9966","0899","6988","1189"],["9999","6169","6689","1191","0888","1898","8986","8061","6966"],["8069","6998","9986","0861","1889","1199","6188","6666","8991"],["6698","8999","8088","1866","1186","0869","6989","9991","6161"],["6961","1166","6199","6688","9998","8091","1869","8989","0886"]],"kind":"magic"},{"name":"Example 12","orig":[["5966","0592","6969","9959","5099","6662","2295","6256","2555"],["2255","5059","2592","5969","6266","6956","9962","0595","6699"],["0559","6656","2262","6295","6992","5955","5066","2599","9969"],["2556","9955","0566","6999","5962","6259","6692","2269","5095"],["6292","2562","5995","5056","6669","9966","0599","6955","2259"],["9999","6269","6659","2292","0555","2595","5956","5062","6966"],["5069","6995","9956","0562","2559","2299","6255","6666","5992"],["6695","5999","5055","2566","2256","0569","6959","9992","6262"],["6962","2266","6299","6655","9995","5092","2569","5959","0556"]],"kind":"magic"},{"name":"Example 13","orig":[["5966","1592","6969","9959","5199","6662","2295","6256","2555"],["2255","5159","2592","5969","6266","6956","9962","1595","6699"],["1559","6656","2262","6295","6992","5955","5166","2599","9969"],["2556","9955","1566","6999","5962","6259","6692","2269","5195"],["6292","2562","5995","5156","6669","9966","1599","6955","2259"],["9999","6269","6659","2292","1555","2595","5956","5162","6966"],["5169","6995","9956","1562","2559","2299","6255","6666","5992"],["6695","5999","5155","2566","2256","1569","6959","9992","6262"],["6962","2266","6299","6655","9995","5192","2569","5959","1556"]],"kind":"magic"},{"name":"Example 14","orig":[["5966","8592","6969","9959","5899","6662","2295","6256","2555"],["2255","5859","2592","5969","6266","6956","9962","8595","6699"],["8559","6656","2262","6295","6992","5955","5866","2599","9969"],["2556","9955","8566","6999","5962","6259","6692","2269","5895"],["6292","2562","5995","5856","6669","9966","8599","6955","2259"],["9999","6269","6659","2292","8555","2595","5956","5862","6966"],["5869","6995","9956","8562","2559","2299","6255","6666","5992"],["6695","5999","5855","2566","2256","8569","6959","9992","6262"],["6962","2266","6299","6655","9995","5892","2569","5959","8556"]],"kind":"magic"},{"name":"Example 15","orig":[["5219","0602","5650","2955","2095","0196","6556","9025","5511"],["6511","2055","5502","5250","9019","5625","2996","0656","0195"],["0655","0125","6596","9056","5602","5211","2019","5595","2950"],["5525","2911","0619","5695","5296","9055","0102","6550","2056"],["9002","5596","5256","2025","0150","2919","0695","5611","6555"],["2995","9050","0155","6502","0611","5556","5225","2096","5619"],["2050","5656","2925","0696","5555","6595","9011","0119","5202"],["0156","5295","2011","5519","6525","0650","5655","2902","9096"],["5696","6519","9095","0111","2956","2002","5550","5255","0625"]],"kind":"magic"},{"name":"Example 16","orig":[["5122","9966","8691","2889","6511","5999","5612","5028","2288"],["5688","6589","2266","5191","5022","8628","2899","9912","5911"],["9989","5928","5699","5012","8666","5188","6522","2211","2891"],["2228","2888","9922","8611","5199","5089","5966","5691","6512"],["5066","2299","5112","6528","5991","2822","9911","8688","5689"],["2811","5091","5989","5666","9988","2212","5128","6599","8622"],["6591","8612","2828","9999","2289","5611","5088","5922","5166"],["5912","5111","6588","2222","5628","9991","8689","2866","5099"],["8699","5622","5011","5988","2812","6566","2291","5189","9928"]],"kind":"magic"}]},"g10_magic8":{"tab":"Order 10 · 8-Digit","style":"seg","orig":"#fff1d6","refl":"#e6f6c6","size":510,"sub":"Order 10 · 8-digit entries · (6,9) · upside-down: turned 180°, 6 ↔ 9 · magic upright and upside down","data":[{"name":"Example 1","orig":[["96966969","69669669","66996699","69969966","66699699","69669696","96966996","66996696","66699666","69969969"],["66669999","69996696","69699666","96969696","66966969","69996669","66669996","69699669","66966966","96969699"],["69999699","66969969","66669699","69666966","96996666","66969966","69999696","66669666","96996699","69666999"],["69696666","66666966","96969996","66999669","69969699","66666999","69696669","96969999","69969696","66999666"],["66969696","96999669","69966999","66696699","69669966","96999696","66969666","69966969","69669999","66696666"],["66669966","69996699","69699699","96969669","66966999","69996666","66669969","69699696","66966996","96969666"],["96966966","69669666","66996666","69969996","66699669","69669699","96966999","66996669","66699696","69969999"],["69999669","66969996","66669669","69666996","96996696","66969999","69999666","66669696","96996669","69666969"],["66969699","96999699","69966966","66696669","69669996","96999666","66969669","69966996","69669969","66696696"],["69696696","66666996","96969966","66999699","69969666","66666969","69696699","96969969","69969669","66999696"]],"kind":"magic"}]},"g10_magic6":{"tab":"Order 10 · 6-Digit","style":"seg","orig":"#fff1d6","refl":"#e6f6c6","size":490,"sub":"Order 10 · 6-digit entries · (0,6,9), (1,6,9), (6,8,9), (2,6,9), (5,6,9), (0,1,6,9), (0,6,8,9), (1,6,8,9), (2,5,6,9) · upside-down: turned 180°, 6 ↔ 9 · magic upright and upside down","data":[{"name":"Example 2","orig":[["096060","606960","060690","000966","696690","606996","096096","060696","696666","000960"],["690990","000696","606666","096996","066060","000660","690996","606660","066066","096990"],["006690","060960","696990","606066","090666","060966","006696","696966","090690","606090"],["600666","696066","090996","066660","006990","696090","600660","090990","006996","066666"],["066996","096660","006090","690690","600966","096696","066966","006060","600990","690666"],["690966","000690","606690","096960","066090","000666","690960","606696","066096","096966"],["096066","606966","060666","000996","696660","606990","096090","060660","696696","000990"],["006660","060996","696960","606096","090696","060990","006666","696996","090660","606060"],["066990","096690","006066","690660","600996","096666","066960","006096","600960","690696"],["600696","696096","090966","066690","006966","696060","600690","090960","006960","066696"]],"kind":"magic"},{"name":"Example 3","orig":[["196161","616961","161691","111966","696691","616996","196196","161696","696666","111961"],["691991","111696","616666","196996","166161","111661","691996","616661","166166","196991"],["116691","161961","696991","616166","191666","161966","116696","696966","191691","616191"],["611666","696166","191996","166661","116991","696191","611661","191991","116996","166666"],["166996","196661","116191","691691","611966","196696","166966","116161","611991","691666"],["691966","111691","616691","196961","166191","111666","691961","616696","166196","196966"],["196166","616966","161666","111996","696661","616991","196191","161661","696696","111991"],["116661","161996","696961","616196","191696","161991","116666","696996","191661","616161"],["166991","196691","116166","691661","611996","196666","166961","116196","611961","691696"],["611696","696196","191966","166691","116966","696161","611691","191961","116961","166696"]],"kind":"magic"},{"name":"Example 4","orig":[["896868","686968","868698","888966","696698","686996","896896","868696","696666","888968"],["698998","888696","686666","896996","866868","888668","698996","686668","866866","896998"],["886698","868968","696998","686866","898666","868966","886696","696966","898698","686898"],["688666","696866","898996","866668","886998","696898","688668","898998","886996","866666"],["866996","896668","886898","698698","688966","896696","866966","886868","688998","698666"],["698966","888698","686698","896968","866898","888666","698968","686696","866896","896966"],["896866","686966","868666","888996","696668","686998","896898","868668","696696","888998"],["886668","868996","696968","686896","898696","868998","886666","696996","898668","686868"],["866998","896698","886866","698668","688996","896666","866968","886896","688968","698696"],["688696","696896","898966","866698","886966","696868","688698","898968","886968","866696"]],"kind":"magic"},{"name":"Example 5","orig":[["296262","626962","262692","222966","696692","626996","296296","262696","696666","222962"],["692992","222696","626666","296996","266262","222662","692996","626662","266266","296992"],["226692","262962","696992","626266","292666","262966","226696","696966","292692","626292"],["622666","696266","292996","266662","226992","696292","622662","292992","226996","266666"],["266996","296662","226292","692692","622966","296696","266966","226262","622992","692666"],["692966","222692","626692","296962","266292","222666","692962","626696","266296","296966"],["296266","626966","262666","222996","696662","626992","296292","262662","696696","222992"],["226662","262996","696962","626296","292696","262992","226666","696996","292662","626262"],["266992","296692","226266","692662","622996","296666","266962","226296","622962","692696"],["622696","696296","292966","266692","226966","696262","622692","292962","226962","266696"]],"kind":"magic"},{"name":"Example 6","orig":[["596565","656965","565695","555966","696695","656996","596596","565696","696666","555965"],["695995","555696","656666","596996","566565","555665","695996","656665","566566","596995"],["556695","565965","696995","656566","595666","565966","556696","696966","595695","656595"],["655666","696566","595996","566665","556995","696595","655665","595995","556996","566666"],["566996","596665","556595","695695","655966","596696","566966","556565","655995","695666"],["695966","555695","656695","596965","566595","555666","695965","656696","566596","596966"],["596566","656966","565666","555996","696665","656995","596595","565665","696696","555995"],["556665","565996","696965","656596","595696","565995","556666","696996","595665","656565"],["566995","596695","556566","695665","655996","596666","566965","556596","655965","695696"],["655696","696596","595966","566695","556966","696565","655695","595965","556965","566696"]],"kind":"magic"},{"name":"Example 7","orig":[["190066","961966","019116","096061","901116","961911","190011","019111","901161","096066"],["906016","099111","961161","191911","010066","099166","906011","961166","010061","191916"],["091116","016066","901916","960061","199161","016061","091111","901961","199116","960016"],["969161","900061","196011","011166","091916","900016","969166","196016","091911","011161"],["011911","191166","090016","909116","966061","191111","011961","090066","966016","909161"],["906061","099116","961116","191966","010016","099161","906066","961111","010011","191961"],["190061","961961","019161","096011","901166","961916","190016","019166","901111","096016"],["091166","016011","901966","960011","199111","016016","091161","901911","199166","960066"],["011916","191116","090061","909166","966011","191161","011966","090011","966066","909111"],["969111","900011","196061","011116","091961","900066","969116","196066","091966","011111"]],"kind":"magic"},{"name":"Example 8","orig":[["890066","968966","089886","096068","908886","968988","890088","089888","908868","096066"],["906086","099888","968868","898988","080066","099866","906088","968866","080068","898986"],["098886","086066","908986","960068","899868","086068","098888","908968","899886","960086"],["969868","900068","896088","088866","098986","900086","969866","896086","098988","088868"],["088988","898866","090086","909886","966068","898888","088968","090066","966086","909868"],["906068","099886","968886","898966","080086","099868","906066","968888","080088","898968"],["890068","968968","089868","096088","908866","968986","890086","089866","908888","096086"],["098866","086088","908966","960088","899888","086086","098868","908988","899866","960066"],["088986","898886","090068","909866","966088","898868","088966","090088","966066","909888"],["969888","900088","896068","088886","098968","900066","969886","896066","098966","088888"]],"kind":"magic"},{"name":"Example 9","orig":[["891166","968966","189886","196168","918886","968988","891188","189888","918868","196166"],["916186","199888","968868","898988","181166","199866","916188","968866","181168","898986"],["198886","186166","918986","961168","899868","186168","198888","918968","899886","961186"],["969868","911168","896188","188866","198986","911186","969866","896186","198988","188868"],["188988","898866","191186","919886","966168","898888","188968","191166","966186","919868"],["916168","199886","968886","898966","181186","199868","916166","968888","181188","898968"],["891168","968968","189868","196188","918866","968986","891186","189866","918888","196186"],["198866","186188","918966","961188","899888","186186","198868","918988","899866","961166"],["188986","898886","191168","919866","966188","898868","188966","191188","966166","919888"],["969888","911188","896168","188886","198968","911166","969886","896166","198966","188888"]],"kind":"magic"},{"name":"Example 10","orig":[["592266","965966","259556","296265","925556","965955","592255","259555","925565","296266"],["926256","299555","965565","595955","252266","299566","926255","965566","252265","595956"],["295556","256266","925956","962265","599565","256265","295555","925965","599556","962256"],["969565","922265","596255","255566","295956","922256","969566","596256","295955","255565"],["255955","595566","292256","929556","966265","595555","255965","292266","966256","929565"],["926265","299556","965556","595966","252256","299565","926266","965555","252255","595965"],["592265","965965","259565","296255","925566","965956","592256","259566","925555","296256"],["295566","256255","925966","962255","599555","256256","295565","925955","599566","962266"],["255956","595556","292265","929566","966255","595565","255966","292255","966266","929555"],["969555","922255","596265","255556","295965","922266","969556","596266","295966","255555"]],"kind":"magic"}]},"g10_magic4":{"tab":"Order 10 · 4-Digit","style":"seg","orig":"#fff1d6","refl":"#e6f6c6","size":470,"sub":"Order 10 · 4-digit entries · (0,1,6,8,9), (0,2,5,6,9), (1,2,5,6,9), (2,5,6,8,9), (0,1,2,5,6,9), (0,1,2,5,6,8,9) · upside-down: turned 180°, 6 ↔ 9 · magic upright and upside down","data":[{"name":"Example 11","orig":[["8098","0698","6818","9990","1118","0610","8010","6810","1190","9998"],["1918","9810","0190","8610","6098","9898","1910","0198","6090","8618"],["9118","6998","1618","0090","8890","6990","9110","1690","8818","0018"],["0890","1090","8910","6198","9618","1018","0898","8918","9610","6190"],["6610","8198","9018","1818","0990","8110","6690","9098","0918","1890"],["1990","9818","0118","8698","6018","9890","1998","0110","6010","8690"],["8090","0690","6890","9910","1198","0618","8018","6898","1110","9918"],["9198","6910","1698","0010","8810","6918","9190","1610","8898","0098"],["6618","8118","9090","1898","0910","8190","6698","9010","0998","1810"],["0810","1010","8990","6118","9690","1098","0818","8998","9698","6110"]],"kind":"magic"},{"name":"Example 12","orig":[["5095","0695","6525","9990","2225","0620","5020","6520","2290","9995"],["2925","9520","0290","5620","6095","9595","2920","0295","6090","5625"],["9225","6995","2625","0090","5590","6990","9220","2690","5525","0025"],["0590","2090","5920","6295","9625","2025","0595","5925","9620","6290"],["6620","5295","9025","2525","0990","5220","6690","9095","0925","2590"],["2990","9525","0225","5695","6025","9590","2995","0220","6020","5690"],["5090","0690","6590","9920","2295","0625","5025","6595","2220","9925"],["9295","6920","2695","0020","5520","6925","9290","2620","5595","0095"],["6625","5225","9090","2595","0920","5290","6695","9020","0995","2520"],["0520","2020","5990","6225","9690","2095","0525","5995","9695","6220"]],"kind":"magic"},{"name":"Example 13","orig":[["5195","1695","6525","9991","2225","1621","5121","6521","2291","9995"],["2925","9521","1291","5621","6195","9595","2921","1295","6191","5625"],["9225","6995","2625","1191","5591","6991","9221","2691","5525","1125"],["1591","2191","5921","6295","9625","2125","1595","5925","9621","6291"],["6621","5295","9125","2525","1991","5221","6691","9195","1925","2591"],["2991","9525","1225","5695","6125","9591","2995","1221","6121","5691"],["5191","1691","6591","9921","2295","1625","5125","6595","2221","9925"],["9295","6921","2695","1121","5521","6925","9291","2621","5595","1195"],["6625","5225","9191","2595","1921","5291","6695","9121","1995","2521"],["1521","2121","5991","6225","9691","2195","1525","5995","9695","6221"]],"kind":"magic"},{"name":"Example 14","orig":[["5895","8695","6525","9998","2225","8628","5828","6528","2298","9995"],["2925","9528","8298","5628","6895","9595","2928","8295","6898","5625"],["9225","6995","2625","8898","5598","6998","9228","2698","5525","8825"],["8598","2898","5928","6295","9625","2825","8595","5925","9628","6298"],["6628","5295","9825","2525","8998","5228","6698","9895","8925","2598"],["2998","9525","8225","5695","6825","9598","2995","8228","6828","5698"],["5898","8698","6598","9928","2295","8625","5825","6595","2228","9925"],["9295","6928","2695","8828","5528","6925","9298","2628","5595","8895"],["6625","5225","9898","2595","8928","5298","6695","9828","8995","2528"],["8528","2828","5998","6225","9698","2895","8525","5995","9695","6228"]],"kind":"magic"},{"name":"Example 15","orig":[["6560","1960","2120","9666","0020","1926","6526","2126","0066","9660"],["0620","9126","1066","6926","2560","9160","0626","1060","2566","6920"],["9020","2660","0920","1566","6166","2666","9026","0966","6120","1520"],["1166","0566","6626","2060","9920","0520","1160","6620","9926","2066"],["2926","6060","9520","0120","1666","6026","2966","9560","1620","0166"],["0666","9120","1020","6960","2520","9166","0660","1026","2526","6966"],["6566","1966","2166","9626","0060","1920","6520","2160","0026","9620"],["9060","2626","0960","1526","6126","2620","9066","0926","6160","1560"],["2920","6020","9566","0160","1626","6066","2960","9526","1660","0126"],["1126","0526","6666","2020","9966","0560","1120","6660","9960","2026"]],"kind":"magic"},{"name":"Example 16","orig":[["9216","2916","8686","1815","0586","2985","9285","8685","0515","1816"],["0886","1685","2515","9985","8216","1616","0885","2516","8215","9986"],["1586","8816","0986","2215","9615","8815","1585","0915","9686","2286"],["2615","0215","9885","8516","1986","0286","2616","9886","1985","8515"],["8985","9516","1286","0686","2815","9585","8915","1216","2886","0615"],["0815","1686","2586","9916","8286","1615","0816","2585","8285","9915"],["9215","2915","8615","1885","0516","2986","9286","8616","0585","1886"],["1516","8885","0916","2285","9685","8886","1515","0985","9616","2216"],["8986","9586","1215","0616","2885","9515","8916","1285","2816","0685"],["2685","0285","9815","8586","1915","0216","2686","9816","1916","8585"]],"kind":"magic"}]},"g10_triple3":{"tab":"Order 10 · Three-layer 3-Digit","style":"seg","orig":"#fff1d6","refl":"#e6f6c6","size":460,"sub":"Order 10 · 3-digit entries · (0,1,6,8,9), (0,2,5,6,9), (1,2,5,6,9), (2,5,6,8,9) · upside-down: turned 180°, 6 ↔ 9 · three balanced layers a b c · magic upright and upside down","data":[{"name":"Example 17","orig":[["198","601","919","081","190","860","086","608","916","869"],["986","819","698","169","981","001","160","816","690","008"],["801","186","060","616","808","998","619","181","069","990"],["666","099","888","909","661","111","900","096","880","118"],["199","600","911","080","196","866","088","609","918","861"],["019","960","101","890","016","686","898","969","108","681"],["660","098","886","908","669","119","901","090","881","116"],["988","811","699","161","980","000","166","818","696","009"],["800","188","066","618","809","999","611","180","061","996"],["011","966","100","896","018","688","899","961","109","680"]],"kind":"magic"},{"name":"Example 18","orig":[["295","602","929","052","290","560","056","605","926","569"],["956","529","695","269","952","002","260","526","690","005"],["502","256","060","626","505","995","629","252","069","990"],["666","099","555","909","662","222","900","096","550","225"],["299","600","922","050","296","566","055","609","925","562"],["029","960","202","590","026","656","595","969","205","652"],["660","095","556","905","669","229","902","090","552","226"],["955","522","699","262","950","000","266","525","696","009"],["500","255","066","625","509","999","622","250","062","996"],["022","966","200","596","025","655","599","962","209","650"]],"kind":"magic"},{"name":"Example 19","orig":[["295","612","929","152","291","561","156","615","926","569"],["956","529","695","269","952","112","261","526","691","115"],["512","256","161","626","515","995","629","252","169","991"],["666","199","555","919","662","222","911","196","551","225"],["299","611","922","151","296","566","155","619","925","562"],["129","961","212","591","126","656","595","969","215","652"],["661","195","556","915","669","229","912","191","552","226"],["955","522","699","262","951","111","266","525","696","119"],["511","255","166","625","519","999","622","251","162","996"],["122","966","211","596","125","655","599","962","219","651"]],"kind":"magic"},{"name":"Example 20","orig":[["295","682","929","852","298","568","856","685","926","569"],["956","529","695","269","952","882","268","526","698","885"],["582","256","868","626","585","995","629","252","869","998"],["666","899","555","989","662","222","988","896","558","225"],["299","688","922","858","296","566","855","689","925","562"],["829","968","282","598","826","656","595","969","285","652"],["668","895","556","985","669","229","982","898","552","226"],["955","522","699","262","958","888","266","525","696","889"],["588","255","866","625","589","999","622","258","862","996"],["822","966","288","596","825","655","599","962","289","658"]],"kind":"magic"}]}});
+fillExamples();
+function exFromHash(){
+  const h=location.hash.slice(1), m=h.match(/^(o\d+e\w+)$/);
+  if(m){ const i=EXAMPLES.findIndex(e=>String(e.num)===m[1]); if(i>=0) return i; }
+  if(SETS[h]) return EXAMPLES.findIndex(e=>e.set===h);
+  return 0;
+}
+let currentEx = exFromHash(), currentSet = EXAMPLES[currentEx].set;
+const PLATE_SIZE = k => { if(SETS[k].size) return SETS[k].size; const d=SETS[k].data[0].orig, n=d.length, L=Math.max(...d.flat().map(c=>c.length));
+  return Math.min(400, 240 + (n-3)*35 + (L>=6?30:L>=4?15:0)); };
+let DATA = cloneSet(currentSet);
+/* Water image of a digit (vertical flip). 0,1,3,8 are unchanged; in seven-segment
+   form 2 and 5 turn into each other (segments top↔bottom, upper↔lower sides). */
+const WATER_MAP = {'0':'0','1':'1','3':'3','8':'8','2':'5','5':'2'};
+const safeDigits = () => ['0','1','2','5','6','8','9'];
+
+/* Each original is opposite its reflection.
+   Placements are chosen so that a 180° flip about the HORIZONTAL screen
+   axis (a "water flip") turns any original into its reflection, upright. */
+const HALF='calc(var(--s) / 2)', TILE_T=0.07, TILE_Z='calc(var(--s) * 0.035)';
+const CUBE_FACES = [
+  { id:'front',  pair:0, refl:false, rot:'rotateX(0deg)',   z:HALF },
+  { id:'back',   pair:0, refl:true,  rot:'rotateX(180deg)', z:HALF },
+  { id:'top',    pair:1, refl:false, rot:'rotateX(90deg)',  z:HALF },
+  { id:'bottom', pair:1, refl:true,  rot:'rotateX(-90deg)', z:HALF },
+  { id:'right',  pair:2, refl:false, rot:'rotateY(90deg)',  z:HALF },
+  { id:'left',   pair:2, refl:true,  rot:'rotateY(90deg) rotateX(180deg)', z:HALF }
+];
+/* two-sided tile: same water-flip geometry as the cube's front/back pair */
+const TILE_FACES = [
+  { id:'front', pair:0, refl:false, rot:'rotateX(0deg)',   z:TILE_Z }
+];
+[...CUBE_FACES,...TILE_FACES].forEach(f=>{
+  const P = new DOMMatrix(f.rot);
+  f.view = P.inverse();                                   // cube rotation that brings this face to the front, upright
+  const n = P.transformPoint(new DOMPoint(0,0,1,0));
+  f.normal = [n.x,n.y,n.z];
+});
+let FACES = CUBE_FACES;
+
+const UP_MAP={'6':'9','9':'6'};
+const reflect = g => g.slice().reverse().map(r=>r.slice().reverse().map(c=>c.split('').reverse().map(d=>UP_MAP[d]??d).join('')));   /* upside-down view */
+const gridOf = f => f.refl ? reflect(DATA[f.pair].orig) : DATA[f.pair].orig;
+
+function analyse(g){
+  const n=g.length, v=g.map(r=>r.map(Number));
+  const rows=v.map(r=>r.reduce((a,b)=>a+b,0));
+  const cols=v[0].map((_,j)=>v.reduce((a,r)=>a+r[j],0));
+  let d1=0,d2=0; for(let i=0;i<n;i++){d1+=v[i][i]; d2+=v[i][n-1-i];}
+  const all=[...rows,...cols], S=all[0], rc=all.every(x=>x===S);
+  let type = rc ? (d1===S&&d2===S ? 'magic' : 'semi-magic') : 'not magic';
+  if(type==='magic'){          // all broken diagonals in both directions
+    let pan=true;
+    for(let k=0;k<n&&pan;k++){ let a=0,b=0; for(let i=0;i<n;i++){ a+=v[i][(i+k)%n]; b+=v[i][(k-i+n)%n]; } if(a!==S||b!==S) pan=false; }
+    if(pan) type='pandiagonal magic';
+  }
+  let stripes=null, Sx=S;
+  if(STRIPES){
+    stripes=[]; for(let c0=0;c0<n;c0+=STRIPES){ let t=0; for(let i=0;i<n;i++) for(let j=c0;j<c0+STRIPES;j++) t+=v[i][j]; stripes.push(t); }
+    const colEq=cols.every(x=>x===cols[0]), stEq=stripes.every(x=>x===stripes[0]);
+    if(type==='not magic' && colEq && stEq && d1===cols[0] && d2===cols[0]){ type='striped (rows differ)'; Sx=cols[0]; }
+  }
+  let blocks=null;
+  if(BLOCKS){ const [bh,bw]=BLOCKS; const bs=[]; let allMagic=true;
+    for(let a=0;a<n;a+=bh) for(let c0=0;c0<n;c0+=bw){ let t=0; for(let i=a;i<a+bh;i++) for(let j=c0;j<c0+bw;j++) t+=v[i][j]; bs.push(t);
+      if(bh===bw){ const s0=v[a].slice(c0,c0+bw).reduce((x,y)=>x+y,0); let ok=true;
+        for(let i=0;i<bh;i++){ if(v[a+i].slice(c0,c0+bw).reduce((x,y)=>x+y,0)!==s0) ok=false; let cs=0; for(let r=0;r<bh;r++) cs+=v[a+r][c0+i]; if(cs!==s0) ok=false; }
+        let e1=0,e2=0; for(let i=0;i<bh;i++){ e1+=v[a+i][c0+i]; e2+=v[a+i][c0+bw-1-i]; } if(e1!==s0||e2!==s0) ok=false;
+        if(!ok) allMagic=false; } }
+    let rc=true;
+    for(let a=0;a<n;a+=bh) for(let c0=0;c0<n;c0+=bw){ const s0=v[a].slice(c0,c0+bw).reduce((x,y)=>x+y,0);
+      for(let i=0;i<bh;i++){ if(v[a+i].slice(c0,c0+bw).reduce((x,y)=>x+y,0)!==s0) rc=false; let cs=0; for(let r=0;r<bh;r++) cs+=v[a+r][c0+i]; if(cs!==s0) rc=false; } }
+    blocks={size:bh+'×'+bw, sums:[...new Set(bs)], magic:bh===bw?allMagic:null, sub:bh===bw?bs[0]/bh:null, rc}; }
+  let center=null;
+  if(CENTER&&n>=CENTER[0]+CENTER[1]){ const [o,m]=CENTER, B=v.slice(o,o+m).map(r=>r.slice(o,o+m)), s0=B[0].reduce((x,y)=>x+y,0);
+    let ok=B.every(r=>r.reduce((x,y)=>x+y,0)===s0); for(let j=0;j<m;j++){ let cs=0; for(let i=0;i<m;i++) cs+=B[i][j]; if(cs!==s0) ok=false; }
+    let e1=0,e2=0; for(let i=0;i<m;i++){ e1+=B[i][i]; e2+=B[i][m-1-i]; } if(e1!==s0||e2!==s0) ok=false;
+    center={m,magic:ok,S:s0}; }
+  return {rows,cols,d1,d2,S:Sx,type,stripes,blocks,center};
+}
+const digitsUsed = g => [...new Set(g.flat().join('').split(''))].sort();
+const waterSafe  = g => digitsUsed(g).every(d=>safeDigits().includes(d));
+
+/* seven-segment glyphs, exactly symmetric about the horizontal mid-line */
+const H=(x0,x1,y)=>`${x0},${y} ${x0+5},${y-5} ${x1-5},${y-5} ${x1},${y} ${x1-5},${y+5} ${x0+5},${y+5}`;
+const V=(x,y0,y1)=>`${x},${y0} ${x+5},${y0+5} ${x+5},${y1-5} ${x},${y1} ${x-5},${y1-5} ${x-5},${y0+5}`;
+const SEGS={a:H(8,52,6),g:H(8,52,50),d:H(8,52,94),f:V(6,8,49),b:V(54,8,49),e:V(6,51,92),c:V(54,51,92)};
+const DIGIT_SEGS={'0':'abcdef','1':'bc','2':'abged','3':'abgcd','4':'fgbc','5':'afgcd','6':'afgedc','7':'abc','8':'abcdefg','9':'abcdfg'};
+const segDigit=d=>`<svg class="seg7" viewBox="${d==='1'?'46 0 16 100':'0 0 60 100'}">${(DIGIT_SEGS[d]||'').split('').map(k=>`<polygon points="${SEGS[k]}"/>`).join('')}</svg>`;
+const cellContent=c=> '<span class="ct">'+(STYLE==='seg' ? c.split('').map(segDigit).join('') : c.replace(/1/g,'<span class="one">I</span>'))+'</span>';
+/* squeeze long numbers horizontally so each fits its cell (like a condensed font) */
+function fitCells(root=document){
+  root.querySelectorAll('.cell .ct').forEach(el=>{
+    el.style.transform='';
+    const avail=el.parentElement.clientWidth*0.9, w=el.offsetWidth;
+    if(avail>0 && w>avail) el.style.transform=`scaleX(${(avail/w).toFixed(3)})`;
+  });
+}
+
+function blockBorder(i,n){
+  if(!BLOCKS) return ';border-color:var(--faint)';   /* order 7: faint cell lines, dark outer frame */
+  const r=Math.floor(i/n), c=i%n, [bh,bw]=BLOCKS, t='calc(var(--s)*.0034*var(--lw))';
+  /* ordinary cell lines faint; block edges in the normal grid-line colour */
+  return ';border-color:var(--faint)'
+    +(c%bw===bw-1 && c<n-1 ? ';border-right-width:'+t+';border-right-color:var(--line)' : '')
+    +(r%bh===bh-1 && r<n-1 ? ';border-bottom-width:'+t+';border-bottom-color:var(--line)' : '');
+}
+function gridHTML(g, extraCls=''){
+  const n=g.length, maxLen=Math.max(...g.flat().map(s=>s.length));
+  const fs = (0.5/n)*Math.min(1, (maxLen>6?5.6:maxLen>4?4.4:2.9)/maxLen);
+  return `<div class="grid ${extraCls}" style="grid-template-columns:repeat(${n},minmax(0,1fr));grid-template-rows:repeat(${n},minmax(0,1fr))">`+
+    g.flat().map((c,i)=>`<div class="cell${STYLE==='seg'?' sg':''}${CENTER&&Math.floor(i/n)>=CENTER[0]&&Math.floor(i/n)<CENTER[0]+CENTER[1]&&i%n>=CENTER[0]&&i%n<CENTER[0]+CENTER[1]?' hlc':''}${STRIPES?(Math.floor((i%n)/STRIPES)%2?' st1':' st0'):''}" style="font-size:calc(var(--s)*${fs.toFixed(4)})${blockBorder(i,n)}">${cellContent(c)}</div>`).join('')+`</div>`;
+}
+const faceLabel = f => `${DATA[f.pair].name.replace('Example ','Ex ')} · ${f.refl?'Water':'Original'}`;
+
+function buildCube(el){
+  el.innerHTML = FACES.map(f=>
+    `<div class="face ${f.refl?'refl':'orig'}" data-face="${f.id}"
+          style="transform:${f.rot} translateZ(${f.z})">
+       ${gridHTML(gridOf(f))}<span class="badge">${faceLabel(f)}</span></div>`).join('') + (FACES===TILE_FACES ? tileEdges() : '');
+}
+function tileEdges(){
+  const t=`calc(var(--s) * ${TILE_T})`, off=`calc(50% - var(--s) * ${TILE_T/2})`;
+  return [
+    `top:${off};left:0;width:100%;height:${t};transform:rotateX(90deg) translateZ(${HALF})`,
+    `top:${off};left:0;width:100%;height:${t};transform:rotateX(-90deg) translateZ(${HALF})`,
+    `left:${off};top:0;height:100%;width:${t};transform:rotateY(90deg) translateZ(${HALF})`,
+    `left:${off};top:0;height:100%;width:${t};transform:rotateY(-90deg) translateZ(${HALF})`
+  ].map(st=>`<div class="edge" style="${st}"></div>`).join('');
+}
+
+/* ---------- rotation state ---------- */
+const cube=document.getElementById('cube'), cube2=document.getElementById('cube2'), cube3=document.getElementById('cube3');
+let M = new DOMMatrix();
+let spinning=true, speed=22, dragging=false, anim=null, queue=[], frameCount=0, activeId=null;
+const SPIN_AXIS=[0.25,1,0.12];
+
+const R = (x,y,z,deg)=> new DOMMatrix().rotateAxisAngleSelf(x,y,z,deg);
+function apply(){ const s=M.toString(); cube.style.transform=s; cube2.style.transform=s; cube3.style.transform=s; }
+
+function orthonormalize(){
+  const c=[[M.m11,M.m12,M.m13],[M.m21,M.m22,M.m23],[M.m31,M.m32,M.m33]];
+  const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2], nrm=a=>{const l=Math.hypot(...a);return a.map(v=>v/l)};
+  const a=nrm(c[0]); let b=c[1].map((v,i)=>v-dot(c[1],a)*a[i]); b=nrm(b);
+  const k=[a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+  M = DOMMatrix.fromFloat64Array(new Float64Array([...a,0,...b,0,...k,0,0,0,0,1]));
+}
+
+/* axis–angle of a rotation matrix, verified against DOMMatrix's own convention */
+function axisAngle(Rm){
+  const r=[[Rm.m11,Rm.m21,Rm.m31],[Rm.m12,Rm.m22,Rm.m32],[Rm.m13,Rm.m23,Rm.m33]];
+  const cos=Math.max(-1,Math.min(1,(r[0][0]+r[1][1]+r[2][2]-1)/2)), ang=Math.acos(cos);
+  if(ang<1e-4) return null;
+  let ax; const s=Math.sin(ang);
+  if(s>1e-3) ax=[r[2][1]-r[1][2], r[0][2]-r[2][0], r[1][0]-r[0][1]].map(v=>v/(2*s));
+  else{
+    let x=Math.sqrt(Math.max(0,(r[0][0]+1)/2)), y=Math.sqrt(Math.max(0,(r[1][1]+1)/2)), z=Math.sqrt(Math.max(0,(r[2][2]+1)/2));
+    const sg=v=>v<0?-1:1;
+    if(x>=y&&x>=z){y*=sg(r[0][1]);z*=sg(r[0][2]);} else if(y>=z){x*=sg(r[0][1]);z*=sg(r[1][2]);} else {x*=sg(r[0][2]);y*=sg(r[1][2]);}
+    ax=[x,y,z];
+  }
+  const deg=ang*180/Math.PI, diff=Q=>Math.abs(Q.m11-Rm.m11)+Math.abs(Q.m12-Rm.m12)+Math.abs(Q.m13-Rm.m13)+
+    Math.abs(Q.m21-Rm.m21)+Math.abs(Q.m22-Rm.m22)+Math.abs(Q.m23-Rm.m23)+Math.abs(Q.m31-Rm.m31)+Math.abs(Q.m32-Rm.m32)+Math.abs(Q.m33-Rm.m33);
+  return diff(R(...ax,deg))<=diff(R(...ax,-deg)) ? {ax,deg} : {ax,deg:-deg};
+}
+
+function startAnim(axis,deg,dur,target){ anim={axis,deg,dur,target,M0:M,t0:null}; }
+function snapTo(f){
+  queue.push(()=>{ const aa=axisAngle(f.view.multiply(M.inverse()));
+    if(!aa){M=f.view;apply();return false;} startAnim(aa.ax,aa.deg,950,f.view); return true; });
+}
+function waterFlip(){
+  queue.push(()=>{ startAnim([1,0,0],180,1500,R(1,0,0,180).multiply(M)); return true; });
+}
+let autoplay=true;
+function setPlayLabel(){ playBtn.textContent = autoplay ? '⏸ Pause' : '▶ Play';
+  const ai=document.getElementById('autoInfo'); if(ai) ai.textContent = autoplay ? 'Playing automatically — press Pause to stop' : 'Paused — press Play to continue'; }
+function pause(){ autoplay=false; spinning=false; queue=[]; setPlayLabel(); }
+
+const ease=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+let last=null;
+function frame(t){
+  const dt = last==null?0:(t-last)/1000; last=t;
+  if(!anim && queue.length){ while(queue.length && !anim){ queue.shift()(); } }
+  if(anim){
+    if(anim.t0==null) anim.t0=t;
+    const p=Math.min(1,(t-anim.t0)/anim.dur);
+    M = R(...anim.axis, anim.deg*ease(p)).multiply(anim.M0);
+    if(p>=1){ if(anim.target) M=anim.target; anim=null; }
+  } else if(spinning && !dragging && speed>0){
+    M = R(...SPIN_AXIS, speed*dt).multiply(M);
+  }
+  if(++frameCount%240===0 && !anim) orthonormalize();
+  apply(); updateActive();
+  requestAnimationFrame(frame);
+}
+
+/* ---------- active face ---------- */
+function updateActive(){
+  const up=M.transformPoint(new DOMPoint(0,-1,0,0)), mode = up.y>0 ? 'upside' : 'orig';
+  if(mode===activeId) return; activeId=mode;
+  const g = mode==='upside' ? reflect(DATA[0].orig) : DATA[0].orig, a=analyse(g);
+  document.getElementById('activeInfo').innerHTML=
+    `<div class="t">${DATA[0].name} — ${mode==='upside'?'Upside-down':'Original'}</div>
+     <div style="color:#8d84ad">${mode==='upside'?'plate turned by 180° in its own plane (6 ↔ 9)':'plate upright'}</div>
+     <div id="activeMini">${gridHTML(g)}</div>
+     Rows: ${a.rows.join(', ')}<br>Columns: ${a.cols.join(', ')}<br>Diagonals: ${a.d1}, ${a.d2}<br>
+     <span class="${a.type==='not magic'?'bad':'ok'}">${a.type}${a.type!=='not magic'?' · S = '+a.S:''}</span>`;
+  fitCells(document.getElementById('activeInfo'));
+}
+
+/* ---------- UI ---------- */
+const playBtn=document.getElementById('playBtn');
+const UPRIGHT={view:new DOMMatrix()}, UPSIDE={view:new DOMMatrix().rotateAxisAngleSelf(0,0,1,180)};
+function turnFlip(){ queue.push(()=>{ startAnim([0,0,1],180,1600/Math.max(0.4,+speedEl.value),R(0,0,1,180).multiply(M)); return true; }); }
+function buildButtons(){
+  document.getElementById('faceBtns').innerHTML = `<div class="prow"><span>${DATA[0].name}</span>
+      <button class="o" data-view="0">Upright</button>
+      <button class="r" data-view="1">Upside-down</button>
+      <button class="w" id="turnOne" title="Show the plate upright, then turn it upside down">🔄</button></div>`;
+  document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{pause();queue=[];snapTo(b.dataset.view==='1'?UPSIDE:UPRIGHT);});
+  document.getElementById('turnOne').onclick=()=>{pause();queue=[];snapTo(UPRIGHT);turnFlip();};
+}
+playBtn.onclick=()=>{ if(autoplay){ pause(); anim=null; } else { autoplay=true; spinning=false; queue=[]; anim=null; setPlayLabel(); autoCycle(); } };
+document.getElementById('flipBtn').onclick=()=>{ pause(); turnFlip(); };
+
+const speedEl=document.getElementById('speed'), sizeEl=document.getElementById('size');
+speedEl.oninput=()=>{document.getElementById('speedV').textContent=(+speedEl.value).toFixed(1)+'×';};
+sizeEl.oninput=()=>{document.documentElement.style.setProperty('--s',sizeEl.value+'px');document.getElementById('sizeV').textContent=sizeEl.value;fitCells();};
+[['cOrig','--orig'],['cRefl','--refl'],['cInk','--ink']].forEach(([id,v])=>
+  document.getElementById(id).oninput=e=>document.documentElement.style.setProperty(v,e.target.value));
+document.getElementById('styleSel').onchange=e=>{ STYLE=e.target.value; rebuild(); };
+const lwEl=document.getElementById('lw');
+lwEl.oninput=()=>{document.documentElement.style.setProperty('--lw',lwEl.value);document.getElementById('lwV').textContent=(+lwEl.value).toFixed(1);fitCells();};
+document.getElementById('cLine').oninput=e=>document.documentElement.style.setProperty('--line',e.target.value);
+const ripEl=document.getElementById('rippleIn');
+ripEl.oninput=()=>{ const v=+ripEl.value; document.getElementById('rippleV').textContent=v;
+  document.getElementById('dNear').setAttribute('scale',v);
+  document.getElementById('dDeep').setAttribute('scale',v*2.2);
+  document.getElementById('dSoft').setAttribute('scale',v*0.5); };
+
+/* surface glints: thin broken wave-lines, spaced wider toward the viewer (perspective) */
+(function buildGlints(){
+  const svg=document.getElementById('glints'), N=16; let html='';
+  for(let i=0;i<N;i++){
+    const t=(i+0.6)/N, y=400*Math.pow(t,1.55), amp=1.5+t*4, k=0.006+Math.random()*0.006, ph=Math.random()*6.28;
+    let d=`M -20 ${y.toFixed(1)}`;
+    for(let x=0;x<=1040;x+=20) d+=` L ${x} ${(y+amp*Math.sin(k*x+ph)).toFixed(1)}`;
+    const dash=`${(10+Math.random()*40).toFixed(0)} ${(60+Math.random()*160).toFixed(0)} ${(4+Math.random()*14).toFixed(0)} ${(80+Math.random()*200).toFixed(0)}`;
+    const op=(0.28-0.16*t).toFixed(2), w=(0.6+t*1.4).toFixed(2), dur=(9+Math.random()*10).toFixed(1);
+    const dir=Math.random()<0.5?'normal':'reverse';
+    html+=`<path d="${d}" stroke="rgba(205,238,255,${op})" stroke-width="${w}" stroke-dasharray="${dash}" style="animation-duration:${dur}s;animation-direction:${dir}"/>`;
+  }
+  svg.innerHTML=html;
+})();
+
+document.body.classList.add('nowater');
+if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>fitCells());
+document.getElementById('showLabels').onchange=e=>document.body.classList.toggle('hidelabels',!e.target.checked);
+
+/* drag to rotate */
+const stage=document.getElementById('stage'); let px,py;
+stage.addEventListener('pointerdown',e=>{dragging=true;anim=null;pause();px=e.clientX;py=e.clientY;stage.setPointerCapture(e.pointerId);});
+stage.addEventListener('pointermove',e=>{ if(!dragging)return; const r=stage.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2;
+  const a0=Math.atan2(py-cy,px-cx), a1=Math.atan2(e.clientY-cy,e.clientX-cx); M=R(0,0,1,(a1-a0)*180/Math.PI).multiply(M); px=e.clientX; py=e.clientY; apply(); });
+['pointerup','pointercancel'].forEach(ev=>stage.addEventListener(ev,()=>dragging=false));
+
+/* ---------- pair cards ---------- */
+function buildCards(){
+  document.getElementById('cards').innerHTML = DATA.map(d=>{
+    const g=d.orig, u=reflect(g), a=analyse(g), b=analyse(u), safe=waterSafe(g);
+    const line=(lab,x)=>`<b>${lab}:</b> rows ${[...new Set(x.rows)].join(', ')} · columns ${[...new Set(x.cols)].join(', ')} · diagonals ${x.d1}, ${x.d2} → <span class="${x.type==='not magic'?'bad':'ok'}">${x.type}${x.type!=='not magic'?', S = '+x.S:''}</span>`;
+    return `<div class="card">
+      <h3>${d.name} — digits (${digitsUsed(g).join(', ')})</h3>
+      <div class="${g.length>=7?'big':''} quad updual">
+        <figure><figcaption>Original</figcaption><div class="mini">${gridHTML(g)}</div></figure>
+        <figure><figcaption>Upside-down<br>(turned 180°, 6 ↔ 9)</figcaption><div class="mini">${gridHTML(u)}</div></figure>
+        <figure><figcaption>The plate itself,<br>turned by 180°</figcaption><div class="mini turned">${gridHTML(g)}</div></figure>
+      </div>
+      <p>${line('Original',a)}<br>${line('Upside-down',b)}<br>
+      ${safe?'<span class="ok">✓ All digits read as digits upside down (0, 1, 2, 5, 8 unchanged; 6 ↔ 9): the turned plate reads exactly as the upside-down square.</span>':'<span class="bad">⚠ Some digits have no upside-down form.</span>'}</p>
+    </div>`;}).join('');
+}
+/* ---------- editor ---------- */
+function buildEditor(){
+  document.getElementById('editor').innerHTML = DATA.map((d,i)=>
+    `<div><div style="font-size:13px;margin-bottom:4px">${d.name}</div>
+     <textarea id="ta${i}">${d.orig.map(r=>r.join(' ')).join('\n')}</textarea></div>`).join('');
+}
+document.getElementById('applyBtn').onclick=()=>{
+  const msg=document.getElementById('edMsg'), next=[]; const warn=[];
+  for(let i=0;i<DATA.length;i++){
+    const rows=document.getElementById('ta'+i).value.trim().split(/\n+/).map(l=>l.trim().split(/[\s,;]+/).filter(Boolean));
+    const n=rows.length;
+    if(n<3||rows.some(r=>r.length!==n)||rows.flat().some(c=>!/^\d+$/.test(c))){
+      msg.innerHTML=`<span class="bad">${DATA[i].name}: enter an n×n block of whole numbers (one row per line).</span>`; return; }
+    next.push({name:DATA[i].name, orig:rows});
+    if(!waterSafe(rows)) warn.push(DATA[i].name);
+  }
+  DATA=next; rebuild();
+  msg.innerHTML = warn.length ? `<span class="bad">Applied. Not water-symmetric: ${warn.join(', ')}.</span>` : '<span class="ok">Applied.</span>';
+};
+
+function rebuild(){ buildCube(cube); buildCube(cube2); buildCube(cube3); buildButtons(); buildCards(); activeId=null; fitCells(); }
+/* section links grouped by order, laid out in two compact rows */
+const shortTab=v=>v.tab.replace(/^Order \d+ · /,'').replace(/ Entries$/,'').replace(/ Cell$/,'').replace('Example ','Ex ');
+function tabsHTML(k){
+  const groups={};
+  Object.entries(SETS).forEach(([key,v])=>{ const n=v.data[0].orig.length; (groups[n]=groups[n]||[]).push([key,v]); });
+  const cur=EXAMPLES[currentEx];
+  return Object.entries(groups).map(([n,list])=>`<div class="tabgroup"><span class="tablabel">Order ${n}</span>`+
+    list.map(([key,v])=>`<span class="secgroup${key===k?' on':''}"><a href="#${key}" class="seclink${key===k?' on':''}">${shortTab(v)}</a>`+
+      EXAMPLES.filter(e=>e.set===key).map(e=>`<a href="#${e.num}" class="exlink${cur&&e.num===cur.num?' on':''}">${(e.name.match(/\d+/)||[e.name.split(' ')[0]])[0]}</a>`).join('')+
+    `</span>`).join('')+`</div>`).join('');
+}
+function loadExample(ei, keepQueue=false){
+  currentEx=ei; const E=EXAMPLES[ei], k=E.set; currentSet=k;
+  const d=SETS[k].data[E.idx]; DATA=[{name:d.name, orig:d.orig.map(r=>r.slice())}];
+  FACES = TILE_FACES;
+  document.getElementById('pairsTitle').textContent='The Pair';
+  const sz=Math.round(Math.min(PLATE_SIZE(k), document.querySelector('.mirrorpane') ? (innerWidth-40)/3.3 : innerWidth-70)); sizeEl.value=sz; document.getElementById('sizeV').textContent=sz;
+  document.documentElement.style.setProperty('--s',sz+'px');
+  STRIPES=SETS[k].stripes||0; BLOCKS=SETS[k].blocks||null; CENTER=SETS[k].center||null;
+  STYLE=SETS[k].style||'classic'; document.getElementById('styleSel').value=STYLE;
+  const co=(SETS[k].data[E.idx].col)||SETS[k].orig||'#f7c5dd', cr=SETS[k].refl||'#bfe8f5', rs=document.documentElement.style;
+  rs.setProperty('--orig',co); rs.setProperty('--refl',cr);
+  document.getElementById('cOrig').value=co; document.getElementById('cRefl').value=cr;
+  document.getElementById('subTitle').textContent=SETS[k].sub.replace(/ · a two-sided tile[^·]*/,' ').replace(/\s+·/g,' ·').replace(/\s+$/,'');
+  document.getElementById('tabs').innerHTML=tabsHTML(k);
+  document.getElementById('chips').innerHTML='';
+  document.getElementById('edMsg').textContent='';
+  if(!keepQueue){ queue=[]; anim=null; }
+  if(!keepQueue && autoplay) autoCycle();
+  if(location.hash!=='#'+E.num) history.replaceState(null,'','#'+E.num);
+  rebuild(); buildEditor();
+}
+window.addEventListener('hashchange',()=>{ if(!location.hash.slice(1)) return; const ei=exFromHash(); if(ei!==currentEx) loadExample(ei); });
+const step=dir=>loadExample((currentEx+dir+EXAMPLES.length)%EXAMPLES.length);
+document.getElementById('prevBtn').onclick=()=>step(-1);
+document.getElementById('nextBtn').onclick=()=>step(1);
+const hold=ms=>queue.push(()=>{anim={axis:[1,0,0],deg:0,dur:ms,M0:M,t0:null};return true;});
+/* automatic run: original → water flip → full turn showing both sides → next plate, looping */
+function nextIndex(){
+  if(document.getElementById('scopeSel').value==='section'){
+    const list=EXAMPLES.map((e,i)=>i).filter(i=>EXAMPLES[i].set===currentSet);
+    return list[(list.indexOf(currentEx)+1)%list.length];
+  }
+  return (currentEx+1)%EXAMPLES.length;
+}
+function autoCycle(){
+  const f=()=>Math.max(0.4,+speedEl.value), H=ms=>queue.push(()=>{anim={axis:[0,0,1],deg:0,dur:ms/f(),M0:M,t0:null};return true;});
+  snapTo(UPRIGHT); H(1700);
+  queue.push(()=>{ startAnim([0,0,1],180,1700/f(),R(0,0,1,180).multiply(M)); return true; }); H(2200);
+  queue.push(()=>{ startAnim([0,0,1],180,1700/f(),R(0,0,1,180).multiply(M)); return true; }); H(700);
+  queue.push(()=>{ if(autoplay){ loadExample(nextIndex(),true); autoCycle(); } return false; });
+}
+spinning=false; setPlayLabel(); loadExample(currentEx); apply(); requestAnimationFrame(frame);
+
+document.getElementById('scopeAll').textContent='all '+EXAMPLES.length+' examples';
+</script>
+</body>
+</html>

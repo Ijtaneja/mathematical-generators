@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Single-Digit Representations</title>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Crimson Text', Georgia, serif;
+    background: #E6DED2;
+    color: #332B24;
+    min-height: 100vh;
+  }
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 0 20px rgba(232,190,107,0.1); }
+    50% { box-shadow: 0 0 30px rgba(232,190,107,0.2); }
+  }
+  .header {
+    padding: 40px 24px 32px; text-align: center;
+    border-bottom: 1px solid rgba(232,190,107,0.12);
+    background: radial-gradient(circle at 12% 18%,rgba(255,255,255,.18),transparent 25%), linear-gradient(125deg,#0d3153,#1468b3 54%,#087f8c);
+  }
+  .header-tag { font-size: 11px; letter-spacing: 4px; text-transform: uppercase; color: #BCE8FF; margin-bottom: 8px; font-family: 'JetBrains Mono', monospace; }
+  .header h1 { font-size: clamp(24px,4vw,36px); font-weight: 700; color: #FFFFFF; margin-bottom: 8px; }
+  .header p { font-size: 16px; color: #DCEEFF; font-style: italic; }
+  .credit { display:inline-block; margin-top: 12px; padding:7px 17px; border:1px solid rgba(255,255,255,.45); border-radius:999px; background:rgba(255,255,255,.12); color:#FFFFFF; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; }
+
+  .controls { padding: 28px 24px 8px; max-width: 760px; margin: 0 auto; }
+  .mode-tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+  .mode-tab {
+    padding: 10px 24px; font-size: 13px; font-family: 'JetBrains Mono', monospace; font-weight: 600;
+    background: #FFFDF8; color: #2E261F; border: 1px solid rgba(120,85,35,0.35); border-radius: 8px;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .mode-tab:hover { border-color: #E8BE6B; }
+  .mode-tab.active { background: linear-gradient(135deg, #E8BE6B, #D4A037); color: #0D0D0D; border-color: #D4A037; }
+
+  .input-section { display: flex; justify-content: center; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+  .num-input {
+    width: 120px; padding: 10px 12px; font-size: 18px; font-family: 'JetBrains Mono', monospace; font-weight: 600;
+    border: 1px solid rgba(120,85,35,0.35); border-radius: 8px; background: #FFFDF8;
+    color: #2E261F; text-align: center; outline: none; transition: all 0.2s;
+  }
+  .num-input:focus { border-color: #E8BE6B; box-shadow: 0 0 0 2px rgba(232,190,107,0.2); }
+  .num-input::-webkit-inner-spin-button, .num-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+  .num-input { -moz-appearance: textfield; }
+  .range-sep { color: #6A6054; font-family: 'JetBrains Mono', monospace; font-size: 16px; }
+
+  .btn {
+    padding: 10px 24px; font-size: 14px; font-family: 'JetBrains Mono', monospace; font-weight: 600;
+    letter-spacing: 1px; text-transform: uppercase; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-solve { background: linear-gradient(135deg, #E8BE6B, #D4A037); color: #0D0D0D; }
+  .btn-solve:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(232,190,107,0.3); }
+  .btn-solve:disabled { background: rgba(232,190,107,0.1); color: #8A7E6F; cursor: wait; transform: none; box-shadow: none; }
+  .btn-download { background: rgba(232,190,107,0.1); color: #E8BE6B; border: 1px solid rgba(232,190,107,0.25); }
+  .btn-download:hover { background: rgba(232,190,107,0.2); }
+  .btn-download:disabled { opacity: 0.3; cursor: default; }
+
+  .progress-bar { max-width: 500px; margin: 12px auto; height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; display: none; }
+  .progress-fill { height: 100%; background: #E8BE6B; border-radius: 2px; transition: width 0.1s; width: 0%; }
+  .progress-text { text-align: center; font-size: 12px; color: #6A6054; font-family: 'JetBrains Mono', monospace; margin-top: 6px; display: none; }
+
+  #results-area { max-width: 940px; margin: 0 auto; padding: 0 24px 40px; }
+
+  .number-block { margin-bottom: 28px; animation: fadeSlideIn 0.3s ease both; }
+  .number-header {
+    display: inline-block; padding: 10px 28px; border-radius: 10px;
+    background: linear-gradient(135deg,#E7F3FA,#F8F5EF); border: 1px solid #8EBED3; margin-bottom: 14px;
+  }
+  .number-val { font-size: clamp(28px,5vw,40px); font-weight: 700; font-family: 'JetBrains Mono', monospace; color: #0D5680; letter-spacing: 2px; }
+
+  .results-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 10px; }
+  .solutions-strip {
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch;
+    padding: 10px; background: #F8F5EF; border: 1px solid rgba(70,50,30,0.24); border-radius: 10px;
+  }
+  .solution-item {
+    flex: 1 1 290px; min-width: 260px; padding: 8px 10px;
+    border-left: 4px solid rgba(170,112,20,0.8); background: #FBF9F4; border-radius: 7px;
+  }
+  .digit-card {
+    background: #161616; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);
+    padding: 12px 16px; min-height: 48px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+  .digit-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+  .card-header { display: flex; align-items: center; gap: 10px; }
+  .digit-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 6px; color: #fff;
+    font-weight: 700; font-size: 14px; font-family: 'JetBrains Mono', monospace; flex-shrink: 0;
+  }
+  .card-info { font-size: 11px; color: #6A6054; font-family: 'JetBrains Mono', monospace; }
+  .expr-line {
+    font-size: 14px; line-height: 1.8; font-family: 'JetBrains Mono', monospace;
+    font-weight: 500; padding-left: 38px; margin-top: 4px;
+  }
+  .expr-line sup { font-size: 0.7em; }
+  .expr-assign { color: #4A4540; margin: 0 6px; font-size: 12px; }
+  .expr-body { color: #3E342B; }
+  .expr-count { font-size: 10px; color: #665647; margin-left: 8px; }
+
+  .legend {
+    text-align: center; margin-top: 24px; padding: 12px 16px; font-size: 12px;
+    color: #5B4A3A; font-family: 'JetBrains Mono', monospace; line-height: 1.8;
+    border-top: 1px solid rgba(255,255,255,0.04);
+  }
+  .empty-state { text-align: center; padding: 80px 24px; }
+  .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.3; }
+  .empty-text { color: #5B4A3A; font-size: 15px; font-style: italic; line-height: 1.8; }
+  .footer { max-width: 940px; margin: 12px auto 0; padding: 26px 24px 36px; text-align: center; color: #DCEEFF; font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 2; background: linear-gradient(125deg,#102f4b,#175b80); }
+  .footer strong { color: #FFFFFF; font-size: 16px; }
+  .footer a { color: #8FD9FF; text-decoration: none; margin: 0 6px; }
+  .footer a:hover { text-decoration: underline; }
+  .footer .refs { margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.15); font-size: 11px; color: #BCE8FF; line-height: 1.9; }
+  .footer .refs a { display: inline; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-tag">∴ Recreational Mathematics ∴</div>
+  <h1>Single-Digit Representations</h1>
+  <p>Express numbers using only one digit — with fewest copies</p>
+  <div class="credit">Created by Inder J. Taneja</div>
+</div>
+
+<div class="controls">
+  <div class="mode-tabs">
+    <button class="mode-tab active" id="tab-single" onclick="switchMode('single')">Single Number</button>
+    <button class="mode-tab" id="tab-range" onclick="switchMode('range')">Interval</button>
+  </div>
+
+  <div id="mode-single" class="input-section">
+    <input type="number" class="num-input" id="input-single" placeholder="400" min="1" max="99999">
+    <button class="btn btn-solve" id="btn-solve" onclick="handleSolve()">Solve</button>
+    <button class="btn btn-download" id="btn-dl-single" onclick="downloadResults()" disabled>↓ .txt</button>
+    <button class="btn btn-download" id="btn-xls-single" onclick="downloadExcel()" disabled>↓ Excel</button>
+  </div>
+
+  <div id="mode-range" class="input-section" style="display:none;">
+    <input type="number" class="num-input" id="input-from" placeholder="395" min="1" max="99999">
+    <span class="range-sep">→</span>
+    <input type="number" class="num-input" id="input-to" placeholder="400" min="1" max="99999">
+    <button class="btn btn-solve" id="btn-solve-range" onclick="handleSolveRange()">Solve</button>
+    <button class="btn btn-download" id="btn-dl-range" onclick="downloadResults()" disabled>↓ .txt</button>
+    <button class="btn btn-download" id="btn-xls-range" onclick="downloadExcel()" disabled>↓ Excel</button>
+  </div>
+
+  <div class="input-section" style="margin-top:2px;">
+    <label for="operation-mode" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#8A7E6F;">Operations:</label>
+    <select id="operation-mode" class="num-input" style="width:190px;font-size:13px;padding:9px 10px;">
+      <option value="both">Factorial + Square-root</option>
+      <option value="factorial">Factorial only</option>
+      <option value="sqrt">Square-root only</option>
+      <option value="basic">Basic operations only</option>
+    </select>
+  </div>
+
+  <div class="progress-bar" id="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+  <div class="progress-text" id="progress-text"></div>
+</div>
+
+<div id="results-area">
+  <div class="empty-state" id="empty-state">
+    <div class="empty-icon">∑</div>
+    <div class="empty-text">Enter a number or interval to find<br>single-digit representations</div>
+  </div>
+</div>
+
+<div class="footer"><strong>Inder J. Taneja</strong><br>
+  <a href="https://numbers-magic.com/" target="_blank">numbers-magic.com</a>
+  <a href="https://inderjtaneja.wordpress.com/" target="_blank">inderjtaneja.wordpress.com</a>
+  <a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/" target="_blank">Mathematical Generators</a>
+  <div class="refs">
+    Based on author's works:<br>
+    Inder J. Taneja, <em>Single Digit Representations of Natural Numbers</em>, Feb. 2015, pp.1-55, <a href="http://arxiv.org/abs/1502.03501" target="_blank">arxiv.org/abs/1502.03501</a><br>
+    Inder J. Taneja, <em>Single Digit Representations of Natural Numbers From 1 to 5000</em>, Zenodo, January 14, 2019, <a href="http://doi.org/10.5281/zenodo.2538893" target="_blank">doi.org/10.5281/zenodo.2538893</a>
+  </div>
+</div>
+
+<script src="/generators/xlsx.full.min.js"></script>
+<script>
+// High-contrast palette: readable both on the light result panels and in Excel.
+const COLORS = {1:'#B42318',2:'#175CD3',3:'#087F5B',4:'#0057B8',5:'#C4320A',6:'#344054',7:'#6941C6',8:'#3538CD',9:'#9E165F'};
+let allResultsData = null;
+let mode = 'single';
+let operationMode = 'both';
+document.getElementById('operation-mode').addEventListener('change', e => operationMode = e.target.value);
+
+function switchMode(m) {
+  mode = m;
+  document.getElementById('tab-single').classList.toggle('active', m==='single');
+  document.getElementById('tab-range').classList.toggle('active', m==='range');
+  document.getElementById('mode-single').style.display = m==='single' ? 'flex' : 'none';
+  document.getElementById('mode-range').style.display = m==='range' ? 'flex' : 'none';
+}
+
+// ─── PARENTHESIZATION HELPERS ───
+function hasTopLevel(e, chars) {
+  let d=0;
+  for(let i=0;i<e.length;i++){
+    if(e[i]==='(') d++; else if(e[i]===')') d--;
+    else if(d===0) { for(const c of chars) if(e[i]===c) return true; }
+  }
+  return false;
+}
+function wrapForAddSub(e){ return hasTopLevel(e,['+','−']) ? '('+e+')' : e; }
+function wrapForMul(e){ return hasTopLevel(e,['+','−']) ? '('+e+')' : e; }
+function wrapForDiv(e){ return hasTopLevel(e,['+','−','×','/']) ? '('+e+')' : e; }
+function wrapForPow(e){ return (hasTopLevel(e,['+','−','×','/','^'])) ? '('+e+')' : e; }
+function clean(e) {
+  while (e[0]==='(' && e[e.length-1]===')' && bal(e.slice(1,-1))) e = e.slice(1,-1);
+  return e;
+}
+function bal(s) { let d=0; for (const c of s) { if (c==='(') d++; if (c===')') d--; if (d<0) return false; } return d===0; }
+
+// ─── FACTORIAL ───
+function factorial(n) {
+  if (n < 0 || !Number.isInteger(n) || n > 12) return null;
+  let r = 1; for (let i = 2; i <= n; i++) r *= i;
+  return r;
+}
+function wrapForFact(e) {
+  if (/^\d+$/.test(e)) return e + '!';
+  if (e[0] === '(' && e[e.length-1] === ')' && bal(e.slice(1,-1))) return e + '!';
+  return '(' + e + ')!';
+}
+
+// ─── SOLVER ───
+function solve(digit, target, maxD) {
+  maxD = maxD || 10;
+  const d = digit;
+  const isHard = (digit === 1);
+  // Digit 1 needs larger search space (1×1=1, 1^n=1 collapse the space)
+  const MMS = isHard ? 15000 : 4000;
+  const MV = Math.max(target*20, 100000);
+  const bc = []; for (let k=0;k<=maxD;k++) bc.push(new Map());
+  const best = new Map();
+
+  function add(v, ex, c) {
+    if (!Number.isFinite(v) || Math.abs(v)>MV || c>maxD) return;
+    const k = Math.abs(v-Math.round(v))<1e-9 ? Math.round(v) : null;
+    if (k===null) {
+      const r = Math.round(v*1e6)/1e6;
+      if (Math.abs(r-v)<1e-9) {
+        if ((r===target || bc[c].size<MMS || bc[c].has(r)) && (!bc[c].has(r)||ex.length<bc[c].get(r).length)) bc[c].set(r,ex);
+        if (!best.has(r)||c<best.get(r).c) best.set(r,{e:ex,c:c});
+      }
+      return;
+    }
+    if ((k===target || bc[c].size<MMS||bc[c].has(k)) && (!bc[c].has(k)||ex.length<bc[c].get(k).length)) bc[c].set(k,ex);
+    if (!best.has(k)||c<best.get(k).c||(c===best.get(k).c&&ex.length<best.get(k).e.length)) best.set(k,{e:ex,c:c});
+  }
+
+  // Seed: concatenations d, dd, ddd, ...
+  let cat=0;
+  for (let k=1;k<=maxD;k++) { cat=cat*10+d; add(cat,String(cat),k); }
+
+  // Expand a tier with factorial (unary op, same digit cost)
+  // Only for digit 1, where it's essential to reach many numbers
+  function expandFactorial(c) {
+    if (!isHard || operationMode === 'sqrt' || operationMode === 'basic') return;
+    let changed = true, iter = 0;
+    while (changed && iter < 4) {
+      changed = false; iter++;
+      for (const [v, ex] of [...bc[c]]) {
+        if (Number.isInteger(v) && v >= 3 && v <= 12) {
+          const fv = factorial(v);
+          if (fv !== null && fv !== v && Math.abs(fv) <= MV) {
+            const fex = wrapForFact(ex);
+            if (!bc[c].has(fv) || fex.length < bc[c].get(fv).length) {
+              if (bc[c].size < MMS || bc[c].has(fv)) {
+                bc[c].set(fv, fex);
+                if (!best.has(fv) || c < best.get(fv).c || (c === best.get(fv).c && fex.length < best.get(fv).e.length))
+                  best.set(fv, {e:fex, c:c});
+                changed = true;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Expand factorial for seed tiers
+  for (let c=1;c<=maxD;c++) { if (bc[c].size>0) expandFactorial(c); }
+  if (best.has(target)) return {expr:clean(best.get(target).e), count:best.get(target).c};
+
+  for (let tc=2;tc<=maxD;tc++) {
+    for (let i=1;i<tc;i++) {
+      const j=tc-i; if(j<1) continue;
+      for (const [a,ae] of bc[i]) {
+        for (const [b,be] of bc[j]) {
+          add(a+b, ae+' + '+be, tc);
+          add(a-b, ae+' − '+wrapForAddSub(be), tc);
+          add(b-a, be+' − '+wrapForAddSub(ae), tc);
+          add(a*b, wrapForMul(ae)+' × '+wrapForMul(be), tc);
+          if(b!==0) add(a/b, wrapForMul(ae)+' / '+wrapForDiv(be), tc);
+          if(a!==0) add(b/a, wrapForMul(be)+' / '+wrapForDiv(ae), tc);
+
+          if(Number.isInteger(b)&&b>=2&&b<=9&&a!==0){ const p=Math.pow(a,b); if(Number.isFinite(p)&&Math.abs(p)<=1e12) add(p,wrapForPow(ae)+'^'+wrapForPow(be),tc); }
+          if(Number.isInteger(a)&&a>=2&&a<=9&&b!==0){ const p=Math.pow(b,a); if(Number.isFinite(p)&&Math.abs(p)<=1e12) add(p,wrapForPow(be)+'^'+wrapForPow(ae),tc); }
+          if(operationMode !== 'factorial' && operationMode !== 'basic') {
+            if(b===0.5&&a>=0){ const s=Math.sqrt(a); if(Number.isFinite(s)) add(s,'√'+wrapForPow(ae),tc); }
+            if(a===0.5&&b>=0){ const s=Math.sqrt(b); if(Number.isFinite(s)) add(s,'√'+wrapForPow(be),tc); }
+          }
+        }
+      }
+    }
+    // Expand factorial after combining
+    expandFactorial(tc);
+
+    if(best.has(target)&&best.get(target).c<=tc) break;
+  }
+
+  const r=best.get(target);
+  return r ? {expr:clean(r.e), count:r.c} : null;
+}
+
+// Keep the common path fast, but retry difficult targets with two extra copies.
+function solveAdaptive(digit, target) {
+  const firstLimit = digit === 1 ? 12 : 10;
+  const first = solve(digit, target, firstLimit);
+  return first || (firstLimit < 12 ? solve(digit, target, 12) : null);
+}
+
+// ─── FORMAT ───
+function fmtHTML(expr) {
+  let h='',i=0;
+  while(i<expr.length){
+    if(expr[i]==='^'){
+      i++; let ex='';
+      if(i<expr.length&&expr[i]==='('){let dp=1;i++;while(i<expr.length&&dp>0){if(expr[i]==='(')dp++;if(expr[i]===')')dp--;if(dp>0)ex+=expr[i];i++;}}
+      else{while(i<expr.length&&/[0-9.]/.test(expr[i])){ex+=expr[i];i++;}}
+      h+='<sup>'+esc(ex)+'</sup>';
+    } else {h+=esc(expr[i]);i++;}
+  }
+  return h;
+}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ─── SINGLE ───
+function handleSolve(){
+  const v=parseInt(document.getElementById('input-single').value);
+  if(isNaN(v)||v<1||v>99999) return;
+  const btn=document.getElementById('btn-solve');
+  btn.disabled=true; btn.textContent='Solving...';
+  const bar=document.getElementById('progress-bar'),fill=document.getElementById('progress-fill'),ptxt=document.getElementById('progress-text');
+  bar.style.display='block'; ptxt.style.display='block'; fill.style.width='0%';
+  const res={}; let dig=1;
+  function stepDigit(){
+    ptxt.textContent='digit '+dig+' of 9';
+    fill.style.width=Math.round((dig-1)/9*100)+'%';
+    setTimeout(()=>{
+      res[dig]=solveAdaptive(dig,v);
+      fill.style.width=Math.round(dig/9*100)+'%';
+      dig++;
+      if(dig<=9) stepDigit();
+      else {
+        allResultsData=[{target:v,results:res}];
+        renderAll(allResultsData);
+        btn.disabled=false; btn.textContent='Solve';
+        bar.style.display='none'; ptxt.style.display='none';
+      document.getElementById('btn-dl-single').disabled=false;
+      document.getElementById('btn-xls-single').disabled=false;
+      }
+    },10);
+  }
+  stepDigit();
+}
+
+// ─── RANGE ───
+function handleSolveRange(){
+  const from=parseInt(document.getElementById('input-from').value);
+  const to=parseInt(document.getElementById('input-to').value);
+  if(isNaN(from)||isNaN(to)||from<1||to<1||from>99999||to>99999||from>to) return;
+  if(to-from>500){alert('Interval max 500 numbers.');return;}
+
+  const btn=document.getElementById('btn-solve-range');
+  btn.disabled=true; btn.textContent='Solving...';
+  const bar=document.getElementById('progress-bar'),fill=document.getElementById('progress-fill'),ptxt=document.getElementById('progress-text');
+  bar.style.display='block'; ptxt.style.display='block'; fill.style.width='0%';
+  allResultsData=[]; document.getElementById('results-area').innerHTML='';
+
+  const total=to-from+1; let idx=0;
+  function step(){
+    const n=from+idx, res={};
+    for(let d=1;d<=9;d++) res[d]=solveAdaptive(d,n);
+    allResultsData.push({target:n,results:res});
+    idx++;
+    fill.style.width=Math.round(idx/total*100)+'%';
+    ptxt.textContent=n+' ('+idx+'/'+total+')';
+    if(idx<total) setTimeout(step,5);
+    else {
+      renderAll(allResultsData);
+      btn.disabled=false; btn.textContent='Solve';
+      bar.style.display='none'; ptxt.style.display='none';
+      document.getElementById('btn-dl-range').disabled=false;
+      document.getElementById('btn-xls-range').disabled=false;
+    }
+  }
+  setTimeout(step,50);
+}
+
+// ─── RENDER ───
+function renderAll(data){
+  const area=document.getElementById('results-area');
+  let h='';
+  for(const item of data) h+=renderBlock(item.target,item.results);
+  h+='<div class="legend">Operations: + − × ÷ ^ √ n!&nbsp;&nbsp;|&nbsp;&nbsp;Concatenation: d, dd, ddd ...&nbsp;&nbsp;|&nbsp;&nbsp;[n×d] = digits used<br>Solver searches up to 12 copies. Difficult digits receive an adaptive second pass. Optimal = fewest copies.</div>';
+  area.innerHTML=h;
+}
+function renderBlock(target,results){
+  let h='<div class="number-block"><div style="text-align:center;margin-bottom:14px;"><div class="number-header"><span class="number-val">'+target+'</span></div></div>';
+  h+='<div class="solutions-strip">';
+  for(let d=1;d<=9;d++){
+    const c=COLORS[d],r=results[d];
+    h+='<div class="solution-item" style="border-left-color:'+c+';">';
+    h+='<div class="card-header"><span class="digit-badge" style="background:'+c+';">'+d+'</span>';
+    h+='<span class="card-info">'+(r?r.count+' digit'+(r.count>1?'s':'')+' min':'not found')+'</span></div>';
+    if(r){
+      h+='<div class="expr-line"><span style="color:'+c+';font-weight:700;">'+target+'</span>';
+      h+='<span class="expr-assign">:=</span><span class="expr-body">'+fmtHTML(r.expr)+'</span>';
+      h+='<span class="expr-count">['+r.count+'×'+d+']</span></div>';
+    }
+    h+='</div>';
+  }
+  h+='</div></div>';
+  return h;
+}
+
+// ─── DOWNLOAD TXT ───
+function downloadResults(){
+  if(!allResultsData||!allResultsData.length) return;
+  let t='';
+  for(const item of allResultsData){
+    for(let d=1;d<=9;d++){
+      const r=item.results[d];
+      if(r) t+='k'+item.target+' := '+r.expr.replace(/×/g,'*').replace(/−/g,'-')+';\n';
+    }
+  }
+  const blob=new Blob([t],{type:'text/plain'}), url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.download = allResultsData.length===1
+    ? 'single-digit-'+allResultsData[0].target+'.txt'
+    : 'single-digit-'+allResultsData[0].target+'-to-'+allResultsData[allResultsData.length-1].target+'.txt';
+  a.href=url; a.click(); URL.revokeObjectURL(url);
+}
+
+function downloadExcel(){
+  if(!allResultsData||!allResultsData.length) return;
+  const rows=[['Number','Digit','Representation','Copies']];
+  for(const item of allResultsData){
+    for(let d=1;d<=9;d++){const r=item.results[d]; rows.push([item.target,d,r?r.expr:'not found',r?r.count:'']);}
+  }
+  const ws=XLSX.utils.aoa_to_sheet(rows); ws['!cols']=[{wch:14},{wch:10},{wch:70},{wch:10}];
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Solutions');
+  const name=allResultsData.length===1 ? 'single-digit-'+allResultsData[0].target+'.xlsx' : 'single-digit-'+allResultsData[0].target+'-to-'+allResultsData[allResultsData.length-1].target+'.xlsx';
+  XLSX.writeFile(wb,name);
+}
+
+document.getElementById('input-single').addEventListener('keydown',function(e){if(e.key==='Enter')handleSolve();});
+document.getElementById('input-from').addEventListener('keydown',function(e){if(e.key==='Enter')handleSolveRange();});
+document.getElementById('input-to').addEventListener('keydown',function(e){if(e.key==='Enter')handleSolveRange();});
+</script>
+</body>
+</html>

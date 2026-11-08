@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Upside-Down &amp; Mirror Magic Squares</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --bg:#F5F6FA;--surface:#FFFFFF;--surface-alt:#E8EAF6;--border:#D3D7EA;
+    --ink:#232A45;--ink-soft:#5C6483;--accent:#3F51B5;--accent-ink:#FFFFFF;--accent-soft:#DDE1F5;
+    --warn:#C9722F;--warn-soft:#F5E3D0;--ok:#2F7A52;--ok-soft:#DCEFE4;
+    --radius-sm:6px;--radius-md:10px;--radius-lg:16px;
+    --shadow:0 1px 2px rgba(30,35,70,0.06), 0 6px 20px rgba(30,35,70,0.06);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;}
+  .page{max-width:1180px;margin:0 auto;padding:3rem 1.5rem 4rem;}
+  header.hero{margin-bottom:2.25rem;}
+  .kicker{font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:0.04em;color:var(--accent);margin-bottom:0.6rem;}
+  h1{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(1.9rem,4.5vw,2.6rem);line-height:1.1;margin:0 0 0.7rem;letter-spacing:-0.01em;}
+  h1 em{font-style:italic;font-weight:500;color:var(--accent);}
+  .hero p{font-size:16px;line-height:1.55;color:var(--ink-soft);max-width:64ch;margin:0;}
+  .credit-line{margin-top:0.9rem;font-size:12.5px;color:var(--ink-soft);}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem 1.6rem;box-shadow:var(--shadow);margin-bottom:1.4rem;}
+  .field-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:0.9rem;align-items:end;}
+  label{display:block;font-size:12.5px;color:var(--ink-soft);margin-bottom:0.35rem;}
+  input[type=number],select{font-family:'IBM Plex Mono',monospace;font-size:16px;padding:0.55rem 0.7rem;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--ink);width:100%;}
+  input:focus{outline:none;border-color:var(--accent);}
+
+  .mode-row{margin-top:1.1rem;}
+  .mode-toggle{display:flex;gap:0.5rem;flex-wrap:wrap;}
+  .mode-btn{font-family:'Inter',sans-serif;font-size:13.5px;font-weight:500;padding:0.55rem 0.9rem;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--ink-soft);cursor:pointer;}
+  .mode-btn.active{border-color:var(--accent);color:var(--accent);background:var(--accent-soft);}
+  .mode-note{font-size:13px;color:var(--ink-soft);margin-top:0.6rem;line-height:1.5;}
+  .digit-line{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-soft);margin-top:0.7rem;display:flex;gap:0.4rem;flex-wrap:wrap;align-items:center;}
+  .digit-pill{padding:0.15rem 0.55rem;border-radius:999px;background:var(--surface-alt);border:1px solid var(--border);}
+  .digit-pill.pair{color:var(--accent);border-color:var(--accent);}
+  .digit-check{
+    display:inline-flex;align-items:center;gap:0.4rem;
+    padding:0.35rem 0.7rem;border-radius:999px;
+    background:var(--surface-alt);border:1px solid var(--border);
+    font-family:'IBM Plex Mono',monospace;font-size:14px;
+    cursor:pointer;user-select:none;
+  }
+  .digit-check input{margin:0;accent-color:var(--accent);cursor:pointer;}
+  .digit-check.checked{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:600;}
+  .digit-check.pair-linked .pair-tag{font-size:10px;color:var(--ink-soft);margin-left:0.1rem;}
+  .pool-note{font-size:12.5px;color:var(--ink-soft);margin-top:0.6rem;line-height:1.5;}
+
+  .actions-row{display:flex;gap:0.6rem;align-items:center;margin-top:1.3rem;flex-wrap:wrap;}
+  button.primary{font-family:'Inter',sans-serif;font-size:14px;font-weight:600;background:var(--accent);color:var(--accent-ink);border:none;border-radius:var(--radius-sm);padding:0.62rem 1.2rem;cursor:pointer;}
+  button.primary:hover{background:#2E3B92;}
+  button.primary:disabled{opacity:0.5;cursor:default;}
+  button.ghost{font-family:'Inter',sans-serif;font-size:13px;font-weight:500;background:transparent;color:var(--ink-soft);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.5rem 0.9rem;cursor:pointer;}
+  button.ghost:hover{background:var(--surface-alt);color:var(--ink);}
+
+  .note{font-size:13.5px;margin-top:0.85rem;color:var(--ink-soft);}
+  .note.warn{color:var(--warn);}
+  .note.ok{color:var(--ok);}
+
+  .progress-wrap{margin-top:1.1rem;display:none;}
+  .progress-bar{height:6px;background:var(--surface-alt);border-radius:999px;overflow:hidden;}
+  .progress-fill{height:100%;background:var(--accent);width:0%;transition:width 0.15s linear;}
+  .progress-text{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink-soft);margin-top:0.4rem;}
+
+  .grids-row{display:flex;gap:1.5rem;flex-wrap:wrap;}
+  .grid-col{flex:1;min-width:220px;overflow-x:auto;}
+  .grids-row.both-results{display:grid;grid-template-columns:1fr;gap:1rem;}
+  .grids-row.both-results .grid-col{width:100%;box-sizing:border-box;padding:1rem;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--surface-alt);}
+  .grids-row.both-results .grid-label{font-size:13px;font-weight:700;color:var(--accent);}
+  .grids-row.both-results table.sq td.cell{background:var(--surface);}
+  .grids-row.large-order{display:grid;grid-template-columns:1fr;gap:1rem;}
+  .grids-row.large-order .grid-col{width:100%;padding:1rem;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--surface-alt);}
+  .grid-label{font-family:'IBM Plex Mono',monospace;font-size:11.5px;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-soft);margin-bottom:0.5rem;}
+  table.sq{border-collapse:collapse;width:100%;min-width:max-content;font-family:'IBM Plex Mono',monospace;font-size:14px;}
+  table.sq td{padding:0.5rem 0.6rem;text-align:right;border:1px solid var(--border);}
+  table.sq td.cell{background:var(--surface-alt);color:var(--ink);font-weight:600;}
+  table.sq td.rowsum{background:var(--accent-soft);color:var(--accent);font-weight:700;border-left:2px solid var(--accent);}
+  table.sq td.colsum{background:var(--accent-soft);color:var(--accent);font-weight:700;border-top:2px solid var(--accent);}
+  table.sq td.corner{background:var(--surface);border:none;}
+  .diag-line{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-soft);margin-top:0.5rem;display:flex;gap:1rem;flex-wrap:wrap;}
+  .diag-line .diag-val.match{color:var(--ok);font-weight:600;}
+  .diag-line .diag-val.nomatch{color:var(--warn);}
+
+  .verdict-row{display:flex;gap:0.9rem;flex-wrap:wrap;margin-top:1.3rem;}
+  .verdict{background:var(--surface-alt);border-radius:var(--radius-md);padding:0.75rem 0.9rem;flex:1;min-width:140px;}
+  .verdict .v-label{font-size:11.5px;color:var(--ink-soft);margin-bottom:0.25rem;}
+  .verdict .v-val{font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600;color:var(--accent);}
+
+  .export-row{display:flex;gap:0.6rem;margin-top:1.3rem;padding-top:1.2rem;border-top:1px solid var(--border);}
+  .results-list{display:flex;flex-direction:column;gap:1.4rem;}
+  .result-item{padding:1.25rem;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface);}
+  .result-head{display:flex;justify-content:space-between;gap:1rem;align-items:center;margin-bottom:0.9rem;}
+  .result-head strong{font-family:'Fraunces',serif;font-size:20px;}
+  .result-head span{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--accent);}
+  .summary-strip{display:flex;gap:0.6rem;flex-wrap:wrap;margin-bottom:1rem;}
+  .summary-strip span{padding:0.3rem 0.65rem;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-family:'IBM Plex Mono',monospace;font-size:12px;}
+  @media(max-width:600px){.grids-row{flex-direction:column}.page{padding:2rem 0.8rem 3rem}.card{padding:1.1rem}.result-item{padding:0.8rem}table.sq{font-size:12px}table.sq td{padding:0.4rem 0.35rem}}
+
+  footer{margin-top:3rem;padding-top:1.6rem;border-top:1px solid var(--border);font-size:13px;color:var(--ink-soft);line-height:1.9;}
+  footer a{color:var(--accent);text-decoration:none;}
+  footer a:hover{text-decoration:underline;}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="hero">
+    <div class="kicker">RECREATIONAL MATHEMATICS</div>
+    <h1><em>Upside-down &amp; Mirror-Looking</em><br><span>Magic Squares</span></h1>
+    <p>Choose the square order, the allowed digital digits, and the number of digits in every cell. Generate many distinct-entry squares that remain magic after mirroring, rotating upside down, or applying both transformations.</p>
+    <div class="credit-line">Created by <strong>Inder J. Taneja</strong></div>
+  </header>
+
+  <div class="card">
+    <div class="field-grid">
+      <div><label for="orderInput">Magic-square order</label><select id="orderInput"><option value="3">3 × 3</option><option value="4">4 × 4</option><option value="5">5 × 5</option><option value="7">7 × 7</option><option value="9">9 × 9</option><option value="10">10 × 10</option></select></div>
+      <div><label for="lengthInput">Digits in each cell</label><input type="number" id="lengthInput" value="4" min="2" max="8"></div>
+      <div><label for="maxResultsInput">Maximum results</label><input type="number" id="maxResultsInput" value="10" min="1" max="100"></div>
+      <div><label for="conditionInput">Magic condition</label><select id="conditionInput"><option value="semi">Rows and columns</option><option value="full">Rows, columns and diagonals</option></select></div>
+    </div>
+    <div class="mode-row">
+      <label>Transform</label>
+      <div class="mode-toggle">
+        <button class="mode-btn active" data-mode="mirror">Mirror-looking (left ↔ right)</button>
+        <button class="mode-btn" data-mode="rotate">Upside-down (180° rotation)</button>
+        <button class="mode-btn" data-mode="both">Upside-down &amp; Mirror-looking</button>
+      </div>
+      <div class="mode-note" id="modeNote">0, 1, 8 stay the same in a mirror; 2 and 5 swap with each other. (3, 4, 6, 7, 9 have no real mirror image.)</div>
+      <label style="margin-top:1rem;">Digits to use</label>
+      <div class="digit-line" id="digitCheckboxes"></div>
+      <div class="pool-note" id="zeroNote">Zero normally appears only in an interior position. For 7×7 two-digit Upside-down squares, fixed-width entries such as 01 are preserved so all 49 combinations are available.</div>
+      <div class="pool-note" id="countNote"></div>
+    </div>
+
+    <div class="note" id="sizeNote"></div>
+
+    <div class="actions-row">
+      <button class="primary" id="genBtn">Generate</button>
+      <button class="ghost" id="stopBtn" style="display:none;">Stop</button>
+    </div>
+    <div class="note" id="setupNote"></div>
+
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-text" id="progressText"></div>
+    </div>
+  </div>
+
+  <div id="resultsCard" class="card" style="display:none;">
+    <div class="summary-strip" id="summaryStrip"></div>
+    <div class="results-list" id="resultsList"></div>
+    <div class="export-row" id="exportRow" style="display:none;">
+      <button class="ghost" id="exportTxtBtn">Export all .txt</button>
+      <button class="ghost" id="exportXlsxBtn">Export all .xlsx</button>
+    </div>
+  </div>
+
+  <footer>
+    <strong>Inder J. Taneja</strong><br>
+    <a href="https://numbers-magic.com/" target="_blank" rel="noopener">numbers-magic.com</a> ·
+    <a href="https://inderjtaneja.wordpress.com/" target="_blank" rel="noopener">inderjtaneja.wordpress.com</a> ·
+    <a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/" target="_blank" rel="noopener">taneja-mathematical-generators.ijtaneja.chatgpt.site</a>
+  </footer>
+
+</div>
+
+<script type="text/plain" id="legacyGenerator">
+const MIRROR_MAP = {'0':'0','1':'1','8':'8','2':'5','5':'2'};
+const ROT_MAP = {'0':'0','1':'1','2':'2','5':'5','8':'8','6':'9','9':'6'};
+
+const TRANSFORMS = {
+  mirror: {
+    map: MIRROR_MAP,
+    fixedBoundary: ['1','8'],
+    swapPairs: [['2','5']],
+    note: '0, 1, 8 stay the same in a mirror; 2 and 5 swap with each other. (3, 4, 6, 7, 9 have no real mirror image.)',
+    label: 'Mirrored'
+  },
+  rotate: {
+    map: ROT_MAP,
+    fixedBoundary: ['1','2','5','8'],
+    swapPairs: [['6','9']],
+    note: '0, 1, 2, 5, 8 stay the same upside down; 6 and 9 swap with each other. (3, 4, 7 have no valid upside-down form.)',
+    label: 'Rotated 180°'
+  }
+};
+
+function transformValue(n, map){
+  const s = n.toString();
+  let out = '';
+  for(let i=s.length-1;i>=0;i--) out += map[s[i]];
+  return parseInt(out,10);
+}
+
+function findPairPartner(transform, d){
+  for(const pair of transform.swapPairs){
+    if(pair[0]===d) return pair[1];
+    if(pair[1]===d) return pair[0];
+  }
+  return null;
+}
+
+function genPool(boundaryDigits, includeZero){
+  const pool=[];
+  for(const a of boundaryDigits){
+    for(const b of boundaryDigits){
+      const numStr = includeZero ? (a+'0'+b) : (a+b);
+      pool.push(parseInt(numStr,10));
+    }
+  }
+  return [...new Set(pool)].sort((a,b)=>a-b);
+}
+
+function solveSquare(pool, n, map, deadline){
+  const N = pool.length;
+  if(N !== n*n) return null;
+  const trans = pool.map(function(v){ return transformValue(v,map); });
+  const total = pool.reduce(function(s,v){ return s+v; },0);
+  const total2 = trans.reduce(function(s,v){ return s+v; },0);
+  if(total % n !== 0 || total2 % n !== 0) return null;
+  const rho = total/n, rho2 = total2/n;
+  if(rho !== rho2) return null;
+  const order = pool.map(function(v,i){ return i; }).sort(function(a,b){ return pool[b]-pool[a]; });
+  const used = new Array(N).fill(false);
+  const grid = Array.from({length:n},function(){ return new Array(n).fill(null); });
+  const tgrid = Array.from({length:n},function(){ return new Array(n).fill(null); });
+  const colSum = new Array(n).fill(0);
+  const colSum2 = new Array(n).fill(0);
+  let diag1=0, diag2=0, tdiag1=0, tdiag2=0;
+
+  function backtrack(pos){
+    if(performance.now()>deadline) return 'timeout';
+    if(pos===n*n) return true;
+    const r=Math.floor(pos/n), c=pos%n;
+    let rowP=0, rowP2=0;
+    for(let cc=0;cc<n;cc++){ if(grid[r][cc]!==null){ rowP+=grid[r][cc]; rowP2+=tgrid[r][cc]; } }
+    const onDiag1 = (r===c), onDiag2 = (r+c===n-1);
+    for(const idx of order){
+      if(used[idx]) continue;
+      const v=pool[idx], tv=trans[idx];
+      if(rowP+v>rho) continue;
+      if(c===n-1 && rowP+v!==rho) continue;
+      if(colSum[c]+v>rho) continue;
+      if(r===n-1 && colSum[c]+v!==rho) continue;
+      if(rowP2+tv>rho2) continue;
+      if(c===n-1 && rowP2+tv!==rho2) continue;
+      if(colSum2[c]+tv>rho2) continue;
+      if(r===n-1 && colSum2[c]+tv!==rho2) continue;
+      if(onDiag1 && diag1+v>rho) continue;
+      if(onDiag1 && r===n-1 && diag1+v!==rho) continue;
+      if(onDiag1 && tdiag1+tv>rho2) continue;
+      if(onDiag1 && r===n-1 && tdiag1+tv!==rho2) continue;
+      if(onDiag2 && diag2+v>rho) continue;
+      if(onDiag2 && r===n-1 && diag2+v!==rho) continue;
+      if(onDiag2 && tdiag2+tv>rho2) continue;
+      if(onDiag2 && r===n-1 && tdiag2+tv!==rho2) continue;
+      used[idx]=true; grid[r][c]=v; tgrid[r][c]=tv;
+      colSum[c]+=v; colSum2[c]+=tv;
+      if(onDiag1){ diag1+=v; tdiag1+=tv; }
+      if(onDiag2){ diag2+=v; tdiag2+=tv; }
+      const res=backtrack(pos+1);
+      if(res==='timeout') return 'timeout';
+      if(res) return true;
+      colSum[c]-=v; colSum2[c]-=tv;
+      if(onDiag1){ diag1-=v; tdiag1-=tv; }
+      if(onDiag2){ diag2-=v; tdiag2-=tv; }
+      grid[r][c]=null; tgrid[r][c]=null; used[idx]=false;
+    }
+    return false;
+  }
+  const res=backtrack(0);
+  if(res===true) return {grid:grid, tgrid:tgrid, rho:rho};
+  return res;
+}
+
+/* ---------- UI ---------- */
+function allBoundaryDigits(transform){
+  return transform.fixedBoundary.concat(transform.swapPairs.reduce(function(a,p){return a.concat(p);},[]));
+}
+
+let currentMode='mirror';
+let stopRequested=false;
+let running=false;
+let lastResult=null;
+let selectedDigits=new Set(allBoundaryDigits(TRANSFORMS.mirror));
+let includeZero=false;
+
+function renderDigitCheckboxes(){
+  const t = TRANSFORMS[currentMode];
+  const allNonZero = t.fixedBoundary.concat(t.swapPairs.reduce(function(a,p){return a.concat(p);},[]));
+  const container = document.getElementById('digitCheckboxes');
+  container.innerHTML='';
+
+  const zeroLabel=document.createElement('label');
+  zeroLabel.className='digit-check'+(includeZero?' checked':'');
+  const zeroCb=document.createElement('input');
+  zeroCb.type='checkbox'; zeroCb.checked=includeZero;
+  zeroLabel.appendChild(zeroCb);
+  zeroLabel.appendChild(document.createTextNode(' 0'));
+  zeroLabel.addEventListener('click',function(e){
+    e.preventDefault();
+    includeZero=!includeZero;
+    renderDigitCheckboxes();
+    updateCountNote();
+  });
+  container.appendChild(zeroLabel);
+
+  allNonZero.forEach(function(d){
+    const checked = selectedDigits.has(d);
+    const partner = findPairPartner(t,d);
+    const label=document.createElement('label');
+    label.className='digit-check'+(checked?' checked':'');
+    const cb=document.createElement('input');
+    cb.type='checkbox'; cb.checked=checked;
+    label.appendChild(cb);
+    label.appendChild(document.createTextNode(' '+d));
+    if(partner){
+      const tag=document.createElement('span');
+      tag.className='pair-tag';
+      tag.textContent='(+'+partner+')';
+      label.appendChild(tag);
+    }
+    label.addEventListener('click',function(e){
+      e.preventDefault();
+      toggleDigit(d);
+    });
+    container.appendChild(label);
+  });
+}
+
+function toggleDigit(d){
+  const t = TRANSFORMS[currentMode];
+  const partner = findPairPartner(t,d);
+  const willSelect = !selectedDigits.has(d);
+  if(willSelect){
+    selectedDigits.add(d);
+    if(partner) selectedDigits.add(partner);
+  } else {
+    selectedDigits.delete(d);
+    if(partner) selectedDigits.delete(partner);
+  }
+  renderDigitCheckboxes();
+  updateCountNote();
+}
+
+function updateCountNote(){
+  const n = selectedDigits.size;
+  const note = document.getElementById('countNote');
+  note.textContent = n+' digit'+(n===1?'':'s')+' selected → searching for a '+n+'×'+n+' square'+
+    (includeZero ? ' (3-digit numbers, 0 in the middle).' : ' (2-digit numbers).');
+}
+
+document.querySelectorAll('.mode-btn').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    document.querySelectorAll('.mode-btn').forEach(function(b){ b.classList.remove('active'); });
+    btn.classList.add('active');
+    currentMode=btn.dataset.mode;
+    document.getElementById('modeNote').textContent = TRANSFORMS[currentMode].note;
+    selectedDigits = new Set(allBoundaryDigits(TRANSFORMS[currentMode]));
+    includeZero=false;
+    renderDigitCheckboxes();
+    updateCountNote();
+  });
+});
+
+renderDigitCheckboxes();
+updateCountNote();
+
+document.getElementById('stopBtn').addEventListener('click',function(){ stopRequested=true; });
+
+document.getElementById('genBtn').addEventListener('click',function(){
+  const noteEl=document.getElementById('setupNote');
+  const digits = Array.from(selectedDigits);
+  const n = digits.length;
+  if(n<2){
+    noteEl.className='note warn';
+    noteEl.textContent='Select at least 2 digits.';
+    return;
+  }
+  noteEl.className='note'; noteEl.textContent='';
+  startSearch(digits, n);
+});
+
+function startSearch(digits, n){
+  running=true; stopRequested=false;
+  document.getElementById('genBtn').disabled=true;
+  document.getElementById('stopBtn').style.display='inline-block';
+  document.getElementById('progressWrap').style.display='block';
+  document.getElementById('resultsCard').style.display='none';
+  document.getElementById('progressText').textContent = 'Searching with digits {'+digits.join(',')+'}…';
+  document.getElementById('progressFill').style.width='30%';
+
+  const transform = TRANSFORMS[currentMode];
+
+  function step(){
+    if(stopRequested){ finish(null,true); return; }
+    const pool = genPool(digits, includeZero);
+    const res = solveSquare(pool, n, transform.map, performance.now()+4000);
+    if(res && res.grid){
+      finish(Object.assign({}, res, {digits: digits}), false);
+    } else {
+      finish(null, false);
+    }
+  }
+
+  function finish(result, stopped){
+    running=false;
+    document.getElementById('genBtn').disabled=false;
+    document.getElementById('stopBtn').style.display='none';
+    const noteEl=document.getElementById('setupNote');
+    if(result){
+      document.getElementById('progressText').textContent='Found using digits {'+result.digits.join(',')+'}.';
+      renderResult(result, n);
+    } else if(stopped){
+      noteEl.className='note warn';
+      noteEl.textContent='Stopped.';
+    } else {
+      noteEl.className='note warn';
+      noteEl.textContent='No magic arrangement found for digits {'+digits.join(',')+'} at '+n+'×'+n+'. Try a different digit selection.';
+    }
+  }
+
+  step();
+}
+
+function renderResult(result, n){
+  lastResult = Object.assign({}, result, {n: n});
+  const grid=result.grid, tgrid=result.tgrid, rho=result.rho, digits=result.digits;
+  document.getElementById('transformedLabel').textContent = TRANSFORMS[currentMode].label;
+
+  function buildTable(g){
+    const table=document.createElement('table');
+    table.className='sq';
+    for(let r=0;r<n;r++){
+      const tr=document.createElement('tr');
+      for(let c=0;c<n;c++){
+        const td=document.createElement('td');
+        td.className='cell';
+        td.textContent=g[r][c];
+        tr.appendChild(td);
+      }
+      const tdSum=document.createElement('td');
+      tdSum.className='rowsum';
+      tdSum.textContent=g[r].reduce(function(s,v){ return s+v; },0);
+      tr.appendChild(tdSum);
+      table.appendChild(tr);
+    }
+    const trFoot=document.createElement('tr');
+    for(let c=0;c<n;c++){
+      const td=document.createElement('td');
+      td.className='colsum';
+      let s=0; for(let r=0;r<n;r++) s+=g[r][c];
+      td.textContent=s;
+      trFoot.appendChild(td);
+    }
+    const corner=document.createElement('td');
+    corner.className='corner';
+    trFoot.appendChild(corner);
+    table.appendChild(trFoot);
+    return table;
+  }
+
+  function diagLine(g){
+    let d1=0, d2=0;
+    for(let i=0;i<n;i++){ d1+=g[i][i]; d2+=g[i][n-1-i]; }
+    const div=document.createElement('div');
+    div.className='diag-line';
+    const s1=document.createElement('span');
+    s1.innerHTML='↘ diagonal: <span class="diag-val '+(d1===rho?'match':'nomatch')+'">'+d1+'</span>';
+    const s2=document.createElement('span');
+    s2.innerHTML='↙ diagonal: <span class="diag-val '+(d2===rho?'match':'nomatch')+'">'+d2+'</span>';
+    div.appendChild(s1); div.appendChild(s2);
+    return div;
+  }
+
+  const gOrig=document.getElementById('gridOrig');
+  gOrig.innerHTML=''; gOrig.appendChild(buildTable(grid)); gOrig.appendChild(diagLine(grid));
+  const gTrans=document.getElementById('gridTrans');
+  gTrans.innerHTML=''; gTrans.appendChild(buildTable(tgrid)); gTrans.appendChild(diagLine(tgrid));
+
+  document.getElementById('vRho').textContent=rho;
+  document.getElementById('vDigits').textContent=digits.join(', ');
+
+  document.getElementById('resultsCard').style.display='block';
+  document.getElementById('exportRow').style.display='flex';
+}
+
+function diagSums(g,n){
+  let d1=0,d2=0;
+  for(let i=0;i<n;i++){ d1+=g[i][i]; d2+=g[i][n-1-i]; }
+  return [d1,d2];
+}
+
+document.getElementById('exportTxtBtn').addEventListener('click',function(){
+  if(!lastResult) return;
+  const grid=lastResult.grid, tgrid=lastResult.tgrid, n=lastResult.n, rho=lastResult.rho, digits=lastResult.digits;
+  const rows=[];
+  for(let r=0;r<n;r++) rows.push(grid[r].concat([grid[r].reduce(function(s,v){return s+v;},0)]));
+  const colSums=[]; for(let c=0;c<n;c++){let s=0;for(let r=0;r<n;r++)s+=grid[r][c]; colSums.push(s);}
+  rows.push(colSums.concat(['']));
+  const [d1,d2]=diagSums(grid,n);
+  rows.push(['diag ↘:',d1,'diag ↙:',d2]);
+  rows.push([]);
+  for(let r=0;r<n;r++) rows.push(tgrid[r].concat([tgrid[r].reduce(function(s,v){return s+v;},0)]));
+  const colSums2=[]; for(let c=0;c<n;c++){let s=0;for(let r=0;r<n;r++)s+=tgrid[r][c]; colSums2.push(s);}
+  rows.push(colSums2.concat(['']));
+  const [d1t,d2t]=diagSums(tgrid,n);
+  rows.push(['diag ↘:',d1t,'diag ↙:',d2t]);
+  const text = 'Transform: '+currentMode+' | n='+n+' | magic sum='+rho+' | digits='+digits.join(',')+'\n\n'
+    + rows.map(function(row){ return row.join('\t'); }).join('\n') + '\n';
+  const blob=new Blob([text],{type:'text/plain'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='upside-down-mirror-square-'+n+'x'+n+'.txt';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+document.getElementById('exportXlsxBtn').addEventListener('click',function(){
+  if(!lastResult) return;
+  const grid=lastResult.grid, tgrid=lastResult.tgrid, n=lastResult.n;
+  const rows=[];
+  for(let r=0;r<n;r++) rows.push(grid[r].concat([grid[r].reduce(function(s,v){return s+v;},0)]));
+  const [d1,d2]=diagSums(grid,n);
+  rows.push(['diag ↘:',d1,'diag ↙:',d2]);
+  rows.push([]);
+  for(let r=0;r<n;r++) rows.push(tgrid[r].concat([tgrid[r].reduce(function(s,v){return s+v;},0)]));
+  const [d1t,d2t]=diagSums(tgrid,n);
+  rows.push(['diag ↘:',d1t,'diag ↙:',d2t]);
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Square');
+  XLSX.writeFile(wb,'upside-down-mirror-square-'+n+'x'+n+'.xlsx');
+});
+</script>
+<script>
+(function(){
+'use strict';
+const MAPS={
+  mirror:{map:{'0':'0','1':'1','2':'5','5':'2','8':'8'},digits:['0','1','2','5','8'],pairs:[['2','5']],label:'Mirror-looking'},
+  rotate:{map:{'0':'0','1':'1','2':'2','5':'5','6':'9','8':'8','9':'6'},digits:['0','1','2','5','6','8','9'],pairs:[['6','9']],label:'Upside-down'},
+  both:{map:{'0':'0','1':'1','2':'5','5':'2','8':'8'},digits:['0','1','2','5','8'],pairs:[['2','5']],label:'Upside-down & Mirror-looking'}
+};
+let mode='mirror',selected=new Set(['0','2','5','8']),results=[],running=false,stop=false;
+const $=id=>document.getElementById(id);
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const choose=(a,n)=>shuffle(a).slice(0,n);
+const sum=a=>a.reduce((x,y)=>x+y,0);
+function partner(d){for(const p of MAPS[mode].pairs){if(p[0]===d)return p[1];if(p[1]===d)return p[0];}return null;}
+function presetDigits(){const n=+$('orderInput').value;if(mode==='mirror'||mode==='both')selected=new Set(n===3?['0','2','5','8']:n===4?['1','2','5','8']:['0','1','2','5','8']);else selected=new Set(n<=4?['1','6','8','9']:['0','1','2','5','6','8','9']);}
+function setMode(next){mode=next;document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));presetDigits();$('modeNote').textContent=mode==='mirror'?'Valid mirror digits: 0, 1, 2, 5, 8. Digits 2 and 5 are selected together.':mode==='rotate'?'Valid upside-down digits: 0, 1, 2, 5, 6, 8, 9. Digits 6 and 9 are selected together.':'Common valid digits: 0, 1, 2, 5, 8. Every result is checked separately as mirror-looking and upside-down.';renderDigits();}
+function renderDigits(){const box=$('digitCheckboxes');box.innerHTML='';for(const d of MAPS[mode].digits){const lab=document.createElement('label');lab.className='digit-check'+(selected.has(d)?' checked':'');const cb=document.createElement('input');cb.type='checkbox';cb.checked=selected.has(d);cb.addEventListener('change',()=>toggleDigit(d));lab.append(cb,document.createTextNode(d));const p=partner(d);if(p){const t=document.createElement('span');t.className='pair-tag';t.textContent='↔ '+p;lab.append(t);}box.append(lab);}updateNote();}
+function toggleDigit(d){const add=!selected.has(d),p=partner(d);if(add){selected.add(d);if(p)selected.add(p);}else{selected.delete(d);if(p)selected.delete(p);}renderDigits();}
+function entryCapacity(n,L){const nonzero=[...selected].filter(d=>d!=='0').length,boundary=mode==='rotate'&&n===7&&L===2?selected.size:nonzero;return boundary*boundary*Math.pow(selected.size,Math.max(0,L-2));}
+function updateNote(){const n=+$('orderInput').value,L=Math.max(2,+$('lengthInput').value||2),capacity=entryCapacity(n,L),feasible=capacity>=n*n;$('countNote').textContent=selected.size+' digits selected · '+capacity.toLocaleString()+' possible fixed-length entries · '+(feasible?'ready for '+n+'×'+n+'.':'this order needs '+(n*n)+' distinct entries; add digits or increase the digits per cell.');$('countNote').style.color=feasible?'var(--ok)':'var(--warn)';}
+document.querySelectorAll('.mode-btn').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.mode)));
+$('orderInput').addEventListener('change',()=>{if(+$('orderInput').value>=9&&+$('lengthInput').value<4)$('lengthInput').value=4;presetDigits();renderDigits();});$('lengthInput').addEventListener('input',updateNote);
+function transformNumber(v,map,L){return Number(String(v).padStart(L,'0').split('').reverse().map(d=>map[d]).join(''));}
+function lineData(g){const n=g.length,rows=g.map(sum),cols=Array.from({length:n},(_,c)=>sum(g.map(r=>r[c]))),d1=sum(g.map((r,i)=>r[i])),d2=sum(g.map((r,i)=>r[n-1-i]));return{rows,cols,d1,d2,magic:rows[0],semi:rows.every(x=>x===rows[0])&&cols.every(x=>x===rows[0]),full:rows.every(x=>x===rows[0])&&cols.every(x=>x===rows[0])&&d1===rows[0]&&d2===rows[0]};}
+function valueList(pool,n){if(!pool.length)return null;const vals=shuffle(pool);while(vals.length<n)vals.push(pool[Math.floor(Math.random()*pool.length)]);return shuffle(vals.slice(0,n));}
+function latinPlane(n,digitPool,boundary,slope,rp,cp){const usable=boundary?digitPool.filter(d=>d!=='0'):digitPool.slice(),vals=valueList(usable,n);if(!vals)return null;const off=Math.floor(Math.random()*n);return Array.from({length:n},(_,r)=>Array.from({length:n},(_,c)=>vals[(rp[r]+slope*cp[c]+off)%n]));}
+function orderFourPlane(which,digitPool,boundary,rp,cp){const usable=boundary?digitPool.filter(d=>d!=='0'):digitPool.slice(),vals=valueList(usable,4);if(!vals)return null;const bases=[[[0,1,2,3],[1,0,3,2],[2,3,0,1],[3,2,1,0]],[[0,2,3,1],[1,3,2,0],[2,0,1,3],[3,1,0,2]]],base=bases[which%2];return Array.from({length:4},(_,r)=>Array.from({length:4},(_,c)=>vals[base[rp[r]][cp[c]]]));}
+function gf9add(a,b){return((a%3+b%3)%3)+3*((Math.floor(a/3)+Math.floor(b/3))%3);}
+function gf9mul(a,b){const ar=a%3,ai=Math.floor(a/3),br=b%3,bi=Math.floor(b/3);return((ar*br-ai*bi)%3+3)%3+3*((ar*bi+ai*br)%3);}
+function latinNinePlane(digitPool,boundary,slope,rp,cp){const usable=boundary?digitPool.filter(d=>d!=='0'):digitPool.slice(),vals=valueList(usable,9),off=Math.floor(Math.random()*9);if(!vals)return null;return Array.from({length:9},(_,r)=>Array.from({length:9},(_,c)=>vals[gf9add(gf9add(rp[r],gf9mul(slope,cp[c])),off)]));}
+function latinCompositePlane(n,digitPool,boundary){const usable=boundary?digitPool.filter(d=>d!=='0'):digitPool.slice(),vals=valueList(usable,n),rp=shuffle([...Array(n).keys()]),cp=shuffle([...Array(n).keys()]),sp=shuffle([...Array(n).keys()]);if(!vals)return null;return Array.from({length:n},(_,r)=>Array.from({length:n},(_,c)=>vals[sp[(rp[r]+cp[c])%n]]));}
+function makeCandidate(n,L,digits){const planes=new Array(L),rp=shuffle([...Array(n).keys()]),cp=shuffle([...Array(n).keys()]),fixedZero=mode==='rotate'&&n===7&&L===2;for(let p=0;p<L;p++){const boundary=(p===0||p===L-1)&&!fixedZero;if(n===4)planes[p]=orderFourPlane(p===L-1?1:p,digits,boundary,rp,cp);else if(n===9)planes[p]=latinNinePlane(digits,boundary,(p%8)+1,rp,cp);else if(n===10)planes[p]=latinCompositePlane(10,digits,boundary);else{const slopes=[1,2,3,4,5,6].filter(k=>k<n);let slope;if(p===0)slope=slopes[0];else if(p===L-1)slope=slopes[1]||slopes[0];else slope=slopes[(p+1)%slopes.length];planes[p]=latinPlane(n,digits,boundary,slope,rp,cp);}if(!planes[p])return null;}const grid=Array.from({length:n},(_,r)=>Array.from({length:n},(_,c)=>Number(planes.map(p=>p[r][c]).join(''))));const flat=grid.flat();if(new Set(flat).size!==n*n||new Set(planes.flat(2)).size<2)return null;const mirrorMap=MAPS.mirror.map,rotateMap=MAPS.rotate.map,primaryMap=mode==='rotate'?rotateMap:mirrorMap,tgrid=Array.from({length:n},(_,r)=>Array.from({length:n},(_,c)=>transformNumber(grid[r][c],primaryMap,L)));if(new Set(tgrid.flat()).size!==n*n)return null;const a=lineData(grid),b=lineData(tgrid);if(!a.semi||!b.semi||a.magic!==b.magic)return null;if(mode!=='both')return{grid,tgrid,a,b};const ugrid=Array.from({length:n},(_,r)=>Array.from({length:n},(_,c)=>transformNumber(grid[r][c],rotateMap,L))),c=lineData(ugrid);if(new Set(ugrid.flat()).size!==n*n||!c.semi||a.magic!==c.magic)return null;return{grid,tgrid,ugrid,a,b,c};}
+function keyOf(g){const forms=[];let x=g;for(let i=0;i<4;i++){forms.push(x.flat().join(','));forms.push(x.map(r=>r.slice().reverse()).flat().join(','));x=Array.from({length:x.length},(_,r)=>Array.from({length:x.length},(_,c)=>x[x.length-1-c][r]));}return forms.sort()[0];}
+function generate(){if(running)return;const n=+$('orderInput').value,L=Math.max(2,Math.min(8,+$('lengthInput').value||4)),max=Math.max(1,Math.min(100,+$('maxResultsInput').value||10)),condition=$('conditionInput').value,digits=[...selected];$('lengthInput').value=L;$('maxResultsInput').value=max;const capacity=entryCapacity(n,L);if(capacity<n*n){$('setupNote').className='note warn';$('setupNote').textContent='This selection supplies only '+capacity+' valid fixed-length entries, but a '+n+'×'+n+' square needs '+(n*n)+' distinct entries. Add digits or increase the digits per cell.';return;}running=true;stop=false;results=[];$('genBtn').disabled=true;$('stopBtn').style.display='inline-block';$('progressWrap').style.display='block';$('resultsCard').style.display='none';const seen=new Set(),limit=Math.max(15000,max*(n>=9?300000:condition==='full'?30000:mode==='both'?12000:n>=5?6000:600));let tries=0;const started=performance.now();function batch(){const end=performance.now()+35;while(!stop&&results.length<max&&tries<limit&&performance.now()<end){tries++;const x=makeCandidate(n,L,digits);if(!x)continue;if(condition==='full'&&(!x.a.full||!x.b.full||(x.c&&!x.c.full)))continue;const k=keyOf(x.grid);if(seen.has(k))continue;seen.add(k);results.push({...x,n,L,digits:digits.slice(),mode,condition});}$('progressFill').style.width=Math.min(100,100*results.length/max)+'%';$('progressText').textContent='Found '+results.length+' of '+max+' · '+tries.toLocaleString()+' constructions tested';if(!stop&&results.length<max&&tries<limit&&performance.now()-started<30000){setTimeout(batch,0);}else finish();}batch();}
+function finish(){running=false;$('genBtn').disabled=false;$('stopBtn').style.display='none';$('progressFill').style.width=results.length?'100%':'0%';$('setupNote').className='note '+(results.length?'ok':'warn');$('setupNote').textContent=results.length?results.length+' different solution'+(results.length===1?'':'s')+' generated.':'No solution was found with this selection. Try more digits, Rows and columns mode, or fewer digits per cell.';renderResults();}
+$('genBtn').addEventListener('click',generate);$('stopBtn').addEventListener('click',()=>{stop=true;});
+function fixed(v,L){return String(v).padStart(L,'0');}
+function tableFor(g,magic,L){const n=g.length,t=document.createElement('table');t.className='sq';for(let r=0;r<n;r++){const tr=t.insertRow();for(let c=0;c<n;c++){const td=tr.insertCell();td.className='cell';td.textContent=fixed(g[r][c],L);}const rs=tr.insertCell();rs.className='rowsum';rs.textContent=sum(g[r]);}const foot=t.insertRow();for(let c=0;c<n;c++){const td=foot.insertCell();td.className='colsum';td.textContent=sum(g.map(r=>r[c]));}foot.insertCell().className='corner';return t;}
+function gridBlock(label,g,data,L){const col=document.createElement('div');col.className='grid-col';const lab=document.createElement('div');lab.className='grid-label';lab.textContent=label;col.append(lab,tableFor(g,data.magic,L));const diag=document.createElement('div');diag.className='diag-line';diag.innerHTML='<span>↘ '+data.d1+'</span><span>↙ '+data.d2+'</span>';col.append(diag);return col;}
+function renderResults(){const card=$('resultsCard'),list=$('resultsList'),strip=$('summaryStrip');list.innerHTML='';strip.innerHTML='';if(!results.length){card.style.display='none';return;}card.style.display='block';$('exportRow').style.display='flex';const first=results[0];[results.length+' results',first.n+'×'+first.n,first.L+' digits per cell',MAPS[first.mode].label,'digits {'+first.digits.join(', ')+'}'].forEach(x=>{const s=document.createElement('span');s.textContent=x;strip.append(s);});results.forEach((x,i)=>{const item=document.createElement('div');item.className='result-item';const head=document.createElement('div');head.className='result-head';head.innerHTML='<strong>Result '+(i+1)+'</strong><span>magic sum '+x.a.magic+'</span>';const row=document.createElement('div');row.className='grids-row'+(x.mode==='both'?' both-results':'')+(x.n>=9?' large-order':'');row.append(gridBlock('Original square',x.grid,x.a,x.L),gridBlock(x.mode==='both'?'Mirror-looking square':MAPS[x.mode].label,x.tgrid,x.b,x.L));if(x.ugrid)row.append(gridBlock('Upside-down square',x.ugrid,x.c,x.L));item.append(head,row);list.append(item);});card.scrollIntoView({behavior:'smooth',block:'start'});}
+function appendTextGrid(out,label,g,data,L){out.push(label+' · magic sum '+data.magic);g.forEach(r=>out.push(r.map(v=>fixed(v,L)).join('\t')+'\t| '+sum(r)));out.push('Columns: '+data.cols.join('\t'),'Diagonals: '+data.d1+' · '+data.d2,'');}
+function textRows(x,i){const out=['RESULT '+(i+1)];appendTextGrid(out,'Original',x.grid,x.a,x.L);appendTextGrid(out,x.mode==='both'?'Mirror-looking':MAPS[x.mode].label,x.tgrid,x.b,x.L);if(x.ugrid)appendTextGrid(out,'Upside-down',x.ugrid,x.c,x.L);return out;}
+function download(name,blob){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
+$('exportTxtBtn').addEventListener('click',()=>{if(!results.length)return;const x=results[0],head=['UPSIDE-DOWN & MIRROR MAGIC SQUARES','Created by Inder J. Taneja','Order: '+x.n+'×'+x.n,'Digits per cell: '+x.L,'Transform: '+MAPS[x.mode].label,'Allowed digits: '+x.digits.join(', '),'Results: '+results.length,''];download('digital-magic-squares-'+x.n+'x'+x.n+'.txt',new Blob([head.concat(results.flatMap(textRows)).join('\n')],{type:'text/plain;charset=utf-8'}));});
+$('exportXlsxBtn').addEventListener('click',()=>{if(!results.length||typeof XLSX==='undefined')return;const wb=XLSX.utils.book_new(),rows=[];function addGrid(i,label,g,data,L){rows.push(['Result '+(i+1),label,'Magic sum',data.magic]);g.forEach(r=>rows.push(r.map(v=>fixed(v,L)).concat([sum(r)])));rows.push(['Columns'].concat(data.cols),['Diagonals',data.d1,data.d2],[]);}results.forEach((x,i)=>{addGrid(i,'Original',x.grid,x.a,x.L);addGrid(i,x.mode==='both'?'Mirror-looking':MAPS[x.mode].label,x.tgrid,x.b,x.L);if(x.ugrid)addGrid(i,'Upside-down',x.ugrid,x.c,x.L);});const ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=Array.from({length:results[0].n+1},()=>({wch:16}));XLSX.utils.book_append_sheet(wb,ws,'All Results');XLSX.writeFile(wb,'digital-magic-squares-'+results[0].n+'x'+results[0].n+'.xlsx');});
+setMode('mirror');
+})();
+</script>
+</body>
+</html>

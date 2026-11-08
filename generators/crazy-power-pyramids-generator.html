@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crazy Power Representations Pyramid-Style Generator</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+/* Layout: a working tool — header band, control panel, then each pyramid as a full-width "plate", one row per k */
+/* Surfaces: recessed wells (inset light from top-left) on a soft lavender ground; controls are raised */
+:root{
+  --bg:#e8e5f3; --panel:#efedf8; --ink:#1f1a3d; --muted:#625c8c; --line:#d3cdea;
+  --base:#3a2c96; --exp:#c0621a; --minus:#c0284f; --plus:#24804f; --accent:#5140c4; --accent2:#3a2c96; --accent-ink:#ffffff;
+  --chip:#e2ddf6; --rowhi:rgba(255,255,255,.55);
+  --well-a:#d9d4ee; --well-b:#f7f5fd; --raise-a:#fbfaff; --raise-b:#e6e2f5;
+  --sh-d:rgba(76,62,148,.30); --sh-l:rgba(255,255,255,.95); --edge:rgba(255,255,255,.7);
+  --hero-a:#2f2670; --hero-b:#5444b0; --hero-ink:#f4f1ff; --hero-muted:#ddd7fa; --hero-gold:#f2b56b; --hero-lilac:#b7a9ff;
+  --f-math:"STIX Two Text","Cambria Math","Times New Roman",serif;
+  --f-ui:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#1b1932; --panel:#211e3b; --ink:#ece9ff; --muted:#a49fcb; --line:#363160;
+  --base:#b9aeff; --exp:#f3ac62; --minus:#ff809b; --plus:#82d9a6; --accent:#9183ff; --accent2:#6a5cf0; --accent-ink:#ffffff;
+  --chip:#2c2852; --rowhi:rgba(255,255,255,.04);
+  --well-a:#131126; --well-b:#272347; --raise-a:#2d2950; --raise-b:#1f1c3a;
+  --sh-d:rgba(0,0,0,.6); --sh-l:rgba(140,128,230,.14); --edge:rgba(160,150,240,.12); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1b1932; --panel:#211e3b; --ink:#ece9ff; --muted:#a49fcb; --line:#363160;
+  --base:#b9aeff; --exp:#f3ac62; --minus:#ff809b; --plus:#82d9a6; --accent:#9183ff; --accent2:#6a5cf0; --accent-ink:#ffffff;
+  --chip:#2c2852; --rowhi:rgba(255,255,255,.04);
+  --well-a:#131126; --well-b:#272347; --raise-a:#2d2950; --raise-b:#1f1c3a;
+  --sh-d:rgba(0,0,0,.6); --sh-l:rgba(140,128,230,.14); --edge:rgba(160,150,240,.12); color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);background-image:radial-gradient(circle at 15% 0%,var(--raise-a),transparent 55%),radial-gradient(circle at 100% 100%,var(--well-a),transparent 60%);background-attachment:fixed;color:var(--ink);font-family:var(--f-ui);font-size:15px;line-height:1.5}
+/* recessed 3D well */
+.panel,.plate,.tablewrap{background:linear-gradient(155deg,var(--well-a) 0%,var(--well-b) 70%);border:1px solid var(--edge);border-radius:16px;box-shadow:inset 7px 7px 14px var(--sh-d),inset -7px -7px 14px var(--sh-l),0 1px 0 var(--sh-l)}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px;display:flex;flex-direction:column;gap:20px}
+header{display:flex;flex-direction:column;gap:8px;padding:26px 28px 24px;border-radius:18px;background:linear-gradient(135deg,var(--hero-a) 0%,var(--hero-b) 100%);border:1.5px solid rgba(242,181,107,.55);padding-top:32px;box-shadow:8px 8px 20px var(--sh-d),-6px -6px 16px var(--sh-l),inset 0 1px 0 rgba(255,255,255,.12),inset 0 -14px 30px rgba(0,0,0,.16);position:relative;overflow:hidden}
+header::after{content:"";position:absolute;right:-60px;top:-80px;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(242,181,107,.22),transparent 70%);pointer-events:none}
+header::before{content:"";position:absolute;left:0;right:0;top:0;height:7px;background:linear-gradient(90deg,#a8711f 0%,#f6d48a 22%,#d99a3c 45%,#fff0c4 62%,#d39235 80%,#a8711f 100%);box-shadow:0 2px 6px rgba(0,0,0,.25),inset 0 -1px 0 rgba(120,70,10,.5)}
+header>*{position:relative}
+.lede{border-top-color:rgba(242,181,107,.45)!important}
+h1{background:linear-gradient(100deg,var(--hero-ink) 0%,var(--hero-lilac) 60%,var(--hero-gold) 100%);-webkit-background-clip:text;background-clip:text;color:transparent;font-family:var(--f-math);font-weight:600;font-size:clamp(26px,3.8vw,40px);line-height:1.15;margin:0;text-wrap:balance}
+.h1sub{display:block}
+.byline{font-size:15px;color:var(--hero-gold);font-weight:600;margin:0;letter-spacing:.02em}
+.lede{color:var(--hero-muted);max-width:76ch;margin:0;padding-top:10px;border-top:1px solid rgba(255,255,255,.14)}
+.formula{font-family:var(--f-math);font-size:18px;color:var(--hero-ink)}
+.formula sup{color:var(--hero-gold)}
+.tabs{display:flex;gap:12px;flex-wrap:wrap;padding:8px;border-radius:16px;background:linear-gradient(155deg,var(--well-a),var(--well-b));border:1px solid var(--edge);box-shadow:inset 5px 5px 10px var(--sh-d),inset -5px -5px 10px var(--sh-l)}
+.tab{font:inherit;font-weight:600;font-size:14.5px;color:var(--base);padding:10px 20px;cursor:pointer;border-radius:12px;border:1px solid var(--edge);background:linear-gradient(160deg,var(--raise-a),var(--raise-b));box-shadow:4px 4px 9px var(--sh-d),-4px -4px 9px var(--sh-l),inset 0 1px 0 rgba(255,255,255,.6);transition:transform .12s,box-shadow .12s,color .12s}
+.tab:hover{transform:translateY(-1px);box-shadow:5px 6px 12px var(--sh-d),-4px -4px 9px var(--sh-l),inset 0 1px 0 rgba(255,255,255,.6)}
+.tab:active{transform:translateY(1px)}
+.tab[aria-selected="true"]{color:#fff;border-color:rgba(242,181,107,.7);background:linear-gradient(160deg,var(--accent),var(--accent2));box-shadow:inset 3px 3px 7px rgba(0,0,0,.35),inset -2px -2px 5px rgba(255,255,255,.15),0 0 0 2px rgba(242,181,107,.25);transform:none}
+.tab:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.view{display:flex;flex-direction:column;gap:16px}
+.panel{padding:18px 20px;display:flex;flex-direction:column;gap:14px}
+.controls{display:flex;flex-wrap:wrap;gap:14px 18px;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label,.lbl{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+input[type=number],select{font:inherit;font-family:var(--f-mono);background:linear-gradient(160deg,var(--well-a),var(--well-b));color:var(--ink);border:1px solid var(--edge);border-radius:9px;padding:8px 10px;width:120px;box-shadow:inset 3px 3px 6px var(--sh-d),inset -3px -3px 6px var(--sh-l)}
+select{width:auto;font-family:var(--f-ui)}
+.checks{display:flex;flex-wrap:wrap;gap:8px 18px}
+.checks label{display:flex;gap:6px;align-items:center;cursor:pointer;font-size:14px}
+.btn{font:inherit;font-weight:600;border-radius:10px;padding:9px 18px;border:1px solid transparent;background:linear-gradient(160deg,var(--accent),var(--accent2));color:var(--accent-ink);cursor:pointer;box-shadow:4px 4px 10px var(--sh-d),-3px -3px 8px var(--sh-l),inset 0 1px 0 rgba(255,255,255,.25);transition:transform .12s,box-shadow .12s}
+.btn:active{transform:translateY(1px);box-shadow:inset 3px 3px 7px rgba(0,0,0,.3)}
+.btn.ghost{background:linear-gradient(160deg,var(--raise-a),var(--raise-b));color:var(--accent);border-color:var(--edge)}
+.btn:hover{filter:brightness(1.08)}
+.btn:disabled{opacity:.55;cursor:wait}
+.seg{display:inline-flex;gap:3px;padding:3px;border:1px solid var(--edge);border-radius:11px;align-self:flex-end;background:linear-gradient(160deg,var(--well-a),var(--well-b));box-shadow:inset 3px 3px 6px var(--sh-d),inset -3px -3px 6px var(--sh-l)}
+.seg button{font:inherit;font-size:13.5px;background:transparent;color:var(--muted);border:0;border-radius:8px;padding:6px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:linear-gradient(160deg,var(--raise-a),var(--raise-b));color:var(--accent);font-weight:600;box-shadow:2px 2px 5px var(--sh-d),-2px -2px 5px var(--sh-l)}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.summary{font-size:14px;color:var(--muted)}
+.summary b{color:var(--ink);font-family:var(--f-mono);font-weight:500}
+.plates{display:flex;flex-direction:column;gap:14px}
+.plate{padding:20px 14px;overflow-x:auto}
+.plate-note{font-size:12.5px;color:var(--muted);text-align:center;margin-top:8px}
+.pyr{display:grid;grid-template-columns:auto auto auto auto;gap:2px 0;justify-content:center;align-items:center;min-width:max-content;margin:0 auto}
+.pyr.aligned{justify-content:start}
+.krow{display:contents}
+.kchip{font-family:var(--f-mono);font-size:12px;color:var(--accent);font-weight:500;background:linear-gradient(160deg,var(--raise-a),var(--raise-b));border-radius:20px;padding:3px 10px;box-shadow:2px 2px 5px var(--sh-d),-2px -2px 5px var(--sh-l);white-space:nowrap;justify-self:end}
+.expr{font-family:var(--f-math);font-size:clamp(17px,2.1vw,24px);white-space:nowrap;padding:6px 10px;border-radius:6px}
+.lhs{font-family:var(--f-math);font-size:clamp(17px,2.1vw,24px);font-weight:600;white-space:nowrap;justify-self:end;text-align:right;padding:6px 0 6px 14px}
+.pyr .expr{text-align:left;padding-left:4px}
+.pyr .kchip{margin-right:6px}
+.pyr .tools{margin-left:14px}
+.krow:hover .expr{background:var(--rowhi);box-shadow:0 1px 4px var(--sh-d)}
+.expr .n{font-weight:600}
+.expr .eq{margin:0 .25em}
+.expr .b{color:var(--base)}
+.expr sup{color:var(--exp);font-size:.62em;margin-left:.04em}
+.expr .op{margin:0 .22em}
+.expr .op.m{color:var(--minus)}
+.expr.none{color:var(--muted);font-style:italic;font-size:16px}
+.tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.krow .tools{flex-wrap:nowrap;white-space:nowrap}
+.cnt{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.ok{color:var(--plus);font-size:13px;font-weight:600}
+.bad{color:var(--minus);font-size:13px;font-weight:600}
+.mini{font:inherit;font-size:12.5px;background:linear-gradient(160deg,var(--raise-a),var(--raise-b));border:1px solid var(--edge);color:var(--accent);border-radius:7px;padding:3px 9px;cursor:pointer;box-shadow:2px 2px 5px var(--sh-d),-2px -2px 4px var(--sh-l)}
+.mini:active{box-shadow:inset 2px 2px 4px var(--sh-d)}
+.mini:hover{color:var(--accent2)}
+.mini.dl{background:linear-gradient(160deg,var(--accent),var(--accent2));color:var(--accent-ink);font-weight:600;padding:5px 12px}
+.note{font-size:13px;color:var(--muted);margin:0}
+.out{font-family:var(--f-mono);font-size:12.5px;background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:10px;white-space:pre;overflow:auto;max-height:260px;margin:0}
+table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+.tablewrap{overflow:auto;max-height:560px;padding:6px}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{position:sticky;top:0;background:var(--panel);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+td.num{font-family:var(--f-mono)}
+td .expr{font-size:16px;padding:0}
+tr.click{cursor:pointer}
+tr.click:hover td{background:var(--rowhi)}
+.pill{display:inline-block;font-size:11.5px;font-weight:600;border-radius:20px;padding:1px 8px;margin-right:4px;background:linear-gradient(160deg,var(--raise-a),var(--raise-b));box-shadow:1px 1px 3px var(--sh-d)}
+.pill.u{color:var(--accent)}
+.pill.p{color:var(--plus)}
+.stats{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:14px;color:var(--muted)}
+.stats b{color:var(--ink);font-family:var(--f-mono);font-weight:500}
+.about{font-size:14.5px;max-width:none}
+.about p{margin:0}
+.refs{gap:12px;font-size:14.5px;line-height:1.6}
+.refs h2{font-family:var(--f-math);font-weight:600;font-size:24px;margin:0;color:var(--accent2);padding-bottom:6px;border-bottom:2px solid transparent;border-image:linear-gradient(90deg,#d99a3c,#f6d48a 40%,transparent) 1}
+.refs p{margin:0}
+.refs-main .ref{display:block;margin-top:4px}
+.refs ol{margin:0;padding-left:1.6em;display:flex;flex-direction:column;gap:9px}
+.refs li::marker{color:var(--exp);font-weight:600}
+.refs .site{display:block;color:var(--muted);font-size:13.5px}
+.refs a{color:var(--accent);text-decoration:none;overflow-wrap:anywhere}
+.refs a:hover{text-decoration:underline}
+footer{border-top:1px solid var(--line);padding-top:16px;font-size:13.5px;color:var(--muted);display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px}
+footer .who{color:var(--ink);font-weight:600;font-size:15px}
+footer .links{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:6px}
+footer .links a{font:inherit;font-weight:600;font-size:14px;color:var(--base);text-decoration:none;padding:9px 18px;border-radius:12px;border:1px solid var(--edge);background:linear-gradient(160deg,var(--raise-a),var(--raise-b));box-shadow:4px 4px 9px var(--sh-d),-4px -4px 9px var(--sh-l),inset 0 1px 0 rgba(255,255,255,.6);transition:transform .12s,box-shadow .12s,color .12s,border-color .12s;overflow-wrap:anywhere}
+footer .links a:hover{transform:translateY(-1px);color:var(--accent);border-color:rgba(242,181,107,.7);box-shadow:5px 6px 12px var(--sh-d),-4px -4px 9px var(--sh-l),0 0 0 2px rgba(242,181,107,.25)}
+footer .links a:active{transform:translateY(1px);box-shadow:inset 3px 3px 7px var(--sh-d)}
+footer .links a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:7px 14px;border-radius:6px;font-size:13.5px;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw}
+.toast.show{opacity:1}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+@media (max-width:560px){.krow .tools{grid-column:3;grid-row:auto;justify-self:start;margin:0 0 6px 4px}.pyr{grid-template-columns:auto auto auto}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Crazy Power Representations<span class="h1sub">Pyramid-Style Generator</span></h1>
+    <p class="byline">Created by Inder J. Taneja</p>
+    <p class="lede">Write a number as <span class="formula">±0<sup>e₀</sup> ± 1<sup>e₁</sup> ± 2<sup>e₂</sup> ± … ± k<sup>eₖ</sup></span>, where the bases run 0, 1, …, k in order and the exponents are a permutation of the same digits 0, 1, …, k. Each row of the pyramid adds one more digit, up to k = 9.</p>
+  </header>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tab-pyr" aria-selected="true" data-view="v-pyr">Pyramid</button>
+    <button class="tab" role="tab" id="tab-scan" aria-selected="false" data-view="v-scan">Range scan</button>
+    <button class="tab" role="tab" id="tab-dl" aria-selected="false" data-view="v-dl">Download</button>
+    <button class="tab" role="tab" id="tab-about" aria-selected="false" data-view="v-about">How it works</button>
+  </div>
+
+  <!-- PYRAMID -->
+  <section id="v-pyr" class="view">
+    <div class="panel">
+      <div class="controls">
+        <div class="seg" role="group" aria-label="Input mode">
+          <button id="modeSingle" aria-pressed="true">Single number</button>
+          <button id="modeInt" aria-pressed="false">Interval</button>
+        </div>
+        <div class="field" id="fSingle"><label for="inN">Number N</label><input type="number" id="inN" value="1089" step="1"></div>
+        <div class="field" id="fA" hidden><label for="inA">From N</label><input type="number" id="inA" value="20" step="1"></div>
+        <div class="field" id="fB" hidden><label for="inB">To N</label><input type="number" id="inB" value="30" step="1"></div>
+        <div class="field"><label for="inFrom">From k</label><select id="inFrom"><option value="min">smallest possible</option></select></div>
+        <div class="field"><label for="inTo">To k</label><select id="inTo"></select></div>
+        <div class="field"><label for="inPick">Row choice</label><select id="inPick"><option value="first">First found</option><option value="random" selected>Random</option></select></div>
+        <button class="btn" id="goBtn">Generate</button>
+        <button class="btn ghost" id="shuffleBtn">Shuffle all rows</button>
+      </div>
+      <div class="checks">
+        <label><input type="checkbox" id="optZZ" checked> 0<sup>0</sup> = 1</label>
+        <label><input type="checkbox" id="optFirst" checked> First term (0<sup>e</sup>) always +</label>
+        <label><input type="checkbox" id="optPlus"> Plus signs only</label>
+        <label><input type="checkbox" id="optRepeatN"> Repeat N on every row</label>
+        <label id="lSkip" hidden><input type="checkbox" id="optSkip" checked> Hide numbers with no representation</label>
+      </div>
+      <p class="note" id="intNote" hidden>Interval mode builds one pyramid per number, up to 300 numbers at a time.</p>
+    </div>
+
+    <div class="bar">
+      <div class="summary" id="summary"></div>
+      <div class="seg" role="group" aria-label="Layout">
+        <button id="layPyr" aria-pressed="true">Centered</button>
+        <button id="layAl" aria-pressed="false">Left</button>
+      </div>
+    </div>
+
+    <div class="plates" id="plates"></div>
+  </section>
+
+  <!-- SCAN -->
+  <section id="v-scan" class="view" hidden>
+    <div class="panel">
+      <div class="controls">
+        <div class="field"><label for="scA">From N</label><input type="number" id="scA" value="1" step="1"></div>
+        <div class="field"><label for="scB">To N</label><input type="number" id="scB" value="300" step="1"></div>
+        <div class="field"><label for="scShow">Show</label><select id="scShow">
+          <option value="all">All numbers</option>
+          <option value="unique">Unique at smallest k</option>
+          <option value="plus">With a plus-only form at smallest k</option>
+          <option value="none">Not reachable with k ≤ 9</option>
+        </select></div>
+        <button class="btn" id="scBtn">Scan</button>
+      </div>
+      <p class="note">Uses the sign and 0<sup>0</sup> options from the Pyramid tab. For each N it finds the smallest k and counts every representation at that k. Up to 20 000 numbers per scan. Click a row to open its pyramid.</p>
+    </div>
+    <div class="stats" id="scStats"></div>
+    <div class="tablewrap"><table><thead><tr><th>N</th><th>Smallest k</th><th>Forms at that k</th><th>Flags</th><th>Example</th></tr></thead><tbody id="scBody"><tr><td colspan="5" class="note">Press Scan to fill this table.</td></tr></tbody></table></div>
+  </section>
+
+  <!-- DOWNLOAD -->
+  <section id="v-dl" class="view" hidden>
+    <div class="panel">
+      <span class="lbl">Pyramids (current Pyramid tab)</span>
+      <div class="tools">
+        <button class="mini dl" id="dlPyrTxt">Download .txt</button>
+        <button class="mini dl" id="dlPyrXlsx">Download Excel (.xlsx)</button>
+        <button class="mini" id="cpTxt">Copy text</button>
+        <button class="mini" id="cpTex">Copy LaTeX</button>
+      </div>
+      <p class="note">The .txt file has every pyramid as shown, then every form for each row. The Excel file has three sheets: <b>Pyramids</b> (the rows shown), <b>Summary</b> (smallest k and number of forms for each k), and <b>All Forms</b> (every representation, up to 200 000 lines).</p>
+      <div class="checks"><label><input type="checkbox" id="optAllTxt" checked> Include all forms in the .txt file</label></div>
+    </div>
+    <div class="panel">
+      <span class="lbl">Range scan (current Range scan tab)</span>
+      <div class="tools">
+        <button class="mini dl" id="dlScTxt">Download .txt</button>
+        <button class="mini dl" id="dlScXlsx">Download Excel (.xlsx)</button>
+        <button class="mini" id="cpSc">Copy table</button>
+      </div>
+      <p class="note">Uses the filter chosen on the Range scan tab. The Excel file has the table plus a sheet counting numbers by smallest k.</p>
+    </div>
+    <div class="panel">
+      <span class="lbl">Preview</span>
+      <pre class="out" id="outBox"></pre>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="v-about" class="view" hidden>
+    <div class="panel about">
+      <p><b>The rule.</b> For a chosen k, the bases are 0, 1, 2, …, k in this order. The exponents use every digit 0, 1, …, k exactly once, so each digit appears once as a base and once as a power. Only the signs between terms are free.</p>
+      <p><b>The pyramid.</b> Starting from the smallest k that works for N, each new row uses one more digit. The last row, k = 9, uses all ten digits 0–9 twice.</p>
+      <p><b>Interval.</b> In Interval mode the generator builds one pyramid for each N in the range, one below the other.</p>
+      <p><b>Search.</b> Exponents are assigned from the largest base down. A branch is cut when the remaining target is larger than the biggest value the unused bases and exponents can still reach (largest exponent on the largest base). The full count at k = 9 takes well under a second.</p>
+      <p><b>Counting.</b> A term 0<sup>e</sup> with e ≥ 1 is zero, so its sign does not create a new form; it is always shown with +. With "First term always +", the term 0<sup>0</sup> = 1 is never subtracted, matching the printed tables.</p>
+      <p><b>Example.</b> 1089 = 0<sup>1</sup> + 1<sup>0</sup> + 2<sup>3</sup> + 3<sup>4</sup> + 4<sup>5</sup> − 5<sup>2</sup> is the only form of 1089 at k = 5.</p>
+    </div>
+  </section>
+
+  <section class="panel refs" aria-labelledby="refsTitle">
+    <h2 id="refsTitle">References</h2>
+    <p class="refs-main">The work is due author's following publications: <span class="ref">Inder J. Taneja, <i>Crazy Power Representations of Natural Numbers</i>, RGMIA Research Report Collection, 19(2016), Art. 31, pp. 1-71, <a href="http://rgmia.org/papers/v19/v19a31.pdf" target="_blank" rel="noopener">http://rgmia.org/papers/v19/v19a31.pdf</a>.</span></p>
+    <ol>
+      <li>Inder J. Taneja, <i>Flexible Power Representations of Natural Numbers</i>, RGMIA Research Report Collection, 19(2016), Art. 131, pp. 1-91, <a href="http://rgmia.org/papers/v19/v19a131.pdf" target="_blank" rel="noopener">http://rgmia.org/papers/v19/v19a131.pdf</a>.</li>
+      <li>Inder J. Taneja, <i>Pyramidical Representations of Natural Numbers</i>, RGMIA Research Report Collection, 19(2016), Art. 58, pp. 1-95, <a href="http://rgmia.org/papers/v19/v19a58.pdf" target="_blank" rel="noopener">http://rgmia.org/papers/v19/v19a58.pdf</a>.
+        <span class="site">Site link: Pyramidical-Type Representations of Natural Numbers, <a href="https://inderjtaneja.wordpress.com/2017/08/20/pyramidical-type-representations-of-natural-numbers" target="_blank" rel="noopener">https://inderjtaneja.wordpress.com/2017/08/20/pyramidical-type-representations-of-natural-numbers</a>.</span></li>
+      <li>Inder J. Taneja, <i>All Digits Flexible Power Representations of Natural Numbers From 11112 to 30000</i>, Zenodo, January 14, 2019, pp. 1-140, <a href="http://doi.org/10.5281/zenodo.2539203" target="_blank" rel="noopener">http://doi.org/10.5281/zenodo.2539203</a>.</li>
+      <li>Inder J. Taneja, <i>All Digits Flexible Power Representations of Natural Numbers From 30001 to 50000</i>, Zenodo, January 14, 2019, pp. 1-147, <a href="http://doi.org/10.5281/zenodo.2539412" target="_blank" rel="noopener">http://doi.org/10.5281/zenodo.2539412</a>.
+        <span class="site">Site link: Inder J. Taneja, Flexible Power Representations: Equal String Lengths, <a href="https://inderjtaneja.wordpress.com/2017/08/20/flexible-power-representations-equal-string-lengths/" target="_blank" rel="noopener">https://inderjtaneja.wordpress.com/2017/08/20/flexible-power-representations-equal-string-lengths/</a>.</span></li>
+      <li>Inder J. Taneja, <i>Permutable Power Minimum Length Representations of Natural Numbers from 0 to 20000</i>, Zenodo, January 30, 2019, pp. 1-288, <a href="http://doi.org/10.5281/zenodo.2553326" target="_blank" rel="noopener">http://doi.org/10.5281/zenodo.2553326</a>.</li>
+      <li>Inder J. Taneja, <i>Pyramid-Type Representations of Natural Numbers</i>, Zenodo, February 5, 2020, pp. 1-213, <a href="http://doi.org/10.5281/zenodo.3637662" target="_blank" rel="noopener">http://doi.org/10.5281/zenodo.3637662</a>.</li>
+      <li>Inder J. Taneja, <i>Pyramid-Type Representations of Natural Numbers from 1001 to 10000</i>, Zenodo, January 16, 2024, pp. 1-585, <a href="http://doi.org/10.5281/zenodo.10520278" target="_blank" rel="noopener">http://doi.org/10.5281/zenodo.10520278</a>.</li>
+    </ol>
+  </section>
+
+  <footer>
+    <span class="who">Inder J. Taneja</span>
+    <span class="links">
+      <a href="https://numbers-magic.com/" target="_blank" rel="noopener">numbers-magic.com</a>
+      <a href="https://inderjtaneja.wordpress.com/" target="_blank" rel="noopener">inderjtaneja.wordpress.com</a>
+      <a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/" target="_blank" rel="noopener">taneja-mathematical-generators.ijtaneja.chatgpt.site</a>
+    </span>
+  </footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const SUP='⁰¹²³⁴⁵⁶⁷⁸⁹';
+const TITLE='Crazy Power Representations',SUB='Pyramid-Style Generator';
+let seedCounter=Date.now()%100000;
+function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}}
+
+/* ---------- search engine ---------- */
+const prepCache={};
+function prep(k,opts){
+  const key=k+'|'+opts.zz;if(prepCache[key])return prepCache[key];
+  const pw=[];for(let b=0;b<=k;b++){pw[b]=[];for(let e=0;e<=k;e++)pw[b][e]=(b===0&&e===0)?(opts.zz?1:0):Math.pow(b,e);}
+  const full=(1<<(k+1))-1,bound=new Float64Array(full+1);
+  for(let m=0;m<=full;m++){const ex=[];for(let e=0;e<=k;e++)if(!(m>>e&1))ex.push(e);let s=0;for(let i=0;i<ex.length;i++)s+=pw[i][ex[i]];bound[m]=s+1;}
+  return prepCache[key]={pw,bound};
+}
+// mode 'first' stops at the first form; 'all' enumerates every form (stores up to cap)
+function solve(N,k,opts,mode,cap){
+  cap=cap||5000;const {pw,bound}=prep(k,opts);const exp=new Array(k+1),sg=new Array(k+1);
+  let count=0,sols=[],stop=false,steps=0,complete=true;const t0=Date.now();
+  function dfs(j,mask,T){
+    if((++steps&0xFFFF)===0&&Date.now()-t0>8000){stop=true;complete=false;}
+    if(stop)return;
+    if(j<0){if(T===0){count++;if(sols.length<cap)sols.push(exp.map((e,b)=>[sg[b],e]));if(mode==='first')stop=true;}return;}
+    for(let e=0;e<=k;e++){
+      if(mask>>e&1)continue;const v=pw[j][e],nm=mask|1<<e;
+      const canNeg=!(v===0||opts.allPlus||(j===0&&opts.firstPlus));
+      for(let si=0;si<(canNeg?2:1);si++){
+        const s=si?-1:1,T2=T-s*v;if(Math.abs(T2)>bound[nm])continue;
+        exp[j]=e;sg[j]=s;dfs(j-1,nm,T2);if(stop)return;
+      }
+    }
+  }
+  dfs(k,0,N);return {count,sols,complete};
+}
+function evalSol(sol,opts){let s=0;sol.forEach(([sg,e],b)=>{s+=sg*((b===0&&e===0)?(opts.zz?1:0):Math.pow(b,e));});return s;}
+function isPerm(sol){const e=sol.map(x=>x[1]).sort((a,b)=>a-b);return e.every((v,i)=>v===i);}
+function minK(N,opts){for(let k=1;k<=9;k++){if(solve(N,k,opts,'first').count)return k;}return null;}
+
+/* ---------- formatting ---------- */
+function termHTML(sol){
+  let h='';
+  sol.forEach(([sg,e],b)=>{
+    if(b===0){if(sg<0)h+='<span class="op m">−</span>';}
+    else h+=`<span class="op${sg<0?' m':''}">${sg<0?'−':'+'}</span>`;
+    h+=`<span class="b">${b}</span><sup>${e}</sup>`;
+  });
+  return h;
+}
+function termText(sol,style){
+  return sol.map(([sg,e],b)=>{
+    const t=style==='tex'?`${b}^{${e}}`:style==='uni'?`${b}${SUP[e]}`:`${b}^${e}`;
+    if(b===0)return (sg<0?'-':'')+t;
+    return (sg<0?' - ':' + ')+t;
+  }).join('');
+}
+
+/* ---------- state ---------- */
+let pyrs=[],curOpts={},busy=false,mode='single';
+function readOpts(){return {zz:$('optZZ').checked,firstPlus:$('optFirst').checked,allPlus:$('optPlus').checked};}
+for(let k=1;k<=9;k++){$('inFrom').insertAdjacentHTML('beforeend',`<option value="${k}">${k}</option>`);$('inTo').insertAdjacentHTML('beforeend',`<option value="${k}"${k===9?' selected':''}>${k}</option>`);}
+const pickIdx=(n,rng)=>Math.floor(rng()*n);
+
+function buildPyramid(N,opts,rng){
+  const from=$('inFrom').value,to=Number($('inTo').value);
+  const kmin=minK(N,opts);
+  let start=from==='min'?(kmin||to):Number(from);if(start>to)start=to;
+  const rows=[];
+  for(let k=start;k<=to;k++){
+    const r=solve(N,k,opts,'all');
+    let idx=0;if(r.sols.length&&$('inPick').value==='random')idx=pickIdx(r.sols.length,rng);
+    rows.push({k,count:r.count,complete:r.complete,sols:r.sols,idx});
+  }
+  return {N,kmin,rows};
+}
+function readInt(id){const v=Math.round(Number($(id).value));return Number.isFinite(v)?v:null;}
+function generate(){
+  if(busy)return;
+  curOpts=readOpts();const rng=mulberry(++seedCounter);
+  if(mode==='single'){
+    const N=readInt('inN');if(N===null){toast('Enter a whole number for N');return;}
+    pyrs=[buildPyramid(N,curOpts,rng)];render();return;
+  }
+  let a=readInt('inA'),b=readInt('inB');
+  if(a===null||b===null){toast('Enter whole numbers for the interval');return;}
+  if(b<a)[a,b]=[b,a];
+  if(b-a>299){b=a+299;$('inB').value=b;toast('Interval limited to 300 numbers');}
+  pyrs=[];busy=true;$('goBtn').disabled=true;let N=a;
+  (function chunk(){
+    const t=Date.now();
+    while(N<=b&&Date.now()-t<60){pyrs.push(buildPyramid(N,curOpts,rng));N++;}
+    $('summary').innerHTML=`Building pyramids: <b>${pyrs.length}</b> of <b>${b-a+1}</b>…`;
+    if(N<=b)setTimeout(chunk,0);else{busy=false;$('goBtn').disabled=false;render();}
+  })();
+}
+function render(){
+  const repeat=$('optRepeatN').checked,skip=mode==='interval'&&$('optSkip').checked;
+  const aligned=$('layAl').getAttribute('aria-pressed')==='true';
+  let html='';
+  pyrs.forEach((p,pi)=>{
+    const hasAny=p.rows.some(r=>r.sols.length);
+    if(skip&&!hasAny)return;
+    html+=`<div class="plate"><div class="pyr${aligned?' aligned':''}">`;
+    let first=true;
+    const lastShown=p.rows.map(r=>!!r.sols.length).lastIndexOf(true);
+    p.rows.forEach((r,i)=>{
+      const sol=r.sols[r.idx];
+      const lhs=(first||repeat)?p.N:'';
+      html+=`<div class="krow"><span class="kchip">k = ${r.k}</span><span class="lhs">${sol?lhs:''}</span>`;
+      if(sol){
+        first=false;
+        const ok=evalSol(sol,curOpts)===p.N&&isPerm(sol);
+        html+=`<div class="expr"><span class="eq">=</span>${termHTML(sol)}${i===lastShown?'.':''}</div>`;
+        html+=`<div class="tools"><span class="${ok?'ok':'bad'}" title="Checked by direct evaluation">${ok?'✓':'✗'}</span><span class="cnt">${r.idx+1} of ${r.count}${r.complete?'':'+'}</span>${r.sols.length>1?`<button class="mini" data-p="${pi}" data-row="${i}" data-d="-1" aria-label="Previous form">‹</button><button class="mini" data-p="${pi}" data-row="${i}" data-d="1" aria-label="Next form">›</button><button class="mini" data-p="${pi}" data-row="${i}" data-d="r">Random</button>`:''}</div>`;
+      }else{
+        html+=`<div class="expr none">${p.N}: no representation with k = ${r.k}</div><div class="tools"></div>`;
+      }
+      html+='</div>';
+    });
+    html+='</div>';
+    if(mode==='interval')html+=`<div class="plate-note">N = ${p.N} · smallest k: ${p.kmin??'none ≤ 9'}${p.kmin&&p.rows.find(r=>r.k===p.kmin)?` · forms at k = ${p.kmin}: ${p.rows.find(r=>r.k===p.kmin).count}`:''}</div>`;
+    html+='</div>';
+  });
+  $('plates').innerHTML=html||'<div class="plate"><div class="expr none" style="text-align:center">No representations in this interval under the current options.</div></div>';
+  if(mode==='single'&&pyrs[0]){
+    const p=pyrs[0],rk=p.rows.find(r=>r.k===p.kmin);
+    const total=p.rows.reduce((a,r)=>a+r.count,0);
+    $('summary').innerHTML=p.kmin?`Smallest k for <b>${p.N}</b>: <b>${p.kmin}</b>${rk?` · forms at k = ${p.kmin}: <b>${rk.count}</b>`:''} · total forms over these rows: <b>${total}</b>`:`<b>${p.N}</b> has no representation with k ≤ 9 under the current options.`;
+  }else if(pyrs.length){
+    const reach=pyrs.filter(p=>p.kmin).length,uniq=pyrs.filter(p=>{const r=p.rows.find(x=>x.k===p.kmin);return r&&r.count===1;}).length;
+    $('summary').innerHTML=`Interval <b>${pyrs[0].N}</b> – <b>${pyrs[pyrs.length-1].N}</b> · pyramids: <b>${reach}</b> of <b>${pyrs.length}</b> numbers · unique at smallest k: <b>${uniq}</b>`;
+  }
+  $('outBox').textContent=pyrTxt(false).slice(0,20000);
+}
+
+/* ---------- export builders ---------- */
+function optLine(o){return `Options: 0^0 = ${o.zz?'1':'0'}; first term always +: ${o.firstPlus?'yes':'no'}; plus signs only: ${o.allPlus?'yes':'no'}`;}
+function pyrBlockTxt(p){
+  const lines=[],pad=' '.repeat(String(p.N).length);let first=true;
+  p.rows.forEach(r=>{const sol=r.sols[r.idx];if(!sol)return;lines.push((first?`${p.N}`:pad)+` = ${termText(sol,'txt')}`);first=false;});
+  if(!lines.length)return `${p.N}: no representation with k ≤ 9`;
+  return lines.join('\n')+'.';
+}
+function pyrTxt(withAll){
+  const out=[TITLE,SUB,'Inder J. Taneja','numbers-magic.com',optLine(curOpts),''];
+  pyrs.forEach(p=>{out.push(pyrBlockTxt(p));out.push('');});
+  if(withAll){
+    out.push('==================== ALL FORMS ====================','');
+    pyrs.forEach(p=>{if(!p.kmin)return;out.push(`N = ${p.N}  (smallest k = ${p.kmin})`);
+      p.rows.forEach(r=>{out.push(`  k = ${r.k}: ${r.count} form(s)${r.complete?'':' (search stopped early)'}${r.sols.length<r.count?` — first ${r.sols.length} listed`:''}`);r.sols.forEach((s,i)=>out.push(`    ${i+1}. ${p.N} = ${termText(s,'txt')}`));});
+      out.push('');});
+  }
+  return out.join('\n');
+}
+function pyrTex(){
+  return pyrs.filter(p=>p.rows.some(r=>r.sols.length)).map(p=>{
+    const lines=[];let first=true;
+    p.rows.forEach(r=>{const sol=r.sols[r.idx];if(!sol)return;lines.push((first?`${p.N} `:'')+`&= ${termText(sol,'tex')}`);first=false;});
+    return '\\begin{align*}\n'+lines.join(' \\\\\n')+'.\n\\end{align*}';
+  }).join('\n\n');
+}
+function pyrWorkbook(){
+  const wb=XLSX.utils.book_new();
+  const a1=[[TITLE],[SUB],['Inder J. Taneja — numbers-magic.com'],[optLine(curOpts)],[],['N','k','Form shown','Forms at this k','Representation']];
+  pyrs.forEach(p=>{p.rows.forEach(r=>{const s=r.sols[r.idx];if(s)a1.push([p.N,r.k,r.idx+1,r.count,`${p.N} = ${termText(s,'uni')}`]);});if(p.kmin)a1.push([]);});
+  const ws1=XLSX.utils.aoa_to_sheet(a1);ws1['!cols']=[{wch:10},{wch:5},{wch:11},{wch:15},{wch:70}];
+  XLSX.utils.book_append_sheet(wb,ws1,'Pyramids');
+  const head=['N','Smallest k'];for(let k=1;k<=9;k++)head.push(`Forms k=${k}`);
+  const a2=[head];
+  pyrs.forEach(p=>{const row=[p.N,p.kmin??'none'];for(let k=1;k<=9;k++){const r=p.rows.find(x=>x.k===k);row.push(r?r.count:(p.kmin&&k<p.kmin?0:''));}a2.push(row);});
+  const ws2=XLSX.utils.aoa_to_sheet(a2);ws2['!cols']=head.map((h,i)=>({wch:i<2?11:11}));
+  XLSX.utils.book_append_sheet(wb,ws2,'Summary');
+  const a3=[['N','k','#','Representation']];let n=0,cut=false;
+  outer:for(const p of pyrs)for(const r of p.rows)for(let i=0;i<r.sols.length;i++){if(n>=200000){cut=true;break outer;}a3.push([p.N,r.k,i+1,`${p.N} = ${termText(r.sols[i],'uni')}`]);n++;}
+  if(cut)a3.push(['Stopped at 200 000 lines.']);
+  const ws3=XLSX.utils.aoa_to_sheet(a3);ws3['!cols']=[{wch:10},{wch:5},{wch:7},{wch:70}];
+  XLSX.utils.book_append_sheet(wb,ws3,'All Forms');
+  return wb;
+}
+function fileStem(){if(!pyrs.length)return 'crazy-power';return pyrs.length===1?`crazy-power-${pyrs[0].N}`:`crazy-power-${pyrs[0].N}-to-${pyrs[pyrs.length-1].N}`;}
+
+/* ---------- download / copy / toast ---------- */
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2200);}
+let dlApi=null;
+if(window.claude&&typeof window.claude.use==='function'){window.claude.use('downloads').then(d=>{dlApi=d;}).catch(()=>{});}
+function saveBlob(blob,name){
+  if(dlApi){
+    dlApi.save({filename:name,data:blob}).then(()=>toast('Saved '+name)).catch(err=>{
+      const c=err&&err.code;
+      if(c==='declined')toast('Download cancelled');
+      else if(c==='rate_limited')toast('A save prompt is already open — try again in a moment');
+      else toast('Download is not available here. Use the copy buttons instead.');
+    });
+    return;
+  }
+  if(window.claude){toast('Download is not available in this view. Use the copy buttons instead.');return;}
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),4000);toast('Saving '+name);
+}
+function saveTxt(text,name){saveBlob(new Blob([text],{type:'text/plain;charset=utf-8'}),name);}
+function saveXlsx(wb,name){
+  if(typeof XLSX==='undefined'){toast('The Excel library did not load. Check the connection and reload.');return;}
+  const data=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+  saveBlob(new Blob([data],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),name);
+}
+function copy(text,label){
+  const box=$('outBox');
+  navigator.clipboard.writeText(text).then(()=>toast(label+' copied')).catch(()=>{box.textContent=text;$('tab-dl').click();const r=document.createRange();r.selectNodeContents(box);const s=getSelection();s.removeAllRanges();s.addRange(r);toast('Text selected — press Ctrl+C to copy');});
+}
+$('dlPyrTxt').onclick=()=>{if(!pyrs.length)return toast('Generate a pyramid first');saveTxt(pyrTxt($('optAllTxt').checked),fileStem()+'.txt');};
+$('dlPyrXlsx').onclick=()=>{if(!pyrs.length)return toast('Generate a pyramid first');if(typeof XLSX==='undefined')return toast('The Excel library did not load. Check the connection and reload.');saveXlsx(pyrWorkbook(),fileStem()+'.xlsx');};
+$('cpTxt').onclick=()=>copy(pyrTxt(false),'Text');
+$('cpTex').onclick=()=>copy(pyrTex(),'LaTeX');
+
+/* ---------- events ---------- */
+$('goBtn').onclick=generate;
+['inN','inA','inB'].forEach(id=>$(id).addEventListener('keydown',e=>{if(e.key==='Enter')generate();}));
+['optZZ','optFirst','optPlus'].forEach(id=>$(id).onchange=generate);
+$('optRepeatN').onchange=render;$('optSkip').onchange=render;
+function setMode(m){mode=m;const iv=m==='interval';
+  $('modeInt').setAttribute('aria-pressed',iv);$('modeSingle').setAttribute('aria-pressed',!iv);
+  $('fSingle').hidden=iv;$('fA').hidden=!iv;$('fB').hidden=!iv;$('lSkip').hidden=!iv;$('intNote').hidden=!iv;generate();}
+$('modeSingle').onclick=()=>setMode('single');$('modeInt').onclick=()=>setMode('interval');
+$('shuffleBtn').onclick=()=>{const rng=mulberry(++seedCounter);pyrs.forEach(p=>p.rows.forEach(r=>{if(r.sols.length)r.idx=pickIdx(r.sols.length,rng);}));render();};
+$('plates').addEventListener('click',e=>{const b=e.target.closest('button[data-row]');if(!b)return;const r=pyrs[+b.dataset.p].rows[+b.dataset.row];const n=r.sols.length;
+  if(b.dataset.d==='r'){const rng=mulberry(++seedCounter);let j=pickIdx(n,rng);if(j===r.idx)j=(j+1)%n;r.idx=j;}else r.idx=(r.idx+Number(b.dataset.d)+n)%n;render();});
+function setLayout(al){$('layAl').setAttribute('aria-pressed',al);$('layPyr').setAttribute('aria-pressed',!al);render();}
+$('layPyr').onclick=()=>setLayout(false);$('layAl').onclick=()=>setLayout(true);
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>{x.setAttribute('aria-selected',x===t);$(x.dataset.view).hidden=x!==t;});});
+
+/* ---------- range scan ---------- */
+let scanRows=[],scanOpts={};
+$('scBtn').onclick=()=>{
+  let a=readInt('scA'),b=readInt('scB');
+  if(a===null||b===null){toast('Enter whole numbers for the range');return;}
+  if(b<a)[a,b]=[b,a];if(b-a>19999){b=a+19999;$('scB').value=b;toast('Range limited to 20 000 numbers');}
+  const opts=readOpts();scanOpts=opts;scanRows=[];let N=a;$('scBtn').disabled=true;
+  (function chunk(){
+    const t=Date.now();
+    while(N<=b&&Date.now()-t<40){
+      const row={N,k:minK(N,opts),count:0,plus:false,ex:null};
+      if(row.k){const r=solve(N,row.k,opts,'all',1);row.count=r.count;row.ex=r.sols[0];
+        row.plus=opts.allPlus?true:solve(N,row.k,{...opts,allPlus:true},'first').count>0;}
+      scanRows.push(row);N++;
+    }
+    $('scStats').innerHTML=`Scanned <b>${scanRows.length}</b> of <b>${b-a+1}</b>…`;
+    if(N<=b)setTimeout(chunk,0);else{$('scBtn').disabled=false;renderScan();}
+  })();
+};
+$('scShow').onchange=renderScan;
+function filtered(){const f=$('scShow').value;return scanRows.filter(r=>f==='all'||(f==='unique'&&r.count===1)||(f==='plus'&&r.plus&&r.k)||(f==='none'&&!r.k));}
+function scanByK(){const byK={};scanRows.forEach(r=>{const key=r.k||'none';byK[key]=(byK[key]||0)+1;});return byK;}
+function renderScan(){
+  if(!scanRows.length)return;
+  const byK=scanByK(),uniq=scanRows.filter(r=>r.count===1).length;
+  $('scStats').innerHTML=`Numbers: <b>${scanRows.length}</b> · unique at smallest k: <b>${uniq}</b> · `+Object.keys(byK).map(k=>`k = ${k}: <b>${byK[k]}</b>`).join(' · ');
+  const rows=filtered(),shown=rows.slice(0,2000);
+  $('scBody').innerHTML=shown.map(r=>`<tr class="click" data-n="${r.N}"><td class="num">${r.N}</td><td class="num">${r.k??'—'}</td><td class="num">${r.k?r.count:'—'}</td><td>${r.count===1?'<span class="pill u">unique</span>':''}${r.plus&&r.k?'<span class="pill p">plus-only</span>':''}</td><td>${r.ex?`<span class="expr">${termHTML(r.ex)}</span>`:''}</td></tr>`).join('')+(rows.length>2000?`<tr><td colspan="5" class="note">Showing 2000 of ${rows.length} rows; the downloads include all of them.</td></tr>`:'')||'<tr><td colspan="5" class="note">No numbers match this filter.</td></tr>';
+}
+$('scBody').addEventListener('click',e=>{const tr=e.target.closest('tr[data-n]');if(!tr)return;$('inN').value=tr.dataset.n;$('tab-pyr').click();if(mode!=='single')setMode('single');else generate();window.scrollTo({top:0});});
+function scanStem(){return scanRows.length?`crazy-power-scan-${scanRows[0].N}-to-${scanRows[scanRows.length-1].N}`:'crazy-power-scan';}
+function scanTxt(){
+  const rows=filtered(),out=[TITLE,SUB+' — Range scan','Inder J. Taneja','numbers-magic.com',optLine(scanOpts),'Filter: '+$('scShow').selectedOptions[0].text,''];
+  out.push('N\tsmallest k\tforms\tunique\tplus-only\texample');
+  rows.forEach(r=>out.push([r.N,r.k??'',r.k?r.count:'',r.count===1?'yes':'',r.plus&&r.k?'yes':'',r.ex?`${r.N} = ${termText(r.ex,'txt')}`:''].join('\t')));
+  return out.join('\n');
+}
+$('dlScTxt').onclick=()=>{if(!scanRows.length)return toast('Run a range scan first');saveTxt(scanTxt(),scanStem()+'.txt');};
+$('dlScXlsx').onclick=()=>{
+  if(!scanRows.length)return toast('Run a range scan first');if(typeof XLSX==='undefined')return toast('The Excel library did not load. Check the connection and reload.');
+  const wb=XLSX.utils.book_new();
+  const a=[[TITLE],[SUB+' — Range scan'],['Inder J. Taneja — numbers-magic.com'],[optLine(scanOpts)],['Filter: '+$('scShow').selectedOptions[0].text],[],['N','Smallest k','Forms at smallest k','Unique','Plus-only form','Example']];
+  filtered().forEach(r=>a.push([r.N,r.k??'none',r.k?r.count:'',r.count===1?'yes':'',r.plus&&r.k?'yes':'',r.ex?`${r.N} = ${termText(r.ex,'uni')}`:'']));
+  const ws=XLSX.utils.aoa_to_sheet(a);ws['!cols']=[{wch:10},{wch:11},{wch:18},{wch:8},{wch:14},{wch:70}];
+  XLSX.utils.book_append_sheet(wb,ws,'Scan');
+  const byK=scanByK(),b=[['Smallest k','Count of N']];Object.keys(byK).forEach(k=>b.push([k,byK[k]]));
+  b.push([],['Unique at smallest k',scanRows.filter(r=>r.count===1).length]);
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(b),'By Smallest k');
+  saveXlsx(wb,scanStem()+'.xlsx');
+};
+$('cpSc').onclick=()=>{if(!scanRows.length)return toast('Run a range scan first');copy(scanTxt(),'Table');};
+
+generate();
+})();
+</script>
+
+</html>

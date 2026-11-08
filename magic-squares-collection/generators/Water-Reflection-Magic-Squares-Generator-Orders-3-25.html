@@ -1,0 +1,1405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Water Reflection Magic Squares Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Oswald:wght@400;500&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root{
+  --s:230px;
+  --orig:#f7c5dd;      /* original faces (pink, as on numbers-magic.com) */
+  --refl:#bfe8f5;      /* water-reflection faces */
+  --ink:#111111;
+  --sh:1.6;            /* sky and water heights (equal) */
+  --lw:1;
+  --faint:rgba(70,60,50,.22);   /* ordinary cell lines inside block squares */              /* line thickness multiplier */
+  --line:#2a2a2a;      /* grid line colour */
+  --gold:#e8c66a;
+  --violet:#a98bff;
+  --bg:#07050E;
+}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,#fbf4e0 0%,#f7ecd0 55%,#f3e4bd 100%);color:#2a2340;font-family:'Share Tech Mono',monospace;}
+header{text-align:center;padding:22px 16px 6px}
+h1{font-family:'Cinzel',serif;color:var(--gold);margin:0;font-size:clamp(22px,3.4vw,38px);letter-spacing:.06em}
+.sub{color:#b9b0d8;margin-top:6px;font-size:14px}
+.wrap{display:grid;grid-template-columns:1fr 370px;gap:18px;max-width:1300px;margin:12px auto;padding:0 16px}
+@media (max-width:950px){.wrap{grid-template-columns:1fr}}
+
+/* ---------- stage ---------- */
+.stage{position:relative;border:1px solid #2a2340;border-radius:14px;overflow:hidden;
+  background:radial-gradient(ellipse at 50% 30%,#1b1433 0%,#0a0716 70%);cursor:grab;user-select:none;touch-action:none}
+.stage:active{cursor:grabbing}
+.scene{position:relative;height:calc(var(--s)*var(--sh));perspective:calc(var(--s)*5);display:flex;align-items:center;justify-content:center}
+.cube{position:relative;width:var(--s);height:var(--s);transform-style:preserve-3d}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.face.active .grid{box-shadow:0 0 calc(var(--s)*.09) var(--gold)}
+.badge{position:absolute;top:4%;left:4%;font:600 calc(var(--s)*.045) 'Share Tech Mono',monospace;
+  background:rgba(0,0,0,.72);color:var(--gold);padding:.15em .4em;border-radius:.3em;pointer-events:none}
+.face.refl .badge{color:#8fe3ff}
+.hidelabels .badge{display:none}
+
+.waterline{height:2px;background:linear-gradient(90deg,transparent,rgba(190,235,255,.5) 18%,rgba(255,238,200,.75) 50%,rgba(190,235,255,.5) 82%,transparent);
+  background-size:200% 100%;animation:shimmer 9s linear infinite;box-shadow:0 0 10px rgba(120,200,255,.35)}
+@keyframes shimmer{to{background-position:-200% 0}}
+.water{position:relative;height:calc(var(--s)*var(--sh));overflow:hidden;
+  background:linear-gradient(#0b2b46 0%,#06192b 55%,#030a14 100%)}
+.rl{position:absolute;inset:0;pointer-events:none}
+.rl .scene{transform:scaleY(-1)}
+/* near layer: crisp, gently rippled, strongest right under the surface */
+.rl-near{filter:url(#ripple) brightness(.88) saturate(.95);opacity:.9;
+  -webkit-mask-image:linear-gradient(to bottom,#000 0%,rgba(0,0,0,.9) 45%,rgba(0,0,0,.55) 80%,rgba(0,0,0,.25) 100%);
+          mask-image:linear-gradient(to bottom,#000 0%,rgba(0,0,0,.9) 45%,rgba(0,0,0,.55) 80%,rgba(0,0,0,.25) 100%)}
+/* deep layer: softer, more distorted, fades into the dark */
+.rl-far{filter:url(#rippleDeep) blur(1.5px) brightness(.72);opacity:.55;
+  -webkit-mask-image:linear-gradient(to bottom,transparent 25%,rgba(0,0,0,.6) 55%,rgba(0,0,0,.6) 85%,transparent 100%);
+          mask-image:linear-gradient(to bottom,transparent 25%,rgba(0,0,0,.6) 55%,rgba(0,0,0,.6) 85%,transparent 100%)}
+.water .tint{position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(rgba(60,140,200,.08) 0%,rgba(10,45,80,.22) 50%,rgba(3,10,20,.5) 100%)}
+.water .glow{position:absolute;left:50%;top:0;width:calc(var(--s)*2.2);height:calc(var(--s)*.4);transform:translate(-50%,-50%);
+  background:radial-gradient(ellipse at center,rgba(232,198,106,.16),rgba(120,200,255,.06) 45%,transparent 70%);pointer-events:none}
+.glints{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;mix-blend-mode:screen}
+.glints path{fill:none;stroke-linecap:round;vector-effect:non-scaling-stroke;animation:glint linear infinite}
+@keyframes glint{to{stroke-dashoffset:-600}}
+.nowater .water,.nowater .waterline{display:none}
+
+/* ---------- grids (shared by cube + cards) ---------- */
+.grid{display:grid;width:100%;height:100%;border:calc(var(--s)*.009*var(--lw)) solid var(--line);background:var(--orig)}
+.refl .grid,.grid.refl{background:var(--refl)}
+.cell{display:flex;align-items:center;justify-content:center;border:calc(var(--s)*.0032*var(--lw)) solid var(--line);
+  font-family:'Oswald',sans-serif;font-weight:500;color:var(--ink);line-height:1}
+/* "1" drawn as a plain bar so it stays a 1 in the water (as in the original figures) */
+.edge{position:absolute;background:linear-gradient(90deg,#7a5f22,#e8c66a 50%,#7a5f22);backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.cell{overflow:hidden;min-width:0;min-height:0}
+.ct{display:inline-flex;align-items:center;white-space:nowrap;transform-origin:center}
+.seg7{height:.8em;width:auto;margin:0 .05em;fill:currentColor;display:block}
+.cell.sg{gap:0}
+.one{display:inline-block;width:.1em;height:.72em;background:currentColor;margin:0 .13em;vertical-align:baseline}
+
+/* ---------- panel ---------- */
+.panel{display:flex;flex-direction:column;gap:12px}
+.box{border:1px solid #2a2340;border-radius:12px;padding:12px 14px;background:#0e0a1c}
+.box h2{font-family:'Cinzel',serif;font-size:15px;color:var(--gold);margin:0 0 10px;letter-spacing:.05em}
+.btns{display:flex;flex-wrap:wrap;gap:6px}
+button{font:13px 'Share Tech Mono',monospace;background:#1c1533;color:#eee;border:1px solid #3d3363;
+  border-radius:7px;padding:6px 9px;cursor:pointer}
+button:hover{border-color:var(--gold);color:var(--gold)}
+button.o{border-left:4px solid var(--orig)}
+button.r{border-left:4px solid var(--refl)}
+button.w{background:#0d3150;border-color:#2c78a8}
+.prow{display:grid;grid-template-columns:88px 1fr 1fr 34px;gap:6px;align-items:center;margin-bottom:6px;font-size:13px}
+.ctl{display:grid;grid-template-columns:120px 1fr 48px;gap:8px;align-items:center;font-size:13px;margin:6px 0}
+.ctl input[type=range]{width:100%}
+.chk{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;margin-top:6px}
+input[type=color]{width:100%;height:26px;border:none;background:none;padding:0}
+#activeInfo{font-size:13px;line-height:1.55}
+#activeInfo .t{color:var(--gold);font-size:14px}
+#activeMini{width:150px;height:150px;margin:8px auto;--s:150px}
+.ok{color:#7ee2a8}.bad{color:#ff8f8f}
+
+/* ---------- pairs section ---------- */
+section.pairs{max-width:1300px;margin:8px auto 30px;padding:0 16px}
+section.pairs h2{font-family:'Cinzel',serif;color:var(--gold);font-size:20px;margin:18px 0 10px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:14px}
+.card{border:1px solid #2a2340;border-radius:12px;padding:12px;background:#0e0a1c}
+.card h3{margin:0 0 8px;font-family:'Cinzel',serif;color:#f1d98f;font-size:15px}
+.duo{display:flex;gap:14px;justify-content:center}
+.duo figure{margin:0;text-align:center;font-size:12px;color:#b9b0d8}
+.mini{--s:120px;width:120px;height:120px;margin:4px auto}
+.lake{margin:10px auto 4px;width:150px}
+.lake .mini{--s:120px}
+.lake .wl{height:2px;margin:3px 0;background:linear-gradient(90deg,transparent,#8fe3ff,transparent)}
+.lake .mir{transform:scaleY(-1);opacity:.85;filter:url(#rippleSoft) brightness(.85);
+  -webkit-mask-image:linear-gradient(to top,#000 0%,rgba(0,0,0,.55) 55%,transparent 100%);
+          mask-image:linear-gradient(to top,#000 0%,rgba(0,0,0,.55) 55%,transparent 100%)}
+.card p{font-size:12.5px;line-height:1.5;margin:8px 0 0;color:#d6d0e6}
+details{margin-top:14px}
+summary{cursor:pointer;color:var(--gold);font-family:'Cinzel',serif}
+.ed{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:10px}
+textarea{width:100%;height:90px;background:#120d24;color:#eee;border:1px solid #3d3363;border-radius:8px;
+  font:14px 'Share Tech Mono',monospace;padding:6px}
+.tabs{display:grid;grid-template-columns:repeat(2,auto);justify-content:center;align-items:center;gap:8px 30px;margin:12px auto 6px;max-width:1000px}
+.tabgroup{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.tablabel{font-family:'Cinzel',serif;color:var(--gold);font-size:13px;font-weight:700;margin-right:2px;white-space:nowrap}
+@media (max-width:760px){.tabs{grid-template-columns:1fr;justify-items:center}}
+.tabs a{font:13px 'Share Tech Mono',monospace;color:#cfc6ee;text-decoration:none;padding:5px 11px;border:1px solid #3d3363;border-radius:20px;background:#140f27}
+.tabs a:hover{border-color:var(--gold);color:var(--gold)}
+.tabs a.on{background:var(--gold);color:#1a1206;border-color:var(--gold);font-weight:600}
+.chips{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:4px 0 6px}
+.chips a{font:13px 'Share Tech Mono',monospace;color:#cfc6ee;text-decoration:none;padding:5px 11px;border:1px solid #3d3363;border-radius:8px;background:#100c20}
+.chips a:hover{border-color:var(--gold);color:var(--gold)}
+.chips a.on{border-color:#8fe3ff;color:#8fe3ff;background:#0d3150}
+footer{text-align:center;color:#6f6790;font-size:12px;padding:10px 0 24px}
+
+/* ---------- light page with coloured cards ---------- */
+h1{color:#4b2e83}
+.sub{color:#5a5275}
+.box{box-shadow:0 3px 12px rgba(90,60,10,.16)}
+.panel .box:nth-child(1){background:#efe9ff;border-color:#cfc3f7}
+.panel .box:nth-child(1) h2{color:#5b3fb5}
+.panel .box:nth-child(2){background:#e6f7ee;border-color:#ade0c4}
+.panel .box:nth-child(2) h2{color:#1f7a4d}
+.panel .box:nth-child(3){background:#fff1e3;border-color:#f3cfa8}
+.panel .box:nth-child(3) h2{color:#b5651d}
+#activeInfo{color:#2a2340}
+#activeInfo .t{color:#1f7a4d}
+button{background:#fff;color:#2a2340;border:1px solid #c9c0e0}
+button:hover{border-color:#c79a2a;color:#9a6b00}
+button.w{background:#dff2fb;border-color:#8cc8e6;color:#0d4d6e}
+.tabs a{background:#fff;color:#3b3355;border-color:#d5cdea}
+.tabs a:hover{border-color:#c79a2a;color:#9a6b00}
+.tabs a.on{background:#e8c66a;color:#1a1206;border-color:#c9a43f}
+.tablabel{color:#9a6b00}
+.chips a{background:#fff;color:#3b3355;border-color:#d5cdea}
+.chips a.on{background:#dff2fb;border-color:#5fb3d9;color:#0d4d6e}
+.stage{border-color:#cfc6e6;box-shadow:0 6px 22px rgba(30,20,60,.28)}
+section.pairs h2{color:#3d2470}
+.cards .card:nth-child(3n+1){background:#e4f1fb;border-color:#a8cde9}
+.cards .card:nth-child(3n+1) h3{color:#1f5f8b}
+.cards .card:nth-child(3n+2){background:#fde9f0;border-color:#f0b3c8}
+.cards .card:nth-child(3n+2) h3{color:#a8325e}
+.cards .card:nth-child(3n){background:#fbf5d6;border-color:#eadb8e}
+.cards .card:nth-child(3n) h3{color:#7d6200}
+.card{box-shadow:0 3px 12px rgba(90,60,10,.16)}
+.card p{color:#2a2340}
+.duo figure{color:#5a5275}
+.ok{color:#1d7a46}.bad{color:#c0392b}
+summary{color:#6b4500}
+textarea{background:#fff;color:#2a2340;border-color:#cfc6e6}
+footer{color:#7a7290}
+
+/* ---------- title & index cards, left stripes, footer ---------- */
+header{padding:18px 16px 4px;max-width:1300px;margin:0 auto;display:grid;gap:12px}
+.hcard{position:relative;border-radius:12px;padding:16px 20px 14px 26px;border:1px solid #e2dbf0;box-shadow:0 3px 12px rgba(90,60,10,.16);overflow:hidden}
+.hcard::before,.box::before,.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:7px}
+.box,.card{position:relative;overflow:hidden;padding-left:22px}
+.titlecard{background:linear-gradient(100deg,#fffaf0,#f3ecff);text-align:center}
+.titlecard::before{background:linear-gradient(#7b4fd6,#e8c66a)}
+.titlecard h1{margin:0}
+.byline{font-family:'Cinzel',serif;font-size:15px;color:#8a5a00;margin-top:6px;letter-spacing:.04em}
+.byline b{color:#4b2e83}
+.indexcard{background:#fffdf6;text-align:center}
+.indexcard::before{background:linear-gradient(#e8a33a,#d8577a)}
+.idxhead{font-family:'Cinzel',serif;font-weight:700;color:#b5651d;font-size:15px;letter-spacing:.08em;text-transform:uppercase;text-align:left;margin-bottom:4px}
+.indexcard .tabs{margin:6px auto 4px}
+.note{font-size:12.5px;color:#7a7290;margin-top:4px}
+.panel .box:nth-child(1)::before{background:#7b4fd6}
+.panel .box:nth-child(2)::before{background:#2fa36b}
+.panel .box:nth-child(3)::before{background:#e08a3a}
+.cards .card:nth-child(3n+1)::before{background:#3a8fd0}
+.cards .card:nth-child(3n+2)::before{background:#d8577a}
+.cards .card:nth-child(3n)::before{background:#d4b02a}
+footer{text-align:center;padding:18px 16px 30px;font-size:13px;color:#3d3355}
+.fname{font-family:'Cinzel',serif;font-weight:700;color:#4b2e83;font-size:16px;margin-bottom:6px}
+.flinks{display:flex;gap:18px;justify-content:center;flex-wrap:wrap}
+.flinks a{color:#14466b;text-decoration:none;border-bottom:1px dotted #14466b}
+.flinks a:hover{color:#9a6b00;border-bottom-color:#9a6b00}
+
+.sectioncard{background:#eefaf8;border-color:#b5e3dc;text-align:center;padding-top:12px;padding-bottom:12px}
+.sectioncard::before{background:linear-gradient(#1aa39a,#3a8fd0)}
+.sechead{font-family:'Cinzel',serif;font-weight:700;color:#137a73;font-size:13px;letter-spacing:.08em;text-transform:uppercase;text-align:left;margin-bottom:2px}
+.sectext{font-size:15px;color:#0f4f4a;line-height:1.5}
+
+.refcard{position:relative;overflow:hidden;max-width:1268px;margin:8px auto 4px;background:#f2f6ff;border:1px solid #c7d4f0;border-radius:12px;padding:14px 20px 14px 28px;box-shadow:0 3px 12px rgba(90,60,10,.16)}
+.refcard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:7px;background:linear-gradient(#3a5bd0,#7b4fd6)}
+.refhead{font-family:'Cinzel',serif;font-weight:700;color:#2c3f94;font-size:17px;margin:0 0 8px;letter-spacing:.04em}
+.reflist{margin:0;list-style:decimal;padding-left:22px;color:#2a2340;font-size:13.5px;line-height:1.6}
+.reflist > li{margin-bottom:6px}
+.sublinks{margin:6px 0 0;padding-left:18px;list-style:disc}
+.sublinks li{margin:2px 0}
+.refcard a{color:#1f5f8b;text-decoration:none;border-bottom:1px dotted #1f5f8b;word-break:break-word}
+.refcard a:hover{color:#9a6b00;border-bottom-color:#9a6b00}
+@media (max-width:1300px){.refcard{margin-left:16px;margin-right:16px}}
+
+/* ---------- recessed 3D gradient cards ---------- */
+.hcard,.box,.card,.refcard{
+  border:1px solid rgba(120,85,20,.28) !important;
+  box-shadow:inset 8px 8px 18px rgba(70,45,0,.32), inset 2px 2px 3px rgba(70,45,0,.25),
+             inset -6px -6px 14px rgba(255,255,255,.9),
+             1px 1px 0 rgba(255,255,255,.85), -1px -1px 0 rgba(120,85,20,.28) !important}
+.titlecard{background:linear-gradient(145deg,#fffaf0 0%,#f3eafe 55%,#e3d3fb 100%)}
+.indexcard{background:linear-gradient(145deg,#fffdf4 0%,#fbf0d6 55%,#f2deb0 100%)}
+.sectioncard{background:linear-gradient(145deg,#f4fdfb 0%,#dff4ef 55%,#c6e9e1 100%)}
+.panel .box:nth-child(1){background:linear-gradient(145deg,#f7f3ff 0%,#e7ddfd 55%,#d5c6f8 100%)}
+.panel .box:nth-child(2){background:linear-gradient(145deg,#f3fcf7 0%,#dcf3e6 55%,#c3e7d2 100%)}
+.panel .box:nth-child(3){background:linear-gradient(145deg,#fff8ef 0%,#fde7cf 55%,#f7d2ac 100%)}
+.cards .card:nth-child(3n+1){background:linear-gradient(145deg,#f1f8fe 0%,#dcebf8 55%,#c4dcf1 100%)}
+.cards .card:nth-child(3n+2){background:linear-gradient(145deg,#fff3f7 0%,#fbdfe9 55%,#f3c7d7 100%)}
+.cards .card:nth-child(3n){background:linear-gradient(145deg,#fffcea 0%,#f9efc2 55%,#efdf98 100%)}
+.refcard{background:linear-gradient(145deg,#f6f9ff 0%,#e3eafb 55%,#cfdaf5 100%)}
+/* stripe sits inside the recess */
+.hcard::before,.box::before,.card::before,.refcard::before{box-shadow:inset -2px 0 3px rgba(0,0,0,.18), inset 2px 2px 3px rgba(0,0,0,.15)}
+/* raised controls stand out against the sunken cards */
+.tabs a,.chips a,button{box-shadow:0 2px 3px rgba(70,45,0,.18), inset 0 1px 0 rgba(255,255,255,.9)}
+.tabs a.on,.chips a.on{box-shadow:inset 1px 1px 3px rgba(70,45,0,.25)}
+button:active{box-shadow:inset 1px 1px 3px rgba(70,45,0,.3)}
+/* the 3D stage as a recessed window */
+.stage{border:1px solid rgba(120,85,20,.35);box-shadow:0 1px 0 rgba(255,255,255,.7), 0 -1px 0 rgba(120,85,20,.15)}
+.stage::after{content:"";position:absolute;inset:0;border-radius:14px;pointer-events:none;z-index:5;
+  box-shadow:inset 6px 8px 22px rgba(0,0,0,.65), inset -3px -4px 12px rgba(255,255,255,.06)}
+/* mini grids inside cards look set into the surface */
+#activeMini .grid,.mini .grid{box-shadow:inset 1px 1px 2px rgba(0,0,0,.15)}
+
+/* striped squares: each vertical stripe its own colour (lighter on the water-reflection side) */
+.cell.st0{background:#ffc98b}
+.cell.st1{background:#a9d6ff}
+.refl .cell.st0,.grid.refl .cell.st0{background:#ffe2c2}
+.refl .cell.st1,.grid.refl .cell.st1{background:#d6ecff}
+
+/* pair card: four images in one row */
+.cards{grid-template-columns:1fr !important}
+.quad{display:grid;grid-template-columns:repeat(4,minmax(0,180px));gap:18px;justify-content:center;align-items:end;margin:6px 0 4px}
+.quad figure{margin:0;text-align:center;font-size:12px;color:#5a5275;container-type:inline-size;position:relative}
+.quad figcaption{min-height:2.6em;line-height:1.3;display:flex;align-items:flex-end;justify-content:center;margin-bottom:4px}
+.quad .mini{--s:100cqw;width:100%;height:auto;aspect-ratio:1;margin:0}
+.quad .qwl{position:absolute;left:-4px;right:-4px;height:3px;bottom:calc(100cqw + 2px);border-radius:2px;
+  background:linear-gradient(90deg,transparent,#4fb3e8 15%,#8fe3ff 50%,#4fb3e8 85%,transparent)}
+.quad .mir{transform:scaleY(-1);opacity:.9;filter:url(#rippleSoft) brightness(.9);
+  -webkit-mask-image:linear-gradient(to top,#000 0%,rgba(0,0,0,.8) 60%,rgba(0,0,0,.45) 100%);
+          mask-image:linear-gradient(to top,#000 0%,rgba(0,0,0,.8) 60%,rgba(0,0,0,.45) 100%)}
+@media (max-width:700px){.quad{grid-template-columns:repeat(2,minmax(0,170px))}}
+
+.ordline{font-family:'Cinzel',serif;font-size:19px;font-weight:700;color:#8a5a00;letter-spacing:.06em;margin-top:2px}
+
+/* index: every example visible */
+.tabs{grid-template-columns:1fr !important;justify-items:center;gap:8px !important;max-width:1250px !important}
+.tabgroup{justify-content:center;row-gap:6px}
+.secgroup{display:inline-flex;align-items:center;gap:3px;padding:3px 5px 3px 3px;border-radius:20px;background:rgba(255,255,255,.45);border:1px solid rgba(160,130,60,.25);margin:0 3px}
+.secgroup.on{background:rgba(232,198,106,.25);border-color:rgba(199,154,42,.6)}
+.tabs a.seclink{padding:4px 10px}
+.tabs a.exlink{min-width:26px;text-align:center;padding:3px 7px;font-size:12px;border-radius:12px}
+.tabs a.exlink.on{background:#dff2fb;border-color:#5fb3d9;color:#0d4d6e;font-weight:700}
+.chips:empty{display:none}
+
+/* gold outer frame on the plates */
+.face .grid{border-color:#d4a72c !important;border-width:calc(var(--s)*.016) !important;
+  box-shadow:inset 0 0 0 1px #8a6a12, 0 0 0 1px #8a6a12}
+.edge{background:linear-gradient(90deg,#8a6a12,#f3d27a 50%,#8a6a12) !important}
+
+/* larger grids in the side panel and pair cards */
+#activeMini{width:100% !important;max-width:340px;height:auto !important;aspect-ratio:1;container-type:inline-size;margin:10px auto !important}
+#activeMini .grid{--s:100cqw}
+.quad{grid-template-columns:repeat(4,minmax(0,1fr)) !important;max-width:1180px;margin:8px auto 6px !important;gap:22px !important}
+.quad figure{font-size:13px}
+@media (max-width:700px){.quad{grid-template-columns:repeat(2,minmax(0,1fr)) !important;gap:14px !important}}
+
+.quad.big{grid-template-columns:repeat(2,minmax(0,1fr)) !important;max-width:1000px;gap:26px 34px !important}
+
+/* the digit 1 drawn as the font's capital I: same height and stroke as 0, 3, 8, and symmetric in water */
+.one{width:auto !important;height:auto !important;background:none !important;margin:0 .045em !important;vertical-align:baseline}
+
+.subline{font-family:'Cinzel',serif;font-size:20px;font-weight:700;color:#5b3fb5;letter-spacing:.08em;margin-top:2px}
+
+.refsub{font-size:14px;color:#2c3f94;font-style:italic;margin:-2px 0 8px}
+
+.cell.hlc{background:#ffd9a8}
+.refl .cell.hlc,.grid.refl .cell.hlc{background:#ffe9c9}
+
+.genlink{margin-top:10px;padding-top:8px;border-top:1px dashed rgba(44,63,148,.3);font-size:13.5px;color:#2a2340}
+
+/* ---------- generator card ---------- */
+.gencard{background:linear-gradient(145deg,#fff8f5 0%,#fde7de 55%,#f5cfc0 100%);border-color:#efc9b8;text-align:left}
+.gencard::before{background:linear-gradient(#d8577a,#7b4fd6)}
+.grow{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin:9px 0}
+.glabel{font-family:'Cinzel',serif;font-weight:700;color:#8a3b2e;font-size:13px;min-width:128px}
+.gl2{min-width:0;margin-left:10px}
+.famlist{display:flex;flex-wrap:wrap;gap:6px}
+.fam{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border:1px solid #d5cdea;border-radius:16px;background:#fff;font-size:13px;cursor:pointer;color:#2a2340;box-shadow:0 2px 3px rgba(70,45,0,.12)}
+.fam input{margin:0;accent-color:#7b4fd6}
+.fam.sg{border-color:#9cc9e2}
+.ginput{font:14px 'Share Tech Mono',monospace;padding:4px 8px;border:1px solid #c9c0e0;border-radius:6px;width:84px;background:#fff;color:#2a2340}
+.gown{width:150px}
+.gnote{font-size:12.5px;color:#7a6f96}
+.ghint{margin:-2px 0 4px;line-height:1.45}
+button.gmain{background:#7b4fd6;color:#fff;border-color:#5d39b0;font-weight:600}
+button.gmain:hover{background:#6a3fc4;color:#fff}
+.gstatus{font-size:13.5px;line-height:1.55;color:#2a2340;margin-top:4px;min-height:1.4em}
+.howto{margin-top:8px;font-size:13.5px;line-height:1.55;color:#2a2340}
+.howto p{margin:6px 0}
+@media (max-width:640px){.glabel{min-width:0;width:100%}.gl2{margin-left:0}}
+</style>
+</head>
+<body>
+
+<!-- water filters: horizontal-only displacement (G fixed at 0.5 = no vertical shift) -->
+<svg width="0" height="0" style="position:absolute">
+  <filter id="ripple" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.006 0.055" numOctaves="2" seed="11" result="n">
+      <animate attributeName="baseFrequency" dur="7s" values="0.006 0.055;0.0066 0.063;0.006 0.055" repeatCount="indefinite"/>
+    </feTurbulence>
+    <feColorMatrix in="n" type="matrix" values="1 0 0 0 0  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 1" result="x"/>
+    <feDisplacementMap id="dNear" in="SourceGraphic" in2="x" scale="5" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+  <filter id="rippleDeep" x="-8%" y="-5%" width="116%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.008 0.035" numOctaves="2" seed="4" result="n">
+      <animate attributeName="baseFrequency" dur="9s" values="0.008 0.035;0.009 0.042;0.008 0.035" repeatCount="indefinite"/>
+    </feTurbulence>
+    <feColorMatrix in="n" type="matrix" values="1 0 0 0 0  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 1" result="x"/>
+    <feDisplacementMap id="dDeep" in="SourceGraphic" in2="x" scale="11" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+  <filter id="rippleSoft" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.02 0.09" numOctaves="1" seed="2" result="n">
+      <animate attributeName="baseFrequency" dur="6s" values="0.02 0.09;0.022 0.1;0.02 0.09" repeatCount="indefinite"/>
+    </feTurbulence>
+    <feColorMatrix in="n" type="matrix" values="1 0 0 0 0  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 1" result="x"/>
+    <feDisplacementMap id="dSoft" in="SourceGraphic" in2="x" scale="2.5" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<header>
+  <div class="hcard titlecard">
+    <h1>Water Reflection Magic Squares</h1>
+    <div class="subline">Plate Representations</div>
+    <div class="ordline">Generator for Any Order</div>
+    <div class="byline">Created by <b>Inder J. Taneja</b></div>
+  </div>
+  <div class="hcard gencard">
+    <div class="idxhead">Generator</div>
+    <div class="grow"><span class="glabel">Order n</span><input type="number" id="genN" class="ginput" min="3" max="40" value="3">
+      <span class="glabel gl2">Variation no.</span><input type="number" id="genSeed" class="ginput" min="1" value="1">
+      <button id="genBtn" class="gmain">Generate</button><button id="genRand">🎲 New variation</button></div>
+    <div class="gnote ghint">Variation no.: for the same order and digits there are many different magic squares. Each number 1, 2, 3, … gives another one; the same number always gives the same squares, so you can come back to them.</div>
+    <div class="grow"><span class="glabel">Digit families</span><span class="famlist" id="famC"></span></div>
+    <div class="gnote ghint">Generate makes every one of these families for the chosen order, and the Index lists them all: magic squares wherever they exist, otherwise semi-magic squares (equal rows and columns).</div>
+    <div class="grow"><span class="glabel">Own digits</span><input id="genOwn" class="ginput gown" placeholder="e.g. 0,1,2,5">
+      <button id="genOwnBtn" class="gmain">Generate own digits</button>
+      <span class="gnote">any of 0, 1, 2, 3, 5, 8 · 2 and 5 always together (2 ↔ 5 in water)</span></div>
+    <div class="grow"><span class="glabel">Export</span><button id="copyO">Copy original</button><button id="copyR">Copy reflection</button><button id="dlXls">Download Excel (.xlsx)</button><button id="dlAll">Download text (.txt)</button>
+      <span class="gnote">downloads hold every possibility of the chosen order (order 3: every magic square)</span></div>
+    <div class="gstatus" id="genStatus"></div>
+    <details class="howto"><summary>How the squares are built</summary>
+      <p>Every entry is a chain of digit groups. Each group comes from a <b>layer</b>: an n×n array of symbols in which every row, every column and both diagonals contain exactly the same symbols. Writing each symbol as a fixed group of allowed digits and joining the groups gives n² different numbers whose rows, columns and diagonals all have the same sum, whatever digits are chosen.</p>
+      <p>Seen in water the rows come in reverse order and 2 ↔ 5. This only rewrites each symbol with other digits, so the water reflection is again a magic square. For the same reason the digit families of one generation are digit substitutions of each other (for example 1 → 8, or 0 → 2 and 1 → 5), as in the papers.</p>
+      <p>Layers used: orders prime to 6 (5, 7, 11, 13, 17, 19, 23, 25, …) take cyclic Latin squares, and the squares are <b>pandiagonal</b>; orders 4, 8, 9, 16, 27, 32 take finite fields; orders such as 20 = 4 × 5 or 28 = 4 × 7 take products; the remaining orders (10, 12, 14, 15, 18, 21, 22, 24, …) take a smaller order in s × s blocks, the block layers being found by computer search. Orders 3 and 6 cannot be made fully magic this way for all digits. Order 6 therefore gets <b>semi-magic</b> squares (rows and columns), found by computer search. Order 3 is taken from a complete computer search: with entries of up to 4 digits, water-reflection magic squares of order 3 exist only for (0,1,3,8), (2,3,5,8), (0,2,3,5,8), (1,2,3,5,8) and (0,1,2,3,5,8); the other digit families get semi-magic squares from two orthogonal Latin squares of order 3, as in the papers.</p>
+    </details>
+  </div>
+  <div class="hcard indexcard">
+    <div class="idxhead">Index</div>
+    <nav class="tabs" id="tabs"></nav>
+    <nav class="chips" id="chips"></nav>
+    <div class="sub note">Each plate carries the original on one side and its water reflection on the other</div>
+  </div>
+  <div class="hcard sectioncard">
+    <div class="sechead">Current Section</div>
+    <div class="sectext" id="subTitle"></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div>
+    <div class="stage" id="stage">
+      <div class="scene"><div class="cube" id="cube"></div></div>
+      <div class="waterline"></div>
+      <div class="water">
+        <div class="glow"></div>
+        <div class="rl rl-far"><div class="scene"><div class="cube" id="cube3"></div></div></div>
+        <div class="rl rl-near"><div class="scene"><div class="cube" id="cube2"></div></div></div>
+        <div class="tint"></div>
+        <svg class="glints" id="glints" viewBox="0 0 1000 400" preserveAspectRatio="none"></svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="box">
+      <h2>Faces &amp; Water Flips</h2>
+      <div id="faceBtns"></div>
+      <div class="btns" style="margin-top:8px">
+        <button id="playBtn" style="border-color:#c79a2a;color:#8a5a00;background:#fff6dc;font-weight:600">⏸ Pause</button>
+        <button class="w" id="flipBtn">🌊 Water flip (current face)</button>
+        <button id="prevBtn">◀ Previous</button>
+        <button id="nextBtn">Next ▶</button>
+        <label style="font-size:13px;display:flex;align-items:center;gap:6px">Auto-play
+          <select id="scopeSel" style="background:#fff;color:#2a2340;border:1px solid #c9c0e0;border-radius:6px;padding:4px;font:13px 'Share Tech Mono',monospace">
+            <option value="all" id="scopeAll">all examples</option><option value="section">this section only</option></select></label>
+        <div id="autoInfo" style="font-size:12px;color:#8d84ad;width:100%"></div>
+      </div>
+    </div>
+
+    <div class="box">
+      <h2>Showing Now</h2>
+      <div id="activeInfo"></div>
+    </div>
+
+    <div class="box">
+      <h2>Controls</h2>
+      <div class="ctl"><span>Play speed</span><input type="range" id="speed" min="0.4" max="2.5" step="0.1" value="1"><span id="speedV">1.0×</span></div>
+      <div class="ctl"><span>Plate size</span><input type="range" id="size" min="140" max="1200" value="230"><span id="sizeV">230</span></div>
+      <div class="ctl"><span>Ripple strength</span><input type="range" id="rippleIn" min="0" max="12" step="0.5" value="5"><span id="rippleV">5</span></div>
+      <div class="ctl"><span>Line thickness</span><input type="range" id="lw" min="0.3" max="3" step="0.1" value="1"><span id="lwV">1.0</span></div>
+      <div class="ctl"><span>Line colour</span><input type="color" id="cLine" value="#2a2a2a"><span></span></div>
+      <div class="ctl"><span>Digit style</span><select id="styleSel" style="background:#fff;color:#2a2340;border:1px solid #c9c0e0;border-radius:6px;padding:4px;font:13px 'Share Tech Mono',monospace"><option value="classic">Classic (condensed)</option><option value="seg">Seven-segment</option></select><span></span></div>
+      <div class="ctl"><span>Original colour</span><input type="color" id="cOrig" value="#f7c5dd"><span></span></div>
+      <div class="ctl"><span>Reflection colour</span><input type="color" id="cRefl" value="#bfe8f5"><span></span></div>
+      <div class="ctl"><span>Digit colour</span><input type="color" id="cInk" value="#111111"><span></span></div>
+      <div class="chk">
+        <label><input type="checkbox" id="showWater" checked> Water surface</label>
+        <label><input type="checkbox" id="showLabels" checked> Face labels</label>
+      </div>
+      <div style="font-size:12px;color:#8d84ad;margin-top:8px">Drag the plate to rotate it by hand.</div>
+    </div>
+  </div>
+</div>
+
+<section class="pairs">
+  <h2 id="pairsTitle">The Three Pairs</h2>
+  <div class="cards" id="cards"></div>
+
+  <details>
+    <summary>Edit the original squares of this set (reflections are derived automatically)</summary>
+    <div class="ed" id="editor"></div>
+    <div class="btns" style="margin-top:8px"><button id="applyBtn">Apply</button></div>
+    <div id="edMsg" style="font-size:13px;margin-top:6px"></div>
+  </details>
+</section>
+
+<section class="refcard">
+  <h2 class="refhead">References</h2>
+  <div class="refsub">Based on the author's following research works:</div>
+  <ol class="reflist">
+    <li><span class="refmain">Inder J. Taneja, <i>Upside-Down, Mirror Looking and Water Reflection Magic Squares: Orders 3 to 6</i>, Zenodo, January 07, 2025, pp. 1-93,
+      <a href="https://doi.org/10.5281/zenodo.14607070" target="_blank" rel="noopener">https://doi.org/10.5281/zenodo.14607070</a>.</span>
+      <ul class="sublinks">
+        <li>Site link: <a href="https://numbers-magic.com/?p=14126" target="_blank" rel="noopener">Water Reflexive Magic Squares: Order 3 to 6 (new site)</a></li>
+        <li>Site link: <a href="https://inderjtaneja.wordpress.com/2025/01/11/water-reflexive-magic-squares-order-3-to-6/" target="_blank" rel="noopener">Water Reflexive Magic Squares: Order 3 to 6 (old site)</a></li>
+      </ul>
+    </li>
+    <li><span class="refmain">Inder J. Taneja, <i>Upside-Down, Mirror Looking and Water Reflection Magic Squares: Orders 7 to 10</i>, Zenodo, January 07, 2025, pp. 1-171,
+      <a href="https://doi.org/10.5281/zenodo.14607071" target="_blank" rel="noopener">https://doi.org/10.5281/zenodo.14607071</a>.</span>
+      <ul class="sublinks">
+        <li>Site link: <a href="https://numbers-magic.com/?p=14213" target="_blank" rel="noopener">Water Reflexive Magic Squares: Order 7 to 10 (new site)</a></li>
+        <li>Site link: <a href="https://inderjtaneja.wordpress.com/2025/01/11/water-reflexive-magic-squares-order-7-to-10/" target="_blank" rel="noopener">Water Reflexive Magic Squares: Order 7 to 10 (old site)</a></li>
+      </ul>
+    </li>
+    <li><span class="refmain">Inder J. Taneja, <i>Upside-Down, Mirror Looking and Water Reflection Magic Squares: Orders 11 to 13</i>, Zenodo, January 15, 2025, pp. 1-146,
+      <a href="https://doi.org/10.5281/zenodo.14649320" target="_blank" rel="noopener">https://doi.org/10.5281/zenodo.14649320</a>.</span>
+      <ul class="sublinks">
+        <li>Site link: <a href="https://numbers-magic.com/?p=14339" target="_blank" rel="noopener">Water Reflection Magic Squares: Order 11 to 13 (new site)</a></li>
+        <li>Site link: <a href="https://inderjtaneja.wordpress.com/2025/01/23/water-reflection-magic-squares-orders-11-to-13/" target="_blank" rel="noopener">Water Reflection Magic Squares: Orders 11 to 13 (old site)</a></li>
+      </ul>
+    </li>
+    <li><span class="refmain">Inder J. Taneja, <i>Upside-Down, Mirror Looking and Water Reflection Magic Squares: Orders 14 to 16</i>, Zenodo, January 15, 2024, pp. 1-140,
+      <a href="https://doi.org/10.5281/zenodo.14649519" target="_blank" rel="noopener">https://doi.org/10.5281/zenodo.14649519</a>.</span>
+      <ul class="sublinks">
+        <li>Site link: <a href="https://numbers-magic.com/?p=14518" target="_blank" rel="noopener">Water Reflection Magic Squares: Order 14 to 16 (new site)</a></li>
+        <li>Site link: <a href="https://inderjtaneja.wordpress.com/2025/01/23/water-reflection-magic-squares-orders-14-to-16/" target="_blank" rel="noopener">Water Reflection Magic Squares: Orders 14 to 16 (old site)</a></li>
+      </ul>
+    </li>
+    <li><span class="refmain">Inder J. Taneja, <i>Upside-Down, Mirror Looking and Water Reflection Magic Squares: Orders 17 to 20</i>, Zenodo, January 17, 2025, pp. 1-86,
+      <a href="https://doi.org/10.5281/zenodo.14676293" target="_blank" rel="noopener">https://doi.org/10.5281/zenodo.14676293</a>.</span>
+      <ul class="sublinks">
+        <li>Site link: <a href="https://numbers-magic.com/?p=14561" target="_blank" rel="noopener">Water Reflection Magic Squares: Orders 17 to 20 (new site)</a></li>
+        <li>Site link: <a href="https://inderjtaneja.wordpress.com/2025/01/23/water-reflection-magic-squares-orders-17-to-20/" target="_blank" rel="noopener">Water Reflection Magic Squares: Orders 17 to 20 (old site)</a></li>
+      </ul>
+    </li>
+    <li><span class="refmain">Inder J. Taneja, <i>Upside-Down, Mirror Looking and Water Reflection Magic Squares: Orders 21 to 23</i>, Zenodo, January 20, 2025, pp. 1-83,
+      <a href="https://doi.org/10.5281/zenodo.14688709" target="_blank" rel="noopener">https://doi.org/10.5281/zenodo.14688709</a>.</span>
+      <ul class="sublinks">
+        <li>Site link: <a href="https://numbers-magic.com/?p=14616" target="_blank" rel="noopener">Water Reflection Magic Squares: Orders 21 to 23 (new site)</a></li>
+        <li>Site link: <a href="https://inderjtaneja.wordpress.com/2025/01/23/water-reflection-magic-squares-orders-21-to-23/" target="_blank" rel="noopener">Water Reflection Magic Squares: Orders 21 to 23 (old site)</a></li>
+      </ul>
+    </li>
+    <li><span class="refmain">Inder J. Taneja, <i>Upside-Down, Mirror Looking and Water Reflection Magic Squares: Order 24</i>, Zenodo, January 20, 2025, pp. 1-150,
+      <a href="https://doi.org/10.5281/zenodo.14700325" target="_blank" rel="noopener">https://doi.org/10.5281/zenodo.14700325</a>.</span>
+      <ul class="sublinks">
+        <li>Site link: <a href="https://numbers-magic.com/?p=14668" target="_blank" rel="noopener">Water Reflection Magic Squares: Order 24 (new site)</a></li>
+        <li>Site link: <a href="https://inderjtaneja.wordpress.com/2025/01/23/water-reflection-magic-squares-order-24/" target="_blank" rel="noopener">Water Reflection Magic Squares: Order 24 (old site)</a></li>
+      </ul>
+    </li>
+    <li><span class="refmain">Inder J. Taneja, <i>Upside-Down, Mirror Looking and Water Reflection Magic Squares: Order 25</i>, Zenodo, January 21, 2025, pp. 1-79,
+      <a href="https://doi.org/10.5281/zenodo.14715162" target="_blank" rel="noopener">https://doi.org/10.5281/zenodo.14715162</a>.</span>
+      <ul class="sublinks">
+        <li>Site link: <a href="https://numbers-magic.com/?p=14749" target="_blank" rel="noopener">Water Reflection Magic Squares: Order 25 (new site)</a></li>
+        <li>Site link: <a href="https://inderjtaneja.wordpress.com/2025/01/23/water-reflection-magic-squares-order-25/" target="_blank" rel="noopener">Water Reflection Magic Squares: Order 25 (old site)</a></li>
+      </ul>
+    </li>
+    <li><span class="refmain">Inder J. Taneja, Online generator: <a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/generators/water-reflection-magic-squares-generator" target="_blank" rel="noopener">Water-Reflection Magic Squares Generator</a></span></li>
+  </ol>
+</section>
+<footer>
+  <div class="fname">Inder J. Taneja</div>
+  <div class="flinks"><a href="https://numbers-magic.com/" target="_blank" rel="noopener">https://numbers-magic.com/</a>
+  <a href="https://inderjtaneja.wordpress.com/" target="_blank" rel="noopener">https://inderjtaneja.wordpress.com/</a></div>
+</footer>
+
+<script>
+/* =========================================================
+   DATA — the three originals; the water reflection of each is
+   its rows in reverse order. Digits 0, 1, 3, 8 are symmetric
+   about a horizontal axis, so they read the same in water.
+   ========================================================= */
+/* =====================================================================
+   Water-reflection magic square engine  (Inder J. Taneja generator)
+   ---------------------------------------------------------------------
+   A "design" of order n is a list of layers (n×n matrices of symbols).
+   Every layer is LINE-BALANCED: each row, each column and both main
+   diagonals contain the same multiset of symbols. The cell → (layer
+   symbols) map is one-to-one.  Writing each layer symbol as a fixed-length
+   digit string and concatenating the strings therefore gives n² distinct
+   numbers whose rows, columns and diagonals all have the same sum —
+   for ANY choice of digit strings.  The water reflection (rows reversed,
+   2 ↔ 5) is the same design with other digit strings, so it is magic too.
+   ===================================================================== */
+const ENGINE = (() => {
+  /* ---------- seeded random ---------- */
+  function rng(seed) { let a = (seed >>> 0) || 1;
+    return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  const shuffle = (arr, R) => { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(R() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; };
+  const gcd = (a, b) => b ? gcd(b, a % b) : a;
+  const mat = (n, f) => Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => f(i, j)));
+
+  /* ---------- 1. cyclic construction (n prime to 6): pandiagonal ---------- */
+  function cyclic(n, R) {
+    const unit = x => gcd(((x % n) + n) % n, n) === 1;
+    const opts = [];
+    for (let a = 1; a < n; a++) for (let b = 1; b < n; b++) if (unit(a) && unit(b) && unit(a + b) && unit(a - b)) opts.push([a, b]);
+    let A, B;
+    for (let t = 0; t < 500; t++) { A = opts[Math.floor(R() * opts.length)]; B = opts[Math.floor(R() * opts.length)]; if (unit(A[0] * B[1] - A[1] * B[0])) break; }
+    const s1 = Math.floor(R() * n), s2 = Math.floor(R() * n);
+    return { n, kind: 'cyclic', layers: [{ a: n, M: mat(n, (i, j) => (A[0] * i + A[1] * j + s1) % n) }, { a: n, M: mat(n, (i, j) => (B[0] * i + B[1] * j + s2) % n) }] };
+  }
+
+  /* ---------- 2. finite field GF(p^k), q ≥ 4 ---------- */
+  function primePower(q) {
+    for (let p = 2; p <= q; p++) if (q % p === 0) { let k = 0, r = q; while (r % p === 0) { r /= p; k++; } return r === 1 ? [p, k] : null; }
+    return null;
+  }
+  function makeField(p, k) {
+    const q = p ** k, toV = x => { const v = []; for (let i = 0; i < k; i++) { v.push(x % p); x = Math.floor(x / p); } return v; },
+      toX = v => v.reduceRight((s, d) => s * p + d, 0);
+    const polyMod = (a, m) => { a = a.slice(); for (let i = a.length - 1; i >= m.length - 1; i--) { const c = a[i] % p; if (!c) continue;
+        for (let j = 0; j < m.length; j++) a[i - (m.length - 1) + j] = ((a[i - (m.length - 1) + j] - c * m[j]) % p + p) % p; }
+      return a.slice(0, m.length - 1); };
+    let irr = null;
+    for (let c = 0; c < p ** k && !irr; c++) {           // monic poly x^k + c(x)
+      const m = [...toV(c), 1]; let ok = true;
+      for (let d = 1; d <= Math.floor(k / 2) && ok; d++) for (let e = 0; e < p ** d && ok; e++) {
+        const f = [...toV(e).slice(0, d), 1]; while (f.length < d + 1) f.splice(f.length - 1, 0, 0);
+        const r = polyMod(m, f); if (r.every(x => x === 0)) ok = false; }
+      if (ok) irr = m;
+    }
+    const add = (x, y) => toX(toV(x).map((d, i) => (d + toV(y)[i]) % p));
+    const neg = x => toX(toV(x).map(d => (p - d) % p));
+    const mul = (x, y) => { const a = toV(x), b = toV(y), r = new Array(2 * k).fill(0);
+      for (let i = 0; i < k; i++) for (let j = 0; j < k; j++) r[i + j] = (r[i + j] + a[i] * b[j]) % p;
+      return toX(k > 1 ? polyMod(r, irr) : [r[0] % p]); };
+    return { q, p, add, neg, mul };
+  }
+  function fieldDesign(q, R) {
+    const [p, k] = primePower(q), F = makeField(p, k);
+    /* row/column labelling with r(n-1-i) = δ - r(i) so that BOTH diagonals are lines */
+    const delta = p === 2 ? 1 : 0, used = new Set(), lab = new Array(q);
+    let lo = 0, hi = q - 1;
+    const els = shuffle([...Array(q).keys()], R);
+    for (const x of els) { if (used.has(x)) continue; const y = F.add(delta, F.neg(x));
+      if (y === x) { lab[(q - 1) / 2] = x; used.add(x); continue; }
+      lab[lo++] = x; lab[hi--] = y; used.add(x); used.add(y); }
+    const bad = new Set([0, 1, F.neg(1)]), cand = shuffle([...Array(q).keys()].filter(x => !bad.has(x)), R);
+    const [al, be] = cand;
+    const L = c => mat(q, (i, j) => F.add(lab[i], F.mul(c, lab[j])));
+    return { n: q, kind: 'field', layers: [{ a: q, M: L(al) }, { a: q, M: L(be) }] };
+  }
+
+  /* ---------- 3. Kronecker product of two orthogonal diagonal Latin designs ---------- */
+  function product(D1, D2) {
+    const n1 = D1.n, n2 = D2.n, n = n1 * n2;
+    const layers = [0, 1].map(t => ({ a: n, M: mat(n, (i, j) => D1.layers[t].M[Math.floor(i / n2)][Math.floor(j / n2)] * n2 + D2.layers[t].M[i % n2][j % n2]) }));
+    return { n, kind: 'product', parts: [D1, D2], layers };
+  }
+
+  /* ---------- 4. blow-up of an order-m design by s×s blocks (search for the block layers) ---------- */
+  function blockSearch(n, s, radices, R, maxIter, diag = true) {
+    const m = n / s, cells = s * s, F = radices.length;
+    const digitsOf = sym => { const d = []; for (const r of radices) { d.push(sym % r); sym = Math.floor(sym / r); } return d; };
+    const DIG = [...Array(cells).keys()].map(digitsOf);
+    const target = radices.map(r => n / r);             // each value appears n/r times in every line
+    const nL = diag ? 2 * n + 2 : 2 * n;
+    const linesOf = (i, j) => { const L = [i, n + j]; if (diag && i === j) L.push(2 * n); if (diag && i + j === n - 1) L.push(2 * n + 1); return L; };
+    const LO = mat(n, linesOf);
+    for (let attempt = 0; attempt < 6; attempt++) {
+      const sym = mat(n, () => 0);
+      for (let bi = 0; bi < m; bi++) for (let bj = 0; bj < m; bj++) {
+        const perm = shuffle([...Array(cells).keys()], R);
+        for (let c = 0; c < cells; c++) sym[bi * s + Math.floor(c / s)][bj * s + c % s] = perm[c];
+      }
+      const cnt = radices.map(r => Array.from({ length: nL }, () => new Array(r).fill(0)));
+      for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) for (const l of LO[i][j]) DIG[sym[i][j]].forEach((d, f) => cnt[f][l][d]++);
+      let cost = 0; cnt.forEach((cf, f) => cf.forEach(row => row.forEach(c => cost += Math.abs(c - target[f]))));
+      let T = 2.0;
+      for (let it = 0; it < maxIter && cost > 0; it++) {
+        const bi = Math.floor(R() * m), bj = Math.floor(R() * m);
+        const c1 = Math.floor(R() * cells); let c2 = Math.floor(R() * (cells - 1)); if (c2 >= c1) c2++;
+        const i1 = bi * s + Math.floor(c1 / s), j1 = bj * s + c1 % s, i2 = bi * s + Math.floor(c2 / s), j2 = bj * s + c2 % s;
+        const x = sym[i1][j1], y = sym[i2][j2], dx = DIG[x], dy = DIG[y];
+        let delta = 0; const ch = [];
+        const bump = (f, l, v, k) => { const c = cnt[f][l][v]; delta += Math.abs(c + k - target[f]) - Math.abs(c - target[f]); cnt[f][l][v] += k; ch.push([f, l, v, k]); };
+        for (let f = 0; f < F; f++) { if (dx[f] === dy[f]) continue;
+          for (const l of LO[i1][j1]) { bump(f, l, dx[f], -1); bump(f, l, dy[f], 1); }
+          for (const l of LO[i2][j2]) { bump(f, l, dy[f], -1); bump(f, l, dx[f], 1); } }
+        if (delta <= 0 || R() < Math.exp(-delta / T)) { sym[i1][j1] = y; sym[i2][j2] = x; cost += delta; }
+        else for (let t = ch.length - 1; t >= 0; t--) { const [f, l, v, k] = ch[t]; cnt[f][l][v] -= k; }
+        if (it % 2000 === 0) T = Math.max(0.05, T * 0.97);
+      }
+      if (cost === 0) return radices.map((r, f) => ({ a: r, M: mat(n, (i, j) => DIG[sym[i][j]][f]) }));
+    }
+    return null;
+  }
+  function blowup(D, s, R) {
+    const m = D.n, n = m * s;
+    const radices = s === 6 ? [2, 3, 2, 3] : s === 4 ? [4, 4] : [s, s];
+    const inner = blockSearch(n, s, radices, R, 1500000);
+    if (!inner) return null;
+    const outer = D.layers.map(L => ({ a: L.a, M: mat(n, (i, j) => L.M[Math.floor(i / s)][Math.floor(j / s)]) }));
+    return { n, kind: 'blowup', s, base: D, layers: [...outer, ...inner] };
+  }
+  function direct(n, R) {               // stand-alone search (used for order 6)
+    const L = blockSearch(n, n, [2, 3, 2, 3], R, 3000000);
+    return L ? { n, kind: 'search', layers: L } : null;
+  }
+
+  /* ---------- choose a construction for order n ---------- */
+  const hasODLS = n => n >= 4 && n !== 6 && (gcd(n, 6) === 1 || primePower(n) || splitODLS(n));
+  function splitODLS(n) { for (let a = 4; a * 4 <= n; a++) if (n % a === 0 && hasODLS(a) && hasODLS(n / a)) return [a, n / a]; return null; }
+  function odls(n, R) {
+    if (gcd(n, 6) === 1) return cyclic(n, R);
+    if (primePower(n)) return fieldDesign(n, R);
+    const [a, b] = splitODLS(n); return product(odls(a, R), odls(b, R));
+  }
+  function design(n, seed) {
+    const R = rng(seed);
+    if (n < 4) throw new Error('Order ' + n + ' cannot be built this way (the smallest order is 4).');
+    if (hasODLS(n)) return odls(n, R);
+    if (n === 6) throw new Error('Order 6 cannot be built with this method (like Euler\u2019s 36-officers problem). Your own order-6 squares are in the Orders 5\u20136 generator.');
+    const S = [2, 3, 4, 5, 7].filter(s => n % s === 0 && n / s >= 4 && n / s !== 6);
+    for (const pass of [0, 1]) for (const s of S) {      // first: blocks over a direct design, then over a built one
+      const m = n / s; if (pass === 0 && !hasODLS(m)) continue; if (pass === 1 && hasODLS(m)) continue;
+      let D; try { D = pass === 0 ? odls(m, R) : design(m, Math.floor(R() * 1e9)); } catch (e) { continue; }
+      const B = blowup(D, s, R); if (B) return B;
+    }
+    throw new Error('No design found for order ' + n + ' — try another variation number.');
+  }
+
+  /* ---------- digit strings for each layer symbol ---------- */
+  function encode(D, digits, seed) {
+    const R = rng(seed * 7 + 3), d = digits.length;
+    const lens = D.layers.map(L => { let t = 1; while (d ** t < L.a) t++; return t; });
+    const codes = D.layers.map((L, k) => {
+      const all = []; for (let x = 0; x < d ** lens[k]; x++) { let s = '', y = x; for (let t = 0; t < lens[k]; t++) { s = digits[y % d] + s; y = Math.floor(y / d); } all.push(s); }
+      return shuffle(all, R).slice(0, L.a);
+    });
+    const n = D.n;
+    return mat(n, (i, j) => D.layers.map((L, k) => codes[k][L.M[i][j]]).join(''));
+  }
+  /* three-digit entries a·b·c (all different) built algebraically: three layers, each row, column and both
+     diagonals hold every layer value equally often.  n = 4, 8 over GF(2) (4 values per layer), n = 5 over Z5,
+     n = 10 = 2·5 (5 values per layer). */
+  const tripleK = n => ({4:4, 5:5, 7:7, 8:4, 10:5, 14:7})[n] || 0;
+  function rankMod(Mx, p) {
+    const A = Mx.map(r => r.map(v => ((v % p) + p) % p)); let rk = 0; const rows = A.length, cols = rows ? A[0].length : 0;
+    for (let c = 0; c < cols && rk < rows; c++) {
+      let piv = -1; for (let r = rk; r < rows; r++) if (A[r][c]) { piv = r; break; }
+      if (piv < 0) continue; [A[rk], A[piv]] = [A[piv], A[rk]];
+      const inv = [...Array(p).keys()].find(x => (A[rk][c] * x) % p === 1);
+      A[rk] = A[rk].map(v => (v * inv) % p);
+      for (let r = 0; r < rows; r++) if (r !== rk && A[r][c]) { const f = A[r][c]; A[r] = A[r].map((v, k) => ((v - f * A[rk][k]) % p + p) % p); }
+      rk++;
+    }
+    return rk;
+  }
+  function tripleDesign(n, seed) {
+    const R = rng(seed * 31 + n), k = tripleK(n); if (!k) return null;
+    if (n === 10 || n === 14) {           // n = 2P: x = i mod P, y = j mod P, p = i div P, q = j div P
+      const P = n / 2, nz = [...Array(P - 1).keys()].map(x => x + 1), pick = () => nz[Math.floor(R() * nz.length)];
+      for (let t = 0; t < 4000; t++) {
+        const L = [0, 1, 2].map(() => [pick(), pick()]);
+        if (!L.every(([al, be]) => (al + be) % P && (al - be + P) % P)) continue;
+        if (((L[0][0] * L[1][1] - L[0][1] * L[1][0]) % P + P) % P === 0) continue;
+        const s1 = Math.floor(R() * P), e = [[0, 1], [2, 3]];                       // e(p,q) distinct for the 4 copies
+        const layers = L.map(([al, be], f) => ({ a: P, M: mat(n, (i, j) => (al * (i % P) + be * (j % P) + (f === 2 ? e[Math.floor(i / P)][Math.floor(j / P)] : 0) + (f === 0 ? s1 : 0)) % P) }));
+        return { n, kind: 'triple', layers };
+      }
+      return null;
+    }
+    const p = (n === 5 || n === 7) ? n : 2, m = p === 2 ? Math.log2(n) : 1, r = p === 2 ? 2 : 1;
+    const vec = x => { const v = []; for (let t = 0; t < m; t++) { v.push(x % p); x = Math.floor(x / p); } return v; };
+    const rnd = () => Array.from({ length: r }, () => Array.from({ length: m }, () => Math.floor(R() * p)));
+    const add = (X, Y, sg) => X.map((row, a) => row.map((v, b) => (v + sg * Y[a][b] + p * p) % p));
+    const layerOK = (X, Y) => rankMod(X, p) === r && rankMod(Y, p) === r && rankMod(add(X, Y, 1), p) === r && rankMod(add(X, Y, -1), p) === r;
+    const oneLayer = () => { for (;;) { const X = rnd(), Y = rnd(); if (layerOK(X, Y)) return [X, Y]; } };
+    for (let t = 0; t < 20000; t++) {
+      const LY = [oneLayer(), oneLayer(), oneLayer()], A = LY.map(x => x[0]), B = LY.map(x => x[1]);
+      const big = []; for (let f = 0; f < 3; f++) for (let a = 0; a < r; a++) big.push([...A[f][a], ...B[f][a]]);
+      if (rankMod(big, p) < 2 * m) continue;
+      const layers = [0, 1, 2].map(f => ({ a: k, M: mat(n, (i, j) => { const vi = vec(i), vj = vec(j); let x = 0;
+        for (let a = r - 1; a >= 0; a--) { let s2 = 0; for (let b = 0; b < m; b++) s2 += A[f][a][b] * vi[b] + B[f][a][b] * vj[b]; x = x * p + (s2 % p); } return x; }) }));
+      return { n, kind: 'triple', layers };
+    }
+    return null;
+  }
+  function encodeTriple(D, digits, seed) {
+    const R = rng(seed * 11 + 7), codes = D.layers.map(() => shuffle(digits.slice(), R));
+    return mat(D.n, (i, j) => D.layers.map((L, f) => codes[f][L.M[i][j]]).join(''));
+  }
+  /* palindromic entries a·b·a (two layers, one digit each): reading backwards leaves every entry unchanged */
+  function canPal(D, digits) { return D.layers.length === 2 && D.layers.every(L => L.a <= digits.length); }
+  function encodePal(D, digits, seed) {
+    const R = rng(seed * 7 + 5);
+    const codes = D.layers.map(L => shuffle(digits.slice(), R).slice(0, L.a));
+    return mat(D.n, (i, j) => { const a = codes[0][D.layers[0].M[i][j]], b = codes[1][D.layers[1].M[i][j]]; return a + b + a; });
+  }
+  /* symmetric relabelling of rows & columns (keeps both diagonals) + optional transpose */
+  function vary(D, seed) {
+    const R = rng(seed * 13 + 5), n = D.n, pi = new Array(n);
+    if (D.kind === 'cyclic') { const a = Math.floor(R() * n), b = Math.floor(R() * n), tr = R() < 0.5;
+      return { ...D, layers: D.layers.map(L => ({ a: L.a, M: mat(n, (i, j) => tr ? L.M[(j + a) % n][(i + b) % n] : L.M[(i + a) % n][(j + b) % n]) })) }; }
+    const half = Math.floor(n / 2), perm = shuffle([...Array(half).keys()], R);
+    for (let i = 0; i < half; i++) { const t = perm[i], flip = R() < 0.5; pi[i] = flip ? n - 1 - t : t; pi[n - 1 - i] = flip ? t : n - 1 - t; }
+    if (n % 2) pi[half] = half;
+    const tr = R() < 0.5;
+    return { ...D, layers: D.layers.map(L => ({ a: L.a, M: mat(n, (i, j) => tr ? L.M[pi[j]][pi[i]] : L.M[pi[i]][pi[j]]) })) };
+  }
+  function describe(D) {
+    if (D.kind === 'cyclic') return 'cyclic Latin squares (pandiagonal)';
+    if (D.kind === 'field') return 'finite field GF(' + D.n + ')';
+    if (D.kind === 'product') return 'product of orders ' + D.parts.map(p => p.n).join(' × ');
+    if (D.kind === 'blowup') return 'order ' + D.base.n + ' design with ' + D.s + '×' + D.s + ' blocks';
+    return 'direct search';
+  }
+  /* ---------- semi-magic designs (rows and columns only) for orders 3 and 6 ---------- */
+  function semiDesign(n, seed) {
+    const R = rng(seed * 17 + 11);
+    if (n === 3) {
+      const p = shuffle([0, 1, 2], R), q = shuffle([0, 1, 2], R), a = 1 + Math.floor(R() * 2), b = 3 - a;
+      return { n, kind: 'semi', layers: [{ a: 3, M: mat(3, (i, j) => p[(i + a * j) % 3]) }, { a: 3, M: mat(3, (i, j) => q[(i + b * j) % 3]) }] };
+    }
+    for (let t = 0; t < 8; t++) { const L = blockSearch(n, n, [2, 3, 2, 3], R, 600000, false); if (L) return { n, kind: 'semi', layers: L }; }
+    throw new Error('No semi-magic design found for order ' + n + ' — try another variation number.');
+  }
+  return { design, encode, encodePal, canPal, tripleDesign, tripleK, encodeTriple, vary, describe, semiDesign };
+})();
+
+/* =========================================================
+   DIGIT FAMILIES — lists are ORDERED so that families with the same
+   number of digits are digit substitutions of each other (as in the papers)
+   ========================================================= */
+const FAMS_C=[['0,1,3,8',1],['0,1,3',1],['0,8,3',1],['1,8,3',1],['0,3',1],['1,3',0],['8,3',0]];
+const FAMS_S=[['0,2,3,5',0],['1,2,3,5',0],['8,2,3,5',0],['0,2,3,5,8',1],['0,2,3,5,1',0],['1,2,3,5,8',0],['0,1,2,3,5,8',0],['2,5,3',1]];
+const famLabel=f=>'('+f.split(',').map(Number).sort((x,y)=>x-y).join(',')+')';
+const FAMS_ALL=[...FAMS_C,...FAMS_S].map(x=>x[0]);
+document.getElementById('famC').innerHTML=FAMS_ALL.map(f=>`<span class="fam${/[25]/.test(f)?' sg':''}">${famLabel(f)}</span>`).join('');
+const O3 = {"0138":[[["0308","1303","0813"],["1313","0808","0303"],["0803","0313","1308"]],[["0308","1313","0803"],["1303","0808","0313"],["0813","0303","1308"]],[["0308","3303","1813"],["3313","1808","0303"],["1803","0313","3308"]],[["0308","3313","1803"],["3303","1808","0313"],["1813","0303","3308"]],[["0313","1308","0818"],["1318","0813","0308"],["0808","0318","1313"]],[["0313","1318","0808"],["1308","0813","0318"],["0818","0308","1313"]],[["0313","3308","1818"],["3318","1813","0308"],["1808","0318","3313"]],[["0313","3318","1808"],["3308","1813","0318"],["1818","0308","3313"]],[["0318","1303","0833"],["1333","0818","0303"],["0803","0333","1318"]],[["0318","1333","0803"],["1303","0818","0333"],["0833","0303","1318"]],[["0318","3303","1833"],["3333","1818","0303"],["1803","0333","3318"]],[["0318","3333","1803"],["3303","1818","0333"],["1833","0303","3318"]],[["0803","0313","1308"],["1313","0808","0303"],["0308","1303","0813"]],[["0803","0333","1318"],["1333","0818","0303"],["0318","1303","0833"]],[["0803","1313","0308"],["0313","0808","1303"],["1308","0303","0813"]],[["0803","1333","0318"],["0333","0818","1303"],["1318","0303","0833"]],[["0808","0318","1313"],["1318","0813","0308"],["0313","1308","0818"]],[["0808","1318","0313"],["0318","0813","1308"],["1313","0308","0818"]],[["0808","1803","1313"],["1813","1308","0803"],["1303","0813","1808"]],[["0808","1813","1303"],["1803","1308","0813"],["1313","0803","1808"]],[["0813","0303","1308"],["1303","0808","0313"],["0308","1313","0803"]],[["0813","1303","0308"],["0303","0808","1313"],["1308","0313","0803"]],[["0813","1808","1318"],["1818","1313","0808"],["1308","0818","1813"]],[["0813","1818","1308"],["1808","1313","0818"],["1318","0808","1813"]],[["0818","0308","1313"],["1308","0813","0318"],["0313","1318","0808"]],[["0818","1308","0313"],["0308","0813","1318"],["1313","0318","0808"]],[["0818","1803","1333"],["1833","1318","0803"],["1303","0833","1818"]],[["0818","1833","1303"],["1803","1318","0833"],["1333","0803","1818"]],[["0833","0303","1318"],["1303","0818","0333"],["0318","1333","0803"]],[["0833","1303","0318"],["0303","0818","1333"],["1318","0333","0803"]],[["1303","0813","1808"],["1813","1308","0803"],["0808","1803","1313"]],[["1303","0833","1818"],["1833","1318","0803"],["0818","1803","1333"]],[["1303","1813","0808"],["0813","1308","1803"],["1808","0803","1313"]],[["1303","1833","0818"],["0833","1318","1803"],["1818","0803","1333"]],[["1308","0303","0813"],["0313","0808","1303"],["0803","1313","0308"]],[["1308","0313","0803"],["0303","0808","1313"],["0813","1303","0308"]],[["1308","0818","1813"],["1818","1313","0808"],["0813","1808","1318"]],[["1308","1818","0813"],["0818","1313","1808"],["1813","0808","1318"]],[["1313","0308","0818"],["0318","0813","1308"],["0808","1318","0313"]],[["1313","0318","0808"],["0308","0813","1318"],["0818","1308","0313"]],[["1313","0803","1808"],["1803","1308","0813"],["0808","1813","1303"]],[["1313","1803","0808"],["0803","1308","1813"],["1808","0813","1303"]],[["1318","0303","0833"],["0333","0818","1303"],["0803","1333","0318"]],[["1318","0333","0803"],["0303","0818","1333"],["0833","1303","0318"]],[["1318","0808","1813"],["1808","1313","0818"],["0813","1818","1308"]],[["1318","1808","0813"],["0808","1313","1818"],["1813","0818","1308"]],[["1333","0803","1818"],["1803","1318","0833"],["0818","1833","1303"]],[["1333","1803","0818"],["0803","1318","1833"],["1818","0833","1303"]],[["1803","0313","3308"],["3313","1808","0303"],["0308","3303","1813"]],[["1803","0333","3318"],["3333","1818","0303"],["0318","3303","1833"]],[["1803","3313","0308"],["0313","1808","3303"],["3308","0303","1813"]],[["1803","3333","0318"],["0333","1818","3303"],["3318","0303","1833"]],[["1808","0318","3313"],["3318","1813","0308"],["0313","3308","1818"]],[["1808","0803","1313"],["0813","1308","1803"],["1303","1813","0808"]],[["1808","0813","1303"],["0803","1308","1813"],["1313","1803","0808"]],[["1808","3318","0313"],["0318","1813","3308"],["3313","0308","1818"]],[["1813","0303","3308"],["3303","1808","0313"],["0308","3313","1803"]],[["1813","0808","1318"],["0818","1313","1808"],["1308","1818","0813"]],[["1813","0818","1308"],["0808","1313","1818"],["1318","1808","0813"]],[["1813","3303","0308"],["0303","1808","3313"],["3308","0313","1803"]],[["1818","0308","3313"],["3308","1813","0318"],["0313","3318","1808"]],[["1818","0803","1333"],["0833","1318","1803"],["1303","1833","0818"]],[["1818","0833","1303"],["0803","1318","1833"],["1333","1803","0818"]],[["1818","3308","0313"],["0308","1813","3318"],["3313","0318","1808"]],[["1833","0303","3318"],["3303","1818","0333"],["0318","3333","1803"]],[["1833","3303","0318"],["0303","1818","3333"],["3318","0333","1803"]],[["3308","0303","1813"],["0313","1808","3303"],["1803","3313","0308"]],[["3308","0313","1803"],["0303","1808","3313"],["1813","3303","0308"]],[["3313","0308","1818"],["0318","1813","3308"],["1808","3318","0313"]],[["3313","0318","1808"],["0308","1813","3318"],["1818","3308","0313"]],[["3318","0303","1833"],["0333","1818","3303"],["1803","3333","0318"]],[["3318","0333","1803"],["0303","1818","3333"],["1833","3303","0318"]]],"2358":[[["2338","5323","3853"],["5353","3838","2323"],["3823","2353","5338"]],[["2338","5353","3823"],["5323","3838","2353"],["3853","2323","5338"]],[["3823","2353","5338"],["5353","3838","2323"],["2338","5323","3853"]],[["3823","5353","2338"],["2353","3838","5323"],["5338","2323","3853"]],[["3853","2323","5338"],["5323","3838","2353"],["2338","5353","3823"]],[["3853","5323","2338"],["2323","3838","5353"],["5338","2353","3823"]],[["5338","2323","3853"],["2353","3838","5323"],["3823","5353","2338"]],[["5338","2353","3823"],["2323","3838","5353"],["3853","5323","2338"]]],"02358":[[["2338","5323","3853"],["5353","3838","2323"],["3823","2353","5338"]],[["2338","5353","3823"],["5323","3838","2353"],["3853","2323","5338"]],[["3823","2353","5338"],["5353","3838","2323"],["2338","5323","3853"]],[["3823","5353","2338"],["2353","3838","5323"],["5338","2323","3853"]],[["3853","2323","5338"],["5323","3838","2353"],["2338","5353","3823"]],[["3853","5323","2338"],["2323","3838","5353"],["5338","2353","3823"]],[["5338","2323","3853"],["2353","3838","5323"],["3823","5353","2338"]],[["5338","2353","3823"],["2323","3838","5353"],["3853","5323","2338"]]],"12358":[[["2338","5323","3853"],["5353","3838","2323"],["3823","2353","5338"]],[["2338","5353","3823"],["5323","3838","2353"],["3853","2323","5338"]],[["3823","2353","5338"],["5353","3838","2323"],["2338","5323","3853"]],[["3823","5353","2338"],["2353","3838","5323"],["5338","2323","3853"]],[["3853","2323","5338"],["5323","3838","2353"],["2338","5353","3823"]],[["3853","5323","2338"],["2323","3838","5353"],["5338","2353","3823"]],[["5338","2323","3853"],["2353","3838","5323"],["3823","5353","2338"]],[["5338","2353","3823"],["2323","3838","5353"],["3853","5323","2338"]]],"012358":[[["0308","1303","0813"],["1313","0808","0303"],["0803","0313","1308"]],[["0308","1313","0803"],["1303","0808","0313"],["0813","0303","1308"]],[["0308","3303","1813"],["3313","1808","0303"],["1803","0313","3308"]],[["0308","3313","1803"],["3303","1808","0313"],["1813","0303","3308"]],[["0313","1308","0818"],["1318","0813","0308"],["0808","0318","1313"]],[["0313","1318","0808"],["1308","0813","0318"],["0818","0308","1313"]],[["0313","3308","1818"],["3318","1813","0308"],["1808","0318","3313"]],[["0313","3318","1808"],["3308","1813","0318"],["1818","0308","3313"]],[["0318","1303","0833"],["1333","0818","0303"],["0803","0333","1318"]],[["0318","1333","0803"],["1303","0818","0333"],["0833","0303","1318"]],[["0318","3303","1833"],["3333","1818","0303"],["1803","0333","3318"]],[["0318","3333","1803"],["3303","1818","0333"],["1833","0303","3318"]],[["0338","1323","0853"],["1353","0838","0323"],["0823","0353","1338"]],[["0338","1353","0823"],["1323","0838","0353"],["0853","0323","1338"]],[["0338","3323","1853"],["3353","1838","0323"],["1823","0353","3338"]],[["0338","3353","1823"],["3323","1838","0353"],["1853","0323","3338"]],[["0803","0313","1308"],["1313","0808","0303"],["0308","1303","0813"]],[["0803","0333","1318"],["1333","0818","0303"],["0318","1303","0833"]],[["0803","1313","0308"],["0313","0808","1303"],["1308","0303","0813"]],[["0803","1333","0318"],["0333","0818","1303"],["1318","0303","0833"]],[["0808","0318","1313"],["1318","0813","0308"],["0313","1308","0818"]],[["0808","1318","0313"],["0318","0813","1308"],["1313","0308","0818"]],[["0808","1803","1313"],["1813","1308","0803"],["1303","0813","1808"]],[["0808","1813","1303"],["1803","1308","0813"],["1313","0803","1808"]],[["0813","0303","1308"],["1303","0808","0313"],["0308","1313","0803"]],[["0813","1303","0308"],["0303","0808","1313"],["1308","0313","0803"]],[["0813","1808","1318"],["1818","1313","0808"],["1308","0818","1813"]],[["0813","1818","1308"],["1808","1313","0818"],["1318","0808","1813"]],[["0818","0308","1313"],["1308","0813","0318"],["0313","1318","0808"]],[["0818","1308","0313"],["0308","0813","1318"],["1313","0318","0808"]],[["0818","1803","1333"],["1833","1318","0803"],["1303","0833","1818"]],[["0818","1833","1303"],["1803","1318","0833"],["1333","0803","1818"]],[["0823","0353","1338"],["1353","0838","0323"],["0338","1323","0853"]],[["0823","1353","0338"],["0353","0838","1323"],["1338","0323","0853"]],[["0833","0303","1318"],["1303","0818","0333"],["0318","1333","0803"]],[["0833","1303","0318"],["0303","0818","1333"],["1318","0333","0803"]],[["0838","1823","1353"],["1853","1338","0823"],["1323","0853","1838"]],[["0838","1853","1323"],["1823","1338","0853"],["1353","0823","1838"]],[["0853","0323","1338"],["1323","0838","0353"],["0338","1353","0823"]],[["0853","1323","0338"],["0323","0838","1353"],["1338","0353","0823"]],[["1303","0813","1808"],["1813","1308","0803"],["0808","1803","1313"]],[["1303","0833","1818"],["1833","1318","0803"],["0818","1803","1333"]],[["1303","1813","0808"],["0813","1308","1803"],["1808","0803","1313"]],[["1303","1833","0818"],["0833","1318","1803"],["1818","0803","1333"]],[["1308","0303","0813"],["0313","0808","1303"],["0803","1313","0308"]],[["1308","0313","0803"],["0303","0808","1313"],["0813","1303","0308"]],[["1308","0818","1813"],["1818","1313","0808"],["0813","1808","1318"]],[["1308","1818","0813"],["0818","1313","1808"],["1813","0808","1318"]],[["1313","0308","0818"],["0318","0813","1308"],["0808","1318","0313"]],[["1313","0318","0808"],["0308","0813","1318"],["0818","1308","0313"]],[["1313","0803","1808"],["1803","1308","0813"],["0808","1813","1303"]],[["1313","1803","0808"],["0803","1308","1813"],["1808","0813","1303"]],[["1318","0303","0833"],["0333","0818","1303"],["0803","1333","0318"]],[["1318","0333","0803"],["0303","0818","1333"],["0833","1303","0318"]],[["1318","0808","1813"],["1808","1313","0818"],["0813","1818","1308"]],[["1318","1808","0813"],["0808","1313","1818"],["1813","0818","1308"]],[["1323","0853","1838"],["1853","1338","0823"],["0838","1823","1353"]],[["1323","1853","0838"],["0853","1338","1823"],["1838","0823","1353"]],[["1333","0803","1818"],["1803","1318","0833"],["0818","1833","1303"]],[["1333","1803","0818"],["0803","1318","1833"],["1818","0833","1303"]],[["1338","0323","0853"],["0353","0838","1323"],["0823","1353","0338"]],[["1338","0353","0823"],["0323","0838","1353"],["0853","1323","0338"]],[["1353","0823","1838"],["1823","1338","0853"],["0838","1853","1323"]],[["1353","1823","0838"],["0823","1338","1853"],["1838","0853","1323"]],[["1803","0313","3308"],["3313","1808","0303"],["0308","3303","1813"]],[["1803","0333","3318"],["3333","1818","0303"],["0318","3303","1833"]],[["1803","3313","0308"],["0313","1808","3303"],["3308","0303","1813"]],[["1803","3333","0318"],["0333","1818","3303"],["3318","0303","1833"]],[["1808","0318","3313"],["3318","1813","0308"],["0313","3308","1818"]],[["1808","0803","1313"],["0813","1308","1803"],["1303","1813","0808"]],[["1808","0813","1303"],["0803","1308","1813"],["1313","1803","0808"]],[["1808","3318","0313"],["0318","1813","3308"],["3313","0308","1818"]],[["1813","0303","3308"],["3303","1808","0313"],["0308","3313","1803"]],[["1813","0808","1318"],["0818","1313","1808"],["1308","1818","0813"]],[["1813","0818","1308"],["0808","1313","1818"],["1318","1808","0813"]],[["1813","3303","0308"],["0303","1808","3313"],["3308","0313","1803"]],[["1818","0308","3313"],["3308","1813","0318"],["0313","3318","1808"]],[["1818","0803","1333"],["0833","1318","1803"],["1303","1833","0818"]],[["1818","0833","1303"],["0803","1318","1833"],["1333","1803","0818"]],[["1818","3308","0313"],["0308","1813","3318"],["3313","0318","1808"]],[["1823","0353","3338"],["3353","1838","0323"],["0338","3323","1853"]],[["1823","3353","0338"],["0353","1838","3323"],["3338","0323","1853"]],[["1833","0303","3318"],["3303","1818","0333"],["0318","3333","1803"]],[["1833","3303","0318"],["0303","1818","3333"],["3318","0333","1803"]],[["1838","0823","1353"],["0853","1338","1823"],["1323","1853","0838"]],[["1838","0853","1323"],["0823","1338","1853"],["1353","1823","0838"]],[["1853","0323","3338"],["3323","1838","0353"],["0338","3353","1823"]],[["1853","3323","0338"],["0323","1838","3353"],["3338","0353","1823"]],[["2308","5303","3813"],["5313","3808","2303"],["3803","2313","5308"]],[["2308","5313","3803"],["5303","3808","2313"],["3813","2303","5308"]],[["2313","5308","3818"],["5318","3813","2308"],["3808","2318","5313"]],[["2313","5318","3808"],["5308","3813","2318"],["3818","2308","5313"]],[["2318","5303","3833"],["5333","3818","2303"],["3803","2333","5318"]],[["2318","5333","3803"],["5303","3818","2333"],["3833","2303","5318"]],[["2338","5323","3853"],["5353","3838","2323"],["3823","2353","5338"]],[["2338","5353","3823"],["5323","3838","2353"],["3853","2323","5338"]],[["3308","0303","1813"],["0313","1808","3303"],["1803","3313","0308"]],[["3308","0313","1803"],["0303","1808","3313"],["1813","3303","0308"]],[["3313","0308","1818"],["0318","1813","3308"],["1808","3318","0313"]],[["3313","0318","1808"],["0308","1813","3318"],["1818","3308","0313"]],[["3318","0303","1833"],["0333","1818","3303"],["1803","3333","0318"]],[["3318","0333","1803"],["0303","1818","3333"],["1833","3303","0318"]],[["3338","0323","1853"],["0353","1838","3323"],["1823","3353","0338"]],[["3338","0353","1823"],["0323","1838","3353"],["1853","3323","0338"]],[["3803","2313","5308"],["5313","3808","2303"],["2308","5303","3813"]],[["3803","2333","5318"],["5333","3818","2303"],["2318","5303","3833"]],[["3803","5313","2308"],["2313","3808","5303"],["5308","2303","3813"]],[["3803","5333","2318"],["2333","3818","5303"],["5318","2303","3833"]],[["3808","2318","5313"],["5318","3813","2308"],["2313","5308","3818"]],[["3808","5318","2313"],["2318","3813","5308"],["5313","2308","3818"]],[["3813","2303","5308"],["5303","3808","2313"],["2308","5313","3803"]],[["3813","5303","2308"],["2303","3808","5313"],["5308","2313","3803"]],[["3818","2308","5313"],["5308","3813","2318"],["2313","5318","3808"]],[["3818","5308","2313"],["2308","3813","5318"],["5313","2318","3808"]],[["3823","2353","5338"],["5353","3838","2323"],["2338","5323","3853"]],[["3823","5353","2338"],["2353","3838","5323"],["5338","2323","3853"]],[["3833","2303","5318"],["5303","3818","2333"],["2318","5333","3803"]],[["3833","5303","2318"],["2303","3818","5333"],["5318","2333","3803"]],[["3853","2323","5338"],["5323","3838","2353"],["2338","5353","3823"]],[["3853","5323","2338"],["2323","3838","5353"],["5338","2353","3823"]],[["5308","2303","3813"],["2313","3808","5303"],["3803","5313","2308"]],[["5308","2313","3803"],["2303","3808","5313"],["3813","5303","2308"]],[["5313","2308","3818"],["2318","3813","5308"],["3808","5318","2313"]],[["5313","2318","3808"],["2308","3813","5318"],["3818","5308","2313"]],[["5318","2303","3833"],["2333","3818","5303"],["3803","5333","2318"]],[["5318","2333","3803"],["2303","3818","5333"],["3833","5303","2318"]],[["5338","2323","3853"],["2353","3838","5323"],["3823","5353","2338"]],[["5338","2353","3823"],["2323","3838","5353"],["3853","5323","2338"]]]};   /* every order-3 water-reflection magic square with entries of up to 4 digits (complete search) */
+const SETS = {};
+let GEN={n:0,seed:0,desc:'',note:''};
+function ownFam(){
+  const own=document.getElementById('genOwn').value.trim(); if(!own) return null;
+  const d=own.split(/[\s,;]+/).filter(Boolean);
+  if(d.some(x=>!/^[012358]$/.test(x))) throw new Error('Own digits: use only 0, 1, 2, 3, 5 and 8.');
+  if(new Set(d).size!==d.length||d.length<2) throw new Error('Own digits: give at least two different digits.');
+  if(d.includes('2')!==d.includes('5')) throw new Error('Own digits: 2 and 5 must be used together, since each becomes the other in water.');
+  return d.join(',');
+}
+function tickedFams(){ return FAMS_ALL.slice(); }
+/* every family → its squares (magic where possible, otherwise semi-magic) */
+function familyResults(n,seed,fams,allO3){
+  const key=f=>f.split(',').sort().join(''); let D=null, SD=null; const out=[];
+  for(const f of fams){ const seg=/[25]/.test(f), k=key(f);
+    if(n===3 && O3[k]) out.push({fam:f,seg,kind:'magic',squares: allO3 ? O3[k] : [O3[k][(seed-1)%O3[k].length]], count:O3[k].length});
+    else if(n===3||n===6){ SD=SD||ENGINE.semiDesign(n,seed); out.push({fam:f,seg,kind:'semi',squares:[ENGINE.encode(SD,f.split(','),seed)]}); }
+    else { D=D||ENGINE.vary(ENGINE.design(n,seed),seed); out.push({fam:f,seg,kind:'magic',squares:[ENGINE.encode(D,f.split(','),seed)],desc:ENGINE.describe(D)}); }
+  }
+  return out;
+}
+function buildSets(n,seed,fams){
+  const res=familyResults(n,seed,fams,false);
+  const mag=res.filter(r=>r.kind==='magic'), semi=res.filter(r=>r.kind==='semi');
+  let desc = n===3 ? 'complete search (magic) and orthogonal Latin squares (semi-magic)' : n===6 ? 'computer search (semi-magic: rows and columns)' : res[0].desc;
+  let note='';
+  if(n===3) note='Fully magic only for '+(mag.length?mag.map(r=>famLabel(r.fam)+' ('+r.count+' squares, this is no. '+((seed-1)%r.count+1)+')').join(', '):'none of these digits')+
+    (semi.length?' · semi-magic (equal rows and columns) for '+semi.map(r=>famLabel(r.fam)).join(', '):'');
+  if(n===6) note='Order 6: no fully magic squares with this method (like Euler’s 36-officers problem); all are semi-magic (equal rows and columns).';
+  Object.keys(SETS).forEach(k=>delete SETS[k]);
+  const groups=new Map();
+  for(const kind of ['magic','semi']) for(const r of res.filter(x=>x.kind===kind)){
+    const L=r.squares[0][0][0].length, g=kind+'|'+L+'|'+(r.seg?'s':'c');
+    if(!groups.has(g)) groups.set(g,{kind,L,seg:r.seg,list:[]}); groups.get(g).list.push(r); }
+  let ex=1;
+  for(const [g,G] of groups){
+    const data=G.list.map(r=>({name:'Example '+(ex++), orig:r.squares[0].map(row=>row.slice()), kind:G.kind}));
+    const pan=G.kind==='magic' && data.every(d=>analyse(d.orig).type==='pandiagonal magic');
+    SETS['g'+n+'_'+G.kind+G.L+(G.seg?'s':'c')]={ tab:'Order '+n+' · '+(G.kind==='semi'?'Semi-magic ':'')+G.L+'-Digit'+(G.seg?' 7-seg':''), style:G.seg?'seg':'classic',
+      orig:G.seg?'#ffe1f0':(G.kind==='semi'?'#e8f0ff':'#fff4c4'), refl:'#e6f6c6', size:Math.min(900,Math.round(230+n*20+G.L*10)),
+      sub:'Order '+n+' · variation '+seed+' · '+G.L+'-digit entries · '+G.list.map(r=>famLabel(r.fam)).join(', ')+(G.seg?' · in water 2 ↔ 5':' · 0, 1, 3, 8 unchanged in water')+' · '+
+        (G.kind==='semi'?'semi-magic squares (equal rows and columns)':pan?'pandiagonal magic squares':'magic squares'), data };
+  }
+  GEN={n,seed,desc,note,ownOnly:null};
+}
+let STYLE='classic', STRIPES=0, BLOCKS=null, CENTER=null;
+const cloneSet = k => SETS[k].data.map(d=>({name:d.name, orig:d.orig.map(r=>r.slice())}));
+/* every example becomes its own two-sided plate */
+const EXAMPLES=[];
+function fillExamples(){ EXAMPLES.length=0; Object.entries(SETS).forEach(([k,v])=>v.data.forEach((d,i)=>EXAMPLES.push({set:k,idx:i,name:d.name,num:'o'+d.orig.length+'e'+(d.name.match(/\d+/)||['x'])[0]}))); }
+(()=>{ const m=location.hash.slice(1).match(/^o(\d+)e/); if(m&&+m[1]>=3&&+m[1]<=40) document.getElementById('genN').value=m[1];
+  try{ buildSets(+document.getElementById('genN').value,1,tickedFams()); }catch(e){ document.getElementById('genN').value=17; buildSets(17,1,tickedFams()); } })();
+fillExamples();
+function exFromHash(){
+  const h=location.hash.slice(1), m=h.match(/^(o\d+e\w+)$/);
+  if(m){ const i=EXAMPLES.findIndex(e=>String(e.num)===m[1]); if(i>=0) return i; }
+  if(SETS[h]) return EXAMPLES.findIndex(e=>e.set===h);
+  return 0;
+}
+let currentEx = exFromHash(), currentSet = EXAMPLES[currentEx].set;
+const PLATE_SIZE = k => { if(SETS[k].size) return SETS[k].size; const d=SETS[k].data[0].orig, n=d.length, L=Math.max(...d.flat().map(c=>c.length));
+  return Math.min(400, 240 + (n-3)*35 + (L>=6?30:L>=4?15:0)); };
+let DATA = cloneSet(currentSet);
+/* Water image of a digit (vertical flip). 0,1,3,8 are unchanged; in seven-segment
+   form 2 and 5 turn into each other (segments top↔bottom, upper↔lower sides). */
+const WATER_MAP = {'0':'0','1':'1','3':'3','8':'8','2':'5','5':'2'};
+const safeDigits = () => STYLE==='seg' ? ['0','1','2','3','5','8'] : ['0','1','3','8'];
+
+/* Each original is opposite its reflection.
+   Placements are chosen so that a 180° flip about the HORIZONTAL screen
+   axis (a "water flip") turns any original into its reflection, upright. */
+const HALF='calc(var(--s) / 2)', TILE_T=0.07, TILE_Z='calc(var(--s) * 0.035)';
+const CUBE_FACES = [
+  { id:'front',  pair:0, refl:false, rot:'rotateX(0deg)',   z:HALF },
+  { id:'back',   pair:0, refl:true,  rot:'rotateX(180deg)', z:HALF },
+  { id:'top',    pair:1, refl:false, rot:'rotateX(90deg)',  z:HALF },
+  { id:'bottom', pair:1, refl:true,  rot:'rotateX(-90deg)', z:HALF },
+  { id:'right',  pair:2, refl:false, rot:'rotateY(90deg)',  z:HALF },
+  { id:'left',   pair:2, refl:true,  rot:'rotateY(90deg) rotateX(180deg)', z:HALF }
+];
+/* two-sided tile: same water-flip geometry as the cube's front/back pair */
+const TILE_FACES = [
+  { id:'front', pair:0, refl:false, rot:'rotateX(0deg)',   z:TILE_Z },
+  { id:'back',  pair:0, refl:true,  rot:'rotateX(180deg)', z:TILE_Z }
+];
+[...CUBE_FACES,...TILE_FACES].forEach(f=>{
+  const P = new DOMMatrix(f.rot);
+  f.view = P.inverse();                                   // cube rotation that brings this face to the front, upright
+  const n = P.transformPoint(new DOMPoint(0,0,1,0));
+  f.normal = [n.x,n.y,n.z];
+});
+let FACES = CUBE_FACES;
+
+const reflect = g => g.slice().reverse().map(r=>r.map(c=>c.split('').map(d=>WATER_MAP[d]??d).join('')));
+const gridOf = f => f.refl ? reflect(DATA[f.pair].orig) : DATA[f.pair].orig;
+
+function analyse(g){
+  const n=g.length, v=g.map(r=>r.map(Number));
+  const rows=v.map(r=>r.reduce((a,b)=>a+b,0));
+  const cols=v[0].map((_,j)=>v.reduce((a,r)=>a+r[j],0));
+  let d1=0,d2=0; for(let i=0;i<n;i++){d1+=v[i][i]; d2+=v[i][n-1-i];}
+  const all=[...rows,...cols], S=all[0], rc=all.every(x=>x===S);
+  let type = rc ? (d1===S&&d2===S ? 'magic' : 'semi-magic') : 'not magic';
+  if(type==='magic'){          // all broken diagonals in both directions
+    let pan=true;
+    for(let k=0;k<n&&pan;k++){ let a=0,b=0; for(let i=0;i<n;i++){ a+=v[i][(i+k)%n]; b+=v[i][(k-i+n)%n]; } if(a!==S||b!==S) pan=false; }
+    if(pan) type='pandiagonal magic';
+  }
+  let stripes=null, Sx=S;
+  if(STRIPES){
+    stripes=[]; for(let c0=0;c0<n;c0+=STRIPES){ let t=0; for(let i=0;i<n;i++) for(let j=c0;j<c0+STRIPES;j++) t+=v[i][j]; stripes.push(t); }
+    const colEq=cols.every(x=>x===cols[0]), stEq=stripes.every(x=>x===stripes[0]);
+    if(type==='not magic' && colEq && stEq && d1===cols[0] && d2===cols[0]){ type='striped (rows differ)'; Sx=cols[0]; }
+  }
+  let blocks=null;
+  if(BLOCKS){ const [bh,bw]=BLOCKS; const bs=[]; let allMagic=true;
+    for(let a=0;a<n;a+=bh) for(let c0=0;c0<n;c0+=bw){ let t=0; for(let i=a;i<a+bh;i++) for(let j=c0;j<c0+bw;j++) t+=v[i][j]; bs.push(t);
+      if(bh===bw){ const s0=v[a].slice(c0,c0+bw).reduce((x,y)=>x+y,0); let ok=true;
+        for(let i=0;i<bh;i++){ if(v[a+i].slice(c0,c0+bw).reduce((x,y)=>x+y,0)!==s0) ok=false; let cs=0; for(let r=0;r<bh;r++) cs+=v[a+r][c0+i]; if(cs!==s0) ok=false; }
+        let e1=0,e2=0; for(let i=0;i<bh;i++){ e1+=v[a+i][c0+i]; e2+=v[a+i][c0+bw-1-i]; } if(e1!==s0||e2!==s0) ok=false;
+        if(!ok) allMagic=false; } }
+    let rc=true;
+    for(let a=0;a<n;a+=bh) for(let c0=0;c0<n;c0+=bw){ const s0=v[a].slice(c0,c0+bw).reduce((x,y)=>x+y,0);
+      for(let i=0;i<bh;i++){ if(v[a+i].slice(c0,c0+bw).reduce((x,y)=>x+y,0)!==s0) rc=false; let cs=0; for(let r=0;r<bh;r++) cs+=v[a+r][c0+i]; if(cs!==s0) rc=false; } }
+    blocks={size:bh+'×'+bw, sums:[...new Set(bs)], magic:bh===bw?allMagic:null, sub:bh===bw?bs[0]/bh:null, rc}; }
+  let center=null;
+  if(CENTER&&n>=CENTER[0]+CENTER[1]){ const [o,m]=CENTER, B=v.slice(o,o+m).map(r=>r.slice(o,o+m)), s0=B[0].reduce((x,y)=>x+y,0);
+    let ok=B.every(r=>r.reduce((x,y)=>x+y,0)===s0); for(let j=0;j<m;j++){ let cs=0; for(let i=0;i<m;i++) cs+=B[i][j]; if(cs!==s0) ok=false; }
+    let e1=0,e2=0; for(let i=0;i<m;i++){ e1+=B[i][i]; e2+=B[i][m-1-i]; } if(e1!==s0||e2!==s0) ok=false;
+    center={m,magic:ok,S:s0}; }
+  return {rows,cols,d1,d2,S:Sx,type,stripes,blocks,center};
+}
+const digitsUsed = g => [...new Set(g.flat().join('').split(''))].sort();
+const waterSafe  = g => digitsUsed(g).every(d=>safeDigits().includes(d));
+
+/* seven-segment glyphs, exactly symmetric about the horizontal mid-line */
+const H=(x0,x1,y)=>`${x0},${y} ${x0+5},${y-5} ${x1-5},${y-5} ${x1},${y} ${x1-5},${y+5} ${x0+5},${y+5}`;
+const V=(x,y0,y1)=>`${x},${y0} ${x+5},${y0+5} ${x+5},${y1-5} ${x},${y1} ${x-5},${y1-5} ${x-5},${y0+5}`;
+const SEGS={a:H(8,52,6),g:H(8,52,50),d:H(8,52,94),f:V(6,8,49),b:V(54,8,49),e:V(6,51,92),c:V(54,51,92)};
+const DIGIT_SEGS={'0':'abcdef','1':'bc','2':'abged','3':'abgcd','4':'fgbc','5':'afgcd','6':'afgedc','7':'abc','8':'abcdefg','9':'abcdfg'};
+const segDigit=d=>`<svg class="seg7" viewBox="${d==='1'?'46 0 16 100':'0 0 60 100'}">${(DIGIT_SEGS[d]||'').split('').map(k=>`<polygon points="${SEGS[k]}"/>`).join('')}</svg>`;
+const cellContent=c=> '<span class="ct">'+(STYLE==='seg' ? c.split('').map(segDigit).join('') : c.replace(/1/g,'<span class="one">I</span>'))+'</span>';
+/* squeeze long numbers horizontally so each fits its cell (like a condensed font) */
+function fitCells(root=document){
+  root.querySelectorAll('.cell .ct').forEach(el=>{
+    el.style.transform='';
+    const avail=el.parentElement.clientWidth*0.9, w=el.offsetWidth;
+    if(avail>0 && w>avail) el.style.transform=`scaleX(${(avail/w).toFixed(3)})`;
+  });
+}
+
+function blockBorder(i,n){
+  if(!BLOCKS) return ';border-color:var(--faint)';   /* order 7: faint cell lines, dark outer frame */
+  const r=Math.floor(i/n), c=i%n, [bh,bw]=BLOCKS, t='calc(var(--s)*.0034*var(--lw))';
+  /* ordinary cell lines faint; block edges in the normal grid-line colour */
+  return ';border-color:var(--faint)'
+    +(c%bw===bw-1 && c<n-1 ? ';border-right-width:'+t+';border-right-color:var(--line)' : '')
+    +(r%bh===bh-1 && r<n-1 ? ';border-bottom-width:'+t+';border-bottom-color:var(--line)' : '');
+}
+function gridHTML(g, extraCls=''){
+  const n=g.length, maxLen=Math.max(...g.flat().map(s=>s.length));
+  const fs = (0.5/n)*Math.min(1, (maxLen>6?5.6:maxLen>4?4.4:2.9)/maxLen);
+  return `<div class="grid ${extraCls}" style="grid-template-columns:repeat(${n},minmax(0,1fr));grid-template-rows:repeat(${n},minmax(0,1fr))">`+
+    g.flat().map((c,i)=>`<div class="cell${STYLE==='seg'?' sg':''}${CENTER&&Math.floor(i/n)>=CENTER[0]&&Math.floor(i/n)<CENTER[0]+CENTER[1]&&i%n>=CENTER[0]&&i%n<CENTER[0]+CENTER[1]?' hlc':''}${STRIPES?(Math.floor((i%n)/STRIPES)%2?' st1':' st0'):''}" style="font-size:calc(var(--s)*${fs.toFixed(4)})${blockBorder(i,n)}">${cellContent(c)}</div>`).join('')+`</div>`;
+}
+const faceLabel = f => `${DATA[f.pair].name.replace('Example ','Ex ')} · ${f.refl?'Water':'Original'}`;
+
+function buildCube(el){
+  el.innerHTML = FACES.map(f=>
+    `<div class="face ${f.refl?'refl':'orig'}" data-face="${f.id}"
+          style="transform:${f.rot} translateZ(${f.z})">
+       ${gridHTML(gridOf(f))}<span class="badge">${faceLabel(f)}</span></div>`).join('') + (FACES===TILE_FACES ? tileEdges() : '');
+}
+function tileEdges(){
+  const t=`calc(var(--s) * ${TILE_T})`, off=`calc(50% - var(--s) * ${TILE_T/2})`;
+  return [
+    `top:${off};left:0;width:100%;height:${t};transform:rotateX(90deg) translateZ(${HALF})`,
+    `top:${off};left:0;width:100%;height:${t};transform:rotateX(-90deg) translateZ(${HALF})`,
+    `left:${off};top:0;height:100%;width:${t};transform:rotateY(90deg) translateZ(${HALF})`,
+    `left:${off};top:0;height:100%;width:${t};transform:rotateY(-90deg) translateZ(${HALF})`
+  ].map(st=>`<div class="edge" style="${st}"></div>`).join('');
+}
+
+/* ---------- rotation state ---------- */
+const cube=document.getElementById('cube'), cube2=document.getElementById('cube2'), cube3=document.getElementById('cube3');
+let M = new DOMMatrix().rotateAxisAngleSelf(1,0,0,-22).rotateAxisAngleSelf(0,1,0,28);
+let spinning=true, speed=22, dragging=false, anim=null, queue=[], frameCount=0, activeId=null;
+const SPIN_AXIS=[0.25,1,0.12];
+
+const R = (x,y,z,deg)=> new DOMMatrix().rotateAxisAngleSelf(x,y,z,deg);
+function apply(){ const s=M.toString(); cube.style.transform=s; cube2.style.transform=s; cube3.style.transform=s; }
+
+function orthonormalize(){
+  const c=[[M.m11,M.m12,M.m13],[M.m21,M.m22,M.m23],[M.m31,M.m32,M.m33]];
+  const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2], nrm=a=>{const l=Math.hypot(...a);return a.map(v=>v/l)};
+  const a=nrm(c[0]); let b=c[1].map((v,i)=>v-dot(c[1],a)*a[i]); b=nrm(b);
+  const k=[a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+  M = DOMMatrix.fromFloat64Array(new Float64Array([...a,0,...b,0,...k,0,0,0,0,1]));
+}
+
+/* axis–angle of a rotation matrix, verified against DOMMatrix's own convention */
+function axisAngle(Rm){
+  const r=[[Rm.m11,Rm.m21,Rm.m31],[Rm.m12,Rm.m22,Rm.m32],[Rm.m13,Rm.m23,Rm.m33]];
+  const cos=Math.max(-1,Math.min(1,(r[0][0]+r[1][1]+r[2][2]-1)/2)), ang=Math.acos(cos);
+  if(ang<1e-4) return null;
+  let ax; const s=Math.sin(ang);
+  if(s>1e-3) ax=[r[2][1]-r[1][2], r[0][2]-r[2][0], r[1][0]-r[0][1]].map(v=>v/(2*s));
+  else{
+    let x=Math.sqrt(Math.max(0,(r[0][0]+1)/2)), y=Math.sqrt(Math.max(0,(r[1][1]+1)/2)), z=Math.sqrt(Math.max(0,(r[2][2]+1)/2));
+    const sg=v=>v<0?-1:1;
+    if(x>=y&&x>=z){y*=sg(r[0][1]);z*=sg(r[0][2]);} else if(y>=z){x*=sg(r[0][1]);z*=sg(r[1][2]);} else {x*=sg(r[0][2]);y*=sg(r[1][2]);}
+    ax=[x,y,z];
+  }
+  const deg=ang*180/Math.PI, diff=Q=>Math.abs(Q.m11-Rm.m11)+Math.abs(Q.m12-Rm.m12)+Math.abs(Q.m13-Rm.m13)+
+    Math.abs(Q.m21-Rm.m21)+Math.abs(Q.m22-Rm.m22)+Math.abs(Q.m23-Rm.m23)+Math.abs(Q.m31-Rm.m31)+Math.abs(Q.m32-Rm.m32)+Math.abs(Q.m33-Rm.m33);
+  return diff(R(...ax,deg))<=diff(R(...ax,-deg)) ? {ax,deg} : {ax,deg:-deg};
+}
+
+function startAnim(axis,deg,dur,target){ anim={axis,deg,dur,target,M0:M,t0:null}; }
+function snapTo(f){
+  queue.push(()=>{ const aa=axisAngle(f.view.multiply(M.inverse()));
+    if(!aa){M=f.view;apply();return false;} startAnim(aa.ax,aa.deg,950,f.view); return true; });
+}
+function waterFlip(){
+  queue.push(()=>{ startAnim([1,0,0],180,1500,R(1,0,0,180).multiply(M)); return true; });
+}
+let autoplay=true;
+function setPlayLabel(){ playBtn.textContent = autoplay ? '⏸ Pause' : '▶ Play';
+  const ai=document.getElementById('autoInfo'); if(ai) ai.textContent = autoplay ? 'Playing automatically — press Pause to stop' : 'Paused — press Play to continue'; }
+function pause(){ autoplay=false; spinning=false; queue=[]; setPlayLabel(); }
+
+const ease=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+let last=null;
+function frame(t){
+  const dt = last==null?0:(t-last)/1000; last=t;
+  if(!anim && queue.length){ while(queue.length && !anim){ queue.shift()(); } }
+  if(anim){
+    if(anim.t0==null) anim.t0=t;
+    const p=Math.min(1,(t-anim.t0)/anim.dur);
+    M = R(...anim.axis, anim.deg*ease(p)).multiply(anim.M0);
+    if(p>=1){ if(anim.target) M=anim.target; anim=null; }
+  } else if(spinning && !dragging && speed>0){
+    M = R(...SPIN_AXIS, speed*dt).multiply(M);
+  }
+  if(++frameCount%240===0 && !anim) orthonormalize();
+  apply(); updateActive();
+  requestAnimationFrame(frame);
+}
+
+/* ---------- active face ---------- */
+function updateActive(){
+  let best=null,bz=-2;
+  for(const f of FACES){ const p=M.transformPoint(new DOMPoint(...f.normal,0)); if(p.z>bz){bz=p.z;best=f;} }
+  if(best.id===activeId) return;
+  activeId=best.id;
+  document.querySelectorAll('.face').forEach(el=>el.classList.toggle('active',el.dataset.face===activeId));
+  const g=gridOf(best), a=analyse(g), partner=FACES.find(x=>x.pair===best.pair&&x.refl!==best.refl);
+  document.getElementById('activeInfo').innerHTML=
+    `<div class="t">${DATA[best.pair].name} — ${best.refl?'Water reflection':'Original'}</div>
+     <div style="color:#8d84ad">${best.id} face · opposite: ${partner.id} (${partner.refl?'water reflection':'original'})</div>
+     <div id="activeMini" class="${best.refl?'refl':''}">${gridHTML(g)}</div>
+     Rows: ${a.rows.join(', ')}<br>Columns: ${a.cols.join(', ')}<br>Diagonals: ${a.d1}, ${a.d2}<br>${a.center?`<span style="color:#8a4b00">Centre ${a.center.m}×${a.center.m} block: ${a.center.magic?'magic, S = '+a.center.S:'not magic'}</span><br>`:''}${a.blocks?`<span style="color:#8a4b00">${a.blocks.size} blocks: ${a.blocks.sums.length===1?'all '+a.blocks.sums[0]:(a.blocks.rc?'equal row and column sums in each':'sums differ')}${a.blocks.magic?' · each magic':''}</span><br>`:''}${a.stripes?`<span style="color:#8a4b00">Vertical ${best.refl?'':''}${g.length}×${STRIPES} stripes: ${a.stripes.join(', ')}</span><br>`:''}
+     <span class="${a.type==='not magic'?'bad':'ok'}">${a.type}${a.type!=='not magic'?' · S = '+a.S:''}</span>`;
+  fitCells(document.getElementById('activeInfo'));
+}
+
+/* ---------- UI ---------- */
+const playBtn=document.getElementById('playBtn');
+function buildButtons(){
+  document.getElementById('faceBtns').innerHTML = DATA.map((d,p)=>{
+    const o=FACES.find(f=>f.pair===p&&!f.refl), r=FACES.find(f=>f.pair===p&&f.refl);
+    return `<div class="prow"><span>${d.name}</span>
+      <button class="o" data-snap="${o.id}">Original</button>
+      <button class="r" data-snap="${r.id}">Water</button>
+      <button class="w" data-pair="${p}" title="Show original, then flip to its water reflection">🌊</button></div>`;
+  }).join('');
+  document.querySelectorAll('[data-snap]').forEach(b=>b.onclick=()=>{pause();queue=[];snapTo(FACES.find(f=>f.id===b.dataset.snap));});
+  document.querySelectorAll('[data-pair]').forEach(b=>b.onclick=()=>{pause();queue=[];
+    snapTo(FACES.find(f=>f.pair===+b.dataset.pair&&!f.refl)); waterFlip();});
+}
+playBtn.onclick=()=>{ if(autoplay){ pause(); anim=null; } else { autoplay=true; spinning=false; queue=[]; anim=null; setPlayLabel(); autoCycle(); } };
+document.getElementById('flipBtn').onclick=()=>{ pause(); waterFlip(); };
+
+const speedEl=document.getElementById('speed'), sizeEl=document.getElementById('size');
+speedEl.oninput=()=>{document.getElementById('speedV').textContent=(+speedEl.value).toFixed(1)+'×';};
+sizeEl.oninput=()=>{document.documentElement.style.setProperty('--s',sizeEl.value+'px');document.getElementById('sizeV').textContent=sizeEl.value;fitCells();};
+[['cOrig','--orig'],['cRefl','--refl'],['cInk','--ink']].forEach(([id,v])=>
+  document.getElementById(id).oninput=e=>document.documentElement.style.setProperty(v,e.target.value));
+document.getElementById('styleSel').onchange=e=>{ STYLE=e.target.value; rebuild(); };
+const lwEl=document.getElementById('lw');
+lwEl.oninput=()=>{document.documentElement.style.setProperty('--lw',lwEl.value);document.getElementById('lwV').textContent=(+lwEl.value).toFixed(1);fitCells();};
+document.getElementById('cLine').oninput=e=>document.documentElement.style.setProperty('--line',e.target.value);
+const ripEl=document.getElementById('rippleIn');
+ripEl.oninput=()=>{ const v=+ripEl.value; document.getElementById('rippleV').textContent=v;
+  document.getElementById('dNear').setAttribute('scale',v);
+  document.getElementById('dDeep').setAttribute('scale',v*2.2);
+  document.getElementById('dSoft').setAttribute('scale',v*0.5); };
+
+/* surface glints: thin broken wave-lines, spaced wider toward the viewer (perspective) */
+(function buildGlints(){
+  const svg=document.getElementById('glints'), N=16; let html='';
+  for(let i=0;i<N;i++){
+    const t=(i+0.6)/N, y=400*Math.pow(t,1.55), amp=1.5+t*4, k=0.006+Math.random()*0.006, ph=Math.random()*6.28;
+    let d=`M -20 ${y.toFixed(1)}`;
+    for(let x=0;x<=1040;x+=20) d+=` L ${x} ${(y+amp*Math.sin(k*x+ph)).toFixed(1)}`;
+    const dash=`${(10+Math.random()*40).toFixed(0)} ${(60+Math.random()*160).toFixed(0)} ${(4+Math.random()*14).toFixed(0)} ${(80+Math.random()*200).toFixed(0)}`;
+    const op=(0.28-0.16*t).toFixed(2), w=(0.6+t*1.4).toFixed(2), dur=(9+Math.random()*10).toFixed(1);
+    const dir=Math.random()<0.5?'normal':'reverse';
+    html+=`<path d="${d}" stroke="rgba(205,238,255,${op})" stroke-width="${w}" stroke-dasharray="${dash}" style="animation-duration:${dur}s;animation-direction:${dir}"/>`;
+  }
+  svg.innerHTML=html;
+})();
+
+document.getElementById('showWater').onchange=e=>{document.body.classList.toggle('nowater',!e.target.checked);fitCells();};
+if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>fitCells());
+document.getElementById('showLabels').onchange=e=>document.body.classList.toggle('hidelabels',!e.target.checked);
+
+/* drag to rotate */
+const stage=document.getElementById('stage'); let px,py;
+stage.addEventListener('pointerdown',e=>{dragging=true;anim=null;pause();px=e.clientX;py=e.clientY;stage.setPointerCapture(e.pointerId);});
+stage.addEventListener('pointermove',e=>{ if(!dragging)return;
+  const dx=e.clientX-px, dy=e.clientY-py; px=e.clientX; py=e.clientY;
+  M = R(0,1,0,dx*0.45).multiply(R(1,0,0,-dy*0.45)).multiply(M); });
+['pointerup','pointercancel'].forEach(ev=>stage.addEventListener(ev,()=>dragging=false));
+
+/* ---------- pair cards ---------- */
+function buildCards(){
+  document.getElementById('cards').innerHTML = DATA.map(d=>{
+    const g=d.orig, w=reflect(g), a=analyse(g), b=analyse(w), safe=waterSafe(g);
+    return `<div class="card">
+      <h3>${d.name} — digits (${digitsUsed(g).join(', ')})</h3>
+      <div class="${g.length>=7?'big':''} quad">
+        <figure><figcaption>Original</figcaption><div class="mini">${gridHTML(g)}</div></figure>
+        <figure><figcaption>Water reflection<br>(rows reversed)</figcaption><div class="mini">${gridHTML(w,'refl')}</div></figure>
+        <figure><figcaption>Original<br>above the water</figcaption><div class="mini">${gridHTML(g)}</div></figure>
+        <figure><figcaption>Its image in the water<br>(true mirror)</figcaption><div class="qwl"></div><div class="mini mir">${gridHTML(g,'refl')}</div></figure>
+      </div>
+      <p>Original: rows ${a.rows.join(', ')} · columns ${a.cols.join(', ')} · diagonals ${a.d1}, ${a.d2}
+        → <span class="${a.type==='not magic'?'bad':'ok'}">${a.type}${a.type!=='not magic'?', S = '+a.S:''}</span><br>
+        Reflection: rows ${b.rows.join(', ')} · columns ${b.cols.join(', ')} · diagonals ${b.d1}, ${b.d2}
+        → <span class="${b.type==='not magic'?'bad':'ok'}">${b.type}${b.type!=='not magic'?', S = '+b.S:''}</span><br>
+        ${a.blocks?`<span style="color:#8a4b00">${a.blocks.size} blocks — original: ${a.blocks.sums.length===1?'every block sums to '+a.blocks.sums[0]:(a.blocks.rc?'each block has equal row and column sums':'block sums differ')}${a.blocks.magic?' · each block is a magic square, S = '+a.blocks.sub:''} · reflection: ${b.blocks.sums.length===1?'every block sums to '+b.blocks.sums[0]:(b.blocks.rc?'each block has equal row and column sums':'block sums differ')}${b.blocks.magic?' (each magic)':''}</span><br>`:''}
+        ${a.center?`<span style="color:#8a4b00">Centre ${a.center.m}×${a.center.m} block — original: ${a.center.magic?'magic, S = '+a.center.S:'not magic'} · reflection: ${b.center.magic?'magic, S = '+b.center.S:'not magic'}</span><br>`:''}
+        ${a.stripes?`<span style="color:#8a4b00">Vertical ${g.length}×${STRIPES} stripes — original: ${a.stripes.join(', ')} · reflection: ${b.stripes.join(', ')}</span><br>`:''}
+        ${b.type.startsWith('striped')?`<span style="color:#5a3d8a">In water the 2 ↔ 5 swap changes the row sums, but the columns, both diagonals and the ${g.length}×${STRIPES} stripes keep their equal sums.</span><br>`:''}
+        ${safe ? `<span class="ok">✓ All digits are water-symmetric (${STYLE==='seg'?'0, 1, 3, 8 unchanged; 2 ↔ 5':'0, 1, 3, 8'}): the mirrored image reads exactly as the reflection square.</span>`
+               : '<span class="bad">⚠ Some digits are not symmetric about a horizontal axis — the water image will not read as numbers.</span>'}</p>
+    </div>`;}).join('');
+}
+
+/* ---------- editor ---------- */
+function buildEditor(){
+  document.getElementById('editor').innerHTML = DATA.map((d,i)=>
+    `<div><div style="font-size:13px;margin-bottom:4px">${d.name}</div>
+     <textarea id="ta${i}">${d.orig.map(r=>r.join(' ')).join('\n')}</textarea></div>`).join('');
+}
+document.getElementById('applyBtn').onclick=()=>{
+  const msg=document.getElementById('edMsg'), next=[]; const warn=[];
+  for(let i=0;i<DATA.length;i++){
+    const rows=document.getElementById('ta'+i).value.trim().split(/\n+/).map(l=>l.trim().split(/[\s,;]+/).filter(Boolean));
+    const n=rows.length;
+    if(n<3||rows.some(r=>r.length!==n)||rows.flat().some(c=>!/^\d+$/.test(c))){
+      msg.innerHTML=`<span class="bad">${DATA[i].name}: enter an n×n block of whole numbers (one row per line).</span>`; return; }
+    next.push({name:DATA[i].name, orig:rows});
+    if(!waterSafe(rows)) warn.push(DATA[i].name);
+  }
+  DATA=next; rebuild();
+  msg.innerHTML = warn.length ? `<span class="bad">Applied. Not water-symmetric: ${warn.join(', ')}.</span>` : '<span class="ok">Applied.</span>';
+};
+
+function rebuild(){ buildCube(cube); buildCube(cube2); buildCube(cube3); buildButtons(); buildCards(); activeId=null; fitCells(); }
+/* section links grouped by order, laid out in two compact rows */
+const shortTab=v=>v.tab.replace(/^Order \d+ · /,'').replace(/ Entries$/,'').replace(/ Cell$/,'').replace('Example ','Ex ');
+function tabsHTML(k){
+  const groups={};
+  Object.entries(SETS).forEach(([key,v])=>{ const n=v.data[0].orig.length; (groups[n]=groups[n]||[]).push([key,v]); });
+  const cur=EXAMPLES[currentEx];
+  return Object.entries(groups).map(([n,list])=>`<div class="tabgroup"><span class="tablabel">Order ${n}</span>`+
+    list.map(([key,v])=>`<span class="secgroup${key===k?' on':''}"><a href="#${key}" class="seclink${key===k?' on':''}">${shortTab(v)}</a>`+
+      EXAMPLES.filter(e=>e.set===key).map(e=>`<a href="#${e.num}" class="exlink${cur&&e.num===cur.num?' on':''}">${(e.name.match(/\d+/)||[e.name.split(' ')[0]])[0]}</a>`).join('')+
+    `</span>`).join('')+`</div>`).join('');
+}
+function loadExample(ei, keepQueue=false){
+  currentEx=ei; const E=EXAMPLES[ei], k=E.set; currentSet=k;
+  const d=SETS[k].data[E.idx]; DATA=[{name:d.name, orig:d.orig.map(r=>r.slice())}];
+  FACES = TILE_FACES;
+  document.getElementById('pairsTitle').textContent='The Pair';
+  const sz=Math.round(Math.min(PLATE_SIZE(k), document.querySelector('.mirrorpane') ? (innerWidth-40)/3.3 : innerWidth-70)); sizeEl.value=sz; document.getElementById('sizeV').textContent=sz;
+  document.documentElement.style.setProperty('--s',sz+'px');
+  STRIPES=SETS[k].stripes||0; BLOCKS=SETS[k].blocks||null; CENTER=SETS[k].center||null;
+  STYLE=SETS[k].style||'classic'; document.getElementById('styleSel').value=STYLE;
+  const co=(SETS[k].data[E.idx].col)||SETS[k].orig||'#f7c5dd', cr=SETS[k].refl||'#bfe8f5', rs=document.documentElement.style;
+  rs.setProperty('--orig',co); rs.setProperty('--refl',cr);
+  document.getElementById('cOrig').value=co; document.getElementById('cRefl').value=cr;
+  document.getElementById('subTitle').textContent=SETS[k].sub.replace(/ · a two-sided tile[^·]*/,' ').replace(/\s+·/g,' ·').replace(/\s+$/,'');
+  document.getElementById('tabs').innerHTML=tabsHTML(k);
+  document.getElementById('chips').innerHTML='';
+  document.getElementById('edMsg').textContent='';
+  if(!keepQueue){ queue=[]; anim=null; }
+  if(!keepQueue && autoplay) autoCycle();
+  if(location.hash!=='#'+E.num) history.replaceState(null,'','#'+E.num);
+  rebuild(); buildEditor();
+}
+window.addEventListener('hashchange',()=>{ if(!location.hash.slice(1)) return; const ei=exFromHash(); if(ei!==currentEx) loadExample(ei); });
+const step=dir=>loadExample((currentEx+dir+EXAMPLES.length)%EXAMPLES.length);
+document.getElementById('prevBtn').onclick=()=>step(-1);
+document.getElementById('nextBtn').onclick=()=>step(1);
+const hold=ms=>queue.push(()=>{anim={axis:[1,0,0],deg:0,dur:ms,M0:M,t0:null};return true;});
+/* automatic run: original → water flip → full turn showing both sides → next plate, looping */
+function nextIndex(){
+  if(document.getElementById('scopeSel').value==='section'){
+    const list=EXAMPLES.map((e,i)=>i).filter(i=>EXAMPLES[i].set===currentSet);
+    return list[(list.indexOf(currentEx)+1)%list.length];
+  }
+  return (currentEx+1)%EXAMPLES.length;
+}
+function autoCycle(){
+  const f=()=>Math.max(0.4,+speedEl.value);
+  snapTo(TILE_FACES[0]);
+  queue.push(()=>{anim={axis:[1,0,0],deg:0,dur:1600/f(),M0:M,t0:null};return true;});
+  queue.push(()=>{ startAnim([1,0,0],180,1500/f(),R(1,0,0,180).multiply(M)); return true; });
+  queue.push(()=>{anim={axis:[1,0,0],deg:0,dur:1900/f(),M0:M,t0:null};return true;});
+  queue.push(()=>{ startAnim([0,1,0],360,2800/f(),R(0,1,0,360).multiply(M)); return true; });
+  queue.push(()=>{ if(autoplay){ loadExample(nextIndex(),true); autoCycle(); } return false; });
+}
+spinning=false; setPlayLabel(); loadExample(currentEx); apply(); requestAnimationFrame(frame);
+
+/* ---------- generator controls ---------- */
+const genStatus=document.getElementById('genStatus');
+function statusLine(ms){
+  let mg=0,sm=0,bad=0; Object.values(SETS).forEach(v=>v.data.forEach(d=>{ for(const g of [d.orig,reflect(d.orig)]){ const t=analyse(g).type;
+    if(t==='magic'||t==='pandiagonal magic') mg++; else if(t==='semi-magic'&&d.kind==='semi') sm++; else bad++; } }));
+  const pan=Object.values(SETS).every(v=>v.data.every(d=>analyse(d.orig).type==='pandiagonal magic'));
+  const tot=mg+sm+bad;
+  genStatus.innerHTML=`<b>Order ${GEN.n}</b>, variation ${GEN.seed}${GEN.ownOnly?' · own digits '+famLabel(GEN.ownOnly):''} · built from ${GEN.desc} · ${EXAMPLES.length} example${EXAMPLES.length>1?'s':''} in the Index`+
+    ` · <span class="${bad?'bad':'ok'}">${bad?'⚠':'✓'} all ${tot} squares (originals and water reflections) checked: `+
+    [mg?`${mg} ${pan?'pandiagonal ':''}magic`:'', sm?`${sm} semi-magic`:'', bad?`${bad} failed`:''].filter(Boolean).join(', ')+`</span>`+(GEN.note?`<br>${GEN.note}`:'')+(ms!=null?` · ${ms} ms`:'');
+}
+function readOrder(){
+  const n=Math.round(+document.getElementById('genN').value), seed=Math.max(1,Math.round(+document.getElementById('genSeed').value)||1);
+  document.getElementById('genSeed').value=seed;
+  if(!(n>=3&&n<=40)) throw new Error('Choose an order from 3 to 40.');
+  return [n,seed];
+}
+function runBuild(n,seed,fams,ownOnly){
+  genStatus.textContent='Building order '+n+' …';
+  setTimeout(()=>{ const t=performance.now();
+    try{ buildSets(n,seed,fams); }catch(e){ genStatus.innerHTML='<span class="bad">'+e.message+'</span>'; return; }
+    GEN.ownOnly=ownOnly||null;
+    fillExamples(); scopeText();
+    queue=[]; anim=null; autoplay=true; setPlayLabel();
+    loadExample(0); statusLine(Math.round(performance.now()-t)); },20);
+}
+/* Generate: the ticked families */
+function regenerate(){
+  let n,seed,fams; try{ [n,seed]=readOrder(); fams=FAMS_ALL.slice(); }catch(e){ genStatus.innerHTML='<span class="bad">'+e.message+'</span>'; return; }
+  runBuild(n,seed,fams,null);
+}
+/* Generate own digits: only the typed digits */
+function regenerateOwn(){
+  let n,seed,own; try{ [n,seed]=readOrder(); own=ownFam(); if(!own) throw new Error('Type your own digits first, e.g. 0,1,2,5.'); }catch(e){ genStatus.innerHTML='<span class="bad">'+e.message+'</span>'; return; }
+  runBuild(n,seed,[own],own);
+}
+document.getElementById('genBtn').onclick=regenerate;
+document.getElementById('genOwnBtn').onclick=regenerateOwn;
+document.getElementById('genRand').onclick=()=>{ document.getElementById('genSeed').value=1+Math.floor(Math.random()*99999); GEN.ownOnly ? regenerateOwn() : regenerate(); };
+[document.getElementById('genN'),document.getElementById('genSeed')].forEach(el=>el.addEventListener('keydown',e=>{ if(e.key==='Enter') (GEN.ownOnly ? regenerateOwn() : regenerate()); }));
+document.getElementById('genOwn').addEventListener('keydown',e=>{ if(e.key==='Enter') regenerateOwn(); });
+function scopeText(){ document.getElementById('scopeAll').textContent=(EXAMPLES.length>1?'all '+EXAMPLES.length+' examples':'the 1 example')+' of order '+GEN.n; }
+
+/* ---------- copy ---------- */
+const asText=g=>g.map(r=>r.join('\t')).join('\n');
+function copyText(txt,btn){ const done=()=>{ const o=btn.textContent; btn.textContent='✓ Copied'; setTimeout(()=>btn.textContent=o,1200); };
+  if(navigator.clipboard) navigator.clipboard.writeText(txt).then(done,()=>{}); }
+document.getElementById('copyO').onclick=e=>copyText(asText(DATA[0].orig),e.currentTarget);
+document.getElementById('copyR').onclick=e=>copyText(asText(reflect(DATA[0].orig)),e.currentTarget);
+
+/* ---------- every possibility of the chosen order (all digit families) ---------- */
+function allPossibilities(){
+  const key=f=>f.split(',').sort().join(''); let fams=FAMS_ALL.slice();
+  let own=null; try{ own=ownFam(); }catch(e){}
+  if(own && !fams.some(f=>key(f)===key(own))) fams.push(own);
+  return familyResults(GEN.n,GEN.seed,fams,true);
+}
+const sumOf=a=>a.reduce((x,y)=>x+y,0);
+function info(g){ const a=analyse(g); return {S:a.S, type:a.type}; }
+function fileBase(){ return 'water_reflection_order'+GEN.n+(GEN.n===3?'_all':'_variation'+GEN.seed); }
+function download(blob,name){ const url=URL.createObjectURL(blob), A=document.createElement('a');
+  A.href=url; A.download=name; document.body.appendChild(A); A.click(); A.remove(); setTimeout(()=>URL.revokeObjectURL(url),1500); }
+
+document.getElementById('dlAll').onclick=()=>{
+  const G=allPossibilities();
+  let out='Water Reflection Magic Squares — Order '+GEN.n+(GEN.n===3?' — all squares with entries of up to 4 digits':', variation '+GEN.seed)+
+    '\nBuilt from '+GEN.desc+'\nGenerator by Inder J. Taneja · numbers-magic.com\nIn water the rows come in reverse order and 2 ↔ 5 (0, 1, 3, 8 unchanged).\n';
+  if(GEN.note) out+=GEN.note+'\n';
+  G.forEach(gr=>{ out+='\n==================== Digits '+famLabel(gr.fam)+(gr.seg?' (seven-segment)':'')+' ====================\n';
+    gr.squares.forEach((sq,k)=>{ const w=reflect(sq), a=info(sq), b=info(w);
+      out+='\n'+(gr.squares.length>1?'Square '+(k+1)+' of '+gr.squares.length+'\n':'')+'Original: '+a.type+', S = '+a.S+'\n'+asText(sq)+
+        '\n\nWater reflection: '+b.type+', S = '+b.S+'\n'+asText(w)+'\n'; }); });
+  download(new Blob([out],{type:'text/plain'}),fileBase()+'.txt');
+};
+
+/* ---------- minimal .xlsx writer (no library needed) ---------- */
+const XL=(()=>{
+  const enc=new TextEncoder();
+  const T=(()=>{ const t=new Uint32Array(256); for(let n=0;n<256;n++){ let c=n; for(let k=0;k<8;k++) c=c&1?0xEDB88320^(c>>>1):c>>>1; t[n]=c>>>0; } return t; })();
+  const crc=b=>{ let c=0xFFFFFFFF; for(let i=0;i<b.length;i++) c=T[(c^b[i])&255]^(c>>>8); return (c^0xFFFFFFFF)>>>0; };
+  function zip(files){
+    const parts=[], central=[]; let off=0;
+    for(const f of files){ const nm=enc.encode(f.name), d=enc.encode(f.data), c=crc(d);
+      const h=new DataView(new ArrayBuffer(30));
+      h.setUint32(0,0x04034b50,true); h.setUint16(4,20,true); h.setUint16(6,0x0800,true); h.setUint16(12,0x21,true);
+      h.setUint32(14,c,true); h.setUint32(18,d.length,true); h.setUint32(22,d.length,true); h.setUint16(26,nm.length,true);
+      parts.push(new Uint8Array(h.buffer),nm,d);
+      const z=new DataView(new ArrayBuffer(46));
+      z.setUint32(0,0x02014b50,true); z.setUint16(4,20,true); z.setUint16(6,20,true); z.setUint16(8,0x0800,true); z.setUint16(14,0x21,true);
+      z.setUint32(16,c,true); z.setUint32(20,d.length,true); z.setUint32(24,d.length,true); z.setUint16(28,nm.length,true); z.setUint32(42,off,true);
+      central.push(new Uint8Array(z.buffer),nm); off+=30+nm.length+d.length; }
+    const size=central.reduce((s,a)=>s+a.length,0), e=new DataView(new ArrayBuffer(22));
+    e.setUint32(0,0x06054b50,true); e.setUint16(8,files.length,true); e.setUint16(10,files.length,true); e.setUint32(12,size,true); e.setUint32(16,off,true);
+    return new Blob([...parts,...central,new Uint8Array(e.buffer)],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  }
+  const RID='r:'+'i'+'d';   /* written in pieces so the WordPress converter leaves it alone */
+  const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const col=c=>{ let s=''; c++; while(c){ const m=(c-1)%26; s=String.fromCharCode(65+m)+s; c=Math.floor((c-1)/26); } return s; };
+  /* styles: 0 default · 1 title · 2 bold · 3 note · 4 sum · 5+3(L-1)+{0 classic original, 1 seven-seg original, 2 reflection} */
+  const MAXL=15, stE=(L,kind)=>5+3*(Math.min(L,MAXL)-1)+kind;
+  function styles(){
+    let nf='', xf='<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'+
+      '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/>'+
+      '<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/>'+
+      '<xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1"/>'+
+      '<xf numFmtId="1" fontId="3" fillId="5" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center"/></xf>';
+    for(let L=1;L<=MAXL;L++){ nf+=`<numFmt numFmtId="${163+L}" formatCode="${'0'.repeat(L)}"/>`;
+      for(const fill of [2,4,3]) xf+=`<xf numFmtId="${163+L}" fontId="4" fillId="${fill}" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center"/></xf>`; }
+    const fill=c=>`<fill><patternFill patternType="solid"><fgColor rgb="FF${c}"/><bgColor indexed="64"/></patternFill></fill>`;
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+
+      `<numFmts count="${MAXL}">${nf}</numFmts>`+
+      '<fonts count="5"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="13"/><color rgb="FF4B2E83"/><name val="Calibri"/></font>'+
+      '<font><b/><sz val="11"/><color rgb="FF8A3B2E"/><name val="Calibri"/></font><font><i/><sz val="10"/><color rgb="FF555555"/><name val="Calibri"/></font><font><sz val="11"/><name val="Consolas"/></font></fonts>'+
+      '<fills count="6"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>'+fill('FFF4C4')+fill('E6F6C6')+fill('FFE1F0')+fill('EDE7FB')+'</fills>'+
+      '<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color rgb="FFB8B0A0"/></left><right style="thin"><color rgb="FFB8B0A0"/></right><top style="thin"><color rgb="FFB8B0A0"/></top><bottom style="thin"><color rgb="FFB8B0A0"/></bottom><diagonal/></border></borders>'+
+      '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'+
+      `<cellXfs count="${5+3*MAXL}">${xf}</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+  }
+  function Sheet(name){ this.name=name.replace(/[:\\\/?*\[\]]/g,'').slice(0,31); this.rows={}; this.widths={}; }
+  Sheet.prototype.set=function(r,c,v,s,f){ (this.rows[r]=this.rows[r]||[])[c]={v,s:s||0,f}; };
+  Sheet.prototype.width=function(c,w){ this.widths[c]=Math.max(this.widths[c]||0,w); };
+  Sheet.prototype.xml=function(){
+    const cols=Object.keys(this.widths).map(Number).sort((a,b)=>a-b).map(c=>`<col min="${c+1}" max="${c+1}" width="${this.widths[c]}" customWidth="1"/>`).join('');
+    const rows=Object.keys(this.rows).map(Number).sort((a,b)=>a-b).map(r=>`<row r="${r+1}">`+this.rows[r].map((x,c)=>{ if(!x) return '';
+      const ref=col(c)+(r+1);
+      if(typeof x.v==='number') return `<c r="${ref}" s="${x.s}">${x.f?`<f>${x.f}</f>`:''}<v>${x.v}</v></c>`;
+      return `<c r="${ref}" s="${x.s}" t="inlineStr"><is><t xml:space="preserve">${esc(x.v)}</t></is></c>`; }).join('')+'</row>').join('');
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+
+      (cols?`<cols>${cols}</cols>`:'')+`<sheetData>${rows}</sheetData></worksheet>`;
+  };
+  function book(sheets){
+    const files=[];
+    files.push({name:'[Content_Types].xml',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'+
+      sheets.map((s,i)=>`<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')+'</Types>'});
+    files.push({name:'_rels/.rels',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'});
+    files.push({name:'xl/workbook.xml',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>'+
+      sheets.map((s,i)=>`<sheet name="${esc(s.name)}" sheetId="${i+1}" ${RID}="rId${i+1}"/>`).join('')+'</sheets><calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>'});
+    files.push({name:'xl/_rels/workbook.xml.rels',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
+      sheets.map((s,i)=>`<Relationship Id="rId${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join('')+
+      `<Relationship Id="rId${sheets.length+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`});
+    files.push({name:'xl/styles.xml',data:styles()});
+    sheets.forEach((s,i)=>files.push({name:`xl/worksheets/sheet${i+1}.xml`,data:s.xml()}));
+    return zip(files);
+  }
+  return {Sheet,book,col,stE};
+})();
+
+/* one square (original or reflection) with row, column and diagonal sums as live formulas */
+function putSquare(sh,r0,c0,g,kind,title){
+  const n=g.length, L=g[0][0].length, v=g.map(r=>r.map(Number)), C=XL.col;
+  sh.set(r0,c0,title,2);
+  for(let i=0;i<n;i++){ for(let j=0;j<n;j++){ L<=15 ? sh.set(r0+1+i,c0+j,v[i][j],XL.stE(L,kind)) : sh.set(r0+1+i,c0+j,g[i][j],XL.stE(15,kind)); sh.width(c0+j,L+3); }
+    sh.set(r0+1+i,c0+n,sumOf(v[i]),4,`SUM(${C(c0)}${r0+2+i}:${C(c0+n-1)}${r0+2+i})`); }
+  for(let j=0;j<n;j++){ let s=0; for(let i=0;i<n;i++) s+=v[i][j]; sh.set(r0+1+n,c0+j,s,4,`SUM(${C(c0+j)}${r0+2}:${C(c0+j)}${r0+1+n})`); }
+  let d1=0,d2=0; const f1=[],f2=[];
+  for(let i=0;i<n;i++){ d1+=v[i][i]; d2+=v[i][n-1-i]; f1.push(C(c0+i)+(r0+2+i)); f2.push(C(c0+n-1-i)+(r0+2+i)); }
+  sh.set(r0+2+n,c0,'Diagonals',3); sh.set(r0+2+n,c0+1,d1,4,f1.join('+')); sh.set(r0+2+n,c0+2,d2,4,f2.join('+'));
+  sh.width(c0+n,Math.max(10,String(sumOf(v[0])).length+3));
+  return r0+3+n;
+}
+document.getElementById('dlXls').onclick=()=>{
+  const G=allPossibilities(), sheets=[], sum=new XL.Sheet('Summary');
+  sum.set(0,0,'Water Reflection Magic Squares — Order '+GEN.n+(GEN.n===3?' — all squares with entries of up to 4 digits':' — variation '+GEN.seed),1);
+  sum.set(1,0,'Built from '+GEN.desc+' · in water the rows come in reverse order and 2 ↔ 5 (0, 1, 3, 8 unchanged) · Generator by Inder J. Taneja, numbers-magic.com',3);
+  const hdr=['Sheet','Digits','Font','Digits per entry','Squares','Magic sum (original)','Original','Magic sum (reflection)','Reflection'];
+  hdr.forEach((h,c)=>{ sum.set(3,c,h,2); sum.width(c,[8,18,15,15,9,22,20,22,20][c]); });
+  G.forEach((gr,k)=>{
+    const sh=new XL.Sheet(famLabel(gr.fam)), kind=gr.seg?1:0, n=GEN.n, first=gr.squares[0], a=info(first), b=info(reflect(first));
+    sh.set(0,0,'Order '+n+' · digits '+famLabel(gr.fam)+(gr.seg?' · seven-segment, 2 ↔ 5 in water':' · 0, 1, 3, 8 unchanged in water')+(n===3?' · '+gr.squares.length+' squares':' · variation '+GEN.seed),1);
+    let r=2;
+    gr.squares.forEach((sq,q)=>{ const w=reflect(sq), A=info(sq), B=info(w);
+      if(gr.squares.length>1){ sh.set(r,0,'Square '+(q+1)+' of '+gr.squares.length,2); r++; }
+      const r1=putSquare(sh,r,0,sq,kind,'Original — '+A.type+', S = '+A.S);
+      putSquare(sh,r,n+2,w,2,'Water reflection — '+B.type+', S = '+B.S);
+      r=r1+1; });
+    sheets.push(sh);
+    [k+2,famLabel(gr.fam),gr.seg?'seven-segment':'classic',first[0][0].length,gr.squares.length,a.S,a.type,b.S,b.type].forEach((x,c)=>sum.set(4+k,c,x,c===0||c===3||c===4?0:0));
+  });
+  download(XL.book([sum,...sheets]),fileBase()+'.xlsx');
+};
+scopeText();
+statusLine(null);
+</script>
+</body>
+</html>

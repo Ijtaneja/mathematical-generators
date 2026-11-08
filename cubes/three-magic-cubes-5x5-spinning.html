@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Three 5×5 Magic Cubes</title>
+<style>@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=Share+Tech+Mono&display=swap');
+:root{--bg:#06080a;--gold:#c9a84c;--gold-light:#f0d080;--gold-dim:#7a6030;--glow:rgba(201,168,76,0.35);}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--gold-light);font-family:'Share Tech Mono',monospace;min-height:100vh;display:flex;flex-direction:column;align-items:center;background-image:radial-gradient(ellipse at 20% 10%,rgba(180,140,40,0.06) 0%,transparent 55%),radial-gradient(ellipse at 80% 90%,rgba(40,80,180,0.05) 0%,transparent 55%);}
+header{text-align:center;padding:32px 20px 24px;width:100%;border-bottom:1px solid rgba(201,168,76,0.2);}
+header h1{font-family:'Cinzel',serif;font-size:clamp(1.1rem,3vw,2rem);font-weight:900;letter-spacing:0.12em;color:var(--gold-light);text-shadow:0 0 40px var(--glow),0 2px 6px #000;}
+header p{font-size:0.65rem;color:var(--gold-dim);letter-spacing:0.22em;margin-top:8px;text-transform:uppercase;}
+.cubes-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0;width:100%;max-width:1400px;padding:20px;}
+.cube-panel{display:flex;flex-direction:column;align-items:center;padding:16px 10px 20px;border:1px solid rgba(201,168,76,0.12);position:relative;}
+.cube-panel-title{font-family:'Cinzel',serif;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:4px;text-align:center;}
+.cube-panel-sub{font-size:0.52rem;color:var(--gold-dim);letter-spacing:0.1em;margin-bottom:10px;text-align:center;}
+.cube-num-badge{position:absolute;top:10px;left:12px;font-family:'Cinzel',serif;font-size:0.7rem;font-weight:900;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:3px;color:#fff;}
+.scene{perspective:900px;width:280px;height:280px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.cube{width:200px;height:200px;position:relative;transform-style:preserve-3d;}
+.face{position:absolute;width:200px;height:200px;backface-visibility:visible;border:2px solid #111;outline:1.5px solid var(--gold);outline-offset:-1px;box-shadow:0 0 16px rgba(201,168,76,0.15),inset 0 0 12px rgba(0,0,0,0.3);overflow:hidden;}
+.face-front{transform:translateZ(100px);}.face-back{transform:rotateY(180deg) translateZ(100px);}.face-left{transform:rotateY(-90deg) translateZ(100px);}.face-right{transform:rotateY(90deg) translateZ(100px);}.face-top{transform:rotateX(90deg) translateZ(100px);}.face-bottom{transform:rotateX(-90deg) translateZ(100px);}
+.grid5{display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(5,1fr);width:100%;height:100%;border:1.5px solid #111;box-sizing:border-box;}
+.cell{display:flex;align-items:center;justify-content:center;font-family:'Share Tech Mono',monospace;font-size:11px;font-weight:bold;color:#000;border:0.2px solid rgba(0,0,0,0.12);line-height:1;}
+.cb-dark{background:#ffb3c6;}.cb-lite{background:#ffd6e0;}
+.b-outer{background:#90caf9;}.b-inner{background:#ffb3c6;}
+.c-inn{background:#ffb3c6;}.c-arm{background:#fff9c4;}.c-elb{background:#ffd6e0;}
+.bz-r{border-right:1.8px solid rgba(0,0,0,0.5)!important;}.bz-b{border-bottom:1.8px solid rgba(0,0,0,0.5)!important;}.bz-l{border-left:1.8px solid rgba(0,0,0,0.5)!important;}.bz-t{border-top:1.8px solid rgba(0,0,0,0.5)!important;}
+.face-lbl{position:absolute;bottom:2px;right:3px;font-family:'Cinzel',serif;font-size:6px;color:rgba(201,168,76,0.4);pointer-events:none;}</style>
+</head>
+<body>
+<header>
+  <h1>Three 5×5 Magic Cubes</h1>
+  <p style="font-size:0.75rem;color:var(--gold);letter-spacing:0.14em;margin-top:6px;font-family:'Cinzel',serif;">Created by Inder J. Taneja</p>
+  <p>Numbers 1–150 · Magic Constant 375–400 · Three Structural Types</p>
+</header>
+<div class="cubes-grid" id="cubesGrid"></div>
+<script>
+const FACES=[[[[1,37,73,109,145],[103,139,25,31,67],[55,61,97,133,19],[127,13,49,85,91],[79,115,121,7,43]],[[2,38,74,110,146],[104,140,26,32,68],[56,62,98,134,20],[128,14,50,86,92],[80,116,122,8,44]],[[3,39,75,111,147],[105,141,27,33,69],[57,63,99,135,21],[129,15,51,87,93],[81,117,123,9,45]],[[4,40,76,112,148],[106,142,28,34,70],[58,64,100,136,22],[130,16,52,88,94],[82,118,124,10,46]],[[5,41,77,113,149],[107,143,29,35,71],[59,65,101,137,23],[131,17,53,89,95],[83,119,125,11,47]],[[6,42,78,114,150],[108,144,30,36,72],[60,66,102,138,24],[132,18,54,90,96],[84,120,126,12,48]]],[[[127,145,25,37,31],[7,67,97,55,139],[13,61,73,85,133],[103,91,49,79,43],[115,1,121,109,19]],[[128,146,26,38,32],[8,68,98,56,140],[14,62,74,86,134],[104,92,50,80,44],[116,2,122,110,20]],[[129,147,27,39,33],[9,69,99,57,141],[15,63,75,87,135],[105,93,51,81,45],[117,3,123,111,21]],[[130,148,28,40,34],[10,70,100,58,142],[16,64,76,88,136],[106,94,52,82,46],[118,4,124,112,22]],[[131,149,29,41,35],[11,71,101,59,143],[17,65,77,89,137],[107,95,53,83,47],[119,5,125,113,23]],[[132,150,30,42,36],[12,72,102,60,144],[18,66,78,90,138],[108,96,54,84,48],[120,6,126,114,24]]],[[[91,61,67,133,13],[49,73,97,145,1],[79,85,55,37,109],[25,31,127,43,139],[121,115,19,7,103]],[[92,62,68,134,14],[50,74,98,146,2],[80,86,56,38,110],[26,32,128,44,140],[122,116,20,8,104]],[[93,63,69,135,15],[51,75,99,147,3],[81,87,57,39,111],[27,33,129,45,141],[123,117,21,9,105]],[[94,64,70,136,16],[52,76,100,148,4],[82,88,58,40,112],[28,34,130,46,142],[124,118,22,10,106]],[[95,65,71,137,17],[53,77,101,149,5],[83,89,59,41,113],[29,35,131,47,143],[125,119,23,11,107]],[[96,66,72,138,18],[54,78,102,150,6],[84,90,60,42,114],[30,36,132,48,144],[126,120,24,12,108]]]];
+const DEFS=[
+  {title:'Uniform Magic Cube',sub:'Checkerboard 2-color pattern',color:'#c06090',fi:0,cellClass:(r,c,fi)=>(r+c)%2===0?'cb-dark':'cb-lite',borders:()=>''},
+  {title:'Bordered Magic Cube',sub:'1-cell outer ring · 3×3 inner square',color:'#3a8ad4',fi:1,cellClass:(r,c,fi)=>(r===0||r===4||c===0||c===4)?'b-outer':'b-inner',borders:(r,c,cls,fi)=>{const z=(r===0||r===4||c===0||c===4)?'b-outer':'b-inner';const zA=(rr,cc)=>(rr===0||rr===4||cc===0||cc===4)?'b-outer':'b-inner';let b='';if(c<4&&zA(r,c+1)!==z)b+=' bz-r';if(r<4&&zA(r+1,c)!==z)b+=' bz-b';if(c>0&&zA(r,c-1)!==z)b+=' bz-l';if(r>0&&zA(r-1,c)!==z)b+=' bz-t';return b;}},
+  {title:'Corner-Type Magic Cube',sub:'3×3 corner · 2×3 arms · 2×2 elbow',color:'#c08830',fi:2,cellClass:(r,c,fi)=>{const k={0:'TR',1:'BR',2:'TL',3:'BL',4:'BR',5:'BL'}[fi]||'TL';const inn=(k==='TL')?(r<=2&&c<=2):(k==='TR')?(r<=2&&c>=2):(k==='BL')?(r>=2&&c<=2):(r>=2&&c>=2);const elb=(k==='TL')?(r>=3&&c>=3):(k==='TR')?(r>=3&&c<=1):(k==='BL')?(r<=1&&c>=3):(r<=1&&c<=1);return inn?'c-inn':elb?'c-elb':'c-arm';},borders:(r,c,cls,fi)=>{const k={0:'TR',1:'BR',2:'TL',3:'BL',4:'BR',5:'BL'}[fi]||'TL';const zA=(rr,cc)=>{const inn=(k==='TL')?(rr<=2&&cc<=2):(k==='TR')?(rr<=2&&cc>=2):(k==='BL')?(rr>=2&&cc<=2):(rr>=2&&cc>=2);const elb=(k==='TL')?(rr>=3&&cc>=3):(k==='TR')?(rr>=3&&cc<=1):(k==='BL')?(rr<=1&&cc>=3):(rr<=1&&cc<=1);return inn?'c-inn':elb?'c-elb':'c-arm';};let b='';if(c<4&&zA(r,c+1)!==cls)b+=' bz-r';if(r<4&&zA(r+1,c)!==cls)b+=' bz-b';if(c>0&&zA(r,c-1)!==cls)b+=' bz-l';if(r>0&&zA(r-1,c)!==cls)b+=' bz-t';return b;}}
+];
+const FC=['face-front','face-back','face-right','face-left','face-top','face-bottom'];
+const gridEl=document.getElementById('cubesGrid');
+const cubeEls=[];
+DEFS.forEach((def,ci)=>{
+  const panel=document.createElement('div'); panel.className='cube-panel';
+  const badge=document.createElement('div'); badge.className='cube-num-badge'; badge.textContent=ci+1; badge.style.background=def.color; panel.appendChild(badge);
+  const ttl=document.createElement('div'); ttl.className='cube-panel-title'; ttl.style.color=def.color; ttl.textContent=def.title; panel.appendChild(ttl);
+  const sub=document.createElement('div'); sub.className='cube-panel-sub'; sub.textContent=def.sub; panel.appendChild(sub);
+  const scene=document.createElement('div'); scene.className='scene';
+  const cubeEl=document.createElement('div'); cubeEl.className='cube'; cubeEl.style.transform='rotateX(-25deg) rotateY('+(35+ci*5)+'deg)';
+  FACES[def.fi].forEach((faceData,fi)=>{
+    const faceDiv=document.createElement('div'); faceDiv.className='face '+FC[fi]; faceDiv.style.outlineColor=def.color;
+    const g=document.createElement('div'); g.className='grid5';
+    for(let r=0;r<5;r++) for(let c=0;c<5;c++){const cell=document.createElement('div');const cls=def.cellClass(r,c,fi);const brd=def.borders(r,c,cls,fi);cell.className='cell '+cls+brd;cell.textContent=faceData[r][c];g.appendChild(cell);}
+    const lbl=document.createElement('div'); lbl.className='face-lbl'; lbl.textContent='F'+(fi+1);
+    faceDiv.appendChild(g); faceDiv.appendChild(lbl); cubeEl.appendChild(faceDiv);
+  });
+  scene.appendChild(cubeEl); panel.appendChild(scene); gridEl.appendChild(panel);
+  let rY=35+ci*5;
+  cubeEls.push({setRY:v=>rY=v,rY:()=>rY,apply:()=>{cubeEl.style.transform='rotateX(-25deg) rotateY('+rY+'deg)';}});
+});
+(function loop(){cubeEls.forEach(c=>{c.setRY(c.rY()+0.28);c.apply();});requestAnimationFrame(loop);})();</script>
+</body>
+</html>

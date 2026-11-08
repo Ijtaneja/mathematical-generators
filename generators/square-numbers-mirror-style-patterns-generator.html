@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Square Numbers and Mirror-Style Patterns Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Libre+Franklin:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#f5f3fb;--bg2:#ece8f8;--bg3:#e1dbf2;--ink:#1c1a34;--ink2:#4c4770;--ink3:#83809f;
+--accent:#a8791f;--accent2:#8a5a20;--accent3:#5b4fa0;--accent4:#3d7a5c;--border:rgba(28,26,52,0.10);--border2:rgba(28,26,52,0.20);
+--col-a:#d4a017;--col-wrap:#8a5a20;
+--radius:8px;--radius-lg:14px;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--ink);font-family:'Instrument Mono',monospace;min-height:100vh;position:relative;}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='4' height='4' fill='%23f5f3fb'/%3E%3Ccircle cx='1' cy='1' r='0.4' fill='%23d6cfeb'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:0.6;}
+.page{position:relative;z-index:1;max-width:1000px;margin:0 auto;padding:40px 24px 80px;}
+header{padding-bottom:24px;border-bottom:2px solid var(--ink);margin-bottom:26px;display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+h1{font-family:'Fraunces',serif;font-optical-sizing:auto;font-size:clamp(22px,4.5vw,36px);font-weight:900;letter-spacing:-1px;line-height:1;}
+h1 .h1-essence{font-style:italic;color:var(--accent);}
+h1 .h1-sq{color:var(--accent);}
+.subtitle{font-size:11px;color:var(--ink3);letter-spacing:2px;text-transform:uppercase;margin-top:6px;}
+.legend{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+.leg{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--ink2);}
+.leg-dot{width:9px;height:9px;border-radius:2px;}
+.note{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:12px 18px;margin-bottom:16px;font-size:12px;color:var(--ink2);line-height:1.6;}
+.note strong{color:var(--ink);}
+.controls{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:14px 18px;margin-bottom:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;align-items:end;}
+.field label{display:block;font-size:9px;color:var(--ink3);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;}
+.field input,.field select{width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius);color:var(--ink);font-family:'Instrument Mono',monospace;font-size:13px;padding:7px 9px;outline:none;-webkit-appearance:none;appearance:none;}
+.field input:focus,.field select:focus{border-color:var(--accent);}
+.btn{width:100%;padding:8px;background:var(--ink);border:none;border-radius:var(--radius);color:var(--bg);font-family:'Instrument Mono',monospace;font-size:11px;font-weight:600;cursor:pointer;letter-spacing:1px;text-transform:uppercase;transition:all 0.15s;}
+.btn:hover{background:var(--accent);}
+.btn:active{transform:scale(0.98);}
+.btn-dl{background:var(--bg);color:var(--ink);border:1px solid var(--border2);}
+.btn-dl:hover{background:var(--bg3);border-color:var(--ink);}
+.summary{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:7px 13px;margin-bottom:11px;display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--ink2);align-items:center;}
+.summary strong{color:var(--ink);}
+.results-wrap{display:flex;flex-direction:column;gap:11px;}
+@keyframes rise{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+.chain-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;animation:rise 0.22s ease both;}
+.chain-head{display:flex;align-items:center;justify-content:space-between;padding:8px 13px;border-bottom:1px solid var(--border);background:var(--bg3);flex-wrap:wrap;gap:5px;}
+.chain-seed{font-size:11px;font-weight:600;color:var(--ink);}
+.badge{font-size:9px;padding:2px 7px;border-radius:20px;letter-spacing:1px;text-transform:uppercase;}
+.badge-sub{background:rgba(168,121,31,0.12);color:var(--accent);border:1px solid rgba(168,121,31,0.25);}
+.badge-ins{background:rgba(91,79,160,0.12);color:var(--accent3);border:1px solid rgba(91,79,160,0.25);}
+.badge-pal{background:rgba(61,122,92,0.12);color:var(--accent4);border:1px solid rgba(61,122,92,0.25);}
+.badge-none{background:rgba(131,128,159,0.12);color:var(--ink3);border:1px solid rgba(131,128,159,0.25);}
+.badge-small{font-size:8px;padding:1px 6px;}
+.chain-body{padding:8px 13px;overflow-x:auto;}
+.chain-row{display:flex;align-items:baseline;gap:4px;padding:3px 0;border-bottom:0.5px solid var(--border);font-size:12px;white-space:nowrap;}
+.chain-row:last-child{border-bottom:none;}
+.cr-factors{color:var(--col-a);flex-shrink:0;}
+.cr-eq{color:var(--ink3);padding:0 4px;flex-shrink:0;}
+.cr-result{flex:1;}
+.d-ins{display:inline-block;padding:0 2px;border-radius:2px;background:rgba(168,121,31,0.13);color:var(--accent2);border-bottom:1.5px solid var(--accent2);}
+.d-sub-prev{display:inline-block;padding:0 2px;border-radius:2px;background:rgba(168,121,31,0.13);color:var(--accent2);border-bottom:1.5px solid var(--accent2);}
+.d-sub-wrap{display:inline-block;padding:0 2px;color:var(--col-wrap);font-style:italic;}
+.d-plain{display:inline-block;}
+.d-pal-block{display:inline-block;padding:1px 5px;border-radius:3px;background:rgba(61,122,92,0.12);color:var(--accent4);border-bottom:1.5px solid var(--accent4);}
+.tag-s{display:inline-block;font-size:9px;padding:1px 5px;border-radius:10px;margin-left:4px;vertical-align:middle;background:rgba(131,128,159,0.12);color:var(--ink3);border:1px solid rgba(131,128,159,0.2);}
+.embed-note{font-size:10px;color:var(--ink3);margin-top:5px;padding-top:5px;border-top:0.5px solid var(--border);}
+.sec-hdr{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--ink3);padding:4px 0 6px;border-bottom:1px solid var(--border2);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;}
+.sec-count{font-size:11px;background:var(--bg3);padding:2px 9px;border-radius:20px;color:var(--ink2);border:1px solid var(--border);}
+.no-sol{text-align:center;padding:20px;color:var(--ink3);font-size:12px;background:var(--bg2);border-radius:var(--radius-lg);border:1px dashed var(--border2);}
+.tabbar{display:flex;gap:6px;margin-bottom:16px;border-bottom:2px solid var(--ink);}
+.tab-btn{background:none;border:none;font-family:'Instrument Mono',monospace;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--ink3);padding:9px 14px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color 0.15s;}
+.tab-btn:hover{color:var(--ink);}
+.tab-btn.active{color:var(--ink);border-bottom-color:var(--accent);font-weight:600;}
+.tabpanel{}
+.scan-panel{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:14px 18px;margin-bottom:16px;}
+.scan-title{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--ink2);margin-bottom:10px;}
+.scan-controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;align-items:end;}
+.scan-controls .field input[type="text"]{font-size:11px;}
+.scan-results{margin-top:11px;font-size:11px;line-height:2;}
+.ivp-row{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:9px;overflow:hidden;}
+.ivp-head{display:flex;align-items:center;justify-content:space-between;padding:10px 15px;cursor:pointer;gap:8px;flex-wrap:wrap;}
+.ivp-head:hover{background:var(--bg3);}
+.ivp-seed{font-size:13px;font-weight:600;color:var(--ink);}
+.ivp-arrow{font-size:10px;color:var(--ink3);transition:transform 0.15s;}
+.ivp-row.open .ivp-arrow{transform:rotate(90deg);}
+.ivp-body{padding:0 13px 13px;}
+.ivp-cap{text-align:center;padding:14px;color:var(--ink3);font-size:12px;background:var(--bg2);border-radius:var(--radius-lg);border:1px dashed var(--border2);margin-top:6px;}
+.scan-hit{display:inline-block;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:3px 10px;margin:2px;font-size:11px;cursor:pointer;transition:all 0.15s;}
+.scan-hit:hover{background:var(--accent);color:var(--bg);border-color:var(--accent);}
+footer{margin-top:30px;padding-top:16px;border-top:1px solid var(--border2);text-align:center;font-size:11px;color:var(--ink3);}
+footer a{color:var(--ink3);text-decoration:underline;}
+/* Refined golden presentation */
+:root{--bg:#fcfaf4;--bg2:#fff;--bg3:#fff6d8;--ink:#354052;--ink2:#59657a;--ink3:#89919e;--accent:#bd8015;--accent2:#936215;--accent3:#3b6f9f;--accent4:#4b8a68;--border:rgba(53,64,82,.13);--border2:rgba(53,64,82,.25);--col-a:#3b6f9f;--col-wrap:#936215;--radius:10px;--radius-lg:18px}
+body{background:linear-gradient(145deg,#fffefa 0%,#fffbed 55%,#f4f8f4 100%);font-family:'Libre Franklin',Arial,sans-serif}
+body::before{background-image:radial-gradient(circle at 10% 7%,rgba(242,190,52,.11),transparent 25%),radial-gradient(circle at 92% 12%,rgba(75,138,104,.10),transparent 24%),linear-gradient(rgba(189,128,21,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(189,128,21,.025) 1px,transparent 1px);background-size:auto,auto,28px 28px;opacity:1}
+.page{max-width:1120px;padding:26px 28px 80px}
+header{padding:34px 38px 28px;border:1px solid rgba(189,128,21,.23);border-radius:24px;margin-bottom:20px;background:linear-gradient(125deg,rgba(255,255,255,.98),rgba(255,250,232,.94));box-shadow:0 14px 40px rgba(119,88,24,.08);position:relative;overflow:hidden}
+header::after{content:'²';position:absolute;right:35px;top:-28px;color:rgba(189,128,21,.10);font:900 145px/1 'Playfair Display',serif;pointer-events:none}
+h1{font-family:'Playfair Display',Georgia,serif;font-size:clamp(30px,4.3vw,48px);letter-spacing:-1.5px;line-height:1.07;max-width:760px}
+h1 .h1-essence{font-style:italic;color:var(--accent)}
+h1 .h1-sq{font-style:italic;color:var(--accent)}
+h1 .h1-patterns{font-style:normal;color:var(--ink)}
+h1 .title-join{display:inline-block;margin:0 .16em 0 .34em;font-style:normal;color:var(--ink)}
+h1 .title-line{display:block}
+h1 .title-line.second{font-size:.78em;letter-spacing:-.8px;margin-top:5px}
+.subtitle{font-size:12px;color:var(--ink2);letter-spacing:1.5px;margin-top:10px;font-weight:600}
+.legend{gap:6px}.leg{gap:6px;font:11px 'Libre Franklin',Arial,sans-serif;background:rgba(255,255,255,.72);padding:5px 8px;border:1px solid var(--border);border-radius:20px}
+.note{background:linear-gradient(90deg,rgba(255,255,255,.96),rgba(255,252,238,.94));border:1px solid rgba(189,128,21,.22);border-left:4px solid var(--accent);padding:15px 19px;font-size:13px;box-shadow:0 6px 18px rgba(119,88,24,.04)}
+.controls,.scan-panel{background:rgba(255,255,255,.94);padding:20px;border-radius:var(--radius-lg);box-shadow:0 8px 24px rgba(119,88,24,.07)}
+.field label{font-size:10px;color:var(--ink2);letter-spacing:1.25px;margin-bottom:7px;font-weight:700}
+.field input,.field select{background:#fffdf7;font:14px 'DM Mono',monospace;padding:10px 11px}
+.btn{padding:11px 12px;background:linear-gradient(135deg,var(--accent3),#315b80);font-family:'Libre Franklin',Arial,sans-serif;font-weight:800;box-shadow:0 5px 12px rgba(59,111,159,.18)}
+.btn:hover{background:linear-gradient(135deg,var(--accent),var(--accent2));transform:translateY(-1px)}
+.btn-dl{background:#fff;color:var(--ink);box-shadow:none}
+.chain-card,.ivp-row{background:rgba(255,255,255,.96);border-left:4px solid rgba(189,128,21,.56);box-shadow:0 6px 18px rgba(119,88,24,.06)}
+.chain-row{padding:5px 0;font:13px 'DM Mono',monospace}
+.tabbar{gap:8px;padding:6px;background:rgba(255,246,216,.82);border:1px solid rgba(189,128,21,.18);border-radius:14px}
+.tab-btn{border-radius:9px;font:700 12px 'Libre Franklin',Arial,sans-serif;letter-spacing:.7px;padding:11px 20px;margin:0}
+.tab-btn.active{color:#fff;background:linear-gradient(135deg,var(--accent),#9a6513);border:0;box-shadow:0 4px 10px rgba(119,88,24,.18)}
+footer a:hover{color:var(--accent)}
+@media(max-width:680px){.page{padding:14px 12px 54px}header{padding:26px 20px 22px;border-radius:18px}h1{font-size:clamp(30px,10vw,43px)}.tab-btn{flex:1;padding:10px 8px}.controls,.scan-panel{padding:15px}}
+.mirror-intro{font-size:13px;color:var(--ink2);line-height:1.6;margin-bottom:14px}
+.mirror-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.mirror-card{background:rgba(255,255,255,.96);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:0 6px 18px rgba(119,88,24,.06)}
+.mirror-card h3{font:700 12px 'Libre Franklin',Arial,sans-serif;letter-spacing:1px;text-transform:uppercase;color:var(--ink2);padding:12px 15px;background:var(--bg3);border-bottom:1px solid var(--border)}
+.mirror-body{padding:12px 15px;overflow-x:auto}
+.mirror-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:6px 0;border-bottom:1px solid var(--border);font:13px 'DM Mono',monospace;white-space:nowrap}
+.mirror-row:last-child{border-bottom:0}.mirror-cell strong{color:var(--accent3)}.mirror-cell small{display:block;color:var(--ink3);font:10px 'Libre Franklin',Arial,sans-serif;margin-top:2px}
+.mirror-badge{display:inline-block;margin-top:10px;padding:5px 9px;border-radius:20px;background:rgba(75,138,104,.12);border:1px solid rgba(75,138,104,.3);color:var(--accent4);font:700 10px 'Libre Franklin',Arial,sans-serif;letter-spacing:.5px}
+@media(max-width:680px){.mirror-grid{grid-template-columns:1fr}.mirror-row{gap:8px;font-size:12px}}
+</style>
+</head>
+<body>
+<div class="page">
+<header>
+  <div>
+    <p class="subtitle" style="color:var(--accent);margin:0 0 9px;">Recreational Mathematics</p>
+    <h1><span class="title-line"><span class="h1-essence">Square Numbers</span><span class="title-join">and</span><span class="h1-sq">Mirror-Style</span></span><span class="title-line second"><span class="h1-patterns">Patterns Generator</span></span></h1>
+    <p class="subtitle">A² · square, reversal, sum, and palindrome patterns</p>
+    <p style="margin-top:12px;font-size:13px;color:var(--ink2);">Created by <strong style="color:var(--ink);">Inder J. Taneja</strong></p>
+  </div>
+  <div class="legend">
+    <div class="leg"><div class="leg-dot" style="background:var(--col-a)"></div>factor A</div>
+    <div class="leg"><div class="leg-dot" style="background:rgba(168,121,31,0.4)"></div>substring/insertion digits</div>
+    <div class="leg"><div class="leg-dot" style="background:var(--accent4)"></div>palindrome</div>
+  </div>
+</header>
+
+<div class="note">
+  A single seed A grows each step, and the pattern detectors run on A² (A×A) instead of a product of separate factors.
+  Three pattern types are checked: <strong>substring</strong> (result contains previous result), <strong>insertion</strong>
+  (same digits inserted at regular positions each step), and <strong>palindrome</strong> (A² itself reads the same
+  forwards and backwards at every step — the classic case being repunits: 11²=121, 111²=12321, 1111²=1234321...).
+</div>
+
+<div class="tabbar">
+  <button class="tab-btn active" id="tab-btn-single" onclick="switchTab('single')">Single Seed</button>
+  <button class="tab-btn" id="tab-btn-interval" onclick="switchTab('interval')">Interval</button>
+  <button class="tab-btn" id="tab-btn-mirror" onclick="switchTab('mirror')">Mirror Patterns</button>
+</div>
+
+<!-- Single Seed tab -->
+<div id="tab-single" class="tabpanel">
+<div class="controls">
+  <div class="field"><label>Seed A</label><input type="number" id="startA" value="11" min="1"></div>
+  <div class="field"><label>Steps</label><input type="number" id="steps" value="8" min="3" max="12"></div>
+  <div class="field"><label>Max digit</label>
+    <select id="maxDigit">
+      <option value="3">0–3 (fast)</option>
+      <option value="6">0–6</option>
+      <option value="9" selected>0–9 (full)</option>
+    </select>
+  </div>
+  <div class="field"><label>&nbsp;</label><button class="btn" onclick="generate()">Find all solutions ↗</button></div>
+  <div class="field"><label>&nbsp;</label><button class="btn btn-dl" onclick="downloadSingle()">Download .txt ↓</button></div>
+</div>
+<div id="summary" class="summary" style="display:none"></div>
+<div class="results-wrap" id="results"></div>
+</div>
+
+<!-- Interval tab -->
+<div id="tab-interval" class="tabpanel" style="display:none">
+<div class="scan-panel">
+  <div class="scan-title">Interval — scan a range of seeds</div>
+  <div class="scan-controls">
+    <div class="field"><label>Seed from</label><input type="number" id="scanFrom" value="10" min="1"></div>
+    <div class="field"><label>Seed to</label><input type="number" id="scanTo" value="150" min="2"></div>
+    <div class="field"><label>Multiple ranges</label><input type="text" id="multiRange" placeholder="e.g. 10-20, 60-70"></div>
+    <div class="field"><label>Min steps</label><input type="number" id="minChain" value="4" min="2" max="10" title="Keep a pattern once it holds for at least this many steps, even if it breaks before reaching Steps/seed"></div>
+    <div class="field"><label>Steps/seed</label><input type="number" id="dlSteps" value="8" min="3" max="12"></div>
+    <div class="field"><label>Max digit</label>
+      <select id="dlMaxDigit">
+        <option value="3">0–3 (fast)</option>
+        <option value="6" selected>0–6</option>
+        <option value="9">0–9 (slow)</option>
+      </select>
+    </div>
+    <div class="field"><label>Filter</label>
+      <select id="dlOnlyEmbed">
+        <option value="yes">Found patterns only</option>
+        <option value="no">All</option>
+      </select>
+    </div>
+  </div>
+  <div style="display:flex;gap:9px;margin-top:11px;flex-wrap:wrap;align-items:center">
+    <button class="btn" style="flex:1;min-width:120px" onclick="generateIntervalOnScreen()">Show interval results ↗</button>
+    <button class="btn btn-dl" style="flex:2;min-width:170px" onclick="downloadInterval()">Download interval .txt ↓</button>
+    <button class="btn btn-dl" style="flex:2;min-width:170px" onclick="downloadIntervalExcel()">Download interval .xlsx ↓</button>
+    <span id="dl-progress" style="font-size:11px;color:var(--ink3);"></span>
+  </div>
+  <div class="scan-results" id="scan-results">
+    <span style="color:var(--ink3)">Checks substring, insertion, and palindrome patterns across a range of seeds. Click "Show interval results" to generate.</span>
+  </div>
+</div>
+<div id="interval-summary" class="summary" style="display:none"></div>
+<div class="results-wrap" id="interval-results"></div>
+</div>
+
+<!-- Mirror Patterns tab -->
+<div id="tab-mirror" class="tabpanel" style="display:none">
+<div class="scan-panel">
+  <div class="scan-title">Mirror patterns — paired reversals and palindromic sums</div>
+  <p class="mirror-intro">Compare a seed with its digit-reversal. Each row shows the two squares and their sum; the paired family is marked when the square digits mirror one another.</p>
+  <div class="controls">
+    <div class="field"><label>Seed</label><input type="number" id="mirrorSeed" value="12" min="1"></div>
+    <div class="field"><label>Steps</label><input type="number" id="mirrorSteps" value="8" min="2" max="12"></div>
+    <div class="field"><label>Insert digit</label><input type="number" id="mirrorDigit" value="0" min="0" max="9"></div>
+    <div class="field"><label>Growth position</label><select id="mirrorPosition"><option value="mid" selected>Between first/last digits</option><option value="pre">Before seed</option><option value="post">After seed</option></select></div>
+    <div class="field"><label>&nbsp;</label><button class="btn" onclick="generateMirror()">Find mirror pairs ↗</button></div>
+    <div class="field"><label>&nbsp;</label><button class="btn btn-dl" onclick="downloadMirror()">Download .txt ↓</button></div>
+    <div class="field"><label>&nbsp;</label><button class="btn btn-dl" onclick="downloadMirrorExcel()">Download .xlsx ↓</button></div>
+  </div>
+  <div id="mirror-summary" class="summary" style="display:none"></div>
+  <div id="mirror-results"></div>
+</div>
+<div class="scan-panel">
+  <div class="scan-title">Palindromic square search</div>
+  <div class="scan-controls">
+    <div class="field"><label>Seed from</label><input type="number" id="palFrom" value="11" min="1"></div>
+    <div class="field"><label>Seed to</label><input type="number" id="palTo" value="120" min="1"></div>
+    <div class="field"><label>Steps/seed</label><input type="number" id="palSteps" value="4" min="2" max="8"></div>
+    <div class="field"><label>Max digit</label><select id="palMaxDigit"><option value="3" selected>0–3 (fast)</option><option value="6">0–6</option><option value="9">0–9</option></select></div>
+    <div class="field"><label>&nbsp;</label><button class="btn" onclick="findPalindromicSeeds()">Find palindromes ↗</button></div>
+  </div>
+  <div id="pal-results" class="scan-results"><span style="color:var(--ink3)">Search a seed range for square chains that remain palindromic.</span></div>
+</div>
+<div class="scan-panel">
+  <div class="scan-title">Mirror interval — automatic search</div>
+  <div class="scan-controls">
+    <div class="field"><label>Seed from</label><input type="number" id="mirrorFrom" value="10" min="1"></div>
+    <div class="field"><label>Seed to</label><input type="number" id="mirrorTo" value="150" min="1"></div>
+    <div class="field"><label>Steps/seed</label><input type="number" id="mirrorIntervalSteps" value="4" min="2" max="8"></div>
+    <div class="field"><label>Insert digit</label><input type="number" id="mirrorIntervalDigit" value="0" min="0" max="9"></div>
+    <div class="field"><label>Growth position</label><select id="mirrorIntervalPosition"><option value="mid" selected>Between first/last</option><option value="pre">Before seed</option><option value="post">After seed</option></select></div>
+    <div class="field"><label>&nbsp;</label><button class="btn" onclick="scanMirrorInterval()">Scan interval ↗</button></div>
+    <div class="field"><label>&nbsp;</label><button class="btn btn-dl" onclick="downloadMirrorInterval()">Download interval .txt ↓</button></div>
+    <div class="field"><label>&nbsp;</label><button class="btn btn-dl" onclick="downloadMirrorIntervalExcel()">Download interval .xlsx ↓</button></div>
+  </div>
+  <div id="mirror-interval-results" class="scan-results"><span style="color:var(--ink3)">Automatically find seeds whose reversal squares remain mirror pairs.</span></div>
+</div>
+</div>
+
+<footer>
+  <div style="margin-bottom:8px;font-size:13px;color:var(--ink);"><strong>Inder J. Taneja</strong></div>
+  <div>
+    <a href="https://numbers-magic.com/" target="_blank">numbers-magic.com</a>
+    &nbsp;·&nbsp;
+    <a href="https://inderjtaneja.wordpress.com/" target="_blank">inderjtaneja.wordpress.com</a>
+    &nbsp;·&nbsp;
+    <a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/" target="_blank">taneja-mathematical-generators.ijtaneja.chatgpt.site</a>
+  </div>
+</footer>
+</div>
+
+<script>
+// ── Growth ───────────────────────────────────────────────────────
+function grow(s, pos, d, step) {
+  if (step===0) return s;
+  const r=d.repeat(step);
+  if (pos==='pre') return r+s;
+  if (pos==='post') return s+r;
+  return s.length<2 ? r+s : s.slice(0,-1)+r+s.slice(-1);
+}
+function isDegenerateZeroGrowth(seedStr,pos,digit){
+  if (digit!=='0') return false;
+  if (pos==='pre') return true;
+  if (pos==='mid' && seedStr.length<2) return true;
+  return false;
+}
+function buildChainSquare(aStr,pos,digit,steps){
+  const results=[], vals=[];
+  for (let s=0;s<steps;s++){
+    const A=grow(aStr,pos,digit,s);
+    results.push((BigInt(A)*BigInt(A)).toString());
+    vals.push(A);
+  }
+  return {results,vals};
+}
+
+// ── Detector 1: substring containment ────────────────────────────
+function detectSubstring(results) {
+  if (results.length<2) return false;
+  for (let i=1;i<results.length;i++)
+    if (!results[i].includes(results[i-1])) return false;
+  return true;
+}
+
+// ── Detector 2: regular insertion ────────────────────────────────
+function getInsertions(prev, curr) {
+  if (curr.length<=prev.length) return null;
+  const ins=[]; let pi=0,ci=0;
+  while (ci<curr.length) {
+    if (pi<prev.length && curr[ci]===prev[pi]) { pi++; ci++; }
+    else { ins.push({absPos:ci, digit:curr[ci]}); ci++; }
+  }
+  if (pi!==prev.length) return null;
+  return ins;
+}
+function detectRegularInsert(results) {
+  if (results.length<3) return false;
+  let baseDigits=null;
+  const allIns=[];
+  for (let i=1;i<results.length;i++) {
+    const ins=getInsertions(results[i-1],results[i]);
+    if (!ins||ins.length===0) return false;
+    const digits=ins.map(x=>x.digit);
+    if (baseDigits===null) baseDigits=digits;
+    else { if (digits.join('')!==baseDigits.join('')) return false; }
+    allIns.push(ins);
+  }
+  for (let k=0;k<baseDigits.length;k++) {
+    let prevPos=null,stride=null;
+    for (let i=0;i<allIns.length;i++) {
+      const pos=allIns[i][k].absPos;
+      if (prevPos!==null) {
+        const s=pos-prevPos;
+        if (stride===null) stride=s;
+        else if (s!==stride) return false;
+      }
+      prevPos=pos;
+    }
+    if (stride===null||stride<=0) return false;
+  }
+  return true;
+}
+function describeInsert(results) {
+  if (results.length<2) return '';
+  const ins=getInsertions(results[0],results[1]);
+  if (!ins) return '';
+  return 'inserts: '+ins.map(x=>`"${x.digit}"`).join(' + ');
+}
+
+// ── Detector 3: palindrome (new — every step's A² reads the same forwards/backwards) ──
+function isPalindrome(s){ return s===[...s].reverse().join(''); }
+function detectPalindrome(results){ return results.length>=2 && results.every(isPalindrome); }
+function chainLenPalindrome(results){
+  let best=0;
+  for (let L=1;L<=results.length;L++){ if (results.slice(0,L).every(isPalindrome)) best=L; else break; }
+  return best;
+}
+
+// ── All solutions for one seed ──────────────────────────────────────
+function allSolutionsSquare(aStr, steps, maxD, onlyEmbed) {
+  const POS=['pre','mid','post'];
+  const DIGITS=['0',...Array.from({length:maxD},(_,i)=>String(i+1))];
+  const seen=new Set(), combos=[];
+  for (const pos of POS) for (const digit of DIGITS) {
+    if (isDegenerateZeroGrowth(aStr,pos,digit)) continue;
+    const {results,vals}=buildChainSquare(aStr,pos,digit,steps);
+    const isSub=detectSubstring(results);
+    const isIns=!isSub && detectRegularInsert(results);
+    const isPalFull=detectPalindrome(results);
+    const isEmbed=isSub||isIns||isPalFull;
+    if (onlyEmbed && !isEmbed) continue;
+    const key=results.join('|');
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const type=isSub?'substring':isIns?'insertion':isPalFull?'palindrome':'none';
+    const desc=isIns?describeInsert(results):'';
+    // "also palindrome" bonus tag: when the primary type is substring/insertion
+    // but the chain is ALSO palindromic at every step — a nice double-pattern.
+    const alsoPalindrome=(type==='substring'||type==='insertion')&&isPalFull;
+    combos.push({pos,digit,results,vals,type,desc,alsoPalindrome,isEmbed});
+  }
+  return combos;
+}
+
+// ── Longest valid prefix length (for partial-chain / "Min steps") ──
+function chainLenSubstring(results) {
+  let best=1;
+  for (let L=2;L<=results.length;L++) { if (detectSubstring(results.slice(0,L))) best=L; else break; }
+  return best;
+}
+function chainLenInsertion(results) {
+  let best=0;
+  for (let L=3;L<=results.length;L++) { if (detectRegularInsert(results.slice(0,L))) best=L; else break; }
+  return best;
+}
+
+// ── All solutions for one seed (partial-chain: keeps a pattern once it holds ──
+// for at least `minSteps` steps, even if it breaks before reaching `steps`).
+// Used by the interval scan/download, where "Min steps" is honored.
+function allSolutionsChainSquare(aStr, steps, maxD, onlyEmbed, minSteps) {
+  const POS=['pre','mid','post'];
+  const DIGITS=['0',...Array.from({length:maxD},(_,i)=>String(i+1))];
+  const seen=new Set(), combos=[];
+  for (const pos of POS) for (const digit of DIGITS) {
+    if (isDegenerateZeroGrowth(aStr,pos,digit)) continue;
+    const {results,vals}=buildChainSquare(aStr,pos,digit,steps);
+    const subLen=chainLenSubstring(results), validSub=subLen>=2;
+    const insLen=chainLenInsertion(results), validIns=insLen>=3;
+    const palLen=chainLenPalindrome(results), validPal=palLen>=2;
+    let achieved=0,type='none';
+    if (validSub&&(!validIns||subLen>=insLen)&&(!validPal||subLen>=palLen)) { achieved=subLen; type='substring'; }
+    else if (validIns&&(!validPal||insLen>=palLen)) { achieved=insLen; type='insertion'; }
+    else if (validPal) { achieved=palLen; type='palindrome'; }
+    const isEmbed=achieved>=minSteps;
+    if (onlyEmbed && !isEmbed) continue;
+    const len=isEmbed?achieved:steps;
+    const rSlice=results.slice(0,len), vSlice=vals.slice(0,len);
+    const key=rSlice.join('|')+'|'+(isEmbed?type:'none');
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const desc=isEmbed&&type==='insertion'?describeInsert(rSlice):'';
+    // bonus "also palindrome" over the SAME achieved length, when primary type isn't palindrome itself
+    const alsoPalindrome=isEmbed&&type!=='palindrome'&&detectPalindrome(rSlice);
+    combos.push({pos,digit,results:rSlice,vals:vSlice,type:isEmbed?type:'none',desc,alsoPalindrome,isEmbed,requested:steps});
+  }
+  return combos;
+}
+
+// A "boundary" seed is itself a multiple of 10.
+function isBoundarySquare(seed){ return Number(seed)%10===0; }
+// An "obvious ×10" solution is one where growth is literally appending a zero
+// at the end (post,'0') — the seed is just being multiplied by 10 each step.
+function isObviousTenGrowthSquare(c){ return c.pos==='post'&&c.digit==='0'; }
+
+// ── Colorize result for display ───────────────────────────────────
+function colorF(s,color){return `<span style="color:${color}">${s}</span>`;}
+function colorResultSubstring(curr,prev) {
+  if (!prev) return `<span class="d-plain">${curr}</span>`;
+  const idx=curr.indexOf(prev);
+  if (idx===-1) return `<span class="d-plain">${curr}</span>`;
+  return (idx>0?`<span class="d-sub-wrap">${curr.slice(0,idx)}</span>`:'')+
+    `<span class="d-sub-prev">${curr.slice(idx,idx+prev.length)}</span>`+
+    (idx+prev.length<curr.length?`<span class="d-sub-wrap">${curr.slice(idx+prev.length)}</span>`:'');
+}
+function colorResultInsertion(curr,prev) {
+  if (!prev) return `<span class="d-plain">${curr}</span>`;
+  const ins=getInsertions(prev,curr);
+  if (!ins) return `<span class="d-plain">${curr}</span>`;
+  const insSet=new Set(ins.map(x=>x.absPos));
+  let html='', i=0;
+  while (i<curr.length) {
+    const isIns=insSet.has(i);
+    let j=i;
+    while (j<curr.length && insSet.has(j)===isIns) j++;
+    const seg=curr.slice(i,j);
+    html+=isIns?`<span class="d-ins">${seg}</span>`:`<span class="d-plain">${seg}</span>`;
+    i=j;
+  }
+  return html;
+}
+function colorResultPalindrome(curr){
+  return `<span class="d-pal-block">${curr}</span>`;
+}
+
+// ── Render card ───────────────────────────────────────────────────
+function renderCard(c,aStr,steps,delay) {
+  let rows='';
+  for (let i=0;i<steps;i++) {
+    const prev=i>0?c.results[i-1]:null;
+    let resHtml='', tag='';
+    const stepIsPal=isPalindrome(c.results[i]);
+    if (i===0) {
+      resHtml=`<span class="d-plain">${c.results[i]}</span>`;
+      tag='<span class="tag-s">seed</span>';
+    } else if (c.type==='substring') {
+      resHtml=colorResultSubstring(c.results[i],prev);
+    } else if (c.type==='insertion') {
+      resHtml=colorResultInsertion(c.results[i],prev);
+    } else if (c.type==='palindrome') {
+      resHtml=colorResultPalindrome(c.results[i]);
+    } else {
+      resHtml=`<span class="d-plain">${c.results[i]}</span>`;
+    }
+    // Bonus mark: even off the primary type, flag any step whose square is itself a palindrome.
+    if (c.type!=='palindrome' && stepIsPal && i>0) tag+='<span class="tag-s" style="color:var(--accent4);border-color:rgba(61,122,92,0.3)">palindrome</span>';
+    rows+=`<div class="chain-row">
+      <span class="cr-factors">${colorF(c.vals[i],'var(--col-a)')}²</span>
+      <span class="cr-eq">=</span>
+      <span class="cr-result">${resHtml}${tag}</span>
+    </div>`;
+  }
+  const badgeClass=c.type==='substring'?'badge-sub':c.type==='insertion'?'badge-ins':c.type==='palindrome'?'badge-pal':'badge-none';
+  let noteStr=c.type==='insertion'?`insertion pattern · ${c.desc}`:c.type==='substring'?'substring containment':c.type==='palindrome'?'palindrome at every step':'no pattern';
+  const bonusBadge=c.alsoPalindrome?`<span class="badge badge-pal badge-small">also palindrome</span>`:'';
+  return `<div class="chain-card" style="animation-delay:${delay}ms">
+    <div class="chain-head">
+      <span class="chain-seed">${aStr} · ${c.pos}(${c.digit})</span>
+      <span style="display:flex;gap:5px;align-items:center"><span class="badge ${badgeClass}">${c.type}</span>${bonusBadge}</span>
+    </div>
+    <div class="chain-body">
+      ${rows}
+      <div class="embed-note">${noteStr}</div>
+    </div>
+  </div>`;
+}
+
+// ── Generate ──────────────────────────────────────────────────────
+function generate() {
+  const aStr=document.getElementById('startA').value.trim();
+  const steps=Math.max(3,Math.min(12,parseInt(document.getElementById('steps').value)||8));
+  const maxD=parseInt(document.getElementById('maxDigit').value)||6;
+  if (!aStr) return;
+  const embedding=allSolutionsSquare(aStr,steps,maxD,true);
+  let html='';
+  if (embedding.length>0) {
+    html+=`<div class="sec-hdr">Patterns found<span class="sec-count">${embedding.length} found</span></div>`;
+    embedding.forEach((c,i)=>{html+=renderCard(c,aStr,steps,i*35);});
+  } else {
+    html=`<div class="no-sol">No patterns found for ${aStr}² with digits 0–${maxD}.<br>Try increasing max digit, steps, or changing the seed.</div>`;
+  }
+  document.getElementById('results').innerHTML=html;
+  const el=document.getElementById('summary');
+  el.style.display='flex';
+  el.innerHTML=`<strong>${aStr}²</strong> &nbsp;·&nbsp; <strong>${embedding.length}</strong> found (${embedding.filter(c=>c.type==='substring').length} substring, ${embedding.filter(c=>c.type==='insertion').length} insertion, ${embedding.filter(c=>c.type==='palindrome').length} palindrome, ${embedding.filter(c=>c.alsoPalindrome).length} also-palindrome)`;
+  window._last={aStr,steps,combos:embedding,embedding};
+}
+
+// ── Download ───────────────────────────────────────────────────────
+function downloadSingle(){
+  if(!window._last){generate();return;}
+  const{aStr,steps,combos}=window._last;
+  const good=combos;
+  const SEP='='.repeat(72),SEP2='-'.repeat(72);
+  let out=[];
+  out.push(SEP);out.push('  SQUARE NUMBERS PATTERN GENERATOR');out.push(SEP);
+  out.push(`  Seed: ${aStr}  |  Steps: ${steps}  |  Found: ${good.length}  |  Generated: ${new Date().toLocaleString()}`);
+  out.push('');
+  if(!good.length){out.push('  No patterns found.');}
+  const maxR=good.length?Math.max(...good.flatMap(c=>c.results.map(r=>r.length))):0;
+  for(const c of good){
+    out.push(SEP2);
+    out.push(`  ${c.pos}(${c.digit})  |  ${c.type.toUpperCase()}${c.desc?' | '+c.desc:''}${c.alsoPalindrome?' | also palindrome':''}`);
+    out.push(SEP2);
+    const maxA=Math.max(...c.vals.map(v=>v.length));
+    for(let i=0;i<steps;i++){
+      const lhs=c.vals[i].padStart(maxA)+'^2';
+      const rhs=c.results[i].padStart(maxR);
+      out.push(`  ${lhs}  =  ${rhs}`);
+    }
+    out.push('');
+  }
+  out.push(SEP);
+  const blob=new Blob([out.join('\n')],{type:'text/plain'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=`square-${aStr}.txt`;a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── Mirror patterns ────────────────────────────────────────────────
+function reverseDigits(s){ return String(s).split('').reverse().join(''); }
+function mirrorChain(seed,pos,digit,steps){
+  const rev=reverseDigits(seed), rows=[];
+  for(let i=0;i<steps;i++){
+    const a=grow(seed,pos,digit,i), b=grow(rev,pos,digit,i);
+    const as=(BigInt(a)*BigInt(a)).toString(), bs=(BigInt(b)*BigInt(b)).toString();
+    rows.push({a,b,as,bs,sum:(BigInt(as)+BigInt(bs)).toString(),mirror:as===reverseDigits(bs),palA:isPalindrome(as),palB:isPalindrome(bs)});
+  }
+  return {rev,rows};
+}
+function generateMirror(){
+  const seed=document.getElementById('mirrorSeed').value.trim(), steps=Math.max(2,Math.min(12,parseInt(document.getElementById('mirrorSteps').value)||8));
+  const digit=String(Math.max(0,Math.min(9,parseInt(document.getElementById('mirrorDigit').value)||0))), pos=document.getElementById('mirrorPosition').value;
+  if(!/^\d+$/.test(seed)||BigInt(seed)<1n)return;
+  const data=mirrorChain(seed,pos,digit,steps), mirrorRows=data.rows.filter(r=>r.mirror).length;
+  let html='<div class="mirror-card"><h3>'+seed+' ↔ '+data.rev+' · square pairs</h3><div class="mirror-body">';
+  data.rows.forEach((r,i)=>{html+='<div class="mirror-row"><div class="mirror-cell"><strong>'+r.a+'² = '+r.as+'</strong></div><div class="mirror-cell"><strong>'+r.b+'² = '+r.bs+'</strong></div><div class="mirror-cell" style="grid-column:1 / -1;color:var(--accent4)"><small>'+r.a+'² + '+r.b+'² = '+r.as+' + '+r.bs+'</small></div></div>';});
+  html+='<span class="mirror-badge">'+mirrorRows+' of '+steps+' rows are exact digit mirrors</span></div></div>';
+  document.getElementById('mirror-results').innerHTML=html;
+  const s=document.getElementById('mirror-summary');s.style.display='flex';s.innerHTML='<strong>'+seed+' ↔ '+data.rev+'</strong> · insert '+digit+' at '+pos+' · <strong>'+mirrorRows+'</strong> mirrored pairs';
+  window._mirror={seed,pos,digit,steps,data};
+}
+function scanMirrorInterval(){
+  const from=Math.max(1,parseInt(document.getElementById('mirrorFrom').value)||1);
+  const to=Math.min(from+499,Math.max(from,parseInt(document.getElementById('mirrorTo').value)||from));
+  const steps=Math.max(2,Math.min(8,parseInt(document.getElementById('mirrorIntervalSteps').value)||4));
+  const digit=String(Math.max(0,Math.min(9,parseInt(document.getElementById('mirrorIntervalDigit').value)||0)));
+  const pos=document.getElementById('mirrorIntervalPosition').value, hits=[];
+  for(let n=from;n<=to;n++){
+    const data=mirrorChain(String(n),pos,digit,steps);
+    if(data.rows.every(r=>r.mirror)) hits.push({n,rev:data.rev,data});
+  }
+  const el=document.getElementById('mirror-interval-results');
+  window._mirrorInterval={from,to,steps,digit,pos,hits};
+  if(!hits.length){el.innerHTML='<span style="color:var(--ink3)">No complete mirror families found in this interval. Try the middle position with insert digit 0.</span>';return;}
+  el.innerHTML='<strong>'+hits.length+'</strong> complete families found · '+hits.map(h=>'<span class="scan-hit" onclick="document.getElementById(\'mirrorSeed\').value='+h.n+';document.getElementById(\'mirrorPosition\').value=\''+pos+'\';document.getElementById(\'mirrorDigit\').value='+digit+';generateMirror()">'+h.n+' ↔ '+h.rev+'</span>').join('');
+}
+function findPalindromicSeeds(){
+  const from=Math.max(1,parseInt(document.getElementById('palFrom').value)||1), to=Math.min(from+499,parseInt(document.getElementById('palTo').value)||from), steps=Math.max(2,Math.min(8,parseInt(document.getElementById('palSteps').value)||4)), maxD=parseInt(document.getElementById('palMaxDigit').value)||3, hits=[];
+  for(let n=from;n<=to;n++){
+    const sols=allSolutionsSquare(String(n),steps,maxD,true).filter(c=>c.type==='palindrome');
+    if(sols.length) hits.push({n,sols});
+  }
+  const el=document.getElementById('pal-results');
+  if(!hits.length){el.innerHTML='<span style="color:var(--ink3)">No all-step palindromic chains found in this range.</span>';return;}
+  el.innerHTML=hits.map(h=>'<div class="scan-hit" onclick="document.getElementById(\'mirrorSeed\').value='+h.n+';generateMirror()">'+h.n+'² · '+h.sols.length+' chain'+(h.sols.length>1?'s':'')+'</div>').join('');
+}
+function downloadMirror(){
+  if(!window._mirror){generateMirror();if(!window._mirror)return;}
+  const {seed,data,steps}=window._mirror, lines=['SQUARE MIRROR PATTERNS','Seed: '+seed+' | Reversal: '+data.rev,''];
+  data.rows.forEach(r=>lines.push(r.a+'^2 + '+r.b+'^2 = '+r.as+' + '+r.bs));
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([lines.join('\n')],{type:'text/plain'}));a.download='square-mirror-'+seed+'.txt';a.click();
+}
+function downloadMirrorExcel(){
+  if(!window._mirror){generateMirror();if(!window._mirror)return;}
+  const d=window._mirror, rows=[['Seed A','Reversed seed','A²','Reversed seed²','A² digits','Reversed digits','Exact mirror?']];
+  d.data.rows.forEach(r=>rows.push([r.a,r.b,r.as,r.bs,r.as,r.bs,r.mirror?'Yes':'No']));
+  const wb=XLSX.utils.book_new(),ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:16},{wch:18},{wch:22},{wch:24},{wch:22},{wch:24},{wch:16}];XLSX.utils.book_append_sheet(wb,ws,'Mirror Squares');XLSX.writeFile(wb,'square-mirror-'+d.seed+'.xlsx');
+}
+function downloadMirrorInterval(){
+  if(!window._mirrorInterval){scanMirrorInterval();if(!window._mirrorInterval)return;}
+  const d=window._mirrorInterval, lines=['SQUARE MIRROR PATTERNS — INTERVAL','Seeds: '+d.from+'–'+d.to+' | Steps: '+d.steps+' | Insert digit: '+d.digit+' | Position: '+d.pos,'Found families: '+d.hits.length,''];
+  d.hits.forEach(h=>{lines.push('--- '+h.n+' ↔ '+h.rev+' ---');h.data.rows.forEach(r=>lines.push(r.a+'^2 + '+r.b+'^2 = '+r.as+' + '+r.bs));lines.push('');});
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([lines.join('\n')],{type:'text/plain'}));a.download='square-mirror-interval-'+d.from+'-'+d.to+'.txt';a.click();
+}
+function downloadMirrorIntervalExcel(){
+  if(!window._mirrorInterval){scanMirrorInterval();}
+  const d=window._mirrorInterval, rows=[['Seed A','Reversed seed','A²','Reversed seed²','Exact mirror?']];
+  d.hits.forEach(h=>h.data.rows.forEach(r=>rows.push([r.a,r.b,r.as,r.bs,r.mirror?'Yes':'No'])));
+  const wb=XLSX.utils.book_new(),ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:16},{wch:18},{wch:22},{wch:24},{wch:16}];XLSX.utils.book_append_sheet(wb,ws,'Mirror Interval');XLSX.writeFile(wb,'square-mirror-interval-'+d.from+'-'+d.to+'.xlsx');
+}
+
+// ── Tabs ────────────────────────────────────────────────────────────
+function switchTab(name){
+  document.getElementById('tab-single').style.display=name==='single'?'':'none';
+  document.getElementById('tab-interval').style.display=name==='interval'?'':'none';
+  document.getElementById('tab-mirror').style.display=name==='mirror'?'':'none';
+  document.getElementById('tab-btn-single').classList.toggle('active',name==='single');
+  document.getElementById('tab-btn-interval').classList.toggle('active',name==='interval');
+  document.getElementById('tab-btn-mirror').classList.toggle('active',name==='mirror');
+}
+
+// ── Range parser ──────────────────────────────────────────────────
+function parseRangesSquare(){
+  const multi=document.getElementById('multiRange').value.trim();
+  const seeds=[];
+  if (multi) {
+    const nums=new Set();
+    multi.split(',').map(s=>s.trim()).forEach(part=>{
+      const m=part.match(/^(\d+)\s*-\s*(\d+)$/);
+      if (m){const lo=parseInt(m[1]),hi=Math.min(parseInt(m[2]),lo+499);for(let i=lo;i<=hi;i++)nums.add(i);}
+      else{const n=parseInt(part);if(!isNaN(n)&&n>=1)nums.add(n);}
+    });
+    [...nums].sort((a,b)=>a-b).forEach(n=>seeds.push(n));
+  } else {
+    const from=parseInt(document.getElementById('scanFrom').value);
+    const to=Math.min(parseInt(document.getElementById('scanTo').value),from+500);
+    for(let n=from;n<=to;n++)seeds.push(n);
+  }
+  return seeds;
+}
+
+// ── Interval on-screen generation ──────────────────────────────────
+const IVP_ONSCREEN_CAP=50;
+function toggleIvpRow(row){
+  const body=row.querySelector('.ivp-body');
+  const open=row.classList.toggle('open');
+  body.style.display=open?'':'none';
+}
+function loadIntervalSquare(seed){
+  document.getElementById('startA').value=seed;
+  switchTab('single');
+  generate();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function generateIntervalOnScreen(){
+  const seeds=parseRangesSquare();
+  const minChain=parseInt(document.getElementById('minChain').value)||4;
+  const steps=Math.max(3,Math.min(12,parseInt(document.getElementById('dlSteps').value)||8));
+  const maxD=parseInt(document.getElementById('dlMaxDigit').value);
+  const onlyEmbed=document.getElementById('dlOnlyEmbed').value==='yes';
+  const el=document.getElementById('scan-results');
+  const summaryEl=document.getElementById('interval-summary');
+  const resultsEl=document.getElementById('interval-results');
+  summaryEl.style.display='none';
+  resultsEl.innerHTML='';
+  el.innerHTML=`<span style="color:var(--ink3)">Scanning ${seeds.length} seeds…</span>`;
+  if(seeds.length>80&&!confirm(`Process ${seeds.length} seeds?`))return;
+  setTimeout(()=>{
+    const hits=[];
+    let totalSolutions=0;
+    for(const seed of seeds){
+      const combos=allSolutionsChainSquare(String(seed),steps,maxD,onlyEmbed,minChain);
+      const good=onlyEmbed?combos.filter(c=>c.isEmbed):combos;
+      if(!good.length)continue;
+      hits.push({seed,combos:good});
+      totalSolutions+=good.length;
+    }
+    if(!hits.length){
+      el.innerHTML=`<span style="color:var(--ink3)">No matching seeds found. Try a wider range, higher max digit, or lower min steps.</span>`;
+      return;
+    }
+    el.innerHTML='';
+    summaryEl.style.display='flex';
+    summaryEl.innerHTML=`<strong>${hits.length}</strong> seeds found &nbsp;·&nbsp; <strong>${totalSolutions}</strong> solutions total`
+      +(hits.length>IVP_ONSCREEN_CAP?` &nbsp;·&nbsp; showing first <strong>${IVP_ONSCREEN_CAP}</strong> seeds below`:'');
+    const shown=hits.slice(0,IVP_ONSCREEN_CAP);
+    let html='';
+    shown.forEach((h)=>{
+      const seedStr=String(h.seed);
+      const cardsHtml=h.combos.map((c,j)=>renderCard(c,seedStr,c.results.length,j*15)).join('');
+      html+=`<div class="ivp-row" onclick="toggleIvpRow(this)">
+        <div class="ivp-head">
+          <span class="ivp-seed">${seedStr}²</span>
+          <span class="badge badge-sub">${h.combos.length} solution${h.combos.length>1?'s':''}</span>
+          <span class="ivp-arrow">▶</span>
+        </div>
+        <div class="ivp-body" style="display:none" onclick="event.stopPropagation()">${cardsHtml}</div>
+      </div>`;
+    });
+    if(hits.length>IVP_ONSCREEN_CAP){
+      const rest=hits.slice(IVP_ONSCREEN_CAP);
+      const restHtml=rest.map(h=>`<span class="scan-hit" onclick="loadIntervalSquare(${h.seed})">${h.seed}²<sup style="font-size:8px">${h.combos.length}</sup></span>`).join('');
+      html+=`<div class="ivp-cap">${rest.length} more seed${rest.length>1?'s':''} found but not shown as cards above — click one to explore it in the Single Seed tab, or use "Download interval .txt/.xlsx" for the full set:<div style="margin-top:8px">${restHtml}</div></div>`;
+    }
+    resultsEl.innerHTML=html;
+    document.getElementById('dl-progress').textContent=`${hits.length} seeds, ${totalSolutions} solutions`;
+  },10);
+}
+
+// ── Download interval (.txt) — split into Regular / Boundary / Obvious ×10 ──
+function downloadInterval(){
+  const seeds=parseRangesSquare();
+  const minChain=parseInt(document.getElementById('minChain').value)||4;
+  const steps=Math.max(3,Math.min(12,parseInt(document.getElementById('dlSteps').value)||8));
+  const maxD=parseInt(document.getElementById('dlMaxDigit').value);
+  const onlyEmbed=document.getElementById('dlOnlyEmbed').value==='yes';
+  const prog=document.getElementById('dl-progress');
+  if(seeds.length>80&&!confirm(`Process ${seeds.length} seeds?`))return;
+  prog.textContent='Building…';
+  setTimeout(()=>{
+    const SEP='='.repeat(72),SEP2='-'.repeat(72),SEP3='·'.repeat(72);
+    const blocks={obvious:[],boundary:[],regular:[]};
+    const counts={obvious:{seeds:0,sol:0},boundary:{seeds:0,sol:0},regular:{seeds:0,sol:0}};
+    const noSolutionRegular=[],noSolutionBoundary=[];
+    function renderBlock(seedStr,list){
+      const block=[];
+      block.push(SEP);block.push(`  SEED: ${seedStr}²   (${list.length} solution${list.length>1?'s':''})`);block.push(SEP);
+      const maxR=Math.max(...list.flatMap(c=>c.results.map(r=>r.length)));
+      for(const c of list){
+        const n=c.results.length;
+        const partialNote=c.isEmbed&&n<c.requested?` | steps: ${n}/${c.requested} (chain broke after ${n})`:'';
+        block.push('');block.push(SEP2);
+        block.push(`  ${c.pos}(${c.digit})  |  type: ${c.type.toUpperCase()}${c.desc?' | '+c.desc:''}${c.alsoPalindrome?' | also palindrome':''}${partialNote}`);
+        block.push(SEP2);
+        const maxA=Math.max(...c.vals.map(v=>v.length));
+        for(let i=0;i<n;i++){
+          const lhs=c.vals[i].padStart(maxA)+'^2';
+          const rhs=c.results[i].padStart(maxR);
+          block.push(`  ${lhs}  =  ${rhs}`);
+        }
+        block.push('');
+      }
+      block.push(SEP3);
+      return block;
+    }
+    for(const seed of seeds){
+      const seedStr=String(seed);
+      const combos=allSolutionsChainSquare(seedStr,steps,maxD,onlyEmbed,minChain);
+      const good=onlyEmbed?combos.filter(c=>c.isEmbed):combos;
+      if(!good.length){
+        (isBoundarySquare(seed)?noSolutionBoundary:noSolutionRegular).push(seedStr);
+        continue;
+      }
+      const seedIsBoundary=isBoundarySquare(seed);
+      const byCat={obvious:[],boundary:[],regular:[]};
+      good.forEach(c=>{
+        if(isObviousTenGrowthSquare(c)) byCat.obvious.push(c);
+        else if(seedIsBoundary) byCat.boundary.push(c);
+        else byCat.regular.push(c);
+      });
+      for(const cat of ['regular','boundary','obvious']){
+        if(!byCat[cat].length) continue;
+        blocks[cat].push(...renderBlock(seedStr,byCat[cat]));
+        counts[cat].seeds++;counts[cat].sol+=byCat[cat].length;
+      }
+    }
+    const out=[];
+    out.push(SEP);out.push('  SQUARE NUMBERS PATTERN GENERATOR -- INTERVAL RESULTS');out.push(SEP);
+    out.push(`  Range     : ${seeds[0]}–${seeds[seeds.length-1]}`);
+    out.push(`  Seeds     : ${seeds.length}`);
+    out.push(`  Max digit : ${maxD}  |  Steps: ${steps}  |  Min embed steps: ${minChain}`);
+    out.push(`  Pattern   : substring + insertion + palindrome (with "also palindrome" bonus tag)`);
+    out.push(`  Filter    : ${onlyEmbed?'found patterns only':'all combinations'}`);
+    out.push(`  Categories: Regular · Boundary (seed is a multiple of 10) · Obvious ×10 (seed just grows by appending zeros)`);
+    out.push(`  Generated : ${new Date().toLocaleString()}`);
+    out.push('');
+    out.push(SEP);out.push(`  REGULAR SEEDS — ${counts.regular.seeds} seeds, ${counts.regular.sol} solutions`);out.push(SEP);
+    out.push('');
+    if(blocks.regular.length) out.push(...blocks.regular); else out.push('  (none)');
+    out.push('');
+    out.push(SEP);out.push(`  BOUNDARY SEEDS (multiple of 10) — ${counts.boundary.seeds} seeds, ${counts.boundary.sol} solutions`);out.push(SEP);
+    out.push('');
+    if(blocks.boundary.length) out.push(...blocks.boundary); else out.push('  (none)');
+    out.push('');
+    out.push(SEP);out.push(`  OBVIOUS ×10 SOLUTIONS — ${counts.obvious.seeds} seeds, ${counts.obvious.sol} solutions`);out.push(SEP);
+    out.push('');
+    if(blocks.obvious.length) out.push(...blocks.obvious); else out.push('  (none)');
+    out.push('');
+    out.push(SEP);out.push('  SUMMARY');out.push(SEP);
+    out.push(`  Regular  — seeds with solutions  : ${counts.regular.seeds}`);
+    out.push(`  Regular  — total solutions       : ${counts.regular.sol}`);
+    out.push(`  Boundary — seeds with solutions  : ${counts.boundary.seeds}`);
+    out.push(`  Boundary — total solutions       : ${counts.boundary.sol}`);
+    out.push(`  Obvious ×10 — seeds w/ solutions : ${counts.obvious.seeds}`);
+    out.push(`  Obvious ×10 — total solutions    : ${counts.obvious.sol}`);
+    out.push(`  Seeds with no solution (regular) : ${noSolutionRegular.length}`);
+    out.push(`  Seeds with no solution (boundary): ${noSolutionBoundary.length}`);
+    out.push(`  All seeds scanned                : ${seeds.length}`);
+    out.push('');out.push(SEP);
+    if(noSolutionRegular.length){
+      out.push('');out.push(SEP);out.push(`  REGULAR SEEDS WITH NO SOLUTIONS (${noSolutionRegular.length})`);out.push(SEP);
+      for(let i=0;i<noSolutionRegular.length;i+=8) out.push('  '+noSolutionRegular.slice(i,i+8).join(', '));
+      out.push('');out.push(SEP);
+    }
+    if(noSolutionBoundary.length){
+      out.push('');out.push(SEP);out.push(`  BOUNDARY SEEDS WITH NO SOLUTIONS (${noSolutionBoundary.length})`);out.push(SEP);
+      for(let i=0;i<noSolutionBoundary.length;i+=8) out.push('  '+noSolutionBoundary.slice(i,i+8).join(', '));
+      out.push('');out.push(SEP);
+    }
+    const rangeLabel=`${seeds[0]}-${seeds[seeds.length-1]}`;
+    const blob=new Blob([out.join('\n')],{type:'text/plain'});
+    const url=URL.createObjectURL(blob);
+    const anchor=document.createElement('a');
+    anchor.href=url;anchor.download=`square-interval-${rangeLabel}.txt`;anchor.click();
+    URL.revokeObjectURL(url);
+    prog.textContent=`Done — Regular:${counts.regular.seeds}/${counts.regular.sol} · Boundary:${counts.boundary.seeds}/${counts.boundary.sol} · Obvious×10:${counts.obvious.seeds}/${counts.obvious.sol}`;
+  },30);
+}
+
+// ── Download interval (.xlsx) ───────────────────────────────────────
+function downloadIntervalExcel(){
+  const seeds=parseRangesSquare();
+  const steps=Math.max(3,Math.min(12,parseInt(document.getElementById('dlSteps').value)||8));
+  const maxD=parseInt(document.getElementById('dlMaxDigit').value);
+  const onlyEmbed=document.getElementById('dlOnlyEmbed').value==='yes';
+  const minChain=parseInt(document.getElementById('minChain').value)||4;
+  const prog=document.getElementById('dl-progress');
+  if(seeds.length>80&&!confirm(`Process ${seeds.length} seeds?`))return;
+  prog.textContent='Building Excel…';
+  setTimeout(()=>{
+    const header=['Seed','Type','Also palindrome','Pattern','Growth','Steps achieved','Steps requested','Step','A','Result'];
+    const rows={regular:[header.slice()],boundary:[header.slice()],obvious:[header.slice()]};
+    const none={regular:[['Seed']],boundary:[['Seed']]};
+    const counts={regular:{seeds:0,sol:0},boundary:{seeds:0,sol:0},obvious:{seeds:0,sol:0}};
+    for(const seed of seeds){
+      const seedStr=String(seed);
+      const combos=allSolutionsChainSquare(seedStr,steps,maxD,onlyEmbed,minChain);
+      const good=onlyEmbed?combos.filter(c=>c.isEmbed):combos;
+      if(!good.length){
+        (isBoundarySquare(seed)?none.boundary:none.regular).push([seedStr]);
+        continue;
+      }
+      const seedIsBoundary=isBoundarySquare(seed);
+      const byCat={obvious:[],boundary:[],regular:[]};
+      good.forEach(c=>{
+        if(isObviousTenGrowthSquare(c)) byCat.obvious.push(c);
+        else if(seedIsBoundary) byCat.boundary.push(c);
+        else byCat.regular.push(c);
+      });
+      for(const cat of ['regular','boundary','obvious']){
+        if(!byCat[cat].length) continue;
+        counts[cat].seeds++;counts[cat].sol+=byCat[cat].length;
+        byCat[cat].forEach(c=>{
+          const n=c.results.length;
+          for(let i=0;i<n;i++){
+            rows[cat].push([seedStr,c.type,c.alsoPalindrome?'yes':'',c.desc||'',`${c.pos}(${c.digit})`,n,c.requested,i+1,c.vals[i],c.results[i]]);
+          }
+        });
+      }
+    }
+    const totalRows=rows.regular.length+rows.boundary.length+rows.obvious.length+none.regular.length+none.boundary.length;
+    if(totalRows===5){prog.textContent='No seeds to export.';return;}
+    const wb=XLSX.utils.book_new();
+    const cols=[{wch:10},{wch:11},{wch:14},{wch:24},{wch:12},{wch:13},{wch:14},{wch:6},{wch:16},{wch:20}];
+    const noneCols=[{wch:12}];
+    const summaryRows=[
+      ['SQUARE NUMBERS PATTERN GENERATOR -- INTERVAL SUMMARY',''],
+      ['Range',`${seeds[0]}–${seeds[seeds.length-1]}`],
+      ['Seeds scanned',seeds.length],
+      ['Max digit',maxD],
+      ['Steps/seed',steps],
+      ['Min embed steps',minChain],
+      ['Filter',onlyEmbed?'found patterns only':'all combinations'],
+      ['Generated',new Date().toLocaleString()],
+      ['',''],
+      ['Category','Seeds with solutions','Total solutions'],
+      ['Regular',counts.regular.seeds,counts.regular.sol],
+      ['Boundary (multiple of 10)',counts.boundary.seeds,counts.boundary.sol],
+      ['Obvious ×10 (seed grows by appending zeros)',counts.obvious.seeds,counts.obvious.sol],
+      ['',''],
+      ['Seeds with no solution (regular)',none.regular.length-1],
+      ['Seeds with no solution (boundary)',none.boundary.length-1],
+    ];
+    const wsSummary=XLSX.utils.aoa_to_sheet(summaryRows);
+    wsSummary['!cols']=[{wch:40},{wch:22},{wch:18}];
+    XLSX.utils.book_append_sheet(wb,wsSummary,'Summary');
+    const sheetNames={regular:'Regular Solutions',boundary:'Boundary Solutions',obvious:'Obvious ×10 Solutions'};
+    for(const cat of ['regular','boundary','obvious']){
+      if(rows[cat].length>1){
+        const ws=XLSX.utils.aoa_to_sheet(rows[cat]);ws['!cols']=cols;
+        XLSX.utils.book_append_sheet(wb,ws,sheetNames[cat]);
+      }
+    }
+    if(none.regular.length>1){
+      const ws=XLSX.utils.aoa_to_sheet(none.regular);ws['!cols']=noneCols;
+      XLSX.utils.book_append_sheet(wb,ws,'No Solutions (Regular)');
+    }
+    if(none.boundary.length>1){
+      const ws=XLSX.utils.aoa_to_sheet(none.boundary);ws['!cols']=noneCols;
+      XLSX.utils.book_append_sheet(wb,ws,'No Solutions (Boundary)');
+    }
+    const rangeLabel=`${seeds[0]}-${seeds[seeds.length-1]}`;
+    XLSX.writeFile(wb,`square-interval-${rangeLabel}.xlsx`);
+    prog.textContent=`Excel done — Regular:${counts.regular.seeds}/${counts.regular.sol} · Boundary:${counts.boundary.seeds}/${counts.boundary.sol} · Obvious×10:${counts.obvious.seeds}/${counts.obvious.sol}`;
+  },30);
+}
+
+generate();
+</script>
+</body>
+</html>

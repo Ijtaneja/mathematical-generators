@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>24 Order 4×4 Magic Squares · Rotating 4D Hypercube · Inder J. Taneja</title>
+<style>
+:root{color-scheme:dark;--bg:#081321;--panel:#102239;--line:#48677e;--ink:#f3f7fc;--muted:#afc3d2;--gold:#f5c967}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 34% 7%,#1b3957,var(--bg) 52%);color:var(--ink);font:15px/1.5 system-ui,Segoe UI,sans-serif}.wrap{max-width:1320px;margin:auto;padding:24px}h1{font-size:clamp(1.65rem,3vw,2.7rem);line-height:1.12;margin:0;color:#f8d98b}header p{color:var(--muted);margin:8px 0 20px}.layout{display:grid;grid-template-columns:minmax(340px,1fr) minmax(350px,550px);gap:20px;align-items:start}.panel{background:#11253ad9;border:1px solid #375570;border-radius:17px;padding:17px;box-shadow:0 12px 32px #0004}.stage{position:relative;aspect-ratio:1/1;min-height:420px;background:radial-gradient(circle,#18334f 0%,#081522 73%);border-radius:12px;overflow:hidden}canvas{width:100%;height:100%;display:block}.overlay{position:absolute;left:14px;bottom:13px;right:14px;display:flex;justify-content:space-between;gap:9px;background:#081725df;border:1px solid #52758a;border-radius:9px;padding:8px 11px;color:#f5f9ff;font-size:.82rem}.panel h2{font-size:1rem;margin:0 0 12px}.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:14px}.controls button{background:#244a64;color:#fff;border:1px solid #5584a0;border-radius:9px;padding:8px 12px;cursor:pointer;font-weight:700}.controls button:hover,.controls button:focus-visible{background:#316383}label.speed{color:var(--muted);display:flex;align-items:center;gap:7px}.gallery{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;max-height:670px;overflow:auto;padding-right:5px}.tile{background:#173046;border:2px solid transparent;border-radius:10px;padding:7px;cursor:pointer;color:var(--ink);text-align:center}.tile.active{border-color:var(--gold);background:#25465c}.tile:focus-visible{outline:2px solid white}.tile strong{display:block;font-size:.78rem;margin-bottom:5px}.tile small{display:block;color:#c5d9e4;margin-top:4px;font-size:.72rem}.mini{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;max-width:104px;margin:auto;border:1px solid #96b4c8;background:#52738b}.mini span{aspect-ratio:1;display:grid;place-items:center;font-size:.74rem;font-weight:750;color:#fff;background:var(--cell)}.explain{color:var(--muted);font-size:.89rem;margin:12px 0 0}.stat{color:#c7e8d1;font-weight:700}footer{text-align:center;color:var(--muted);margin:26px 0 6px;font-size:.84rem}footer a{color:#8dd2f5;margin:0 6px}@media(max-width:880px){.layout{grid-template-columns:1fr}.gallery{grid-template-columns:repeat(6,minmax(0,1fr));max-height:none}}@media(max-width:610px){.wrap{padding:14px}.stage{min-height:300px}.gallery{grid-template-columns:repeat(3,minmax(0,1fr))}.overlay{font-size:.71rem}.mini span{font-size:.66rem}}
+.speed select{background:#244a64;color:#fff;border:1px solid #5584a0;border-radius:8px;padding:7px;font:inherit}.selected-box{margin-top:15px;padding:13px;background:#0b1c2e;border:1px solid #385b70;border-radius:12px}.selected-box strong{display:block;margin-bottom:9px;color:#f8d98b}.selected-grid{display:grid;gap:1px;width:min(100%,312px);background:#7592a2;border:1px solid #7592a2}.selected-grid span{aspect-ratio:1;display:grid;place-items:center;color:white;font-weight:800;font-size:clamp(.76rem,1.35vw,1rem);text-shadow:0 1px 2px #001b26}
+.tile .mini span{background:linear-gradient(145deg,#f8fbff,var(--cell) 65%,#184364)!important;color:#16324d!important;text-shadow:0 1px #fff7!important}
+</style></head><body><div class="wrap"><header><h1>24 Order 4×4 Magic Squares · 4D Hypercube</h1><p id="subtitle">Choose a construction · Created by Inder J. Taneja</p></header>
+<div class="layout"><section class="panel"><div class="stage"><canvas id="space" aria-label="Rotating projection of a four-dimensional hypercube with several highlighted magic-square faces"></canvas><div class="overlay"><span id="faceInfo"></span><span id="sumInfo"></span></div></div><div class="controls"><label class="speed">Construction <select id="typeSelect"><option value="0">Pandiagonal</option><option value="1">Striped</option></select></label><label class="speed">Faces together <select id="faceCount"><option value="1">1</option><option value="3">3</option><option value="4" selected>4</option><option value="6">6</option><option value="8">8</option><option value="12">12</option><option value="24">24</option></select></label><button id="play">Pause</button><button id="prev">← Previous group</button><button id="next">Next group →</button><label class="speed">Rotation <input id="speed" type="range" min="0" max="100" value="45"></label></div><div class="selected-box"><strong id="selectedTitle"></strong><div id="selectedGrid" class="selected-grid"></div></div><p class="explain">Each of the 24 square faces holds an order 4×4 magic square. Choose a construction above, then select how many faces to display together.</p></section>
+<section class="panel"><h2>All 24 square faces <span class="stat" id="verified"></span></h2><div id="gallery" class="gallery"></div><p class="explain" id="numberRange"></p></section></div>
+<footer>Created by Inder J. Taneja<br><a href="https://numbers-magic.com/">numbers-magic.com</a> · <a href="https://inderjtaneja.wordpress.com/">WordPress</a> · <a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/">Mathematical Generators</a><br>Magic square source: <a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/generators/multi-magic-square-generator-orders-3-12">Multiple Faces Magic Squares Generator · Orders 3–12</a></footer></div>
+<script>
+'use strict';
+const variants=[{"name":"Pandiagonal","grid":[[7,12,1,14],[2,13,8,11],[16,3,10,5],[9,6,15,4]],"equal":true,"mask":null},{"name":"Striped","grid":[[15,2,14,3],[8,9,5,12],[1,16,4,13],[10,7,11,6]],"equal":true,"mask":null}];
+const count=24;let selectedType=0,squares=[],faceOrders=[],visibleCount=4;
+function makeSquares(type,total=count){
+ const {grid,equal,mask}=type,n=grid.length,half=n*n/2;
+ return Array.from({length:total},(_,k)=>grid.map((row,r)=>row.map((v,c)=>{
+  if(mask)return total*(v-1)+1+(mask[r][c]?k:total-1-k);
+  if(!equal)return total*(v-1)+1+k;
+  return v<=half ? half*k+v : half*(2*total-k-1)+(v-half);
+ })));
+}
+const colors=Array.from({length:count},(_,i)=>`hsl(${Math.round(20+i*315/(count-1))} 68% 43%)`);
+const faces=[];
+for(let a=0;a<4;a++)for(let b=a+1;b<4;b++){
+ const other=[0,1,2,3].filter(x=>x!==a&&x!==b);
+ for(let fixed=0;fixed<4;fixed++){
+  const fixedValue=[fixed&1?1:-1,fixed&2?1:-1];
+  const vertex=(u,v)=>{const p=[0,0,0,0];p[other[0]]=fixedValue[0];p[other[1]]=fixedValue[1];p[a]=u;p[b]=v;return p};
+  faces.push({a,b,other,fixedValue,corners:[vertex(-1,-1),vertex(1,-1),vertex(1,1),vertex(-1,1)]});
+ }
+}
+function verify(){
+ const values=squares.flat(2).sort((a,b)=>a-b);
+ const needed=faceOrders.reduce((a,n)=>a+n*n,0);
+ if(faces.length!==24||squares.length!==24||values.length!==needed||values.some((v,i)=>v!==i+1))return false;
+ return squares.every((s,index)=>{
+  const n=faceOrders[index];
+  const M=s[0].reduce((a,b)=>a+b,0);
+  return s.every(r=>r.reduce((a,b)=>a+b,0)===M)&&Array.from({length:n},(_,c)=>c).every(c=>s.reduce((a,r)=>a+r[c],0)===M)&&[0,1].every(t=>s.reduce((a,r,i)=>a+r[t?n-1-i:i],0)===M);
+ });
+}
+function regionAt(r,c,n){
+ const type=variants[selectedType].name;
+ if(n===4&&type==='Striped')return c<2?'left':'right';
+ if(n===5&&type==='Concentric')return r>=1&&r<=3&&c>=1&&c<=3?'core':'outer';
+ if(n===5&&type==='Semi-Striped')return r<3?(c<3?'core':'side'):'bottom';
+ if(n===6&&type==='Concentric')return r>=1&&r<=4&&c>=1&&c<=4?'core':'outer';
+ if(n===6&&type==='Striped')return r<2?'top':r<4?'middle':'bottom';
+ return 'plain';
+}
+function regionColor(index,r,c,n){
+ const region=regionAt(r,c,n),hue=Math.round(20+index*315/23);
+ const light={plain:51,left:42,right:68,outer:41,core:72,side:56,bottom:48,top:39,middle:70}[region];
+ return `hsl(${hue} 65% ${light}%)`;
+}
+function regionEdges(r,c,n){
+ const me=regionAt(r,c,n);
+ return (c<n-1&&regionAt(r,c+1,n)!==me?'border-right:3px solid #173b56;':'')+
+        (r<n-1&&regionAt(r+1,c,n)!==me?'border-bottom:3px solid #173b56;':'');
+}
+function structureLines(q,n){
+ ctx.save();ctx.strokeStyle='#ffffff';ctx.lineWidth=3;ctx.shadowColor='#12334a';ctx.shadowBlur=3;
+ for(let r=0;r<n;r++)for(let c=0;c<n;c++){
+  const own=regionAt(r,c,n);
+  if(c<n-1&&regionAt(r,c+1,n)!==own){const a=bilinear(q,(c+1)/n,r/n),b=bilinear(q,(c+1)/n,(r+1)/n);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}
+  if(r<n-1&&regionAt(r+1,c,n)!==own){const a=bilinear(q,c/n,(r+1)/n),b=bilinear(q,(c+1)/n,(r+1)/n);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}
+ }
+ ctx.restore();
+}
+const gallery=document.getElementById('gallery');let chosen=0,playing=true,time=0,last=0,cycle=0;
+function shownFaces(){return Array.from({length:visibleCount},(_,k)=>(chosen+Math.floor(k*count/visibleCount))%count)}
+function setType(index){
+ selectedType=Number(index);const type=variants[selectedType];
+ faceOrders=Array(count).fill(4);squares=makeSquares(type);
+ chosen=0;cycle=0;
+ document.getElementById('subtitle').textContent=`${type.name} construction · Created by Inder J. Taneja`;
+ if(!verify())throw Error(`Magic-square or face verification failed for ${type.name}`);
+ document.getElementById('verified').textContent='✓ 24 verified';
+ const max=faceOrders.reduce((a,n)=>a+n*n,0);
+ document.getElementById('numberRange').textContent=`The 24 squares use the numbers 1–${max} exactly once. Every row, column, and diagonal is checked; each sum appears below its square.`;
+ gallery.replaceChildren();
+ for(let i=0;i<count;i++){
+  const n=faceOrders[i];
+  const tile=document.createElement('button');tile.className='tile';tile.type='button';tile.dataset.index=i;
+  const sum=squares[i][0].reduce((a,b)=>a+b,0);
+  tile.innerHTML=`<strong>Face ${i+1} · ${n}×${n}</strong><div class="mini" style="grid-template-columns:repeat(${n},1fr)">${squares[i].flat().map((v,pos)=>{const r=Math.floor(pos/n),c=pos%n;return `<span style="--cell:${regionColor(i,r,c,n)};${regionEdges(r,c,n)}font-size:${n===6?'.48rem':n===5?'.55rem':n===4?'.63rem':'.74rem'}">${v}</span>`}).join('')}</div><small>Magic sum ${sum}</small>`;
+  tile.onclick=()=>{chosen=i;cycle=0;updateSelection()};gallery.appendChild(tile);
+ }
+ updateSelection();
+}
+function updateSelection(){
+ const active=shownFaces();
+ document.querySelectorAll('.tile').forEach((el,i)=>el.classList.toggle('active',active.includes(i)));
+ document.getElementById('faceInfo').textContent=`Faces ${active.map(i=>i+1).join(', ')} of 24`;
+ document.getElementById('sumInfo').textContent=`Magic sum ${squares[chosen][0].reduce((a,b)=>a+b,0)}`;
+ document.getElementById('selectedTitle').textContent=`Face ${chosen+1} · ${faceOrders[chosen]}×${faceOrders[chosen]} · Σ ${squares[chosen][0].reduce((a,b)=>a+b,0)}`;
+ const detail=document.getElementById('selectedGrid');detail.style.gridTemplateColumns=`repeat(${faceOrders[chosen]},1fr)`;
+ detail.innerHTML=squares[chosen].flat().map((v,pos)=>{const n=faceOrders[chosen],r=Math.floor(pos/n),c=pos%n;return `<span style="background:linear-gradient(145deg,#ffffffcc,${regionColor(chosen,r,c,n)} 75%);${regionEdges(r,c,n)}color:#122d43;text-shadow:none">${v}</span>`}).join('');
+}
+document.getElementById('typeSelect').onchange=e=>setType(e.target.value);
+document.getElementById('faceCount').onchange=e=>{visibleCount=Number(e.target.value);updateSelection()};
+setType(0);
+document.getElementById('play').onclick=()=>{playing=!playing;document.getElementById('play').textContent=playing?'Pause':'Play'};
+document.getElementById('prev').onclick=()=>{chosen=(chosen+23)%24;cycle=0;updateSelection()};
+document.getElementById('next').onclick=()=>{chosen=(chosen+1)%24;cycle=0;updateSelection()};
+const canvas=document.getElementById('space'),ctx=canvas.getContext('2d');
+function rotate(p,i,j,angle){const c=Math.cos(angle),s=Math.sin(angle);[p[i],p[j]]=[p[i]*c-p[j]*s,p[i]*s+p[j]*c]}
+function transform(point,w,h){
+ const p=point.slice();rotate(p,0,3,time*.47+.21);rotate(p,1,3,time*.34);rotate(p,2,3,time*.21+.42);rotate(p,0,2,time*.19);rotate(p,0,1,time*.12);
+ const k4=2.95/(3.5-p[3]),x=p[0]*k4,y=p[1]*k4,z=p[2]*k4;
+ const k3=3.7/(4.8-z);return{x:w/2+x*k3*w*.20,y:h/2+y*k3*h*.20,depth:z+p[3]*.33};
+}
+function polygon(points,fill,stroke,width=1){ctx.beginPath();ctx.moveTo(points[0].x,points[0].y);for(let i=1;i<points.length;i++)ctx.lineTo(points[i].x,points[i].y);ctx.closePath();if(fill){ctx.fillStyle=fill;ctx.fill()}if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=width;ctx.stroke()}}
+function bilinear(q,u,v){const x=q[0].x*(1-u)*(1-v)+q[1].x*u*(1-v)+q[2].x*u*v+q[3].x*(1-u)*v;const y=q[0].y*(1-u)*(1-v)+q[1].y*u*(1-v)+q[2].y*u*v+q[3].y*(1-u)*v;return{x,y}}
+function drawSelected(q,index){
+ const color=colors[index],square=squares[index],n=faceOrders[index];
+ for(let r=0;r<n;r++)for(let c=0;c<n;c++){
+  const cell=[bilinear(q,c/n,r/n),bilinear(q,(c+1)/n,r/n),bilinear(q,(c+1)/n,(r+1)/n),bilinear(q,c/n,(r+1)/n)];
+  const tone=regionColor(index,r,c,n),gradient=ctx.createLinearGradient(cell[0].x,cell[0].y,cell[2].x,cell[2].y);gradient.addColorStop(0,'#ffffff');gradient.addColorStop(.55,tone);gradient.addColorStop(1,'#16436a');polygon(cell,gradient,'#f5ffff',1.15);
+  const center=bilinear(q,(c+.5)/n,(r+.5)/n),size=Math.hypot(cell[1].x-cell[0].x,cell[1].y-cell[0].y);
+  if(size>12){ctx.font=`700 ${Math.max(9,Math.min(20,size*.52))}px system-ui`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#fff';ctx.shadowColor='#001522';ctx.shadowBlur=3;ctx.fillText(square[r][c],center.x,center.y);ctx.shadowBlur=0}
+ }
+ structureLines(q,n);polygon(q,null,'#ffdc87',3);
+}
+const edges=[];for(let i=0;i<16;i++)for(let axis=0;axis<4;axis++)if(!(i&(1<<axis)))edges.push([i,i|(1<<axis)]);
+function render(now){
+ const dt=Math.min(.05,(now-last)/1000||0);last=now;
+ if(playing){const velocity=Number(document.getElementById('speed').value)/50;time+=dt*velocity;cycle+=dt;if(cycle>=3.2){chosen=(chosen+1)%24;cycle=0;updateSelection()}}
+ const dpr=Math.min(devicePixelRatio||1,2),bounds=canvas.getBoundingClientRect(),w=bounds.width,h=bounds.height;
+ if(canvas.width!==Math.round(w*dpr)||canvas.height!==Math.round(h*dpr)){canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr)}
+ ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
+ const vertices=Array.from({length:16},(_,mask)=>transform([0,1,2,3].map(i=>mask&(1<<i)?1:-1),w,h));
+ const projected=faces.map(face=>face.corners.map(p=>transform(p,w,h)));
+ const order=projected.map((q,i)=>({i,z:q.reduce((a,p)=>a+p.depth,0)/4})).sort((a,b)=>a.z-b.z),active=shownFaces();
+ for(const {i} of order){if(active.includes(i))continue;polygon(projected[i],'#60b2dd0a','#6f9db63f',.8)}
+ for(const [a,b] of edges){ctx.beginPath();ctx.moveTo(vertices[a].x,vertices[a].y);ctx.lineTo(vertices[b].x,vertices[b].y);ctx.strokeStyle='#b5d8e7ae';ctx.lineWidth=1.15;ctx.stroke()}
+ for(const v of vertices){ctx.beginPath();ctx.arc(v.x,v.y,2.5,0,Math.PI*2);ctx.fillStyle='#e5f5fd';ctx.fill()}
+ for(const {i} of order){if(!active.includes(i))continue;ctx.globalAlpha=.82;drawSelected(projected[i],i);ctx.globalAlpha=1}
+ requestAnimationFrame(render);
+}
+requestAnimationFrame(render);
+</script></body></html>

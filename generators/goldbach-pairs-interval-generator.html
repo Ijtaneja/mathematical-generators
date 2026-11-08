@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Goldbach Pairs Interval Generator</title>
+<style>
+  :root{
+    --bg:#f6f8fb; --card:#ffffff; --ink:#172033; --muted:#5b6475;
+    --accent:#0b7a75; --accent2:#155eab; --bad:#b42318; --line:#d8dee9;
+    --soft:#e9f7f5; --head:#0f766e;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--ink)}
+  header{background:linear-gradient(120deg,#0f766e,#1d4ed8);color:#fff;padding:22px 18px;text-align:center}
+  header h1{margin:0;font-size:28px;letter-spacing:.3px}
+  header p{margin:8px 0 0;font-size:14px;opacity:.95}
+  header .credit{font-weight:700;font-size:15px;opacity:1}
+  main{max-width:1180px;margin:18px auto;padding:0 14px 30px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 6px 18px rgba(15,23,42,.06);padding:16px;margin-bottom:16px}
+  .grid{display:grid;grid-template-columns:repeat(6,minmax(120px,1fr));gap:12px;align-items:end}
+  label{font-weight:bold;font-size:13px;color:#263244;display:block;margin-bottom:5px}
+  input,select,button{width:100%;padding:10px 11px;border:1px solid #c7ceda;border-radius:9px;font-size:14px;background:#fff;color:#111827}
+  button{border:none;background:var(--accent);color:white;font-weight:bold;cursor:pointer;transition:.15s}
+  button:hover{filter:brightness(.95)}
+  button.secondary{background:var(--accent2)}
+  button.danger{background:#b91c1c}
+  button.gray{background:#4b5563}
+  .checks{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;color:#263244;font-size:14px}
+  .checks label{display:flex;gap:6px;align-items:center;font-weight:normal;margin:0}
+  .checks input{width:auto}
+  .status{font-size:14px;color:var(--muted);margin-top:10px;line-height:1.45}
+  .summary{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+  .tile{background:var(--soft);border:1px solid #bee3df;border-radius:12px;padding:12px;text-align:center}
+  .tile .big{font-size:22px;font-weight:bold;color:#0f766e}
+  .tile .small{font-size:12px;color:#405066;margin-top:3px}
+  .tablewrap{overflow:auto;max-height:560px;border:1px solid var(--line);border-radius:12px}
+  table{border-collapse:collapse;width:100%;font-size:13px;background:#fff}
+  th,td{border-bottom:1px solid #edf0f5;border-right:1px solid #edf0f5;padding:7px 8px;vertical-align:top;white-space:nowrap}
+  th{position:sticky;top:0;background:#0f766e;color:#fff;z-index:1}
+  tr:nth-child(even) td{background:#fbfcfe}
+  td.pairs{white-space:normal;min-width:360px;line-height:1.45}
+  .ok{color:#047857;font-weight:bold}.warn{color:#b45309;font-weight:bold}.bad{color:var(--bad);font-weight:bold}
+  .footer{text-align:center;color:#5b6475;font-size:13px;margin-top:18px;line-height:1.8}
+  .footer a{color:#155eab;overflow-wrap:anywhere}
+  progress{width:100%;height:14px;margin-top:10px}
+  @media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}.summary{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Goldbach Pairs Interval Generator</h1>
+  <p>Fast interval calculator for representations N = p + q, where p and q are primes</p>
+  <p class="credit">Created by Inder J. Taneja</p>
+</header>
+<main>
+  <section class="card">
+    <div class="grid">
+      <div><label for="fromN">From even N</label><input id="fromN" type="number" value="4" min="4" step="2"></div>
+      <div><label for="toN">To even N</label><input id="toN" type="number" value="200" min="4" step="2"></div>
+      <div><label for="mode">Pair mode</label><select id="mode"><option value="all">All pairs p ≤ q</option><option value="distinct">Distinct primes only p &lt; q</option><option value="twin">Twin-prime pairs |p-q| = 2</option><option value="mirror">Mirror-prime pairs</option></select></div>
+      <div><label for="limitRows">Display limit</label><input id="limitRows" type="number" value="5000" min="10" step="10"></div>
+      <div><button onclick="startGenerate()">Generate</button></div>
+      <div><button class="danger" onclick="stopGenerate()">Stop</button></div>
+    </div>
+    <div class="checks">
+      <label><input type="checkbox" id="showPairs" checked> Show pair list</label>
+      <label><input type="checkbox" id="compactPairs"> Compact pair list</label>
+      <label><input type="checkbox" id="onlyMultiple"> Show only N with 2 or more pairs</label>
+      <label><input type="checkbox" id="verifyGoldbach" checked> Verify every even N has at least one pair</label>
+    </div>
+    <progress id="prog" value="0" max="100"></progress>
+    <div id="status" class="status">Ready.</div>
+  </section>
+
+  <section class="card summary" id="summary">
+    <div class="tile"><div class="big" id="sEven">0</div><div class="small">Even numbers checked</div></div>
+    <div class="tile"><div class="big" id="sPairs">0</div><div class="small">Total Goldbach pairs</div></div>
+    <div class="tile"><div class="big" id="sMax">0</div><div class="small">Maximum pairs for one N</div></div>
+    <div class="tile"><div class="big" id="sMaxN">-</div><div class="small">N with maximum pairs</div></div>
+    <div class="tile"><div class="big" id="sFail">0</div><div class="small">Goldbach failures found</div></div>
+  </section>
+
+  <section class="card">
+    <div class="grid" style="grid-template-columns:repeat(4,1fr)">
+      <button class="secondary" onclick="downloadTXT()">Download TXT</button>
+      <button class="secondary" onclick="downloadCSV()">Download CSV / Excel</button>
+      <button class="gray" onclick="copyResults()">Copy Results</button>
+      <button class="gray" onclick="clearResults()">Clear</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="tablewrap">
+      <table id="tbl">
+        <thead><tr><th>#</th><th>Even N</th><th>No. of pairs G(N)</th><th>Goldbach pairs</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer class="footer"><strong>Inder J. Taneja</strong><br>
+    <a href="https://numbers-magic.com/" target="_blank" rel="noopener noreferrer">numbers-magic.com</a> ·
+    <a href="https://inderjtaneja.wordpress.com/" target="_blank" rel="noopener noreferrer">inderjtaneja.wordpress.com</a> ·
+    <a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/" target="_blank" rel="noopener noreferrer">Mathematical Generators</a>
+  </footer>
+</main>
+<script>
+let STOP=false, rows=[], primes=[], isPrime=[], lastText='';
+
+function normEven(x){ x=Math.floor(Number(x)||0); if(x<4)x=4; if(x%2)x++; return x; }
+function reverseNumber(n){ return Number(String(n).split('').reverse().join('')); }
+function isMirrorPair(p,q){ return reverseNumber(p)===q || reverseNumber(q)===p; }
+
+function sieve(max){
+  const arr = new Uint8Array(max+1);
+  arr.fill(1); arr[0]=0; arr[1]=0;
+  for(let i=4;i<=max;i+=2) arr[i]=0;
+  const r=Math.floor(Math.sqrt(max));
+  for(let p=3;p<=r;p+=2){
+    if(arr[p]) for(let j=p*p;j<=max;j+=2*p) arr[j]=0;
+  }
+  const ps=[]; if(max>=2) ps.push(2);
+  for(let i=3;i<=max;i+=2) if(arr[i]) ps.push(i);
+  return {arr,ps};
+}
+
+function makePairString(pairs, compact){
+  if(!pairs.length) return '<span class="bad">None</span>';
+  if(compact) return pairs.map(x=>x[0]+'+'+x[1]).join('; ');
+  return pairs.map(x=>'('+x[0]+', '+x[1]+')').join('; ');
+}
+
+async function startGenerate(){
+  STOP=false; rows=[]; lastText='';
+  const a=normEven(document.getElementById('fromN').value);
+  const b=normEven(document.getElementById('toN').value);
+  const from=Math.min(a,b), to=Math.max(a,b);
+  document.getElementById('fromN').value=from; document.getElementById('toN').value=to;
+  const mode=document.getElementById('mode').value;
+  const displayLimit=Math.max(10, Number(document.getElementById('limitRows').value)||5000);
+  const showPairs=document.getElementById('showPairs').checked;
+  const compact=document.getElementById('compactPairs').checked;
+  const onlyMultiple=document.getElementById('onlyMultiple').checked;
+  const verify=document.getElementById('verifyGoldbach').checked;
+  const tbody=document.querySelector('#tbl tbody'); tbody.innerHTML='';
+  setStatus('Building prime sieve up to '+to.toLocaleString()+' ...');
+  await new Promise(r=>setTimeout(r,20));
+  const sv=sieve(to); isPrime=sv.arr; primes=sv.ps;
+  setStatus('Prime sieve complete: '+primes.length.toLocaleString()+' primes found. Generating Goldbach pairs ...');
+  let checked=0,totalPairs=0,maxPairs=0,maxNs=[],fail=0,displayed=0,serial=0;
+  const totalEven=((to-from)/2)+1;
+  let textLines=[];
+  textLines.push('Goldbach Pairs Interval Generator');
+  textLines.push('Interval: '+from+' to '+to+', Mode: '+mode);
+  textLines.push('Created by Inder J. Taneja');
+  textLines.push('');
+  textLines.push('#\tN\tG(N)\tPairs');
+
+  for(let N=from;N<=to;N+=2){
+    if(STOP){ setStatus('Stopped by user. Partial results shown.'); break; }
+    let pairs=[];
+    for(const p of primes){
+      if(p>N/2) break;
+      const q=N-p;
+      if(!isPrime[q]) continue;
+      if(mode==='distinct' && p===q) continue;
+      if(mode==='twin' && Math.abs(q-p)!==2) continue;
+      if(mode==='mirror' && !isMirrorPair(p,q)) continue;
+      pairs.push([p,q]);
+    }
+    checked++; totalPairs+=pairs.length;
+    if(verify && pairs.length===0) fail++;
+    if(pairs.length>maxPairs){ maxPairs=pairs.length; maxNs=[N]; }
+    else if(pairs.length===maxPairs && pairs.length>0){ maxNs.push(N); }
+    if(!(onlyMultiple && pairs.length<2)){
+      serial++; rows.push({serial,N,count:pairs.length,pairs});
+      const pairTextPlain=pairs.map(x=>x[0]+'+'+x[1]).join('; ');
+      textLines.push(serial+'\t'+N+'\t'+pairs.length+'\t'+pairTextPlain);
+      if(displayed<displayLimit){
+        const tr=document.createElement('tr');
+        tr.innerHTML='<td>'+serial+'</td><td>'+N+'</td><td>'+pairs.length+'</td><td class="pairs">'+(showPairs?makePairString(pairs,compact):'Hidden')+'</td>';
+        tbody.appendChild(tr); displayed++;
+      }
+    }
+    if(checked%50===0 || N===to){
+      updateSummary(checked,totalPairs,maxPairs,maxNs,fail);
+      document.getElementById('prog').value=Math.round(100*checked/totalEven);
+      setStatus('Checked '+checked.toLocaleString()+' of '+totalEven.toLocaleString()+' even numbers. Displayed '+displayed.toLocaleString()+' rows.');
+      await new Promise(r=>setTimeout(r,0));
+    }
+  }
+  lastText=textLines.join('\n');
+  updateSummary(checked,totalPairs,maxPairs,maxNs,fail);
+  document.getElementById('prog').value=STOP?document.getElementById('prog').value:100;
+  if(!STOP) setStatus('Complete. Rows stored: '+rows.length.toLocaleString()+'. Use TXT or CSV download.');
+}
+
+function updateSummary(e,p,m,ns,f){
+  document.getElementById('sEven').textContent=e.toLocaleString();
+  document.getElementById('sPairs').textContent=p.toLocaleString();
+  document.getElementById('sMax').textContent=m.toLocaleString();
+  document.getElementById('sMaxN').textContent=ns.slice(0,8).join(', ')+(ns.length>8?' ...':'');
+  document.getElementById('sFail').textContent=f.toLocaleString();
+  document.getElementById('sFail').className=f?'big bad':'big';
+}
+function setStatus(t){ document.getElementById('status').textContent=t; }
+function stopGenerate(){ STOP=true; }
+function clearResults(){ rows=[]; lastText=''; document.querySelector('#tbl tbody').innerHTML=''; updateSummary(0,0,0,[],0); document.getElementById('prog').value=0; setStatus('Cleared.'); }
+function blobDownload(name, content, type){
+  const blob=new Blob([content],{type}); const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+function downloadTXT(){ if(!lastText) buildTextFromRows(); blobDownload('Goldbach-Pairs-Interval.txt', lastText||'No results', 'text/plain;charset=utf-8'); }
+function downloadCSV(){
+  let csv='Index,Even N,G(N),Pairs\n';
+  for(const r of rows){ csv += r.serial+','+r.N+','+r.count+',"'+r.pairs.map(x=>x[0]+'+'+x[1]).join('; ').replace(/"/g,'""')+'"\n'; }
+  blobDownload('Goldbach-Pairs-Interval.csv', csv, 'text/csv;charset=utf-8');
+}
+function buildTextFromRows(){
+  let lines=['Goldbach Pairs Interval Generator','Created by Inder J. Taneja','','#\tN\tG(N)\tPairs'];
+  for(const r of rows) lines.push(r.serial+'\t'+r.N+'\t'+r.count+'\t'+r.pairs.map(x=>x[0]+'+'+x[1]).join('; '));
+  lastText=lines.join('\n');
+}
+async function copyResults(){ if(!lastText) buildTextFromRows(); try{ await navigator.clipboard.writeText(lastText); setStatus('Results copied to clipboard.'); } catch(e){ setStatus('Copy failed. Use download instead.'); } }
+</script>
+</body>
+</html>

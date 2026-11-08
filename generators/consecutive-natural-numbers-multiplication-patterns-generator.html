@@ -1,0 +1,848 @@
+<!-- Consecutive & Mirror-Style Multiplication Patterns – Generator — WordPress Custom HTML embed -->
+<!-- Created by Inder J. Taneja — paste this entire block into a WordPress "Custom HTML" block -->
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Libre+Franklin:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+.cmp-wrap{all:initial;--bg:#f4f9fb;--bg2:#ffffff;--bg3:#e7f3f5;--ink:#17354a;--ink2:#456277;--ink3:#687f8e;--accent:#c87522;--accent2:#9f4f24;--accent3:#386aa5;--teal:#187b79;--border:rgba(23,53,74,0.12);--border2:rgba(23,53,74,0.24);--col-a:#386aa5;--col-b:#c87522;--col-prev:#b85e20;--col-wrap:#187b79;--radius:10px;--radius-lg:18px;background:linear-gradient(145deg,#f7fbfc 0%,#eef7f7 52%,#fff8ee 100%);color:var(--ink);font-family:'Libre Franklin',Arial,sans-serif;min-height:100vh;display:block;position:relative;box-sizing:border-box;}
+.cmp-wrap *,.cmp-wrap *::before,.cmp-wrap *::after{box-sizing:border-box;margin:0;padding:0;}
+.cmp-wrap::before{content:'';position:absolute;inset:0;background-image:radial-gradient(circle at 12% 8%,rgba(56,106,165,.12),transparent 25%),radial-gradient(circle at 90% 12%,rgba(200,117,34,.13),transparent 23%),linear-gradient(rgba(24,123,121,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(24,123,121,.035) 1px,transparent 1px);background-size:auto,auto,28px 28px,28px 28px;pointer-events:none;z-index:0;}
+.cmp-wrap .cmp-page{position:relative;z-index:1;max-width:1120px;margin:0 auto;padding:26px 28px 80px;}
+.cmp-wrap header{padding:34px 38px 28px;border:1px solid rgba(56,106,165,.18);border-radius:24px;margin-bottom:24px;display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;background:linear-gradient(125deg,rgba(255,255,255,.96),rgba(231,243,245,.94));box-shadow:0 14px 40px rgba(23,53,74,.09);position:relative;overflow:hidden;}
+.cmp-wrap header::after{content:'×';position:absolute;right:28px;top:-34px;color:rgba(200,117,34,.09);font-family:'Playfair Display',serif;font-size:150px;font-weight:900;line-height:1;pointer-events:none;}
+.cmp-wrap h1{font-family:'Playfair Display',Georgia,serif;font-size:clamp(32px,5vw,54px);font-weight:900;letter-spacing:-1.6px;line-height:1.06;max-width:760px;}
+.cmp-wrap h1 span{color:var(--accent);}
+.cmp-wrap .cmp-subtitle{font-size:12px;color:var(--ink2);letter-spacing:1.5px;text-transform:uppercase;margin-top:10px;font-weight:600;}
+.cmp-wrap .cmp-legend{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+.cmp-wrap .cmp-leg{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink2);background:rgba(255,255,255,.66);padding:5px 8px;border:1px solid var(--border);border-radius:20px;}
+.cmp-wrap .cmp-leg-dot{width:9px;height:9px;border-radius:2px;}
+.cmp-wrap .cmp-controls{background:rgba(255,255,255,.93);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:20px;margin-bottom:18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:13px;align-items:end;box-shadow:0 8px 24px rgba(23,53,74,.06);}
+.cmp-wrap .cmp-field label{display:block;font-size:10px;color:var(--ink2);letter-spacing:1.25px;text-transform:uppercase;margin-bottom:7px;font-weight:700;}
+.cmp-wrap .cmp-field input,.cmp-wrap .cmp-field select{width:100%;background:#f8fcfc;border:1px solid var(--border2);border-radius:var(--radius);color:var(--ink);font-family:'DM Mono',monospace;font-size:14px;padding:10px 11px;outline:none;-webkit-appearance:none;appearance:none;}
+.cmp-wrap .cmp-field input:focus,.cmp-wrap .cmp-field select:focus{border-color:var(--accent);}
+.cmp-wrap .cmp-btn{width:100%;padding:11px 12px;background:linear-gradient(135deg,var(--accent3),#285985);border:none;border-radius:var(--radius);color:#fff;font-family:'Libre Franklin',Arial,sans-serif;font-size:11px;font-weight:800;cursor:pointer;letter-spacing:.7px;text-transform:uppercase;transition:all 0.18s;box-shadow:0 5px 12px rgba(56,106,165,.18);}
+.cmp-wrap .cmp-btn:hover{background:linear-gradient(135deg,var(--accent),var(--accent2));transform:translateY(-1px);}
+.cmp-wrap .cmp-btn:active{transform:scale(0.98);}
+.cmp-wrap .cmp-btn-dl{background:#fff;color:var(--ink);border:1px solid var(--border2);box-shadow:none;}
+.cmp-wrap .cmp-btn-dl:hover{background:var(--bg3);border-color:var(--ink);}
+.cmp-wrap .cmp-btn-green{background:linear-gradient(135deg,var(--teal),#12605f);color:#fff;}
+.cmp-wrap .cmp-btn-green:hover{background:linear-gradient(135deg,var(--accent),var(--accent2));}
+.cmp-wrap .cmp-scan-panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 18px;margin-bottom:20px;}
+.cmp-wrap .cmp-scan-title{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--ink3);margin-bottom:9px;}
+.cmp-wrap .cmp-scan-controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:9px;align-items:end;}
+.cmp-wrap .cmp-scan-results{margin-top:9px;font-size:12px;color:var(--ink2);line-height:2;max-height:160px;overflow-y:auto;}
+.cmp-wrap .cmp-scan-hit{display:inline-block;background:rgba(168,121,31,0.1);border:1px solid rgba(168,121,31,0.2);color:var(--accent);border-radius:4px;padding:1px 6px;margin:2px;cursor:pointer;font-size:11px;}
+.cmp-wrap .cmp-scan-hit:hover{background:rgba(168,121,31,0.2);}
+.cmp-wrap .cmp-results-wrap{display:flex;flex-direction:column;gap:11px;}
+.cmp-wrap .cmp-chain-card{background:rgba(255,255,255,.94);border:1px solid var(--border);border-left:4px solid rgba(56,106,165,.48);border-radius:var(--radius-lg);overflow:hidden;animation:cmp-rise 0.22s ease both;box-shadow:0 6px 18px rgba(23,53,74,.055);}
+@keyframes cmp-rise{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+.cmp-chain-head{display:flex;align-items:center;justify-content:space-between;padding:8px 13px;border-bottom:1px solid var(--border);background:var(--bg3);flex-wrap:wrap;gap:5px;}
+.cmp-wrap .cmp-chain-seed{font-size:11px;font-weight:600;color:var(--ink);}
+.cmp-wrap .cmp-badge{font-size:9px;padding:2px 7px;border-radius:20px;letter-spacing:1px;text-transform:uppercase;}
+.cmp-wrap .cmp-badge-sub{background:rgba(168,121,31,0.12);color:var(--accent);border:1px solid rgba(168,121,31,0.25);}
+.cmp-wrap .cmp-badge-ins{background:rgba(91,79,160,0.12);color:var(--accent3);border:1px solid rgba(91,79,160,0.25);}
+.cmp-wrap .cmp-badge-none{background:rgba(131,128,159,0.12);color:var(--ink3);border:1px solid rgba(131,128,159,0.25);}
+.cmp-wrap .cmp-chain-body{padding:8px 13px;overflow-x:auto;}
+.cmp-wrap .cmp-chain-row{display:flex;align-items:baseline;gap:4px;padding:5px 0;border-bottom:0.5px solid var(--border);font-family:'DM Mono',monospace;font-size:13px;white-space:nowrap;}
+.cmp-wrap .cmp-chain-row:last-child{border-bottom:none;}
+.cmp-wrap .cmp-cr-factors{color:var(--ink2);flex-shrink:0;min-width:185px;}
+.cmp-wrap .cmp-cr-eq{color:var(--ink3);padding:0 4px;flex-shrink:0;}
+.cmp-wrap .cmp-cr-result{flex:1;}
+.cmp-wrap .cmp-da{display:inline-block;padding:0 1px;color:var(--col-a);}
+.cmp-wrap .cmp-db{display:inline-block;padding:0 1px;color:var(--col-b);}
+.cmp-wrap .cmp-d-ins{display:inline-block;padding:0 2px;border-radius:2px;background:rgba(168,121,31,0.13);color:var(--col-prev);border-bottom:1.5px solid var(--col-prev);}
+.cmp-wrap .cmp-d-sub-prev{display:inline-block;padding:0 2px;border-radius:2px;background:rgba(168,121,31,0.13);color:var(--col-prev);border-bottom:1.5px solid var(--col-prev);}
+.cmp-wrap .cmp-d-sub-wrap{display:inline-block;padding:0 2px;color:var(--col-wrap);font-style:italic;}
+.cmp-wrap .cmp-d-plain{display:inline-block;}
+.cmp-wrap .cmp-tag-s,.cmp-wrap .cmp-tag-l{display:inline-block;font-size:9px;padding:1px 5px;border-radius:10px;margin-left:4px;vertical-align:middle;}
+.cmp-wrap .cmp-tag-s{background:rgba(131,128,159,0.12);color:var(--ink3);border:1px solid rgba(131,128,159,0.2);}
+.cmp-wrap .cmp-tag-l{background:rgba(168,121,31,0.1);color:var(--accent);border:1px solid rgba(168,121,31,0.2);}
+.cmp-wrap .cmp-embed-note{font-size:10px;color:var(--ink3);margin-top:5px;padding-top:5px;border-top:0.5px solid var(--border);}
+.cmp-wrap .cmp-sec-hdr{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--ink3);padding:4px 0 6px;border-bottom:1px solid var(--border2);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;}
+.cmp-wrap .cmp-sec-count{font-size:11px;background:var(--bg3);padding:2px 9px;border-radius:20px;color:var(--ink2);border:1px solid var(--border);}
+.cmp-wrap .cmp-no-sol{text-align:center;padding:20px;color:var(--ink3);font-size:12px;background:var(--bg2);border-radius:var(--radius-lg);border:1px dashed var(--border2);}
+.cmp-wrap .cmp-summary{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:7px 13px;margin-bottom:11px;display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--ink2);align-items:center;}
+.cmp-wrap .cmp-summary strong{color:var(--ink);}
+.cmp-wrap .cmp-tabbar{display:flex;gap:8px;margin-bottom:18px;padding:6px;background:rgba(231,243,245,.85);border:1px solid var(--border);border-radius:14px;}
+.cmp-wrap .cmp-tab-btn{background:none;border:none;border-radius:9px;font-family:'Libre Franklin',Arial,sans-serif;font-size:12px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--ink3);padding:11px 20px;cursor:pointer;transition:all 0.15s;}
+.cmp-wrap .cmp-tab-btn:hover{color:var(--ink);}
+.cmp-wrap .cmp-tab-btn.active{color:#fff;background:linear-gradient(135deg,var(--teal),var(--accent3));box-shadow:0 4px 10px rgba(23,53,74,.15);}
+.cmp-wrap footer a:hover{color:var(--accent)!important;}
+@media(max-width:680px){.cmp-wrap .cmp-page{padding:14px 12px 54px}.cmp-wrap header{padding:26px 20px 22px;border-radius:18px}.cmp-wrap h1{font-size:clamp(29px,10vw,42px)}.cmp-wrap .cmp-legend{gap:6px}.cmp-wrap .cmp-tab-btn{flex:1;padding:10px 8px}.cmp-wrap .cmp-controls{padding:15px}.cmp-wrap .cmp-cr-factors{min-width:160px}}
+.cmp-wrap .cmp-ivp-row{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:9px;overflow:hidden;}
+.cmp-wrap .cmp-ivp-head{display:flex;align-items:center;justify-content:space-between;padding:10px 15px;cursor:pointer;gap:8px;flex-wrap:wrap;}
+.cmp-wrap .cmp-ivp-head:hover{background:var(--bg3);}
+.cmp-wrap .cmp-ivp-seed{font-size:13px;font-weight:600;color:var(--ink);}
+.cmp-wrap .cmp-ivp-arrow{font-size:10px;color:var(--ink3);transition:transform 0.15s;}
+.cmp-wrap .cmp-ivp-row.open .cmp-ivp-arrow{transform:rotate(90deg);}
+.cmp-wrap .cmp-ivp-body{padding:0 13px 13px;}
+.cmp-wrap .cmp-ivp-cap{text-align:center;padding:14px;color:var(--ink3);font-size:12px;background:var(--bg2);border-radius:var(--radius-lg);border:1px dashed var(--border2);margin-top:6px;}
+.cmp-wrap .cmp-mirror-note{font-size:13px;color:var(--ink2);line-height:1.6;margin-bottom:14px}.cmp-wrap .cmp-mirror-card{background:rgba(255,255,255,.94);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;box-shadow:0 6px 18px rgba(23,53,74,.05)}.cmp-wrap .cmp-mirror-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:7px 0;border-bottom:1px solid var(--border);font:13px 'DM Mono',monospace}.cmp-wrap .cmp-mirror-row:last-child{border-bottom:0}.cmp-wrap .cmp-mirror-row strong{color:var(--accent3)}
+</style>
+<div class="cmp-wrap">
+
+<div class="cmp-page">
+<header>
+  <div>
+    <p class="cmp-subtitle" style="color:var(--teal);margin:0 0 9px;">Recreational Mathematics</p>
+    <h1>Consecutive <span>&amp; Mirror-Style</span><br><span>Multiplication Patterns</span> – Generator</h1>
+    <p class="cmp-subtitle">Product pairs · substring and insertion patterns · all growth modes</p>
+    <p style="margin-top:12px;font-size:13px;color:var(--ink2);">Created by <strong style="color:var(--ink);">Inder J. Taneja</strong></p>
+  </div>
+  <div class="cmp-legend">
+    <div class="cmp-leg"><div class="cmp-leg-dot" style="background:var(--col-a)"></div>factor A</div>
+    <div class="cmp-leg"><div class="cmp-leg-dot" style="background:var(--col-b)"></div>factor B</div>
+    <div class="cmp-leg"><div class="cmp-leg-dot" style="background:rgba(168,121,31,0.4)"></div>pattern digits (new each step)</div>
+    <div class="cmp-leg"><div class="cmp-leg-dot" style="background:var(--col-wrap)"></div>wrap (substring mode)</div>
+  </div>
+</header>
+
+<div class="cmp-tabbar">
+  <button class="cmp-tab-btn active" id="cmp-tab-btn-single" onclick="switchTab('single')">Single Pair</button>
+  <button class="cmp-tab-btn" id="cmp-tab-btn-interval" onclick="switchTab('interval')">Interval</button>
+  <button class="cmp-tab-btn" id="cmp-tab-btn-mirror" onclick="switchTab('mirror')">Mirror Patterns</button>
+</div>
+
+<!-- Single Pair tab -->
+<div id="cmp-tab-single" class="cmp-tabpanel">
+<div class="cmp-controls">
+  <div class="cmp-field"><label>Seed A</label><input type="number" id="cmp-startA" value="66" min="1"></div>
+  <div class="cmp-field"><label>Seed B</label><input type="number" id="cmp-startB" value="67" min="1"></div>
+  <div class="cmp-field"><label>Steps</label><input type="number" id="cmp-steps" value="7" min="3" max="12"></div>
+  <div class="cmp-field"><label>Max digit</label>
+    <select id="cmp-maxDigit">
+      <option value="3">0–3 (fast)</option>
+      <option value="6">0–6</option>
+      <option value="9" selected>0–9 (full)</option>
+    </select>
+  </div>
+  <div class="cmp-field"><label>&nbsp;</label><button class="cmp-btn" onclick="generate()">Find all solutions ↗</button></div>
+  <div class="cmp-field"><label>&nbsp;</label><button class="cmp-btn cmp-btn-dl" onclick="downloadSingle()">Download .txt ↓</button></div>
+  <div class="cmp-field"><label>&nbsp;</label><button class="cmp-btn cmp-btn-dl" onclick="downloadSingleExcel()">Download .xlsx ↓</button></div>
+</div>
+<div id="cmp-summary" class="cmp-summary" style="display:none"></div>
+<div class="cmp-results-wrap" id="cmp-results"></div>
+</div>
+
+<!-- Interval tab -->
+<div id="cmp-tab-interval" class="cmp-tabpanel" style="display:none">
+<div class="cmp-scan-panel">
+  <div class="cmp-scan-title">Interval — scan A×(A+gap) for a range of seeds</div>
+  <div class="cmp-scan-controls">
+    <div class="cmp-field"><label>A from</label><input type="number" id="cmp-scanFrom" value="10" min="1"></div>
+    <div class="cmp-field"><label>A to</label><input type="number" id="cmp-scanTo" value="100" min="2"></div>
+    <div class="cmp-field"><label>Gap (B=A+gap)</label><input type="number" id="cmp-scanGap" value="1" min="1" max="999"></div>
+    <div class="cmp-field"><label>Multiple ranges</label><input type="text" id="cmp-multiRange" placeholder="e.g. 10-20, 60-70"></div>
+    <div class="cmp-field"><label>Min steps</label><input type="number" id="cmp-minChain" value="4" min="2" max="10" title="Keep a pattern once it holds for at least this many steps, even if it breaks before reaching Steps/pair"></div>
+    <div class="cmp-field"><label>Steps/pair</label><input type="number" id="cmp-dlSteps" value="7" min="3" max="10"></div>
+    <div class="cmp-field"><label>Max digit</label>
+      <select id="cmp-dlMaxDigit">
+        <option value="3">0–3 (fast)</option>
+        <option value="6" selected>0–6</option>
+        <option value="9">0–9 (slow)</option>
+      </select>
+    </div>
+    <div class="cmp-field"><label>Filter</label>
+      <select id="cmp-dlOnlyEmbed">
+        <option value="yes">Embedding only</option>
+        <option value="no">All</option>
+      </select>
+    </div>
+  </div>
+  <div style="display:flex;gap:9px;margin-top:11px;flex-wrap:wrap;align-items:center">
+    <button class="cmp-btn" style="flex:1;min-width:120px" onclick="generateIntervalOnScreen()">Show interval results ↗</button>
+    <button class="cmp-btn cmp-btn-green" style="flex:2;min-width:170px" onclick="downloadInterval()">Download interval .txt ↓</button>
+    <button class="cmp-btn cmp-btn-green" style="flex:2;min-width:170px" onclick="downloadIntervalExcel()">Download interval .xlsx ↓</button>
+    <span id="cmp-dl-progress" style="font-size:11px;color:var(--ink3);"></span>
+  </div>
+  <div class="cmp-scan-results" id="cmp-scan-results">
+    <span style="color:var(--ink3)">Two pattern types detected: <strong>substring</strong> (result contains previous result) and <strong>insertion</strong> (same digits inserted at regular positions each step). Click "Show interval results" to generate.</span>
+  </div>
+</div>
+<div id="cmp-interval-summary" class="cmp-summary" style="display:none"></div>
+<div class="cmp-results-wrap" id="cmp-interval-results"></div>
+</div>
+
+<!-- Mirror Patterns tab -->
+<div id="cmp-tab-mirror" class="cmp-tabpanel" style="display:none">
+<div class="cmp-scan-panel">
+  <div class="cmp-scan-title">Mirror-style products — paired reversed factors</div>
+  <p class="cmp-mirror-note">Compare A×B with reverse(A)×reverse(B). The products are mirror partners when the second product is the digit-reversal of the first.</p>
+  <div class="cmp-controls">
+    <div class="cmp-field"><label>Seed A</label><input type="number" id="cmp-mirrorA" value="12" min="1"></div>
+    <div class="cmp-field"><label>Gap (B=A+gap)</label><input type="number" id="cmp-mirrorGap" value="1" min="1"></div>
+    <div class="cmp-field"><label>Steps</label><input type="number" id="cmp-mirrorSteps" value="5" min="2" max="10"></div>
+    <div class="cmp-field"><label>Insert digit</label><input type="number" id="cmp-mirrorDigit" value="0" min="0" max="9"></div>
+    <div class="cmp-field"><label>Growth position</label><select id="cmp-mirrorPos"><option value="mid" selected>Between first/last</option><option value="pre">Before factors</option><option value="post">After factors</option></select></div>
+    <div class="cmp-field"><label>&nbsp;</label><button class="cmp-btn" onclick="generateMirrorProducts()">Find mirror products ↗</button></div>
+    <div class="cmp-field"><label>&nbsp;</label><button class="cmp-btn cmp-btn-dl" onclick="downloadMirrorProducts()">Download .txt ↓</button></div>
+    <div class="cmp-field"><label>&nbsp;</label><button class="cmp-btn cmp-btn-dl" onclick="downloadMirrorProductsExcel()">Download .xlsx ↓</button></div>
+  </div>
+  <div id="cmp-mirror-results"></div>
+</div>
+<div class="cmp-scan-panel">
+  <div class="cmp-scan-title">Mirror interval — automatic search</div>
+  <div class="cmp-scan-controls">
+    <div class="cmp-field"><label>A from</label><input type="number" id="cmp-mirrorFrom" value="10" min="1"></div>
+    <div class="cmp-field"><label>A to</label><input type="number" id="cmp-mirrorTo" value="150" min="1"></div>
+    <div class="cmp-field"><label>Gap</label><input type="number" id="cmp-mirrorIntervalGap" value="1" min="1"></div>
+    <div class="cmp-field"><label>Steps</label><input type="number" id="cmp-mirrorIntervalSteps" value="4" min="2" max="8"></div>
+    <div class="cmp-field"><label>Insert digit</label><input type="number" id="cmp-mirrorIntervalDigit" value="0" min="0" max="9"></div>
+    <div class="cmp-field"><label>Position</label><select id="cmp-mirrorIntervalPos"><option value="mid" selected>Between first/last</option><option value="pre">Before factors</option><option value="post">After factors</option></select></div>
+  </div>
+  <div style="display:flex;gap:9px;margin-top:11px;flex-wrap:wrap;align-items:center"><button class="cmp-btn" style="flex:1;min-width:120px" onclick="scanMirrorProducts()">Scan interval ↗</button><button class="cmp-btn cmp-btn-green" style="flex:2;min-width:170px" onclick="downloadMirrorIntervalProducts()">Download interval .txt ↓</button><button class="cmp-btn cmp-btn-green" style="flex:2;min-width:170px" onclick="downloadMirrorIntervalProductsExcel()">Download interval .xlsx ↓</button></div>
+  <div class="cmp-scan-results" id="cmp-mirror-interval-results"><span style="color:var(--ink3)">Find complete mirror-product families across a range of seeds.</span></div>
+</div>
+</div>
+
+<footer style="margin-top:30px;padding-top:16px;border-top:1px solid var(--border2);text-align:center;font-size:11px;color:var(--ink3);">
+  <div style="margin-bottom:8px;font-size:13px;color:var(--ink);"><strong>Inder J. Taneja</strong></div>
+  <div>
+    <a href="https://numbers-magic.com/" target="_blank" style="color:var(--ink3);text-decoration:underline;">numbers-magic.com</a>
+    &nbsp;·&nbsp;
+    <a href="https://inderjtaneja.wordpress.com/" target="_blank" style="color:var(--ink3);text-decoration:underline;">inderjtaneja.wordpress.com</a>
+    &nbsp;·&nbsp;
+    <a href="https://taneja-mathematical-generators.ijtaneja.chatgpt.site/" target="_blank" style="color:var(--ink3);text-decoration:underline;">taneja-mathematical-generators.ijtaneja.chatgpt.site</a>
+  </div>
+</footer>
+</div>
+
+
+</div>
+<script>
+
+// ── Growth ───────────────────────────────────────────────────────
+function grow(s, pos, d, step) {
+  if (step===0) return s;
+  const r=d.repeat(step);
+  if (pos==='pre') return r+s;
+  if (pos==='post') return s+r;
+  return s.length<2 ? r+s : s.slice(0,-1)+r+s.slice(-1);
+}
+
+function buildChain(aStr,bStr,gA,gB,dA,dB,steps) {
+  const results=[],pairs=[];
+  for (let s=0;s<steps;s++) {
+    const A=grow(aStr,gA,dA,s), B=grow(bStr,gB,dB,s);
+    results.push((BigInt(A)*BigInt(B)).toString());
+    pairs.push({A,B});
+  }
+  return {results,pairs};
+}
+
+// ── Detector 1: substring containment ────────────────────────────
+function detectSubstring(results) {
+  if (results.length<2) return false;
+  for (let i=1;i<results.length;i++)
+    if (!results[i].includes(results[i-1])) return false;
+  return true;
+}
+
+// ── Detector 2: regular insertion ────────────────────────────────
+// Each step inserts the same set of digits at positions that advance by a fixed stride.
+function getInsertions(prev, curr) {
+  if (curr.length<=prev.length) return null;
+  const ins=[]; let pi=0,ci=0;
+  while (ci<curr.length) {
+    if (pi<prev.length && curr[ci]===prev[pi]) { pi++; ci++; }
+    else { ins.push({absPos:ci, digit:curr[ci]}); ci++; }
+  }
+  if (pi!==prev.length) return null;
+  return ins;
+}
+
+function detectRegularInsert(results) {
+  if (results.length<3) return false;
+  let baseDigits=null, strides=null;
+  const allIns=[];
+  for (let i=1;i<results.length;i++) {
+    const ins=getInsertions(results[i-1],results[i]);
+    if (!ins||ins.length===0) return false;
+    const digits=ins.map(x=>x.digit);
+    if (baseDigits===null) baseDigits=digits;
+    else { if (digits.join('')!==baseDigits.join('')) return false; }
+    allIns.push(ins);
+  }
+  // Check strides per insertion slot
+  for (let k=0;k<baseDigits.length;k++) {
+    let prevPos=null,stride=null;
+    for (let i=0;i<allIns.length;i++) {
+      const pos=allIns[i][k].absPos;
+      if (prevPos!==null) {
+        const s=pos-prevPos;
+        if (stride===null) stride=s;
+        else if (s!==stride) return false;
+      }
+      prevPos=pos;
+    }
+    if (stride===null||stride<=0) return false;
+  }
+  return true;
+}
+
+// ── Describe insertion pattern ────────────────────────────────────
+function describeInsert(results) {
+  if (results.length<2) return '';
+  const ins=getInsertions(results[0],results[1]);
+  if (!ins) return '';
+  return 'inserts: '+ins.map(x=>`"${x.digit}"`).join(' + ');
+}
+
+// ── Longest valid prefix length (for partial-chain / "Min steps") ──
+function chainLenSubstring(results) {
+  let best=1;
+  for (let L=2;L<=results.length;L++) {
+    if (detectSubstring(results.slice(0,L))) best=L; else break;
+  }
+  return best; // >=2 means a real substring pattern was found
+}
+function chainLenInsertion(results) {
+  let best=0;
+  for (let L=3;L<=results.length;L++) {
+    if (detectRegularInsert(results.slice(0,L))) best=L; else break;
+  }
+  return best; // >=3 means a real insertion pattern was found
+}
+
+// ── Growth digit '0' is only meaningful for 'mid'/'post' (it genuinely changes
+// the number). At 'pre' — or 'mid' on a 1-digit seed, which behaves like 'pre' —
+// it just prepends a leading zero, leaving the numeric value unchanged: a no-op
+// that would falsely register as a trivial "pattern" (constant product every step).
+function isDegenerateZeroGrowth(seedStr,pos,digit){
+  if (digit!=='0') return false;
+  if (pos==='pre') return true;
+  if (pos==='mid' && seedStr.length<2) return true;
+  return false;
+}
+
+// A "boundary" pair straddles a multiple of ten (9×10, 10×11, 19×20, 20×21, ...) —
+// one seed ends in 0 — which behaves differently from a plain pair like 31×32.
+function isBoundaryPair(a,b){
+  return (Number(a)%10===0)||(Number(b)%10===0);
+}
+
+// An "obvious ×10" solution is one where a factor's growth is literally appending
+// a zero at the end (post,'0') — i.e. that factor is just being multiplied by 10
+// each step. Since X·(10Y) = 10·(X·Y), any pattern in X·Y trivially carries over
+// with an extra zero, making this a much less interesting class of "solution".
+function isObviousTenGrowth(c){
+  return (c.gA==='post'&&c.dA==='0')||(c.gB==='post'&&c.dB==='0');
+}
+
+// ── All solutions for one pair (full-chain: pattern must hold for every requested step) ──
+function allSolutions(aStr,bStr,steps,maxD,onlyEmbed) {
+  const POS=['pre','mid','post'];
+  const DIGITS=['0',...Array.from({length:maxD},(_,i)=>String(i+1))];
+  const seen=new Set(),combos=[];
+  for (const gA of POS) for (const gB of POS) for (const dA of DIGITS) for (const dB of DIGITS) {
+    if (isDegenerateZeroGrowth(aStr,gA,dA)||isDegenerateZeroGrowth(bStr,gB,dB)) continue;
+    const {results,pairs}=buildChain(aStr,bStr,gA,gB,dA,dB,steps);
+    const isSub=detectSubstring(results);
+    const isIns=!isSub && detectRegularInsert(results);
+    if (onlyEmbed && !isSub && !isIns) continue;
+    const key=results.join('|');
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const type=isSub?'substring':isIns?'insertion':'none';
+    const desc=isIns?describeInsert(results):'';
+    combos.push({gA,gB,dA,dB,results,pairs,type,desc,isEmbed:isSub||isIns});
+  }
+  return combos;
+}
+
+// ── All solutions for one pair (partial-chain: keeps a pattern once it holds ──
+// for at least `minSteps` steps, even if it breaks before reaching `steps`).
+// Used by the interval scan/download, where "Min steps" is honored.
+function allSolutionsChain(aStr,bStr,steps,maxD,onlyEmbed,minSteps) {
+  const POS=['pre','mid','post'];
+  const DIGITS=['0',...Array.from({length:maxD},(_,i)=>String(i+1))];
+  const seen=new Set(),combos=[];
+  for (const gA of POS) for (const gB of POS) for (const dA of DIGITS) for (const dB of DIGITS) {
+    if (isDegenerateZeroGrowth(aStr,gA,dA)||isDegenerateZeroGrowth(bStr,gB,dB)) continue;
+    const {results,pairs}=buildChain(aStr,bStr,gA,gB,dA,dB,steps);
+    const subLen=chainLenSubstring(results), validSub=subLen>=2;
+    const insLen=chainLenInsertion(results), validIns=insLen>=3;
+    let achieved=0,type='none';
+    if (validSub&&(!validIns||subLen>=insLen)) { achieved=subLen; type='substring'; }
+    else if (validIns) { achieved=insLen; type='insertion'; }
+    const isEmbed=achieved>=minSteps;
+    if (onlyEmbed && !isEmbed) continue;
+    const len=isEmbed?achieved:steps;
+    const rSlice=results.slice(0,len), pSlice=pairs.slice(0,len);
+    const key=rSlice.join('|')+'|'+(isEmbed?type:'none');
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const desc=isEmbed&&type==='insertion'?describeInsert(rSlice):'';
+    combos.push({gA,gB,dA,dB,results:rSlice,pairs:pSlice,type:isEmbed?type:'none',desc,isEmbed,requested:steps});
+  }
+  return combos;
+}
+
+// ── Colorize result for display ───────────────────────────────────
+function colorF(s,cls){return [...s].map(c=>`<span class="${cls}">${c}</span>`).join('');}
+
+function colorResultSubstring(curr,prev) {
+  if (!prev) return `<span class="cmp-d-plain">${curr}</span>`;
+  const idx=curr.indexOf(prev);
+  if (idx===-1) return `<span class="cmp-d-plain">${curr}</span>`;
+  return (idx>0?`<span class="cmp-d-sub-wrap">${curr.slice(0,idx)}</span>`:'')+
+    `<span class="cmp-d-sub-prev">${curr.slice(idx,idx+prev.length)}</span>`+
+    (idx+prev.length<curr.length?`<span class="cmp-d-sub-wrap">${curr.slice(idx+prev.length)}</span>`:'');
+}
+
+function colorResultInsertion(curr,prev) {
+  if (!prev) return `<span class="cmp-d-plain">${curr}</span>`;
+  const ins=getInsertions(prev,curr);
+  if (!ins) return `<span class="cmp-d-plain">${curr}</span>`;
+  const insSet=new Set(ins.map(x=>x.absPos));
+  return [...curr].map((c,i)=>insSet.has(i)?`<span class="cmp-d-ins">${c}</span>`:`<span class="cmp-d-plain">${c}</span>`).join('');
+}
+
+// ── Render card ───────────────────────────────────────────────────
+function renderCard(c,aStr,bStr,steps,delay) {
+  let rows='';
+  for (let i=0;i<steps;i++) {
+    const prev=i>0?c.results[i-1]:null;
+    let resHtml='', tag='';
+    if (i===0) {
+      resHtml=`<span class="cmp-d-plain">${c.results[i]}</span>`;
+      tag='<span class="cmp-tag-s">seed</span>';
+    } else if (c.type==='substring') {
+      resHtml=colorResultSubstring(c.results[i],prev);
+      tag='';
+    } else if (c.type==='insertion') {
+      resHtml=colorResultInsertion(c.results[i],prev);
+      tag='';
+    } else {
+      resHtml=`<span class="cmp-d-plain">${c.results[i]}</span>`;
+    }
+    rows+=`<div class="cmp-chain-row">
+      <span class="cmp-cr-factors">${colorF(c.pairs[i].A,'cmp-da')} × ${colorF(c.pairs[i].B,'cmp-db')}</span>
+      <span class="cmp-cr-eq">=</span>
+      <span class="cmp-cr-result">${resHtml}${tag}</span>
+    </div>`;
+  }
+  const badgeClass=c.type==='substring'?'cmp-badge-sub':c.type==='insertion'?'cmp-badge-ins':'cmp-badge-none';
+  const noteStr=c.type==='insertion'?`insertion pattern · ${c.desc}`:c.type==='substring'?'substring containment':'no pattern';
+  return `<div class="cmp-chain-card" style="animation-delay:${delay}ms">
+    <div class="cmp-chain-head">
+      <span class="cmp-chain-seed">${aStr}×${bStr} · A:${c.gA}(${c.dA}) B:${c.gB}(${c.dB})</span>
+      <span class="cmp-badge ${badgeClass}">${c.type}</span>
+    </div>
+    <div class="cmp-chain-body">
+      ${rows}
+      <div class="cmp-embed-note">${noteStr}</div>
+    </div>
+  </div>`;
+}
+
+// ── Generate ──────────────────────────────────────────────────────
+function generate() {
+  const aStr=document.getElementById('cmp-startA').value.trim();
+  const bStr=document.getElementById('cmp-startB').value.trim();
+  const steps=Math.max(3,Math.min(12,parseInt(document.getElementById('cmp-steps').value)||7));
+  const maxD=parseInt(document.getElementById('cmp-maxDigit').value)||9;
+  if (!aStr||!bStr) return;
+  const combos=allSolutions(aStr,bStr,steps,maxD,false);
+  const embedding=combos.filter(c=>c.isEmbed);
+  const noEmbed=combos.filter(c=>!c.isEmbed);
+  let html='';
+  if (embedding.length>0) {
+    html+=`<div class="cmp-sec-hdr">Embedding solutions<span class="cmp-sec-count">${embedding.length} found</span></div>`;
+    embedding.forEach((c,i)=>{html+=renderCard(c,aStr,bStr,steps,i*35);});
+  }
+  if (noEmbed.length>0) {
+    html+=`<div class="cmp-sec-hdr" style="margin-top:16px">Non-embedding (${noEmbed.length})<span class="cmp-sec-count" style="cursor:pointer;color:var(--accent)" onclick="toggleSec(this)">show</span></div><div id="cmp-ne-sec" style="display:none">`;
+    noEmbed.forEach((c,i)=>{html+=renderCard(c,aStr,bStr,steps,i*12);});
+    html+='</div>';
+  }
+  if (!embedding.length) html=`<div class="cmp-no-sol">No embedding solutions for ${aStr}×${bStr} with digits 1–${maxD}.<br>Try increasing max digit or changing seeds.</div>`+html;
+  document.getElementById('cmp-results').innerHTML=html;
+  const el=document.getElementById('cmp-summary');
+  el.style.display='flex';
+  el.innerHTML=`<strong>${embedding.length}</strong> embedding (${combos.filter(c=>c.type==='substring').length} substring, ${combos.filter(c=>c.type==='insertion').length} insertion) &nbsp;·&nbsp; <strong>${noEmbed.length}</strong> non-embedding &nbsp;·&nbsp; <strong>${combos.length}</strong> total tried`;
+  window._last={aStr,bStr,steps,maxD,combos,embedding};
+}
+
+// ── Mirror products ──────────────────────────────────────────────
+function reverseDigitsCmp(s){return String(s).split('').reverse().join('');}
+function mirrorProductChain(a,gap,pos,digit,steps){
+  const b=String(Number(a)+gap), ar=reverseDigitsCmp(a), br=reverseDigitsCmp(b), rows=[];
+  for(let i=0;i<steps;i++){
+    const A=grow(a,pos,digit,i), B=grow(b,pos,digit,i), R=grow(ar,pos,digit,i), S=grow(br,pos,digit,i);
+    const p=(BigInt(A)*BigInt(B)).toString(), q=(BigInt(R)*BigInt(S)).toString(); rows.push({A,B,R,S,p,q,mirror:p===reverseDigitsCmp(q)});
+  } return {b,ar,br,rows};
+}
+function renderMirrorProduct(data,a,gap){
+  let h='<div class="cmp-mirror-card"><div class="cmp-scan-title">'+a+'×'+data.b+' ↔ '+data.ar+'×'+data.br+'</div>';
+  data.rows.forEach(r=>{h+='<div class="cmp-mirror-row"><strong>'+r.A+' × '+r.B+' = '+r.p+'</strong><strong>'+r.R+' × '+r.S+' = '+r.q+'</strong><div style="grid-column:1/-1;color:var(--teal);font-size:11px">'+(r.mirror?'exact digit-reversal pair':'not an exact reversal')+'</div></div>';});
+  return h+'</div>';
+}
+function generateMirrorProducts(){
+  const a=document.getElementById('cmp-mirrorA').value.trim(), gap=Math.max(1,parseInt(document.getElementById('cmp-mirrorGap').value)||1), steps=Math.max(2,Math.min(10,parseInt(document.getElementById('cmp-mirrorSteps').value)||5)), digit=String(Math.max(0,Math.min(9,parseInt(document.getElementById('cmp-mirrorDigit').value)||0))),pos=document.getElementById('cmp-mirrorPos').value;
+  if(!/^\d+$/.test(a)||BigInt(a)<1n)return; const data=mirrorProductChain(a,gap,pos,digit,steps); document.getElementById('cmp-mirror-results').innerHTML=renderMirrorProduct(data,a,gap); window._cmpMirror={a,gap,steps,digit,pos,data};
+}
+function scanMirrorProducts(){
+  const from=Math.max(1,parseInt(document.getElementById('cmp-mirrorFrom').value)||1),to=Math.min(from+499,Math.max(from,parseInt(document.getElementById('cmp-mirrorTo').value)||from)),gap=Math.max(1,parseInt(document.getElementById('cmp-mirrorIntervalGap').value)||1),steps=Math.max(2,Math.min(8,parseInt(document.getElementById('cmp-mirrorIntervalSteps').value)||4)),digit=String(Math.max(0,Math.min(9,parseInt(document.getElementById('cmp-mirrorIntervalDigit').value)||0))),pos=document.getElementById('cmp-mirrorIntervalPos').value,hits=[];
+  for(let n=from;n<=to;n++){const data=mirrorProductChain(String(n),gap,pos,digit,steps);if(data.rows.every(r=>r.mirror))hits.push({n,data});}
+  window._cmpMirrorInterval={from,to,gap,steps,digit,pos,hits}; const el=document.getElementById('cmp-mirror-interval-results');
+  el.innerHTML=hits.length?'<strong>'+hits.length+'</strong> complete families found · '+hits.map(h=>'<span class="cmp-scan-hit" onclick="document.getElementById(\'cmp-mirrorA\').value='+h.n+';generateMirrorProducts()">'+h.n+'×'+h.data.b+' ↔ '+h.data.ar+'×'+h.data.br+'</span>').join(''):'<span style="color:var(--ink3)">No complete mirror-product families found in this interval.</span>';
+}
+function downloadMirrorProducts(){if(!window._cmpMirror){generateMirrorProducts();if(!window._cmpMirror)return;}const d=window._cmpMirror,x=['CONSECUTIVE MULTIPLICATION — MIRROR PRODUCTS'];d.data.rows.forEach(r=>x.push(r.A+' × '+r.B+' = '+r.p+'  ↔  '+r.R+' × '+r.S+' = '+r.q));const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([x.join('\n')],{type:'text/plain'}));a.download='mirror-products-'+d.a+'.txt';a.click();}
+function downloadMirrorProductsExcel(){if(!window._cmpMirror){generateMirrorProducts();if(!window._cmpMirror)return;}const d=window._cmpMirror,rows=[['Seed A','Seed B','Reversed A','Reversed B','Product A×B','Product reversed pair','Exact mirror?']];d.data.rows.forEach(r=>rows.push([r.A,r.B,r.R,r.S,r.p,r.q,r.mirror?'Yes':'No']));const wb=XLSX.utils.book_new(),ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:14},{wch:14},{wch:14},{wch:14},{wch:20},{wch:24},{wch:16}];XLSX.utils.book_append_sheet(wb,ws,'Mirror Products');XLSX.writeFile(wb,'mirror-products-'+d.a+'.xlsx');}
+function downloadMirrorIntervalProducts(){if(!window._cmpMirrorInterval){scanMirrorProducts();}const d=window._cmpMirrorInterval,x=['CONSECUTIVE MULTIPLICATION — MIRROR INTERVAL','Seeds: '+d.from+'–'+d.to+' | Gap: '+d.gap+' | Steps: '+d.steps,'Found: '+d.hits.length,''];d.hits.forEach(h=>{x.push('--- '+h.n+'×'+h.data.b+' ↔ '+h.data.ar+'×'+h.data.br+' ---');h.data.rows.forEach(r=>x.push(r.A+' × '+r.B+' = '+r.p+'  ↔  '+r.R+' × '+r.S+' = '+r.q));});const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([x.join('\n')],{type:'text/plain'}));a.download='mirror-products-interval-'+d.from+'-'+d.to+'.txt';a.click();}
+function downloadMirrorIntervalProductsExcel(){if(!window._cmpMirrorInterval){scanMirrorProducts();}const d=window._cmpMirrorInterval,wb=XLSX.utils.book_new(),rows=[['Seed A','Seed B','Reversed A','Reversed B','Product A×B','Product reversed pair','Exact mirror?']];d.hits.forEach(h=>h.data.rows.forEach(r=>rows.push([r.A,r.B,r.R,r.S,r.p,r.q,r.mirror?'Yes':'No'])));const ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:14},{wch:14},{wch:14},{wch:14},{wch:20},{wch:24},{wch:16}];XLSX.utils.book_append_sheet(wb,ws,'Mirror Interval');XLSX.writeFile(wb,'mirror-products-interval-'+d.from+'-'+d.to+'.xlsx');}
+
+function toggleSec(btn){
+  const s=document.getElementById('cmp-ne-sec');if(!s)return;
+  const h=s.style.display==='none';s.style.display=h?'':'none';btn.textContent=h?'hide':'show';
+}
+
+// ── Tabs ────────────────────────────────────────────────────────────
+function switchTab(name){
+  document.getElementById('cmp-tab-single').style.display=name==='single'?'':'none';
+  document.getElementById('cmp-tab-interval').style.display=name==='interval'?'':'none';
+  document.getElementById('cmp-tab-mirror').style.display=name==='mirror'?'':'none';
+  document.getElementById('cmp-tab-btn-single').classList.toggle('active',name==='single');
+  document.getElementById('cmp-tab-btn-interval').classList.toggle('active',name==='interval');
+  document.getElementById('cmp-tab-btn-mirror').classList.toggle('active',name==='mirror');
+}
+
+// ── Interval on-screen generation ──────────────────────────────────
+const CMP_IVP_ONSCREEN_CAP=50;
+function toggleIvpRow(row){
+  const body=row.querySelector('.cmp-ivp-body');
+  const open=row.classList.toggle('open');
+  body.style.display=open?'':'none';
+}
+function loadIntervalPair(a,b){
+  document.getElementById('cmp-startA').value=a;
+  document.getElementById('cmp-startB').value=b;
+  switchTab('single');
+  generate();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function generateIntervalOnScreen(){
+  const pairs=parseRanges();
+  const minChain=parseInt(document.getElementById('cmp-minChain').value)||4;
+  const steps=Math.max(4,Math.min(10,parseInt(document.getElementById('cmp-dlSteps').value)||7));
+  const maxD=parseInt(document.getElementById('cmp-dlMaxDigit').value)||6;
+  const onlyEmbed=document.getElementById('cmp-dlOnlyEmbed').value==='yes';
+  const el=document.getElementById('cmp-scan-results');
+  const summaryEl=document.getElementById('cmp-interval-summary');
+  const resultsEl=document.getElementById('cmp-interval-results');
+  summaryEl.style.display='none';
+  resultsEl.innerHTML='';
+  el.innerHTML=`<span style="color:var(--ink3)">Scanning ${pairs.length} pairs…</span>`;
+  if(pairs.length>80&&!confirm(`Process ${pairs.length} pairs?`))return;
+  setTimeout(()=>{
+    const hits=[];
+    let totalSolutions=0;
+    for(const[a,b]of pairs){
+      const combos=allSolutionsChain(String(a),String(b),steps,maxD,onlyEmbed,minChain);
+      const good=onlyEmbed?combos.filter(c=>c.isEmbed):combos;
+      if(!good.length)continue;
+      hits.push({a,b,combos:good});
+      totalSolutions+=good.length;
+    }
+    if(!hits.length){
+      el.innerHTML=`<span style="color:var(--ink3)">No matching pairs found. Try a wider range, higher max digit, or lower min steps.</span>`;
+      return;
+    }
+    el.innerHTML='';
+    summaryEl.style.display='flex';
+    summaryEl.innerHTML=`<strong>${hits.length}</strong> pairs found &nbsp;·&nbsp; <strong>${totalSolutions}</strong> solutions total`
+      +(hits.length>CMP_IVP_ONSCREEN_CAP?` &nbsp;·&nbsp; showing first <strong>${CMP_IVP_ONSCREEN_CAP}</strong> pairs below`:'');
+    const shown=hits.slice(0,CMP_IVP_ONSCREEN_CAP);
+    let html='';
+    shown.forEach((h,i)=>{
+      const aStr=String(h.a),bStr=String(h.b);
+      const cardsHtml=h.combos.map((c,j)=>renderCard(c,aStr,bStr,c.results.length,j*15)).join('');
+      html+=`<div class="cmp-ivp-row" onclick="toggleIvpRow(this)">
+        <div class="cmp-ivp-head">
+          <span class="cmp-ivp-seed">${aStr}×${bStr}</span>
+          <span class="cmp-badge cmp-badge-sub">${h.combos.length} solution${h.combos.length>1?'s':''}</span>
+          <span class="cmp-ivp-arrow">▶</span>
+        </div>
+        <div class="cmp-ivp-body" style="display:none" onclick="event.stopPropagation()">${cardsHtml}</div>
+      </div>`;
+    });
+    if(hits.length>CMP_IVP_ONSCREEN_CAP){
+      const rest=hits.slice(CMP_IVP_ONSCREEN_CAP);
+      const restHtml=rest.map(h=>`<span class="cmp-scan-hit" onclick="loadIntervalPair(${h.a},${h.b})">${h.a}×${h.b}<sup style="font-size:8px">${h.combos.length}</sup></span>`).join('');
+      html+=`<div class="cmp-ivp-cap">${rest.length} more pair${rest.length>1?'s':''} found but not shown as cards above — click one to explore it in the Single Pair tab, or use "Download interval .txt/.xlsx" for the full set:<div style="margin-top:8px">${restHtml}</div></div>`;
+    }
+    resultsEl.innerHTML=html;
+    document.getElementById('cmp-dl-progress').textContent=`${hits.length} pairs, ${totalSolutions} solutions`;
+  },10);
+}
+
+// ── Range parser ──────────────────────────────────────────────────
+function parseRanges(){
+  const multi=document.getElementById('cmp-multiRange').value.trim();
+  const gap=parseInt(document.getElementById('cmp-scanGap').value)||1;
+  const pairs=[];
+  if (multi) {
+    const nums=new Set();
+    multi.split(',').map(s=>s.trim()).forEach(part=>{
+      const m=part.match(/^(\d+)\s*-\s*(\d+)$/);
+      if (m){const lo=parseInt(m[1]),hi=Math.min(parseInt(m[2]),lo+499);for(let i=lo;i<=hi;i++)nums.add(i);}
+      else{const n=parseInt(part);if(!isNaN(n)&&n>=1)nums.add(n);}
+    });
+    [...nums].sort((a,b)=>a-b).forEach(a=>pairs.push([a,a+gap]));
+  } else {
+    const from=parseInt(document.getElementById('cmp-scanFrom').value);
+    const to=Math.min(parseInt(document.getElementById('cmp-scanTo').value),from+500);
+    for(let a=from;a<=to;a++)pairs.push([a,a+gap]);
+  }
+  return pairs;
+}
+
+// ── Interval download ─────────────────────────────────────────────
+function downloadInterval(){
+  const pairs=parseRanges();
+  const minChain=parseInt(document.getElementById('cmp-minChain').value)||4;
+  const steps=Math.max(4,Math.min(10,parseInt(document.getElementById('cmp-dlSteps').value)||7));
+  const maxD=parseInt(document.getElementById('cmp-dlMaxDigit').value)||6;
+  const onlyEmbed=document.getElementById('cmp-dlOnlyEmbed').value==='yes';
+  const prog=document.getElementById('cmp-dl-progress');
+  if(pairs.length>80&&!confirm(`Process ${pairs.length} pairs?`))return;
+  prog.textContent='Building…';
+  setTimeout(()=>{
+    const SEP='='.repeat(72),SEP2='-'.repeat(72),SEP3='·'.repeat(72);
+    const blocks={obvious:[],boundary:[],regular:[]};
+    const counts={obvious:{pairs:0,sol:0},boundary:{pairs:0,sol:0},regular:{pairs:0,sol:0}};
+    const noSolutionRegular=[],noSolutionBoundary=[];
+    function renderBlock(aStr,bStr,list){
+      const block=[];
+      block.push(SEP);block.push(`  PAIR: ${aStr} x ${bStr}   (${list.length} solution${list.length>1?'s':''})`);block.push(SEP);
+      const maxR=Math.max(...list.flatMap(c=>c.results.map(r=>r.length)));
+      for(const c of list){
+        const n=c.results.length;
+        const partialNote=c.isEmbed&&n<c.requested?` | steps: ${n}/${c.requested} (chain broke after ${n})`:'';
+        block.push('');block.push(SEP2);
+        block.push(`  A:${c.gA}(${c.dA})  B:${c.gB}(${c.dB})  |  type: ${c.type.toUpperCase()}${c.desc?' | '+c.desc:''}${partialNote}`);
+        block.push(SEP2);
+        const maxA=Math.max(...c.pairs.map(p=>p.A.length));
+        const maxB=Math.max(...c.pairs.map(p=>p.B.length));
+        for(let i=0;i<n;i++){
+          const lhs=c.pairs[i].A.padStart(maxA)+' x '+c.pairs[i].B.padStart(maxB);
+          const rhs=c.results[i].padStart(maxR);
+          block.push(`  ${lhs}  =  ${rhs}`);
+        }
+        block.push('');
+      }
+      block.push(SEP3);
+      return block;
+    }
+    for(const[a,b]of pairs){
+      const aStr=String(a),bStr=String(b);
+      const combos=allSolutionsChain(aStr,bStr,steps,maxD,onlyEmbed,minChain);
+      const good=onlyEmbed?combos.filter(c=>c.isEmbed):combos;
+      if(!good.length){
+        (isBoundaryPair(a,b)?noSolutionBoundary:noSolutionRegular).push(`${aStr}x${bStr}`);
+        continue;
+      }
+      const pairIsBoundary=isBoundaryPair(a,b);
+      const byCat={obvious:[],boundary:[],regular:[]};
+      good.forEach(c=>{
+        if(isObviousTenGrowth(c)) byCat.obvious.push(c);
+        else if(pairIsBoundary) byCat.boundary.push(c);
+        else byCat.regular.push(c);
+      });
+      for(const cat of ['regular','boundary','obvious']){
+        if(!byCat[cat].length) continue;
+        blocks[cat].push(...renderBlock(aStr,bStr,byCat[cat]));
+        counts[cat].pairs++;counts[cat].sol+=byCat[cat].length;
+      }
+    }
+    const out=[];
+    out.push(SEP);out.push('  CONSECUTIVE MULTIPLICATION PATTERN GENERATOR -- INTERVAL RESULTS');out.push(SEP);
+    out.push(`  Range     : A=${pairs[0][0]}–${pairs[pairs.length-1][0]}, B=A+${document.getElementById('cmp-scanGap').value||1}`);
+    out.push(`  Pairs     : ${pairs.length} (e.g. ${pairs[0][0]}x${pairs[0][1]}${pairs.length>1?', '+pairs[1][0]+'x'+pairs[1][1]:''}...)`);
+    out.push(`  Max digit : ${maxD}  |  Steps: ${steps}  |  Min embed steps: ${minChain}`);
+    out.push(`  Pattern   : substring (result contains prev) + insertion (same digits inserted regularly)`);
+    out.push(`  Filter    : ${onlyEmbed?'embedding only':'all combinations'}`);
+    out.push(`  Categories: Regular · Boundary (a seed is a multiple of 10, e.g. 9x10, 20x21) · Obvious ×10 (a factor just grows by appending zeros, e.g. 11x12→111x120→1111x1200...)`);
+    out.push(`  Generated : ${new Date().toLocaleString()}`);
+    out.push('');
+    out.push(SEP);out.push(`  REGULAR PAIRS — ${counts.regular.pairs} pairs, ${counts.regular.sol} solutions`);out.push(SEP);
+    out.push('');
+    if(blocks.regular.length) out.push(...blocks.regular); else out.push('  (none)');
+    out.push('');
+    out.push(SEP);out.push(`  BOUNDARY PAIRS (multiple of 10) — ${counts.boundary.pairs} pairs, ${counts.boundary.sol} solutions`);out.push(SEP);
+    out.push('');
+    if(blocks.boundary.length) out.push(...blocks.boundary); else out.push('  (none)');
+    out.push('');
+    out.push(SEP);out.push(`  OBVIOUS ×10 SOLUTIONS (a factor grows purely by appending zeros) — ${counts.obvious.pairs} pairs, ${counts.obvious.sol} solutions`);out.push(SEP);
+    out.push('');
+    if(blocks.obvious.length) out.push(...blocks.obvious); else out.push('  (none)');
+    out.push('');
+    out.push(SEP);out.push('  SUMMARY');out.push(SEP);
+    out.push(`  Regular  — pairs with solutions  : ${counts.regular.pairs}`);
+    out.push(`  Regular  — total solutions       : ${counts.regular.sol}`);
+    out.push(`  Boundary — pairs with solutions  : ${counts.boundary.pairs}`);
+    out.push(`  Boundary — total solutions       : ${counts.boundary.sol}`);
+    out.push(`  Obvious ×10 — pairs w/ solutions : ${counts.obvious.pairs}`);
+    out.push(`  Obvious ×10 — total solutions    : ${counts.obvious.sol}`);
+    out.push(`  Pairs with no solution (regular) : ${noSolutionRegular.length}`);
+    out.push(`  Pairs with no solution (boundary): ${noSolutionBoundary.length}`);
+    out.push(`  All pairs scanned                : ${pairs.length}`);
+    out.push('');out.push(SEP);
+    if(noSolutionRegular.length){
+      out.push('');out.push(SEP);out.push(`  REGULAR PAIRS WITH NO SOLUTIONS (${noSolutionRegular.length})`);out.push(SEP);
+      for(let i=0;i<noSolutionRegular.length;i+=8) out.push('  '+noSolutionRegular.slice(i,i+8).join(', '));
+      out.push('');out.push(SEP);
+    }
+    if(noSolutionBoundary.length){
+      out.push('');out.push(SEP);out.push(`  BOUNDARY PAIRS WITH NO SOLUTIONS (${noSolutionBoundary.length})`);out.push(SEP);
+      for(let i=0;i<noSolutionBoundary.length;i+=8) out.push('  '+noSolutionBoundary.slice(i,i+8).join(', '));
+      out.push('');out.push(SEP);
+    }
+    const rangeLabel=`${pairs[0][0]}-${pairs[pairs.length-1][0]}_gap${document.getElementById('cmp-scanGap').value||1}`;
+    const blob=new Blob([out.join('\n')],{type:'text/plain'});
+    const url=URL.createObjectURL(blob);
+    const anchor=document.createElement('a');
+    anchor.href=url;anchor.download=`embed-interval-${rangeLabel}.txt`;anchor.click();
+    URL.revokeObjectURL(url);
+    prog.textContent=`Done — Regular:${counts.regular.pairs}/${counts.regular.sol} · Boundary:${counts.boundary.pairs}/${counts.boundary.sol} · Obvious×10:${counts.obvious.pairs}/${counts.obvious.sol}`;
+  },30);
+}
+
+// ── Single download (Excel) ─────────────────────────────────────
+function downloadSingleExcel(){
+  if(!window._last){generate();return;}
+  const{aStr,bStr,steps,combos}=window._last;
+  const rows=[['Pair','Type','Pattern','A growth','B growth','Step','A','B','Result']];
+  combos.forEach(c=>{
+    for(let i=0;i<steps;i++){
+      rows.push([`${aStr}x${bStr}`,c.type,c.desc||'',`${c.gA}(${c.dA})`,`${c.gB}(${c.dB})`,i+1,c.pairs[i].A,c.pairs[i].B,c.results[i]]);
+    }
+  });
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:10},{wch:11},{wch:24},{wch:12},{wch:12},{wch:6},{wch:16},{wch:16},{wch:20}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Solutions');
+  XLSX.writeFile(wb,`consecutive-mult-${aStr}x${bStr}.xlsx`);
+}
+
+// ── Interval download (Excel) ───────────────────────────────────
+function downloadIntervalExcel(){
+  const pairs=parseRanges();
+  const steps=Math.max(4,Math.min(10,parseInt(document.getElementById('cmp-dlSteps').value)||7));
+  const maxD=parseInt(document.getElementById('cmp-dlMaxDigit').value)||6;
+  const onlyEmbed=document.getElementById('cmp-dlOnlyEmbed').value==='yes';
+  const minChain=parseInt(document.getElementById('cmp-minChain').value)||4;
+  const prog=document.getElementById('cmp-dl-progress');
+  if(pairs.length>80&&!confirm(`Process ${pairs.length} pairs?`))return;
+  prog.textContent='Building Excel…';
+  setTimeout(()=>{
+    const header=['Pair','Type','Pattern','A growth','B growth','Steps achieved','Steps requested','Step','A','B','Result'];
+    const rows={regular:[header.slice()],boundary:[header.slice()],obvious:[header.slice()]};
+    const none={regular:[['Pair','A','B']],boundary:[['Pair','A','B']]};
+    const counts={regular:{pairs:0,sol:0},boundary:{pairs:0,sol:0},obvious:{pairs:0,sol:0}};
+    for(const[a,b]of pairs){
+      const aStr=String(a),bStr=String(b);
+      const combos=allSolutionsChain(aStr,bStr,steps,maxD,onlyEmbed,minChain);
+      const good=onlyEmbed?combos.filter(c=>c.isEmbed):combos;
+      if(!good.length){
+        (isBoundaryPair(a,b)?none.boundary:none.regular).push([`${aStr}x${bStr}`,aStr,bStr]);
+        continue;
+      }
+      const pairIsBoundary=isBoundaryPair(a,b);
+      const byCat={obvious:[],boundary:[],regular:[]};
+      good.forEach(c=>{
+        if(isObviousTenGrowth(c)) byCat.obvious.push(c);
+        else if(pairIsBoundary) byCat.boundary.push(c);
+        else byCat.regular.push(c);
+      });
+      for(const cat of ['regular','boundary','obvious']){
+        if(!byCat[cat].length) continue;
+        counts[cat].pairs++;counts[cat].sol+=byCat[cat].length;
+        byCat[cat].forEach(c=>{
+          const n=c.results.length;
+          for(let i=0;i<n;i++){
+            rows[cat].push([`${aStr}x${bStr}`,c.type,c.desc||'',`${c.gA}(${c.dA})`,`${c.gB}(${c.dB})`,n,c.requested,i+1,c.pairs[i].A,c.pairs[i].B,c.results[i]]);
+          }
+        });
+      }
+    }
+    const totalRows=rows.regular.length+rows.boundary.length+rows.obvious.length+none.regular.length+none.boundary.length;
+    if(totalRows===5){prog.textContent='No pairs to export.';return;}
+    const wb=XLSX.utils.book_new();
+    const cols=[{wch:10},{wch:11},{wch:24},{wch:12},{wch:12},{wch:13},{wch:14},{wch:6},{wch:16},{wch:16},{wch:20}];
+    const noneCols=[{wch:12},{wch:12},{wch:12}];
+    const summaryRows=[
+      ['CONSECUTIVE MULTIPLICATION PATTERN GENERATOR -- INTERVAL SUMMARY',''],
+      ['Range',`A=${pairs[0][0]}–${pairs[pairs.length-1][0]}, B=A+${document.getElementById('cmp-scanGap').value||1}`],
+      ['Pairs scanned',pairs.length],
+      ['Max digit',maxD],
+      ['Steps/pair',steps],
+      ['Min embed steps',minChain],
+      ['Filter',onlyEmbed?'embedding only':'all combinations'],
+      ['Generated',new Date().toLocaleString()],
+      ['',''],
+      ['Category','Pairs with solutions','Total solutions'],
+      ['Regular',counts.regular.pairs,counts.regular.sol],
+      ['Boundary (multiple of 10)',counts.boundary.pairs,counts.boundary.sol],
+      ['Obvious ×10 (factor grows by appending zeros)',counts.obvious.pairs,counts.obvious.sol],
+      ['',''],
+      ['Pairs with no solution (regular)',none.regular.length-1],
+      ['Pairs with no solution (boundary)',none.boundary.length-1],
+    ];
+    const wsSummary=XLSX.utils.aoa_to_sheet(summaryRows);
+    wsSummary['!cols']=[{wch:36},{wch:22},{wch:18}];
+    XLSX.utils.book_append_sheet(wb,wsSummary,'Summary');
+    const sheetNames={regular:'Regular Solutions',boundary:'Boundary Solutions',obvious:'Obvious ×10 Solutions'};
+    for(const cat of ['regular','boundary','obvious']){
+      if(rows[cat].length>1){
+        const ws=XLSX.utils.aoa_to_sheet(rows[cat]);ws['!cols']=cols;
+        XLSX.utils.book_append_sheet(wb,ws,sheetNames[cat]);
+      }
+    }
+    if(none.regular.length>1){
+      const ws=XLSX.utils.aoa_to_sheet(none.regular);ws['!cols']=noneCols;
+      XLSX.utils.book_append_sheet(wb,ws,'No Solutions (Regular)');
+    }
+    if(none.boundary.length>1){
+      const ws=XLSX.utils.aoa_to_sheet(none.boundary);ws['!cols']=noneCols;
+      XLSX.utils.book_append_sheet(wb,ws,'No Solutions (Boundary)');
+    }
+    const rangeLabel=`${pairs[0][0]}-${pairs[pairs.length-1][0]}_gap${document.getElementById('cmp-scanGap').value||1}`;
+    XLSX.writeFile(wb,`consecutive-mult-interval-${rangeLabel}.xlsx`);
+    prog.textContent=`Excel done — Regular:${counts.regular.pairs}/${counts.regular.sol} · Boundary:${counts.boundary.pairs}/${counts.boundary.sol} · Obvious×10:${counts.obvious.pairs}/${counts.obvious.sol} · None(reg/bnd):${none.regular.length-1}/${none.boundary.length-1}`;
+  },30);
+}
+
+// ── Single download ───────────────────────────────────────────────
+function downloadSingle(){
+  if(!window._last){generate();return;}
+  const{aStr,bStr,steps,combos}=window._last;
+  const SEP='='.repeat(72),SEP2='-'.repeat(72);
+  let out=[];
+  out.push(SEP);out.push('  CONSECUTIVE MULTIPLICATION PATTERN GENERATOR -- SINGLE PAIR');out.push(SEP);
+  out.push(`  Pair: ${aStr} x ${bStr}  |  Steps: ${steps}  |  Embedding: ${combos.filter(c=>c.isEmbed).length}  |  Generated: ${new Date().toLocaleString()}`);
+  out.push('');
+  const maxR=Math.max(...combos.flatMap(c=>c.results.map(r=>r.length)));
+  for(const c of combos){
+    out.push(SEP2);
+    out.push(`  A:${c.gA}(${c.dA})  B:${c.gB}(${c.dB})  |  ${c.type.toUpperCase()}${c.desc?' | '+c.desc:''}`);
+    out.push(SEP2);
+    const maxA=Math.max(...c.pairs.map(p=>p.A.length));
+    const maxB=Math.max(...c.pairs.map(p=>p.B.length));
+    for(let i=0;i<steps;i++){
+      const lhs=c.pairs[i].A.padStart(maxA)+' x '+c.pairs[i].B.padStart(maxB);
+      const rhs=c.results[i].padStart(maxR);
+      out.push(`  ${lhs}  =  ${rhs}`);
+    }
+    out.push('');
+  }
+  out.push(SEP);
+  const blob=new Blob([out.join('\n')],{type:'text/plain'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=`embed-${aStr}x${bStr}.txt`;a.click();
+  URL.revokeObjectURL(url);
+}
+
+generate();
+
+</script>
