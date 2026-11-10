@@ -261,4 +261,7 @@ function renderBatch(){
 }
 document.getElementById('generate').onclick=renderSingle;document.getElementById('txt').onclick=()=>downloadBlob(new Blob([textOf([current])],{type:'text/plain'}),`cornered_magic_square_n${current.grid.length}.txt`);document.getElementById('xlsx').onclick=()=>excelOf([current],`cornered_magic_square_n${current.grid.length}.xlsx`);document.getElementById('generateBatch').onclick=renderBatch;document.getElementById('batchTxt').onclick=()=>downloadBlob(new Blob([textOf(batch)],{type:'text/plain'}),`cornered_magic_squares_n${batch[0].grid.length}.txt`);document.getElementById('batchXlsx').onclick=()=>excelOf(batch,`cornered_magic_squares_n${batch[0].grid.length}.xlsx`);
 function tab(single){document.getElementById('singleView').hidden=!single;document.getElementById('batchView').hidden=single;document.getElementById('singleTab').classList.toggle('active',single);document.getElementById('batchTab').classList.toggle('active',!single)}document.getElementById('singleTab').onclick=()=>tab(true);document.getElementById('batchTab').onclick=()=>tab(false);document.getElementById('order').onkeydown=e=>{if(e.key==='Enter')renderSingle()};renderSingle();
-</script></body></html>
+</script>
+<!-- IJT shared page-view counter -->
+<script defer src="/mathematical-generators/shared-visit-counter.js"></script>
+</body></html>

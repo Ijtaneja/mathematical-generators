@@ -124,4 +124,7 @@ $('colourSystem').onchange=applyColourSystem;
 $('pool').onchange=$('window').onchange=()=>{if(busy)return;activeSeeds.clear();updatePool();shown=[currentSeed()];$('status').textContent='Verified prime set selected.';$('searchStatus').textContent='';render();};
 try{const saved=localStorage.getItem('prime-magic-colour-system');if(['original','ocean','peach','mint'].includes(saved)){$('colourSystem').value=saved;colourSystem=saved;document.body.dataset.colourSystem=saved;$('background').value=saved==='peach'?'peach':saved==='mint'?'mint':'';}}catch(e){}
 selectType(0);
-</script></body></html>
+</script>
+<!-- IJT shared page-view counter -->
+<script defer src="/mathematical-generators/shared-visit-counter.js"></script>
+</body></html>

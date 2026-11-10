@@ -44,3 +44,6 @@ function download(text,ext,type){if(!result)return;let url=URL.createObjectURL(n
 function csvText(r){let lines=['Group,Line,Sum of entries,Sum of squared entries,Sum of cubed entries'];for(let k of Object.keys(labels))r.data[k].forEach((v,i)=>lines.push([labels[k],k==='main'?(i===0?'Main down-right':'Main down-left'):i+1,v,r.data[k+'2'][i],r.data[k+'3'][i]].join(',')));return lines.join('\n')}
 $('csv').onclick=()=>download(csvText(result),'csv','text/csv');$('txt').onclick=()=>download('Inder J. Taneja · Magic, Bimagic and Trimagic TXT Checker\nSum tests are separate from entry distinctness and normality.\n'+JSON.stringify(result,null,2),'txt','text/plain');
 </script></html>
+
+<!-- IJT shared page-view counter -->
+<script defer src="/mathematical-generators/shared-visit-counter.js"></script>

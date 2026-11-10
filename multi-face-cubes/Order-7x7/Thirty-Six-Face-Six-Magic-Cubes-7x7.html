@@ -42,4 +42,7 @@ for(let r=0;r<ORDER;r++)for(let c=0;c<ORDER;c++){let cell=[point(q,c/ORDER,r/ORD
 for(const comp of activeType.components||[]){let [name,r0,r1,c0,c1]=comp,region=[point(q,c0/ORDER,r0/ORDER),point(q,c1/ORDER,r0/ORDER),point(q,c1/ORDER,r1/ORDER),point(q,c0/ORDER,r1/ORDER)];polygon(region,null,rgba(f.near?'#ffffff':color,f.near?.43:.08),f.near?1.25:.45)}polygon(q,null,rgba(color,f.near?.92:.28),f.near?2.1:1)}
 vertices.sort((a,b)=>a.p.z-b.p.z);for(const {cube,p} of vertices){let color=colors[cube],radius=(p.z>0?5.3:3.5)*(7/(7-p.z));ctx.save();ctx.shadowColor=color;ctx.shadowBlur=p.z>0?14:5;let glow=ctx.createRadialGradient(p.x-radius*.3,p.y-radius*.4,.2,p.x,p.y,radius);glow.addColorStop(0,'#fff');glow.addColorStop(.45,color);glow.addColorStop(1,rgba(color,.42));ctx.beginPath();ctx.arc(p.x,p.y,radius,0,Math.PI*2);ctx.fillStyle=glow;ctx.fill();ctx.restore()}}
 requestAnimationFrame(render);document.getElementById('pause').onclick=()=>{playing=!playing;document.getElementById('pause').textContent=playing?'Pause rotation':'Resume rotation'};
-</script></body></html>
+</script>
+<!-- IJT shared page-view counter -->
+<script defer src="/mathematical-generators/shared-visit-counter.js"></script>
+</body></html>

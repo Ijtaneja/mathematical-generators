@@ -656,4 +656,7 @@ function referenceTilt(angle){
 }
 function animate(t){currentTime=t;let dt=last?Math.min((t-last)/1000,.06):0;last=t;if(turnTarget){let dy=turnTarget.yaw-yaw,dp=turnTarget.pitch-pitch;yaw+=dy*Math.min(1,dt*5.5);pitch+=dp*Math.min(1,dt*5.5);if(Math.abs(dy)+Math.abs(dp)<.004){yaw=turnTarget.yaw;pitch=turnTarget.pitch;turnTarget=null}}else if(playing){yaw+=dt*(Math.PI*2/18)*(Number(speed.value)/36);pitch=referenceTilt(yaw)}draw();requestAnimationFrame(animate)}requestAnimationFrame(animate);
 canvas.addEventListener('pointermove',e=>{const rect=canvas.getBoundingClientRect(),x=e.clientX-rect.left,y=e.clientY-rect.top;hoverValue=null;for(let i=hitRegions.length-1;i>=0;i--){const p=hitRegions[i].points;ctx.beginPath();ctx.moveTo(p[0].x,p[0].y);for(let j=1;j<4;j++)ctx.lineTo(p[j].x,p[j].y);ctx.closePath();if(ctx.isPointInPath(x,y)){hoverValue=hitRegions[i].value;break}}canvas.style.cursor=hoverValue==null?'default':'pointer'});canvas.addEventListener('pointerleave',()=>{hoverValue=null});canvas.addEventListener('click',()=>{if(hoverValue!=null){pinnedValue=hoverValue;playing=false;play.textContent='Resume rotation'}});
-</script></body></html>
+</script>
+<!-- IJT shared page-view counter -->
+<script defer src="/mathematical-generators/shared-visit-counter.js"></script>
+</body></html>

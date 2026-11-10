@@ -82,4 +82,7 @@ $('featured').innerHTML=featured.map((x,i)=>`<article class="featured-card"><spa
 $('featured').onclick=e=>{const button=e.target.closest('[data-feature]');if(!button)return;const x=featured[Number(button.dataset.feature)];$('seed').value=x.seed;$('from').value=x.n;$('to').value=x.n;$('permutations').value='same';$('perSeed').value='0';run()};
 $('run').onclick=run;$('stop').onclick=()=>{cancel=true;$('status').textContent='Stopping after this seed…'};$('example').onclick=()=>{$('seed').value='12';$('from').value='1';$('to').value='200';$('permutations').value='all';$('perSeed').value='0';run()};$('txt').onclick=()=>save(['Factorial and Power Digit Equality Expressions Generator','Created by Inder J. Taneja','',...rows.map(r=>`Seed ${r.seed}; exponent order ${r.order}: ${r.value} = ${r.factorial} = ${r.power}`)].join('\n'),'factorial-power-digit-equalities.txt','text/plain;charset=utf-8');$('xlsx').onclick=()=>save(workbook(),'factorial-power-digit-equalities.xlsx','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 })();
-</script></body></html>
+</script>
+<!-- IJT shared page-view counter -->
+<script defer src="/mathematical-generators/shared-visit-counter.js"></script>
+</body></html>

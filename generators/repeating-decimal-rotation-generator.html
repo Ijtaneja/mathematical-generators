@@ -126,4 +126,7 @@ function download(csv){
  const url=URL.createObjectURL(new Blob([text],{type:csv?'text/csv;charset=utf-8':'text/plain;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download=`Repeating-Decimal-${model.n}.${csv?'csv':'txt'}`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 $('download').onclick=()=>download(false);$('csv').onclick=()=>download(true);generate();
-</script></body></html>
+</script>
+<!-- IJT shared page-view counter -->
+<script defer src="/mathematical-generators/shared-visit-counter.js"></script>
+</body></html>

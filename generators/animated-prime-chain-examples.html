@@ -722,4 +722,7 @@ window.GPALL = {choose, seek: t => { T0 = t; playing = false; draw(); }, cover: 
 (document.fonts ? document.fonts.load('700 40px Lora').catch(() => {}) : Promise.resolve()).finally(() => { setTimeout(() => { thumbs = null; }, 600); PH.onload = () => { thumbs = null; }; requestAnimationFrame(loop); });
 })();
 </script>
+
+<!-- IJT shared page-view counter -->
+<script defer src="/mathematical-generators/shared-visit-counter.js"></script>
 </body></html>

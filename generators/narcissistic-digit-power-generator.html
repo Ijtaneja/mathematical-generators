@@ -99,4 +99,7 @@ $('run').onclick=()=>{
 $('stop').onclick=()=>finish(`Stopped: ${rows.length} identities found so far.`);
 $('csv').onclick=()=>{const header=['Number','Type','c','d','Numerator','Denominator','Identity'];const csv=[header.map(csvValue).join(','),...rows.map(r=>[r.n,r.kind,r.c,r.d,r.numerator,r.denominator,formula(r)].map(csvValue).join(','))].join('\r\n');download('narcissistic-digit-power-results.csv','\ufeff'+csv,'text/csv;charset=utf-8')};
 $('txt').onclick=()=>download('narcissistic-digit-power-results.txt',rows.map(formula).join('\n'),'text/plain;charset=utf-8');
-</script></body></html>
+</script>
+<!-- IJT shared page-view counter -->
+<script defer src="/mathematical-generators/shared-visit-counter.js"></script>
+</body></html>

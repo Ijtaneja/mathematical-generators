@@ -83,4 +83,7 @@ function downloadXlsx(){
 function download(kind){if(!rows.length)return;let data,name,type;if(kind==='txt'){data=rows.map(r=>`${r.n} = (${r.expr})^${r.exp} [base=${r.base}; blocks=${r.blocks}]`).join('\n');name='semi-selfie-perfect-power-results.txt';type='text/plain'}else{const q=x=>'"'+String(x).replaceAll('"','""')+'"';data='Number,Expression,Base,Exponent,Blocks\n'+rows.map(r=>[r.n,r.expr,r.base,r.exp,r.blocks].map(q).join(',')).join('\n');name='semi-selfie-perfect-power-results.csv';type='text/csv'}const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+data],{type:type+';charset=utf-8'}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{mode=t.dataset.mode;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===t));$('singleFields').classList.toggle('hidden',mode!=='single');$('rangeFields').classList.toggle('hidden',mode!=='range')});$('run').onclick=run;$('stop').onclick=()=>{cancelled=true;$('status').textContent='Stopping after the current number…';};$('examples').onclick=()=>{mode='range';document.querySelector('[data-mode="range"]').click();$('from').value='1';$('to').value='10000';run()};$('clear').onclick=()=>{cancelled=true;rows=[];$('results').innerHTML='';$('summary').classList.add('hidden');$('status').textContent='Ready.';$('txt').disabled=$('xlsx').disabled=true};$('txt').onclick=()=>download('txt');$('xlsx').onclick=downloadXlsx;
 })();
-</script></body></html>
+</script>
+<!-- IJT shared page-view counter -->
+<script defer src="/mathematical-generators/shared-visit-counter.js"></script>
+</body></html>

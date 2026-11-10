@@ -58,4 +58,7 @@ const tabLabel=()=>activeTab==='different'?'Different Digits':activeTab==='equal
 function save(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
 els.txt.onclick=()=>save(`mirror-number-sums-${k}-terms-${activeTab}.txt`,lines().join('\n'),'text/plain');els.csv.onclick=()=>{const q=s=>'"'+String(s).replace(/"/g,'""')+'"',out=visibleData(),termHeaders=Array.from({length:k},(_,i)=>`Term ${i+1}`),revHeaders=Array.from({length:k},(_,i)=>`rev(Term ${i+1})`);const rows=[['No.',...termHeaders,'Sum c',...revHeaders,'rev(c)','Original Identity','Reflected Identity','Type'],...out.map((r,i)=>[i+1,...r.terms,r.c,...r.reversed,r.rc,`${r.terms.join(' + ')} = ${r.c}`,`${r.reversed.join(' + ')} = ${r.rc}`,activeTab==='different'?'Different digits':activeTab==='equal'?'Equal digits':r.type])];save(`mirror-number-sums-${k}-terms-${activeTab}.csv`,'\ufeff'+rows.map(x=>x.map(q).join(',')).join('\r\n'),'text/csv;charset=utf-8')};els.copy.onclick=async()=>{try{await navigator.clipboard.writeText(lines().join('\n'));els.status.textContent='Results copied'}catch(e){alert('Copy was blocked by the browser. Please use the TXT download.')}};
 })();
-</script></body></html>
+</script>
+<!-- IJT shared page-view counter -->
+<script defer src="/mathematical-generators/shared-visit-counter.js"></script>
+</body></html>

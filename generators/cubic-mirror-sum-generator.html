@@ -44,4 +44,7 @@ E.stop.onclick=()=>finish('Stopped');E.clear.onclick=()=>{running=false;data=[];
 const label=()=>active==='mirror'?'Non-palindromic Mirror Pairs':active==='pal'?'Palindromic Result':'All';const lines=()=>['Cubic Mirror-Sum Generator',`Terms: ${k}`,`Tab: ${label()}`,'Created by Inder J. Taneja','',...visible().map((r,i)=>`${i+1}. ${r.bases.map(x=>x+'^3').join(' + ')} = ${r.sum}  <=>  ${r.rb.map(x=>x+'^3').join(' + ')} = ${r.rsum}  [${r.type}]`)];
 function save(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}E.txt.onclick=()=>save(`cubic-mirror-sums-${k}-terms-${active}.txt`,lines().join('\n'),'text/plain');E.csv.onclick=()=>{const q=x=>'"'+String(x).replace(/"/g,'""')+'"',rows=[['No.','Original identity','Reflected identity','Original sum','Reflected sum','Type'],...visible().map((r,i)=>[i+1,r.bases.map(x=>x+'^3').join(' + ')+' = '+r.sum,r.rb.map(x=>x+'^3').join(' + ')+' = '+r.rsum,r.sum,r.rsum,r.type])];save(`cubic-mirror-sums-${k}-terms-${active}.csv`,'\ufeff'+rows.map(r=>r.map(q).join(',')).join('\r\n'),'text/csv;charset=utf-8')};E.copy.onclick=async()=>{try{await navigator.clipboard.writeText(lines().join('\n'));E.status.textContent='Results copied'}catch(e){alert('Copy was blocked. Please use TXT download.')}};
 })();
-</script></body></html>
+</script>
+<!-- IJT shared page-view counter -->
+<script defer src="/mathematical-generators/shared-visit-counter.js"></script>
+</body></html>

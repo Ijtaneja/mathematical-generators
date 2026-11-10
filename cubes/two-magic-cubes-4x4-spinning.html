@@ -69,5 +69,8 @@ DEFS.forEach((def,ci)=>{
   cubeEls.push({setRY:v=>rY=v,rY:()=>rY,apply:()=>{cubeEl.style.transform='rotateX(-25deg) rotateY('+rY+'deg)';}});
 });
 (function loop(){cubeEls.forEach(c=>{c.setRY(c.rY()+0.28);c.apply();});requestAnimationFrame(loop);})();</script>
+
+<!-- IJT shared page-view counter -->
+<script defer src="/mathematical-generators/shared-visit-counter.js"></script>
 </body>
 </html>

@@ -61511,4 +61511,7 @@ function excelExport(order){const rows=ordered(order),name=kind==='running'?'Run
 function download(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1200)}
 $('txtNumber').onclick=()=>textExport('number');$('txtLetters').onclick=()=>textExport('letters');$('xlsxNumber').onclick=()=>excelExport('number');$('xlsxLetters').onclick=()=>excelExport('letters');$('stats').textContent=`${datasets.running.records.length.toLocaleString()} running-type and ${datasets.fraction.records.length.toLocaleString()} fraction-type identities loaded.`;search();
 })();
-</script></body></html>
+</script>
+<!-- IJT shared page-view counter -->
+<script defer src="/mathematical-generators/shared-visit-counter.js"></script>
+</body></html>
