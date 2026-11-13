@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Water Reflection Cubes · Orders 3–25</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;padding:clamp(10px,2.5vw,28px);background:white;color:#193e59;font:16px Georgia,serif}
+main{max-width:1450px;margin:auto;padding:clamp(12px,2vw,22px);border:4px double #a68547;border-radius:18px;background:linear-gradient(145deg,#e8f4fa,#fcf5e7);box-shadow:inset 4px 4px 13px #426e8a30}
+header{text-align:center;margin:0 0 12px}
+h1{margin:0;font-size:clamp(25px,4vw,44px)}
+header p{margin:7px 0 0}
+nav{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
+nav a{padding:9px 6px;text-align:center;border:1px solid #829eb2;border-radius:8px;background:linear-gradient(#cfe2ef,#fbfcff);box-shadow:inset 2px 2px 5px #456b8730;color:inherit;text-decoration:none}
+nav a[aria-current="true"]{background:#224e6b;color:white}
+a:focus-visible{outline:3px solid #b17719;outline-offset:3px}
+.links{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:12px 0}
+.links a{color:inherit}
+iframe{display:block;width:100%;height:max(560px,82vh);border:1px solid #829eb2;border-radius:10px;background:white}
+</style>
+</head>
+<body>
+<main>
+<header><h1>Water Reflection Cubes</h1><p>Orders 3–25 · Inder J. Taneja</p></header>
+<nav aria-label="Choose an order group">
+<a href="water_reflection_cubes_order3_4.html" target="plate" aria-current="true">Orders 3–4</a>
+<a href="water_reflection_cubes_order5_6.html" target="plate">Orders 5–6</a>
+<a href="water_reflection_cubes_order7_8.html" target="plate">Orders 7–8</a>
+<a href="water_reflection_cubes_order9_10.html" target="plate">Orders 9–10</a>
+<a href="water_reflection_cubes_order11_12.html" target="plate">Orders 11–12</a>
+<a href="water_reflection_cubes_order13_14.html" target="plate">Orders 13–14</a>
+<a href="water_reflection_cubes_order15_16.html" target="plate">Orders 15–16</a>
+<a href="water_reflection_cubes_order17_18.html" target="plate">Orders 17–18</a>
+<a href="water_reflection_cubes_order19_20.html" target="plate">Orders 19–20</a>
+<a href="water_reflection_cubes_order21_22.html" target="plate">Orders 21–22</a>
+<a href="water_reflection_cubes_order23_24.html" target="plate">Orders 23–24</a>
+<a href="water_reflection_cubes_order25.html" target="plate">Order 25</a>
+</nav>
+<div class="links"><a href="../#water-reflection-cubes">Back to Mathematical Generators</a><a id="full-page" href="water_reflection_cubes_order3_4.html" target="_blank" rel="noopener">Open selected generator in a new tab</a></div>
+<iframe name="plate" src="water_reflection_cubes_order3_4.html" title="Water Reflection Cubes · Orders 3–4"></iframe>
+</main>
+<script>
+const links = [...document.querySelectorAll('nav a')];
+const frame = document.querySelector('iframe');
+const fullPage = document.querySelector('#full-page');
+for (const link of links) {
+  link.addEventListener('click', (event) => {
+    if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+    links.forEach((item) => item.removeAttribute('aria-current'));
+    link.setAttribute('aria-current', 'true');
+    fullPage.href = link.href;
+    frame.title = 'Water Reflection Cubes · ' + link.textContent;
+  });
+}
+</script>
+</body>
+</html>
